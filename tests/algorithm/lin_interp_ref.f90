@@ -1,6 +1,6 @@
 #include "ekat_config.f"
 
-module scream_ut
+module ekat_ut
 
   use iso_c_binding, only: c_int, c_double, c_float
 
@@ -67,4 +67,4 @@ contains
 
 end subroutine linear_interp
 
-end module scream_ut
+end module ekat_ut

@@ -1,7 +1,7 @@
 #ifndef EKAT_SCALAR_TRAITS_HPP
 #define EKAT_SCALAR_TRAITS_HPP
 
-#include "scream_kokkos.hpp"
+#include "Kokkos_Core.hpp"
 
 #include <limits>
 #include <climits>
@@ -12,7 +12,7 @@
 #include <math_constants.h>
 #endif
 
-namespace scream {
+namespace ekat {
 
 template<typename T>
 struct ScalarTraits {
@@ -23,7 +23,7 @@ struct ScalarTraits {
 
   KOKKOS_INLINE_FUNCTION
   static const raw_type quiet_NaN () {
-    scream_kassert_msg(std::is_floating_point<raw_type>::value,
+    ekat_kassert_msg(std::is_floating_point<raw_type>::value,
                        "Error! NaN is only available for floating point types.\n");
 #ifdef __CUDA_ARCH__
     if (std::is_same<raw_type,float>::value) {
@@ -31,7 +31,7 @@ struct ScalarTraits {
     } else if (std::is_same<raw_type,double>::value) {
       return CUDART_NAN;
     } else {
-      scream_kerror_msg ("Error! No NaN provided for this floating point type.\n");
+      ekat_kerror_msg ("Error! No NaN provided for this floating point type.\n");
       // Silence compiler warning
       return 0;
     }
@@ -68,6 +68,6 @@ struct ScalarTraits {
 };
 
 
-} // namespace scream
+} // namespace ekat
 
 #endif // EKAT_SCALAR_TRAITS_HPP

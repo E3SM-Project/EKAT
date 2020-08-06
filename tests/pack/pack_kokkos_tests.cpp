@@ -1,9 +1,9 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/scream_pack_kokkos.hpp"
-#include "ekat/scream_types.hpp"
-#include "ekat/util/scream_utils.hpp"
-#include "ekat/util/scream_kokkos_utils.hpp"
+#include "ekat/ekat_pack_kokkos.hpp"
+#include "ekat/ekat_types.hpp"
+#include "ekat/util/ekat_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_utils.hpp"
 
 namespace {
 
@@ -35,7 +35,7 @@ void compare (const VA& a, const VB& b) {
 #define make_get_index(rank, ...)                                         \
 template<typename View, typename IdxView, OnlyRank<View, rank, int> = 0 > \
 KOKKOS_INLINE_FUNCTION                                                    \
-scream::pack::Pack<typename View::value_type, IdxView::value_type::n> get_index(const View& data, const IdxView& idx) { return index(data, __VA_ARGS__); }
+ekat::pack::Pack<typename View::value_type, IdxView::value_type::n> get_index(const View& data, const IdxView& idx) { return index(data, __VA_ARGS__); }
 
 #define make_get_data(rank, ...)                                        \
 template<typename View, typename IdxView, OnlyRank<View, rank, int> = 0 > \
@@ -57,7 +57,7 @@ template<int Packn, typename View>
 void do_index_test(const View& data)
 {
   static constexpr int pack_size = Packn;
-  using IdxPack = scream::pack::Pack<int, pack_size>;
+  using IdxPack = ekat::pack::Pack<int, pack_size>;
   fill(data);
   Kokkos::View<IdxPack[View::Rank]> idx("idx");
   Kokkos::parallel_for(View::Rank, KOKKOS_LAMBDA(const int r) {
@@ -76,7 +76,7 @@ void do_index_test(const View& data)
   REQUIRE(nerr == 0);
 }
 
-TEST_CASE("index", "scream::pack") {
+TEST_CASE("index", "ekat::pack") {
   {
     Kokkos::View<double*> data("data", 100);
     do_index_test<16>(data);
@@ -103,9 +103,9 @@ TEST_CASE("index", "scream::pack") {
   }
 }
 
-TEST_CASE("scalarize", "scream::pack") {
-  using scream::pack::Pack;
-  using scream::pack::scalarize;
+TEST_CASE("scalarize", "ekat::pack") {
+  using ekat::pack::Pack;
+  using ekat::pack::scalarize;
 
   typedef Kokkos::View<Pack<double, 16>*> Array1;
   typedef Kokkos::View<Pack<double, 32>**> Array2;
@@ -168,9 +168,9 @@ OnlyRank<Src, 2> repack_test (const Src& a_src, const Dst& a) {
   compare(scalarize(a_src), scalarize(a));
 }
 
-TEST_CASE("repack", "scream::pack") {
-  using scream::pack::Pack;
-  using scream::pack::repack;
+TEST_CASE("repack", "ekat::pack") {
+  using ekat::pack::Pack;
+  using ekat::pack::repack;
 
   typedef Kokkos::View<Pack<double, 16>*> Array1;
   typedef Kokkos::View<Pack<double, 32>**> Array2;
@@ -216,9 +216,9 @@ TEST_CASE("repack", "scream::pack") {
   }
 }
 
-TEST_CASE("kokkos_packs", "scream::pack") {
-  using namespace scream;
-  using namespace scream::pack;
+TEST_CASE("kokkos_packs", "ekat::pack") {
+  using namespace ekat;
+  using namespace ekat::pack;
 
   using TestBigPack = Pack<Real, 16>;
 
@@ -278,18 +278,18 @@ TEST_CASE("kokkos_packs", "scream::pack") {
   REQUIRE(nerr == 0);
 }
 
-TEST_CASE("host_device_packs_1d", "scream::pack")
+TEST_CASE("host_device_packs_1d", "ekat::pack")
 {
   static constexpr int num_pksizes_to_test = 4;
   static constexpr int num_views_per_pksize = 3;
   static constexpr int fixed_view_size = 67;
 
-  using KT = scream::KokkosTypes<scream::DefaultDevice>;
+  using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  using Pack1T = scream::pack::Pack<int, 1>;
-  using Pack2T = scream::pack::Pack<int, 2>;
-  using Pack4T = scream::pack::Pack<int, 4>;
-  using Pack8T = scream::pack::Pack<int, 8>; // we will use this to test fixed-sized view sugar
+  using Pack1T = ekat::pack::Pack<int, 1>;
+  using Pack2T = ekat::pack::Pack<int, 2>;
+  using Pack4T = ekat::pack::Pack<int, 4>;
+  using Pack8T = ekat::pack::Pack<int, 8>; // we will use this to test fixed-sized view sugar
 
   using view_p1_t = typename KT::template view_1d<Pack1T>;
   using view_p2_t = typename KT::template view_1d<Pack2T>;
@@ -343,10 +343,10 @@ TEST_CASE("host_device_packs_1d", "scream::pack")
     }
   }
 
-  scream::pack::host_to_device( cptr_data[0], sizes, p1_d);
-  scream::pack::host_to_device( cptr_data[1], sizes, p2_d);
-  scream::pack::host_to_device( cptr_data[2], sizes, p4_d);
-  scream::pack::host_to_device( cptr_data[3], fixed_view_size, p8_d); // fixed-size
+  ekat::pack::host_to_device( cptr_data[0], sizes, p1_d);
+  ekat::pack::host_to_device( cptr_data[1], sizes, p2_d);
+  ekat::pack::host_to_device( cptr_data[2], sizes, p4_d);
+  ekat::pack::host_to_device( cptr_data[3], fixed_view_size, p8_d); // fixed-size
 
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
@@ -358,33 +358,33 @@ TEST_CASE("host_device_packs_1d", "scream::pack")
           const int pk_idx = k % pk_sizes[i];
 
           if (i == 0) {
-            scream_krequire(p1_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            ekat_krequire(p1_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p1_d[j](view_idx)[pk_idx] += i+j;
           }
           else if (i == 1) {
-            scream_krequire(p2_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            ekat_krequire(p2_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p2_d[j](view_idx)[pk_idx] += i+j;
           }
           else if (i == 2) {
-            scream_krequire(p4_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            ekat_krequire(p4_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p4_d[j](view_idx)[pk_idx] += i+j;
           }
           else if (i == 3) {
-            scream_krequire(p8_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            ekat_krequire(p8_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p8_d[j](view_idx)[pk_idx] += i+j;
           }
           else {
-            scream_krequire_msg(false, "Unhandled i");
+            ekat_krequire_msg(false, "Unhandled i");
           }
         }
       }
     }
   });
 
-  scream::pack::device_to_host( ptr_data[0], sizes, p1_d);
-  scream::pack::device_to_host( ptr_data[1], sizes, p2_d);
-  scream::pack::device_to_host( ptr_data[2], sizes, p4_d);
-  scream::pack::device_to_host( ptr_data[3], fixed_view_size, p8_d); // fixed-size
+  ekat::pack::device_to_host( ptr_data[0], sizes, p1_d);
+  ekat::pack::device_to_host( ptr_data[1], sizes, p2_d);
+  ekat::pack::device_to_host( ptr_data[2], sizes, p4_d);
+  ekat::pack::device_to_host( ptr_data[3], fixed_view_size, p8_d); // fixed-size
 
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
@@ -403,12 +403,12 @@ void host_device_packs_2d(bool transpose)
   static constexpr int fixed_view_dim1 = 5;
   static constexpr int fixed_view_dim2 = 67;
 
-  using KT = scream::KokkosTypes<scream::DefaultDevice>;
+  using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  using Pack1T = scream::pack::Pack<int, 1>;
-  using Pack2T = scream::pack::Pack<int, 2>;
-  using Pack4T = scream::pack::Pack<int, 4>;
-  using Pack8T = scream::pack::Pack<int, 8>; // we will use this to test fixed-sized view sugar
+  using Pack1T = ekat::pack::Pack<int, 1>;
+  using Pack2T = ekat::pack::Pack<int, 2>;
+  using Pack4T = ekat::pack::Pack<int, 4>;
+  using Pack8T = ekat::pack::Pack<int, 8>; // we will use this to test fixed-sized view sugar
 
   using view_p1_t = typename KT::template view_2d<Pack1T>;
   using view_p2_t = typename KT::template view_2d<Pack2T>;
@@ -474,10 +474,10 @@ void host_device_packs_2d(bool transpose)
     }
   }
 
-  scream::pack::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
-  scream::pack::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
-  scream::pack::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
-  scream::pack::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
+  ekat::pack::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
+  ekat::pack::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
+  ekat::pack::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
+  ekat::pack::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
 
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
@@ -504,13 +504,13 @@ void host_device_packs_2d(bool transpose)
               curr_scalar = &(p8_d[j](k1, view_idx)[pk_idx]);
             }
             else {
-              scream_krequire_msg(false, "Unhandled i");
+              ekat_krequire_msg(false, "Unhandled i");
             }
             if (transpose) {
-              //scream_krequire(*curr_scalar == k2*(i+j+1) + k1*(i-j-1));
+              //ekat_krequire(*curr_scalar == k2*(i+j+1) + k1*(i-j-1));
             }
             else {
-              scream_krequire(*curr_scalar == k1*(i+j+1) + k2*(i-j-1));
+              ekat_krequire(*curr_scalar == k1*(i+j+1) + k2*(i-j-1));
             }
             *curr_scalar += i+j;
           }
@@ -519,10 +519,10 @@ void host_device_packs_2d(bool transpose)
     }
   });
 
-  scream::pack::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
-  scream::pack::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
-  scream::pack::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
-  scream::pack::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
+  ekat::pack::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
+  ekat::pack::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
+  ekat::pack::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
+  ekat::pack::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
 
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
@@ -537,18 +537,18 @@ void host_device_packs_2d(bool transpose)
   }
 }
 
-TEST_CASE("host_device_packs_2d", "scream::pack")
+TEST_CASE("host_device_packs_2d", "ekat::pack")
 {
   host_device_packs_2d(false);
   host_device_packs_2d(true);
 }
 
-TEST_CASE("index_and_shift", "scream::pack")
+TEST_CASE("index_and_shift", "ekat::pack")
 {
   static constexpr int pack_size = 8;
   static constexpr int num_ints = 100;
   static constexpr int shift = 2;
-  using IntPack = scream::pack::Pack<int, pack_size>;
+  using IntPack = ekat::pack::Pack<int, pack_size>;
 
   Kokkos::View<int*> data("data", num_ints);
 
@@ -559,10 +559,10 @@ TEST_CASE("index_and_shift", "scream::pack")
   int nerr = 0;
   Kokkos::parallel_reduce(num_ints - shift - pack_size, KOKKOS_LAMBDA(const int i, int& errs) {
     IntPack expected1, expected2, vals1, vals2, idx;
-    expected1 = scream::pack::range<IntPack>(i+1000);
-    expected2 = scream::pack::range<IntPack>(i+1000+shift);
-    idx = scream::pack::range<IntPack>(i);
-    scream::pack::index_and_shift<shift>(data, idx, vals1, vals2);
+    expected1 = ekat::pack::range<IntPack>(i+1000);
+    expected2 = ekat::pack::range<IntPack>(i+1000+shift);
+    idx = ekat::pack::range<IntPack>(i);
+    ekat::pack::index_and_shift<shift>(data, idx, vals1, vals2);
     if ( (vals1 != expected1 || vals2 != expected2).any()) {
       ++errs;
     }

@@ -1,20 +1,20 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/scream_utils.hpp"
+#include "ekat/util/ekat_utils.hpp"
 #include "ekat/util/ekat_string_utils.hpp"
-#include "ekat/scream_pack.hpp"
-#include "ekat/scream_kokkos_meta.hpp"
+#include "ekat/ekat_pack.hpp"
+#include "ekat/kokkos/ekat_kokkos_meta.hpp"
 
 namespace {
 
 TEST_CASE("precision", "util") {
-  CHECK_FALSE(scream::util::is_single_precision<double>::value);
-  CHECK(scream::util::is_single_precision<float>::value);
+  CHECK_FALSE(ekat::util::is_single_precision<double>::value);
+  CHECK(ekat::util::is_single_precision<float>::value);
 }
 
 // This is just a compilation test.
-TEST_CASE("Unmanaged", "scream::ko") {
-  using scream::ko::Unmanaged;
+TEST_CASE("Unmanaged", "ekat::ko") {
+  using ekat::util::Unmanaged;
 
   {
     typedef Kokkos::View<double*> V;
@@ -26,7 +26,7 @@ TEST_CASE("Unmanaged", "scream::ko") {
   }
 
   {
-    typedef Kokkos::View<scream::pack::Pack<double, EKAT_PACK_SIZE>***,
+    typedef Kokkos::View<ekat::pack::Pack<double, EKAT_PACK_SIZE>***,
                          Kokkos::LayoutLeft,
                          Kokkos::HostSpace,
                          Kokkos::MemoryTraits<Kokkos::RandomAccess> >
@@ -46,7 +46,7 @@ TEST_CASE("Unmanaged", "scream::ko") {
   }
 
   {
-    typedef Kokkos::View<scream::pack::Pack<int, EKAT_PACK_SIZE>[10],
+    typedef Kokkos::View<ekat::pack::Pack<int, EKAT_PACK_SIZE>[10],
                          Kokkos::HostSpace,
                          Kokkos::MemoryTraits<Kokkos::Atomic | Kokkos::Aligned | Kokkos::Restrict> >
       V;
@@ -72,7 +72,7 @@ TEST_CASE("Unmanaged", "scream::ko") {
 }
 
 TEST_CASE("string","string") {
-  using namespace scream;
+  using namespace ekat;
 
   util::CaseInsensitiveString cis1 = "field_1";
   util::CaseInsensitiveString cis2 = "fIeLd_1";

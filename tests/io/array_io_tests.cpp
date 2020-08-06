@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/scream_pack.hpp"
+#include "ekat/ekat_pack.hpp"
 
 extern "C"{
 int test_array_io ();

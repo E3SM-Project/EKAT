@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/scream_upper_bound.hpp"
+#include "ekat/util/ekat_upper_bound.hpp"
 
 #include <random>
 #include <vector>
@@ -21,7 +21,7 @@ TEST_CASE("upper_bound", "soak") {
     }
     std::sort(v.begin(), v.end());
     double search_val = value_dist(generator);
-    double v1 = *scream::util::upper_bound_impl(v.data(), v.data() + size, search_val);
+    double v1 = *ekat::util::upper_bound_impl(v.data(), v.data() + size, search_val);
     double v2 = *std::upper_bound(v.begin(), v.end(), search_val);
     REQUIRE(v1 == v2);
   }

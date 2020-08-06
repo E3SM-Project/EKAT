@@ -1,16 +1,16 @@
 set(EKAT_SOURCES
-  mpi/scream_comm.cpp
-  scream_assert.cpp
-  scream_session.cpp
-  scream_parameter_list.cpp
-  scream_parse_yaml_file.cpp
-  util/array_io.cpp
+  mpi/ekat_comm.cpp
+  ekat_assert.cpp
+  ekat_session.cpp
+  ekat_parameter_list.cpp
+  ekat_parse_yaml_file.cpp
+  util/ekat_array_io.cpp
   util/array_io_mod.f90
   util/ekat_string_utils.cpp
-  util/scream_arch.cpp
-  util/scream_test_utils.cpp
-  util/scream_utils.cpp
-  util/time_stamp.cpp
+  util/ekat_arch.cpp
+  util/ekat_test_utils.cpp
+  util/ekat_utils.cpp
+  util/ekat_time_stamp.cpp
 )
 
 add_library(ekat ${EKAT_SOURCES})

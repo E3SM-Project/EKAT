@@ -7,9 +7,9 @@
 
 ! These routines are meant only for BFB testing. The solve a diagonally dominant
 ! tridiagonal system A x = b, with (dl,d,du) the tridiags and x = b on
-! input. See scream_tridag.hpp for performant solvers.
+! input. See ekat_tridag.hpp for performant solvers.
 
-module scream_tridag_bfb_mod
+module ekat_tridag_bfb_mod
   implicit none
   
   interface
@@ -25,4 +25,4 @@ module scream_tridag_bfb_mod
        real(c_real), intent(inout) :: dl(n), d(n), du(n), x(nrhs,n)
      end subroutine tridiag_diagdom_bfb_a1xm
   end interface
-end module scream_tridag_bfb_mod
+end module ekat_tridag_bfb_mod

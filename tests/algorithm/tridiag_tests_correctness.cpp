@@ -3,13 +3,13 @@
 #include "tridiag_tests.hpp"
 
 extern "C" {
-  void tridiag_diagdom_bfb_a1x1(int n, scream::Real* dl, scream::Real* d,
-                                scream::Real* du, scream::Real* x);
-  void tridiag_diagdom_bfb_a1xm(int n, int nrhs, scream::Real* dl, scream::Real* d,
-                                scream::Real* du, scream::Real* x);
+  void tridiag_diagdom_bfb_a1x1(int n, ekat::Real* dl, ekat::Real* d,
+                                ekat::Real* du, ekat::Real* x);
+  void tridiag_diagdom_bfb_a1xm(int n, int nrhs, ekat::Real* dl, ekat::Real* d,
+                                ekat::Real* du, ekat::Real* x);
 }
 
-namespace scream {
+namespace ekat {
 namespace tridiag {
 namespace test {
 namespace correct {
@@ -29,7 +29,7 @@ struct Solver {
     case cr_scalar: return "cr_scalar";
     case bfb: return "bfb";
     case bfbf90: return "bfbf90";
-    default: scream_require_msg(false, "Not a valid solver: " << e);
+    default: ekat_require_msg(false, "Not a valid solver: " << e);
     }
   }
 
@@ -100,7 +100,7 @@ struct Solve<true, APack, DataPack> {
                    const int nprob, const int nrhs) {
     using Kokkos::subview;
     using Kokkos::ALL;
-    using scream::pack::scalarize;
+    using ekat::pack::scalarize;
 
     assert(nrhs > 1 || DataPack::n == 1);
     assert(nrhs > 1 || X.extent_int(2) == 1);
@@ -121,9 +121,9 @@ struct Solve<true, APack, DataPack> {
         const auto d  = get_diag(As, 1);
         const auto du = get_diag(As, 2);
         if (tc.solver == Solver::thomas_team_scalar)
-          scream::tridiag::thomas(team, dl, d, du, Xs);
+          ekat::tridiag::thomas(team, dl, d, du, Xs);
         else
-          scream::tridiag::thomas(team, dl, d, du, X);
+          ekat::tridiag::thomas(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
@@ -138,7 +138,7 @@ struct Solve<true, APack, DataPack> {
               const auto d  = get_diag(As, 1);
               const auto du = get_diag(As, 2);
               const auto x  = get_x(Xs);
-              scream::tridiag::thomas(dl, d, du, x);
+              ekat::tridiag::thomas(dl, d, du, x);
             };
             Kokkos::single(Kokkos::PerTeam(team), single);
           };
@@ -151,7 +151,7 @@ struct Solve<true, APack, DataPack> {
               const auto dl = get_diag(As, 0);
               const auto d  = get_diag(As, 1);
               const auto du = get_diag(As, 2);
-              scream::tridiag::thomas(dl, d, du, Xs);
+              ekat::tridiag::thomas(dl, d, du, Xs);
             };
             Kokkos::single(Kokkos::PerTeam(team), single);
           };
@@ -165,7 +165,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diags(As, 0);
             const auto d  = get_diags(As, 1);
             const auto du = get_diags(As, 2);
-            scream::tridiag::thomas(dl, d, du, Xs);
+            ekat::tridiag::thomas(dl, d, du, Xs);
           };
           Kokkos::single(Kokkos::PerTeam(team), single);
         };
@@ -180,7 +180,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diag(As, 0);
             const auto d  = get_diag(As, 1);
             const auto du = get_diag(As, 2);
-            scream::tridiag::thomas(dl, d, du, X);
+            ekat::tridiag::thomas(dl, d, du, X);
           };
           Kokkos::single(Kokkos::PerTeam(team), single);
         };
@@ -191,7 +191,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diags(A, 0);
             const auto d  = get_diags(A, 1);
             const auto du = get_diags(A, 2);
-            scream::tridiag::thomas(dl, d, du, X);
+            ekat::tridiag::thomas(dl, d, du, X);
           };
           Kokkos::single(Kokkos::PerTeam(team), single);
         };
@@ -208,7 +208,7 @@ struct Solve<true, APack, DataPack> {
             const auto d  = get_diag(As, 1);
             const auto du = get_diag(As, 2);
             const auto x  = get_x(Xs);
-            scream::tridiag::cr(team, dl, d, du, x);
+            ekat::tridiag::cr(team, dl, d, du, x);
           };
           Kokkos::parallel_for(policy, f);
         } else {
@@ -218,7 +218,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diag(As, 0);
             const auto d  = get_diag(As, 1);
             const auto du = get_diag(As, 2);
-            scream::tridiag::cr(team, dl, d, du, Xs);
+            ekat::tridiag::cr(team, dl, d, du, Xs);
           }; 
          Kokkos::parallel_for(policy, f);
         }
@@ -229,7 +229,7 @@ struct Solve<true, APack, DataPack> {
           const auto dl = get_diags(As, 0);
           const auto d  = get_diags(As, 1);
           const auto du = get_diags(As, 2);
-          scream::tridiag::cr(team, dl, d, du, Xs);
+          ekat::tridiag::cr(team, dl, d, du, Xs);
         };
         Kokkos::parallel_for(policy, f);
       }
@@ -239,7 +239,7 @@ struct Solve<true, APack, DataPack> {
         const auto dl = get_diags(A, 0);
         const auto d  = get_diags(A, 1);
         const auto du = get_diags(A, 2);
-        scream::tridiag::bfb(team, dl, d, du, X);
+        ekat::tridiag::bfb(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
@@ -263,13 +263,13 @@ struct Solve<true, APack, DataPack> {
                                    dl.data(), d.data(), du.data(), Xs.data());
         }
       } else {
-        scream_require_msg(false, "bfbf90 does not support nprob > 1");
+        ekat_require_msg(false, "bfbf90 does not support nprob > 1");
       }
       deep_copy(A, Am);
       deep_copy(X, Xm);
     } break;
     default:
-      scream_require_msg(false, "Same pack size: " << Solver::convert(tc.solver));
+      ekat_require_msg(false, "Same pack size: " << Solver::convert(tc.solver));
     }
   }
 };
@@ -280,7 +280,7 @@ struct Solve<false, APack, DataPack> {
                    const int nprob, const int nrhs) {
     using Kokkos::subview;
     using Kokkos::ALL;
-    using scream::pack::scalarize;
+    using ekat::pack::scalarize;
 
     using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
     using MT = typename TeamPolicy::member_type;
@@ -299,9 +299,9 @@ struct Solve<false, APack, DataPack> {
         const auto d  = get_diag(As, 1);
         const auto du = get_diag(As, 2);
         if (tc.solver == Solver::thomas_team_scalar)
-          scream::tridiag::thomas(team, dl, d, du, Xs);
+          ekat::tridiag::thomas(team, dl, d, du, Xs);
         else
-          scream::tridiag::thomas(team, dl, d, du, X);
+          ekat::tridiag::thomas(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
@@ -312,7 +312,7 @@ struct Solve<false, APack, DataPack> {
           const auto dl = get_diag(As, 0);
           const auto d  = get_diag(As, 1);
           const auto du = get_diag(As, 2);
-          scream::tridiag::thomas(dl, d, du, X);
+          ekat::tridiag::thomas(dl, d, du, X);
         };
         Kokkos::single(Kokkos::PerTeam(team), single);
       };
@@ -324,12 +324,12 @@ struct Solve<false, APack, DataPack> {
         const auto dl = get_diags(As, 0);
         const auto d  = get_diags(As, 1);
         const auto du = get_diags(As, 2);
-        scream::tridiag::bfb(team, dl, d, du, X);
+        ekat::tridiag::bfb(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
     default:
-      scream_require_msg(false, "Different pack size: " << Solver::convert(tc.solver));
+      ekat_require_msg(false, "Different pack size: " << Solver::convert(tc.solver));
     }
   }
 };
@@ -342,9 +342,9 @@ struct Data {
 
   Data (const int nrow, const int nprob_, const int nrhs_)
     : nprob(nprob_), nrhs(nrhs_),
-      A("A", 3, nrow, scream::pack::npack<APack>(nprob)),
+      A("A", 3, nrow, ekat::pack::npack<APack>(nprob)),
       Acopy("A", A.extent(0), A.extent(1), A.extent(2)),
-      B("B", nrow, scream::pack::npack<DataPack>(nrhs)),
+      B("B", nrow, ekat::pack::npack<DataPack>(nrhs)),
       X("X", B.extent(0), B.extent(1)),
       Y("Y", X.extent(0), X.extent(1))
   {}
@@ -401,7 +401,7 @@ void run_test_configs (Fn& fn) {
   for (const auto solver : Solver::all) {
     TestConfig tc;
     tc.solver = solver;
-    if (scream::util::OnGpu<Kokkos::DefaultExecutionSpace>::value) {
+    if (ekat::util::OnGpu<Kokkos::DefaultExecutionSpace>::value) {
       tc.n_kokkos_vec = 1;
       for (const int n_kokkos_thread : {128, 256, 512}) {
         tc.n_kokkos_thread = n_kokkos_thread;
@@ -431,11 +431,11 @@ void run_test_configs (Fn& fn) {
 
 template <int A_pack_size, int data_pack_size>
 void run_property_test_on_config (const TestConfig& tc) {
-  using namespace scream::tridiag::test;
+  using namespace ekat::tridiag::test;
 
-  using scream::Real;
-  using APack = scream::pack::Pack<Real, A_pack_size>;
-  using DataPack = scream::pack::Pack<Real, data_pack_size>;
+  using ekat::Real;
+  using APack = ekat::pack::Pack<Real, A_pack_size>;
+  using DataPack = ekat::pack::Pack<Real, data_pack_size>;
 
 #if 1
   const int nrows[] = {1,2,3,4,5, 8,10,16, 32,43, 63,64,65, 111,128,129, 2048};
@@ -503,11 +503,11 @@ void run_property_test () {
 
 template <int A_pack_size, int data_pack_size>
 void run_bfb_test_on_config (TestConfig& tc) {
-  using namespace scream::tridiag::test;
+  using namespace ekat::tridiag::test;
 
-  using scream::Real;
-  using APack = scream::pack::Pack<Real, A_pack_size>;
-  using DataPack = scream::pack::Pack<Real, data_pack_size>;
+  using ekat::Real;
+  using APack = ekat::pack::Pack<Real, A_pack_size>;
+  using DataPack = ekat::pack::Pack<Real, data_pack_size>;
 
   if (tc.solver != Solver::bfb) return;
 
@@ -562,18 +562,18 @@ void run_bfb_test () {
 } // namespace correct
 } // namespace test
 } // namespace tridiag
-} // namespace scream
+} // namespace ekat
 
 TEST_CASE("property", "tridiag") {
-  scream::tridiag::test::correct::run_property_test<1,1>();
+  ekat::tridiag::test::correct::run_property_test<1,1>();
   if (EKAT_PACK_SIZE > 1) {
-    scream::tridiag::test::correct::run_property_test<1, EKAT_PACK_SIZE>();
-    scream::tridiag::test::correct::run_property_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
+    ekat::tridiag::test::correct::run_property_test<1, EKAT_PACK_SIZE>();
+    ekat::tridiag::test::correct::run_property_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
   }
 }
 
 TEST_CASE("bfb", "tridiag") {
-  scream::tridiag::test::correct::run_bfb_test<1,1>();
+  ekat::tridiag::test::correct::run_bfb_test<1,1>();
   if (EKAT_PACK_SIZE > 1)
-    scream::tridiag::test::correct::run_bfb_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
+    ekat::tridiag::test::correct::run_bfb_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
 }

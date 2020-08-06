@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/scream_lin_interp.hpp"
-#include "ekat/util/scream_test_utils.hpp"
+#include "ekat/util/ekat_lin_interp.hpp"
+#include "ekat/util/ekat_test_utils.hpp"
 
 #include <random>
 #include <vector>
@@ -10,13 +10,13 @@
 extern "C" {
 
 // This will link to the fortran reference implementation
-void linear_interp_c(const scream::Real* x1, const scream::Real* x2, const scream::Real* y1, scream::Real* y2, int km1, int km2, int ncol, scream::Real minthresh);
+void linear_interp_c(const ekat::Real* x1, const ekat::Real* x2, const ekat::Real* y1, ekat::Real* y2, int km1, int km2, int ncol, ekat::Real minthresh);
 
 }
 
 namespace {
 
-using scream::Real;
+using ekat::Real;
 using vector_2d_t = std::vector<std::vector<Real> >;
 
 const Real* flatten(const vector_2d_t& data)
@@ -85,11 +85,11 @@ TEST_CASE("lin_interp", "soak") {
       populate_li_input(km1, km2, x1[i].data(), y1[i].data(), x2[i].data(), &generator);
     }
 
-    using LIV = scream::util::LinInterp<Real>;
-    using Pack = scream::pack::BigPack<Real>;
+    using LIV = ekat::util::LinInterp<Real>;
+    using Pack = ekat::pack::BigPack<Real>;
     LIV vect(ncol, km1, km2, minthresh);
-    const int km1_pack = scream::pack::npack<Pack>(km1);
-    const int km2_pack = scream::pack::npack<Pack>(km2);
+    const int km1_pack = ekat::pack::npack<Pack>(km1);
+    const int km2_pack = ekat::pack::npack<Pack>(km2);
     typename LIV::template view_2d<Pack>
       x1kv("x1kv", ncol, km1_pack),
       x2kv("x2kv", ncol, km2_pack),
@@ -133,9 +133,9 @@ TEST_CASE("lin_interp", "soak") {
       const Real* x2flat = flatten(x2);
       const Real* y1flat = flatten(y1);
 
-      scream::util::transpose<scream::util::TransposeDirection::c2f>(x1flat, x1f.data(), ncol, km1);
-      scream::util::transpose<scream::util::TransposeDirection::c2f>(y1flat, y1f.data(), ncol, km1);
-      scream::util::transpose<scream::util::TransposeDirection::c2f>(x2flat, x2f.data(), ncol, km2);
+      ekat::util::transpose<ekat::util::TransposeDirection::c2f>(x1flat, x1f.data(), ncol, km1);
+      ekat::util::transpose<ekat::util::TransposeDirection::c2f>(y1flat, y1f.data(), ncol, km1);
+      ekat::util::transpose<ekat::util::TransposeDirection::c2f>(x2flat, x2f.data(), ncol, km2);
 
       delete[] x1flat;
       delete[] x2flat;
@@ -147,7 +147,7 @@ TEST_CASE("lin_interp", "soak") {
       linear_interp_c(x1f.data(), x2f.data(), y1f.data(), y2f.data(), km1, km2, ncol, minthresh);
 
       std::vector<Real> y2c(ncol*km2);
-      scream::util::transpose<scream::util::TransposeDirection::f2c>(y2f.data(), y2c.data(), ncol, km2);
+      ekat::util::transpose<ekat::util::TransposeDirection::f2c>(y2f.data(), y2c.data(), ncol, km2);
 
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km2; ++j) {
@@ -163,14 +163,14 @@ TEST_CASE("lin_interp", "soak") {
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
         const int i = team_member.league_rank();
         vect.setup(team_member,
-                   scream::util::subview(x1kv, i),
-                   scream::util::subview(x2kv, i));
+                   ekat::util::subview(x1kv, i),
+                   ekat::util::subview(x2kv, i));
         team_member.team_barrier();
         vect.lin_interp(team_member,
-                        scream::util::subview(x1kv, i),
-                        scream::util::subview(x2kv, i),
-                        scream::util::subview(y1kv, i),
-                        scream::util::subview(y2kv, i));
+                        ekat::util::subview(x1kv, i),
+                        ekat::util::subview(x2kv, i),
+                        ekat::util::subview(y1kv, i),
+                        ekat::util::subview(y2kv, i));
       });
     }
 
@@ -180,7 +180,7 @@ TEST_CASE("lin_interp", "soak") {
       Kokkos::deep_copy(y2kvm, y2kv);
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km2; ++j) {
-          scream::util::catch2_req_pk_sensitive<scream::util::StrictFP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
+          ekat::util::catch2_req_pk_sensitive<ekat::util::StrictFP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
         }
       }
     }

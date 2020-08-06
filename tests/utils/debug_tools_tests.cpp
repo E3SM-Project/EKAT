@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/scream_assert.hpp"
+#include "ekat/ekat_assert.hpp"
 #include <csignal>
 #include <unistd.h>
 #include  <csetjmp>
@@ -30,7 +30,7 @@ int has_fe_invalid (int mask) {
 }
 
 int run_fpe_tests () {
-  int mask = scream::get_enabled_fpes();
+  int mask = ekat::get_enabled_fpes();
 
   std::cout << " tests mask: " << mask << "\n";
 
@@ -112,7 +112,7 @@ int run_fpe_tests () {
 }
 
 TEST_CASE ("fpes","") {
-  using namespace scream;
+  using namespace ekat;
 
   // Set a handler, which simply sets the global gSignalStatus,
   // so we can check with catch whether the FPE was raised.
@@ -125,7 +125,7 @@ TEST_CASE ("fpes","") {
   SECTION ("default-fpes") {
     printf ("*) testing default fpes...\n");
     feclearexcept(FE_ALL_EXCEPT);
-    int mask = scream::get_enabled_fpes();
+    int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
@@ -143,7 +143,7 @@ TEST_CASE ("fpes","") {
     feclearexcept(FE_ALL_EXCEPT);
     disable_all_fpes();
     enable_fpes(FE_DIVBYZERO);
-    int mask = scream::get_enabled_fpes();
+    int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
@@ -161,7 +161,7 @@ TEST_CASE ("fpes","") {
     feclearexcept(FE_ALL_EXCEPT);
     enable_fpes(FE_ALL_EXCEPT);
     disable_fpes(FE_DIVBYZERO);
-    int mask = scream::get_enabled_fpes();
+    int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
@@ -178,10 +178,10 @@ TEST_CASE ("fpes","") {
 TEST_CASE ("assert-macros") {
   printf ("*) testing assert macros...\n");
   auto test_req_msg = [](const bool test, const std::string& msg) {
-    scream_require_msg(test,msg);
+    ekat_require_msg(test,msg);
   };
   auto test_err_msg = [](const std::string& msg) {
-    scream_error_msg(msg);
+    ekat_error_msg(msg);
   };
   REQUIRE_THROWS (test_req_msg(1>3,"Uh? I wonder what Sharkowsky would have to say about this...\n"));
 
