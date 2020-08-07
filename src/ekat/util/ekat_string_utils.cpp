@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <sstream>
 
-namespace scream {
+namespace ekat {
 namespace util {
 
 void strip (std::string& str, const char c) {
@@ -100,4 +100,4 @@ bool caseInsensitiveLessEqualString (const std::string& s1, const std::string& s
 }
 
 } // namespace util
-} // namespace scream
+} // namespace ekat

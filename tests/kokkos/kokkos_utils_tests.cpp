@@ -1,14 +1,14 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/scream_kokkos_utils.hpp"
-#include "ekat/util/scream_arch.hpp"
+#include "ekat/kokkos/ekat_kokkos_utils.hpp"
+#include "ekat/util/ekat_arch.hpp"
 
 #include <thread>
 
 namespace {
 
 TEST_CASE("data_type", "[kokkos_utils]") {
-  using namespace scream::util;
+  using namespace ekat::util;
 
   // Check meta-util to get underlying scalar type of a raw MD array
   REQUIRE(std::is_same<ValueType<double**&>::type,double>::value);
@@ -33,8 +33,8 @@ TEST_CASE("data_type", "[kokkos_utils]") {
 }
 
 TEST_CASE("team_policy", "[kokkos_utils]") {
-  using namespace scream::util;
-  using namespace scream;
+  using namespace ekat::util;
+  using namespace ekat;
 
   using Device = DefaultDevice;
   using ExeSpace = typename KokkosTypes<Device>::ExeSpace;
@@ -51,7 +51,7 @@ TEST_CASE("team_policy", "[kokkos_utils]") {
       }
     }
     else {
-#if defined SCREAM_MIMIC_GPU && defined KOKKOS_ENABLE_OPENMP
+#if defined EKAT_MIMIC_GPU && defined KOKKOS_ENABLE_OPENMP
       REQUIRE((Kokkos::OpenMP::concurrency() == 1 || p.team_size() > 1));
 #endif
     }
@@ -61,8 +61,8 @@ TEST_CASE("team_policy", "[kokkos_utils]") {
 TEST_CASE("team_utils_omp", "[kokkos_utils]")
 {
 #ifdef KOKKOS_ENABLE_OPENMP
-  using namespace scream::util;
-  using namespace scream;
+  using namespace ekat::util;
+  using namespace ekat;
 
   using Device = DefaultDevice;
   using ExeSpace = typename KokkosTypes<Device>::ExeSpace;
@@ -145,8 +145,8 @@ TEST_CASE("team_utils_omp", "[kokkos_utils]")
 
 void test_utils_large_ni(const double saturation_multiplier)
 {
-  using namespace scream::util;
-  using namespace scream;
+  using namespace ekat::util;
+  using namespace ekat;
 
   using Device = DefaultDevice;
   using ExeSpace = typename KokkosTypes<Device>::ExeSpace;

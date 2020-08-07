@@ -1,13 +1,13 @@
 #ifndef EKAT_TRIDIAG_TESTS_HPP
 #define EKAT_TRIDIAG_TESTS_HPP
 
-#include "ekat/util/scream_tridiag.hpp"
-#include "ekat/util/scream_utils.hpp"
-#include "ekat/util/scream_arch.hpp"
-#include "ekat/scream_pack.hpp"
-#include "ekat/scream_pack_kokkos.hpp"
+#include "ekat/util/ekat_tridiag.hpp"
+#include "ekat/util/ekat_utils.hpp"
+#include "ekat/util/ekat_arch.hpp"
+#include "ekat/ekat_pack.hpp"
+#include "ekat/ekat_pack_kokkos.hpp"
 
-namespace scream {
+namespace ekat {
 namespace tridiag {
 namespace test {
 
@@ -90,17 +90,17 @@ int matvec (TridiagDiag dl, TridiagDiag d, TridiagDiag du, XArray X, YArray Y,
 }
 
 template <typename Array>
-scream::Real reldif (const Array& a, const Array& b, const int nrhs) {
+ekat::Real reldif (const Array& a, const Array& b, const int nrhs) {
   assert(a.extent_int(0) == b.extent_int(0));
   assert(a.extent_int(1) == b.extent_int(1));
   assert(a.rank == 2);
   assert(b.rank == 2);
-  scream::Real num = 0, den = 0;
+  ekat::Real num = 0, den = 0;
   for (int i = 0; i < a.extent_int(0); ++i)
     for (int j = 0; j < nrhs; ++j) {
       if (std::isnan(a(i,j)) || std::isnan(b(i,j)) ||
           std::isinf(a(i,j)) || std::isinf(b(i,j))) {
-        return std::numeric_limits<scream::Real>::infinity();
+        return std::numeric_limits<ekat::Real>::infinity();
       }
       num = std::max(num, std::abs(a(i,j) - b(i,j)));
       den = std::max(den, std::abs(a(i,j)));
@@ -131,6 +131,6 @@ void run(const Input& in);
 
 } // namespace test
 } // namespace tridiag
-} // namespace scream
+} // namespace ekat
 
 #endif // EKAT_TRIDIAG_TESTS_HPP

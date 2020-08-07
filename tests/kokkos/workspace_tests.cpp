@@ -1,11 +1,11 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/scream_workspace.hpp"
-#include "ekat/util/scream_kokkos_utils.hpp"
+#include "ekat/ekat_workspace.hpp"
+#include "ekat/kokkos/ekat_kokkos_utils.hpp"
 
 namespace unit_test {
 
-using namespace scream;
+using namespace ekat;
 
 struct UnitWrap {
 
@@ -26,8 +26,8 @@ using view_3d = typename KokkosTypes<Device>::template view_3d<S>;
 
 static void unittest_workspace_overprovision()
 {
-  using namespace scream;
-  using namespace scream::util;
+  using namespace ekat;
+  using namespace ekat::util;
 
   using WSM = WorkspaceManager<Real, Device>;
 
@@ -80,7 +80,7 @@ static void unittest_workspace_overprovision()
 
 static void unittest_workspace()
 {
-  using namespace scream;
+  using namespace ekat;
 
   unittest_workspace_overprovision();
 
@@ -150,7 +150,7 @@ static void unittest_workspace()
     }
     team.team_barrier();
 
-    Kokkos::Array<ko::Unmanaged<view_1d<int> >, num_ws> wssub;
+    Kokkos::Array<util::Unmanaged<view_1d<int> >, num_ws> wssub;
 
     // Main test. Test different means of taking and release spaces.
     for (int r = 0; r < 8; ++r) {
@@ -162,8 +162,8 @@ static void unittest_workspace()
         }
       }
       else {
-        ko::Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
-        Kokkos::Array<ko::Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
+        util::Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
+        Kokkos::Array<util::Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
         Kokkos::Array<const char*, num_ws> names = { {"ws0", "ws1", "ws2", "ws3"} };
         if (r % 4 == 1) {
           ws.take_many(names, ptrs);
@@ -212,7 +212,7 @@ static void unittest_workspace()
         ws.reset();
       }
       else if (r % 4 == 1) {
-        Kokkos::Array<ko::Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
+        Kokkos::Array<util::Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
         ws.release_many_contiguous(ptrs);
       }
       else if (r % 4 == 2) {
@@ -372,13 +372,13 @@ static void unittest_workspace()
 namespace {
 
 TEST_CASE("workspace_manager", "[utils]") {
-  unit_test::UnitWrap::UnitTest<scream::DefaultDevice>::unittest_workspace();
+  unit_test::UnitWrap::UnitTest<ekat::DefaultDevice>::unittest_workspace();
 }
 
 #ifdef KOKKOS_ENABLE_CUDA
 // Force host testing on CUDA
 TEST_CASE("workspace_manager_host", "[utils]") {
-  unit_test::UnitWrap::UnitTest<scream::HostDevice>::unittest_workspace();
+  unit_test::UnitWrap::UnitTest<ekat::HostDevice>::unittest_workspace();
 }
 #endif
 

@@ -1,8 +1,8 @@
 #include "catch2/catch.hpp"
 
-#include "ekat/scream_pack.hpp"
-#include "ekat/scream_types.hpp"
-#include "ekat/util/scream_utils.hpp"
+#include "ekat/ekat_pack.hpp"
+#include "ekat/ekat_types.hpp"
+#include "ekat/util/ekat_utils.hpp"
 
 namespace {
 
@@ -16,14 +16,14 @@ double cube(double x) {
 
 template <int PACKN>
 struct TestMask {
-  typedef scream::pack::Mask<PACKN> Mask;
-  typedef scream::pack::Pack<int, PACKN> Pack;
+  typedef ekat::pack::Mask<PACKN> Mask;
+  typedef ekat::pack::Pack<int, PACKN> Pack;
 
   static int sum_true (const Mask& m) {
     int sum1 = 0, sum2 = 0, sum3 = 0;
-    scream_masked_loop(m, s) ++sum1;
-    scream_masked_loop_no_force_vec(m, s) ++sum2;
-    scream_masked_loop_no_vec(m, s) ++sum3;
+    ekat_masked_loop(m, s) ++sum1;
+    ekat_masked_loop_no_force_vec(m, s) ++sum2;
+    ekat_masked_loop_no_vec(m, s) ++sum3;
     REQUIRE(sum1 == sum2);
     REQUIRE(sum2 == sum3);
     return sum1;
@@ -53,9 +53,9 @@ struct TestMask {
       for (int i = 0; i < Mask::n; ++i)
         b[i] = i;
       const auto m1 = a > b;
-      scream_masked_loop_no_vec(m1, s) REQUIRE(m1[s] == (s % 2 == 1));
+      ekat_masked_loop_no_vec(m1, s) REQUIRE(m1[s] == (s % 2 == 1));
       const auto m2 = b < a;
-      scream_masked_loop_no_vec(m2, s) REQUIRE(m2[s] == (s % 2 == 1));
+      ekat_masked_loop_no_vec(m2, s) REQUIRE(m2[s] == (s % 2 == 1));
       REQUIRE(sum_true(m1 && m2) == Mask::n / 2);
       REQUIRE(sum_true(m1 && true) == Mask::n / 2);
       REQUIRE(sum_true(m1 && false) == 0);
@@ -68,7 +68,7 @@ struct TestMask {
   }
 };
 
-TEST_CASE("Mask", "scream::pack") {
+TEST_CASE("Mask", "ekat::pack") {
 #ifndef __INTEL_COMPILER
   TestMask<1>::run();
 #endif
@@ -82,8 +82,8 @@ TEST_CASE("Mask", "scream::pack") {
 
 template <typename Scalar, int PACKN>
 struct TestPack {
-  typedef scream::pack::Mask<PACKN> Mask;
-  typedef scream::pack::Pack<Scalar, PACKN> Pack;
+  typedef ekat::pack::Mask<PACKN> Mask;
+  typedef ekat::pack::Pack<Scalar, PACKN> Pack;
   typedef typename Pack::scalar scalar;
 
   static const double tol;
@@ -100,7 +100,7 @@ struct TestPack {
 
   static void setup (Pack& a, Pack& b, scalar& c,
                      const bool limit = false, const bool pve = false) {
-    using scream::util::min;
+    using ekat::util::min;
     vector_novec for (int i = 0; i < Pack::n; ++i) {
       const auto sign = pve ? 1 : (2*(i % 2) - 1);
       a[i] = i + 1.2;
@@ -123,7 +123,7 @@ struct TestPack {
   }
 
   static void test_conversion () {
-    typedef scream::pack::Pack<scream::Int, PACKN> IntPack;
+    typedef ekat::pack::Pack<ekat::Int, PACKN> IntPack;
     Pack a;
     IntPack a_int_true;
     vector_novec for (int i = 0; i < Pack::n; ++i) {
@@ -151,7 +151,7 @@ struct TestPack {
   }
 
   static void test_range () {
-    const auto p = scream::pack::range<Pack>(42);
+    const auto p = ekat::pack::range<Pack>(42);
     vector_novec for (int i = 0; i < Pack::n; ++i)
       REQUIRE(p[i] == static_cast<scalar>(42 + i));
   }
@@ -264,8 +264,8 @@ struct TestPack {
     test_pack_gen_bin_op_all(*);
     test_pack_gen_bin_op_all(/);
 
-    test_pack_gen_bin_fn_all(min, scream::util::min, setup);
-    test_pack_gen_bin_fn_all(max, scream::util::max, setup);
+    test_pack_gen_bin_fn_all(min, ekat::util::min, setup);
+    test_pack_gen_bin_fn_all(max, ekat::util::max, setup);
     test_pack_gen_bin_fn_all(pow, std::pow, setup_pow);
 
     test_pack_gen_unary_op(-);
@@ -297,7 +297,7 @@ template <typename Scalar, int PACKN>
 const double TestPack<Scalar,PACKN>::tol =
   2*std::numeric_limits<Scalar>::epsilon();
 
-TEST_CASE("Pack", "scream::pack") {
+TEST_CASE("Pack", "ekat::pack") {
   TestPack<int,EKAT_PACK_SIZE>::run();
   TestPack<long,EKAT_PACK_SIZE>::run();
   TestPack<float,EKAT_PACK_SIZE>::run();
@@ -316,8 +316,8 @@ TEST_CASE("Pack", "scream::pack") {
   }
 }
 
-TEST_CASE("isnan", "scream::pack") {
-  using namespace scream;
+TEST_CASE("isnan", "ekat::pack") {
+  using namespace ekat;
   using pt = pack::Pack<Real, EKAT_PACK_SIZE>;
   using mt = pack::Mask<EKAT_PACK_SIZE>;
 

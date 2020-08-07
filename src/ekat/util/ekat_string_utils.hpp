@@ -19,7 +19,7 @@
  *    at every occurrence of a given char, and more.
  */
 
-namespace scream {
+namespace ekat {
 namespace util {
 
 // Strip character c from input string
@@ -94,6 +94,6 @@ operator<= (const S1& s1, const S2& s2) {
 }
 
 } // namespace util
-} // namespace scream
+} // namespace ekat
 
 #endif // EKAT_STRING_UTILS_HPP

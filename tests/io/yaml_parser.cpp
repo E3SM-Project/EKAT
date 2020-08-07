@@ -1,10 +1,10 @@
 #include <catch2/catch.hpp>
-#include "ekat/scream_parse_yaml_file.hpp"
+#include "ekat/ekat_parse_yaml_file.hpp"
 
 namespace {
 
 TEST_CASE ("yaml_parser","") {
-  using namespace scream;
+  using namespace ekat;
 
   std::string fname = "input.yaml";
   ParameterList params("parameters");
