@@ -1,15 +1,32 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/ekat_utils.hpp"
 #include "ekat/util/ekat_string_utils.hpp"
 #include "ekat/ekat_pack.hpp"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
+#include "ekat/ekat_type_traits.hpp"
+
+#include "ekat_test_config.h"
 
 namespace {
 
 TEST_CASE("precision", "util") {
-  CHECK_FALSE(ekat::util::is_single_precision<double>::value);
-  CHECK(ekat::util::is_single_precision<float>::value);
+  CHECK_FALSE(ekat::is_single_precision<double>::value);
+  CHECK(ekat::is_single_precision<float>::value);
+}
+
+TEST_CASE("type_traits", "") {
+  using namespace ekat;
+  REQUIRE(std::is_same<ekat::ValueType<double**&>::type,double>::value);
+  REQUIRE(std::is_same<ekat::ValueType<double*[3]>::type,double>::value);
+  REQUIRE(std::is_same<ekat::ValueType<double[2][3]>::type,double>::value);
+
+  // Check meta-util to get rank and dynamic rank of a raw MD array
+  REQUIRE(ekat::GetRanks<double[2][3]>::rank==2);
+  REQUIRE(ekat::GetRanks<double[2][3]>::rank_dynamic==0);
+  REQUIRE(ekat::GetRanks<double*[2][3]>::rank==3);
+  REQUIRE(ekat::GetRanks<double*[2][3]>::rank_dynamic==1);
+  REQUIRE(ekat::GetRanks<double**[2][3]>::rank==4);
+  REQUIRE(ekat::GetRanks<double**[2][3]>::rank_dynamic==2);
 }
 
 // This is just a compilation test.
@@ -26,7 +43,7 @@ TEST_CASE("Unmanaged", "ekat::ko") {
   }
 
   {
-    typedef Kokkos::View<ekat::pack::Pack<double, EKAT_PACK_SIZE>***,
+    typedef Kokkos::View<ekat::pack::Pack<double, EKAT_TEST_PACK_SIZE>***,
                          Kokkos::LayoutLeft,
                          Kokkos::HostSpace,
                          Kokkos::MemoryTraits<Kokkos::RandomAccess> >
@@ -46,7 +63,7 @@ TEST_CASE("Unmanaged", "ekat::ko") {
   }
 
   {
-    typedef Kokkos::View<ekat::pack::Pack<int, EKAT_PACK_SIZE>[10],
+    typedef Kokkos::View<ekat::pack::Pack<int, EKAT_TEST_PACK_SIZE>[10],
                          Kokkos::HostSpace,
                          Kokkos::MemoryTraits<Kokkos::Atomic | Kokkos::Aligned | Kokkos::Restrict> >
       V;

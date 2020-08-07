@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <set>
 
 namespace ekat {
 namespace util {
@@ -56,15 +57,17 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 
 // A set of weak_ptr would not compile, due to the lack of operator<.
 // To overcome this, one could add a Compare type to the set template
-// arguments. Or, more easily, overload operator<...
-// NOTE: this cannot be in the util namespace, or else the compiler won't detect
-//       it, when T is declared in the ekat namespace
+// arguments.
 
 template<typename T>
-inline bool operator< (const std::weak_ptr<T>& p, const std::weak_ptr<T>& q)
-{
-  return p.owner_before(q);
-}
+struct WeakPtrLess {
+  inline bool operator () (const std::weak_ptr<T>& p, const std::weak_ptr<T>& q) const {
+    return p.owner_before(q);
+  }
+};
+
+template<typename T>
+using WeakPtrSet = std::set<std::weak_ptr<T>,WeakPtrLess<T>>;
 
 } // namespace ekat
 

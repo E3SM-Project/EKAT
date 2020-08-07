@@ -1,19 +1,19 @@
-#include "ekat_config.f"
-
 module unit_test_mod
   implicit none
 contains
 
   function test_array_io() result(nerr) bind(c)
-    use array_io_mod
+    ! Precision independent use clauses
     use iso_c_binding
+    use array_io_mod, only: array_io_file_exists
 
 #ifdef EKAT_DOUBLE_PRECISION
-    integer, parameter :: c_real = c_double
-#else
-    integer, parameter :: c_real = c_float
+    use iso_c_binding, only: c_real=>c_double
+    use array_io_mod, only: array_io_write=>array_io_write_double, array_io_read=>array_io_read_double
+#elif defined(EKAT_SINGLE_PRECISION)
+    use iso_c_binding, only: c_real=>c_float
+    use array_io_mod, only: array_io_write=>array_io_write_float, array_io_read=>array_io_read_float
 #endif
-
 
     integer(kind=c_int) :: nerr
     integer ::  i, j
@@ -21,7 +21,11 @@ contains
     logical :: ok
 
     character(kind=c_char, len=128), parameter :: &
-         filename = c_char_"unit_test_f90_array_io.dat"//C_NULL_CHAR
+#ifdef EKAT_DOUBLE_PRECISION
+         filename = c_char_"unit_test_f90_array_io_dp.dat"//C_NULL_CHAR
+#else
+         filename = c_char_"unit_test_f90_array_io_sp.dat"//C_NULL_CHAR
+#endif
 
     do j = 1,3
        do i = 1,10

@@ -8,6 +8,20 @@
 
 #include <mpi.h>
 
+void ekat_initialize_test_session (int argc, char** argv);
+void ekat_finalize_test_session ();
+
+struct TestSession {
+  static TestSession& get () {
+    static TestSession s;
+    return s;
+  }
+
+  std::map<std::string,std::string> params;
+private:
+  TestSession() = default;
+};
+
 int main (int argc, char **argv) {
 
   // Initialize MPI
@@ -18,7 +32,7 @@ int main (int argc, char **argv) {
     if (cmd_line_arg=="") {
       return;
     }
-    auto& ts = ekat::util::TestSession::get();
+    auto& ts = TestSession::get();
 
     std::stringstream input(cmd_line_arg);
     std::string option;
@@ -60,11 +74,17 @@ int main (int argc, char **argv) {
     args.push_back(const_cast<char*>(new_arg.c_str()));
   }
 
-  // Initialize ekat;
+  // Initialize ekat
   ekat::initialize_ekat_session(args.size(),args.data());
+
+  // Possibly calling user-defined initialization routines
+  ekat_initialize_test_session(args.size(),args.data());
 
   // Run tests
   int num_failed = catch_session.run(argc, argv);
+
+  // Possibly calling user-defined finalization routines
+  ekat_finalize_test_session ();
 
   // Finalize ekat
   ekat::finalize_ekat_session();

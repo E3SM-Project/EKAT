@@ -4,10 +4,12 @@
 //TODO
 // - bounds checking define
 
-#include "ekat_types.hpp"
-#include "util/ekat_utils.hpp"
-#include "ekat_macros.hpp"
-#include "ekat_scalar_traits.hpp"
+#include "ekat/util/ekat_math_utils.hpp"
+#include "ekat/ekat_macros.hpp"
+#include "ekat/ekat_scalar_traits.hpp"
+#include "ekat/ekat_type_traits.hpp"
+
+#include "Kokkos_Core.hpp"
 
 namespace ekat {
 namespace pack {
@@ -534,28 +536,38 @@ OnlyPack<PackType> range (const typename PackType::scalar& start) {
 
 } // namespace pack
 
-namespace util {
-
-// Specialization of scalar-properties detection helper struct for Pack types
+// Specialization of ScalarTraits struct for Pack types
 
 template<typename T, int N>
-struct ScalarProperties<pack::Pack<T,N>> {
+struct ScalarTraits<pack::Pack<T,N>> {
+
+  using inner_value_type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+  using value_type = pack::Pack<T,N>;
+
+  using inner_traits = ScalarTraits<T>;
+
+  // Note: if T is not an arithmetic type, this will throw.
+  static_assert (!inner_traits::is_simd, "Error! We do not allow nested pack structures, for now.\n");
+
+
   // This seems funky. But write down a pow of 2 and a non-pow of 2 in binary (both positive), and you'll see why it works
-  static_assert (N>0 && ((N & (N-1))==0), "Error! Packs can only have power of two lengths.\n");
+  static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
 
-  using scalar_type = typename ScalarProperties<T>::scalar_type;
-  static constexpr bool is_pack = true;
-};
-
-// Specialization of TypeName struct for Pack type
-template<typename T, int N>
-struct TypeName<pack::Pack<T,N>> {
   static std::string name () {
-    return "Pack<" + TypeName<T>::name() + "," + std::to_string(N) + ">";
+    return "Pack<" + inner_traits::name() + "," + std::to_string(N) + ">";
+  }
+  static constexpr bool is_pack = true;
+
+  KOKKOS_INLINE_FUNCTION
+  static const value_type quiet_NaN () {
+    return value_type(inner_traits::quiet_NaN());
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static const value_type invalid () {
+    return value_type(inner_traits::invalid());
   }
 };
-
-} // namespace util
 
 } // namespace ekat
 

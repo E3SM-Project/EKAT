@@ -3,10 +3,10 @@
 #include "tridiag_tests.hpp"
 
 extern "C" {
-  void tridiag_diagdom_bfb_a1x1(int n, ekat::Real* dl, ekat::Real* d,
-                                ekat::Real* du, ekat::Real* x);
-  void tridiag_diagdom_bfb_a1xm(int n, int nrhs, ekat::Real* dl, ekat::Real* d,
-                                ekat::Real* du, ekat::Real* x);
+  void tridiag_diagdom_bfb_a1x1(int n, Real* dl, Real* d,
+                                Real* du, Real* x);
+  void tridiag_diagdom_bfb_a1xm(int n, int nrhs, Real* dl, Real* d,
+                                Real* du, Real* x);
 }
 
 namespace ekat {
@@ -433,7 +433,6 @@ template <int A_pack_size, int data_pack_size>
 void run_property_test_on_config (const TestConfig& tc) {
   using namespace ekat::tridiag::test;
 
-  using ekat::Real;
   using APack = ekat::pack::Pack<Real, A_pack_size>;
   using DataPack = ekat::pack::Pack<Real, data_pack_size>;
 
@@ -505,7 +504,6 @@ template <int A_pack_size, int data_pack_size>
 void run_bfb_test_on_config (TestConfig& tc) {
   using namespace ekat::tridiag::test;
 
-  using ekat::Real;
   using APack = ekat::pack::Pack<Real, A_pack_size>;
   using DataPack = ekat::pack::Pack<Real, data_pack_size>;
 
@@ -566,14 +564,14 @@ void run_bfb_test () {
 
 TEST_CASE("property", "tridiag") {
   ekat::tridiag::test::correct::run_property_test<1,1>();
-  if (EKAT_PACK_SIZE > 1) {
-    ekat::tridiag::test::correct::run_property_test<1, EKAT_PACK_SIZE>();
-    ekat::tridiag::test::correct::run_property_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
+  if (EKAT_TEST_PACK_SIZE > 1) {
+    ekat::tridiag::test::correct::run_property_test<1, EKAT_TEST_PACK_SIZE>();
+    ekat::tridiag::test::correct::run_property_test<EKAT_TEST_PACK_SIZE, EKAT_TEST_PACK_SIZE>();
   }
 }
 
 TEST_CASE("bfb", "tridiag") {
   ekat::tridiag::test::correct::run_bfb_test<1,1>();
-  if (EKAT_PACK_SIZE > 1)
-    ekat::tridiag::test::correct::run_bfb_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
+  if (EKAT_TEST_PACK_SIZE > 1)
+    ekat::tridiag::test::correct::run_bfb_test<EKAT_TEST_PACK_SIZE, EKAT_TEST_PACK_SIZE>();
 }

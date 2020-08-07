@@ -13,8 +13,8 @@ namespace util {
 
 namespace {
 
-constexpr std::array<int,12> nonleap_days = {31,28,31,30,31,30,31,31,30,31,30,31};
-constexpr std::array<int,12> leap_days = {31,29,31,30,31,30,31,31,30,31,30,31};
+constexpr int nonleap_days [12] = {31,28,31,30,31,30,31,31,30,31,30,31};
+constexpr int leap_days    [12] = {31,29,31,30,31,30,31,31,30,31,30,31};
 
 // Utility functions
 bool is_leap (const int yy) {
@@ -54,7 +54,7 @@ TimeStamp::TimeStamp()
  : m_yy (std::numeric_limits<int>::lowest())
  , m_mm (std::numeric_limits<int>::lowest())
  , m_dd (std::numeric_limits<int>::lowest())
- , m_ss (std::numeric_limits<Real>::lowest())
+ , m_ss (std::numeric_limits<double>::lowest())
 {
   // Nothing to do here
 }
@@ -62,7 +62,7 @@ TimeStamp::TimeStamp()
 TimeStamp::TimeStamp(const int yy,
                      const int mm,
                      const int dd,
-                     const Real ss)
+                     const double ss)
  : m_yy(yy)
  , m_mm(mm)
  , m_dd(dd)
@@ -99,7 +99,7 @@ std::string TimeStamp::to_string () const {
          (h==0 ? zero : std::to_string(h)) + ":" + (m==0 ? zero : std::to_string(m)) + ":" + (s==0 ? zero : std::to_string(s));
 }
 
-TimeStamp& TimeStamp::operator+=(const Real seconds) {
+TimeStamp& TimeStamp::operator+=(const double seconds) {
   ekat_require_msg(is_valid(), "Error! The time stamp contains uninitialized values.\n"
                                  "       To use this object, use operator= with a valid rhs first.\n");
 
@@ -154,13 +154,13 @@ bool operator<= (const TimeStamp& ts1, const TimeStamp& ts2) {
   return true;
 }
 
-Real operator- (const TimeStamp& ts1, const TimeStamp& ts2) {
+double operator- (const TimeStamp& ts1, const TimeStamp& ts2) {
   if (ts1<ts1) {
     return -(ts2-ts1);
   }
 
   constexpr int spd = constants::seconds_per_day;
-  Real dt = 0;
+  double dt = 0;
 
   const int y1 = ts1.get_years();
   const int y2 = ts2.get_years();
@@ -249,7 +249,7 @@ Real operator- (const TimeStamp& ts1, const TimeStamp& ts2) {
   return dt;
 }
 
-TimeStamp operator+ (const TimeStamp& ts, const Real dt) {
+TimeStamp operator+ (const TimeStamp& ts, const double dt) {
   TimeStamp sum = ts;
   sum += dt;
   return sum;

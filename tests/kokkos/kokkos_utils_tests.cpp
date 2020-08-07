@@ -1,27 +1,18 @@
 #include <catch2/catch.hpp>
 
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/util/ekat_arch.hpp"
+
+#include "ekat_test_config.h"
 
 #include <thread>
 
 namespace {
 
 TEST_CASE("data_type", "[kokkos_utils]") {
+  using namespace ekat;
   using namespace ekat::util;
-
-  // Check meta-util to get underlying scalar type of a raw MD array
-  REQUIRE(std::is_same<ValueType<double**&>::type,double>::value);
-  REQUIRE(std::is_same<ValueType<double*[3]>::type,double>::value);
-  REQUIRE(std::is_same<ValueType<double[2][3]>::type,double>::value);
-
-  // Check meta-util to get rank and dynamic rank of a raw MD array
-  REQUIRE(GetRanks<double[2][3]>::rank==2);
-  REQUIRE(GetRanks<double[2][3]>::rank_dynamic==0);
-  REQUIRE(GetRanks<double*[2][3]>::rank==3);
-  REQUIRE(GetRanks<double*[2][3]>::rank_dynamic==1);
-  REQUIRE(GetRanks<double**[2][3]>::rank==4);
-  REQUIRE(GetRanks<double**[2][3]>::rank_dynamic==2);
 
   // Check meta-util that allows to reshape a view
   Kokkos::View<double*> v1d("",100);
@@ -153,15 +144,15 @@ void test_utils_large_ni(const double saturation_multiplier)
   using MemberType = typename KokkosTypes<Device>::MemberType;
 
   const int nk = 128;
-  const Real overprov_factor = 1.5;
+  const double overprov_factor = 1.5;
   const auto temp_policy = ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, nk);
-  TeamUtils<ExeSpace> tu_temp(temp_policy);
+  TeamUtils<Real,ExeSpace> tu_temp(temp_policy);
   const int num_conc = tu_temp.get_max_concurrent_threads() / temp_policy.team_size();
 
   int ni = num_conc*saturation_multiplier;
   if (ni == 0) ni = 1;
   const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk);
-  TeamUtils<ExeSpace> tu(p, overprov_factor);
+  TeamUtils<Real,ExeSpace> tu(p, overprov_factor);
 
   REQUIRE(p.league_size() == ni);
   if (saturation_multiplier <= 1.0) {

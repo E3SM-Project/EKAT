@@ -1,7 +1,6 @@
 #ifndef EKAT_WSM_IMPL_HPP
 #define EKAT_WSM_IMPL_HPP
 
-#include "ekat/util/ekat_utils.hpp"
 #include "ekat/ekat_assert.hpp"
 
 #include <map>
@@ -14,7 +13,7 @@ namespace ekat {
  */
 
 template <typename T, typename D>
-WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy, const Real& overprov_factor) :
+WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy, const double& overprov_factor) :
   m_tu(policy, overprov_factor),
   m_max_ws_idx(m_tu.get_num_ws_slots()),
   m_reserve( (sizeof(T) > 2*sizeof(int)) ? 1 :

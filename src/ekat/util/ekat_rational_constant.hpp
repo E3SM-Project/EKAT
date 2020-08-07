@@ -5,13 +5,9 @@
 #include <sstream>
 
 #include "ekat/ekat_assert.hpp"
-#include "ekat/ekat_types.hpp"
 
-namespace ekat
-{
-
-namespace util
-{
+namespace ekat {
+namespace util {
 
 enum class Format {
   Float,
@@ -47,8 +43,9 @@ public:
   // No default
   RationalConstant () = delete;
 
-  // No construction from Real
-  RationalConstant (const Real x) = delete;
+  // No construction from float/double
+  RationalConstant (const double x) = delete;
+  RationalConstant (const float x) = delete;
 
   // Construction from long, means long/1
   template<typename IntType>
@@ -161,7 +158,7 @@ inline std::string to_string (const RationalConstant& rat, const Format fmt = Fo
   std::stringstream ss;
   switch (fmt) {
     case Format::Float:
-      ss << static_cast<Real>(rat.num())/rat.den();
+      ss << static_cast<double>(rat.num())/rat.den();
       break;
     case Format::Rat:
       ss << rat.num();
@@ -186,7 +183,6 @@ inline std::ostream& operator<< (std::ostream& out, const RationalConstant& rat)
 }
 
 } // namespace util
-
 } // namespace ekat
 
 #endif // EKAT_RATIONAL_CONSTANT_HPP

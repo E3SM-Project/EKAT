@@ -1,8 +1,10 @@
 #ifndef EKAT_UTILS_HPP
 #define EKAT_UTILS_HPP
 
-#include "ekat/ekat_types.hpp"
+#include "ekat/ekat_scalar_types.hpp"
 #include "ekat/ekat_assert.hpp"
+
+#include "Kokkos_Core.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -24,8 +26,8 @@ namespace ekat {
  * especially useful for bfb tests agaisnt fortran,
  * to ensure that literals are not a source of round-off differences.
  */
-template<typename T> KOKKOS_INLINE_FUNCTION
-constexpr typename std::enable_if<std::is_arithmetic<T>::value,Real>::type
+template<typename T, bool doublePrecision> KOKKOS_INLINE_FUNCTION
+constexpr typename std::enable_if<std::is_arithmetic<T>::value,RealType<doublePrecision>>::type
 sp (const T val) {
   return Real(val);
 }

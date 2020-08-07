@@ -1,9 +1,9 @@
 #ifndef EKAT_WSM_HPP
 #define EKAT_WSM_HPP
 
-#include "ekat_types.hpp"
-#include "util/ekat_arch.hpp"
-#include "kokkos/ekat_kokkos_utils.hpp"
+#include "ekat/util/ekat_arch.hpp"
+#include "ekat/kokkos/ekat_kokkos_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 
 namespace unit_test {
 struct UnitWrap;
@@ -73,7 +73,7 @@ class WorkspaceManager
   //
 
   // Default overprov factor for large GPU problems, testing has shown 1.25 is optimal
-  static constexpr Real GPU_DEFAULT_OVERPROVISION_FACTOR = 1.25;
+  static constexpr double GPU_DEFAULT_OVERPROVISION_FACTOR = 1.25;
 
   //
   // ------- public API ---------
@@ -85,7 +85,7 @@ class WorkspaceManager
   //   policy: The team policy for Kokkos kernels using this WorkspaceManager
   //   overprov_factor: How many workspace slots to overprovision (only applies to GPU for large problems)
   WorkspaceManager(int size, int max_used, TeamPolicy policy,
-                   const Real& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+                   const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   // call from host.
   //
@@ -265,7 +265,7 @@ class WorkspaceManager
          m_max_names    = 256
   };
 
-  util::TeamUtils<ExeSpace> m_tu;
+  util::TeamUtils<T,ExeSpace> m_tu;
   int m_max_ws_idx, m_reserve, m_size, m_total, m_max_used;
 #ifndef NDEBUG
   view_1d<int> m_num_used;
@@ -280,7 +280,7 @@ class WorkspaceManager
 }; // class WorkspaceManager
 
 template <typename T, typename D>
-constexpr Real WorkspaceManager<T, D>::GPU_DEFAULT_OVERPROVISION_FACTOR;
+constexpr double WorkspaceManager<T, D>::GPU_DEFAULT_OVERPROVISION_FACTOR;
 
 } // namespace ekat
 

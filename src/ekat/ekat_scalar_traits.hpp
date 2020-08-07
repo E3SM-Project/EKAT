@@ -1,11 +1,12 @@
 #ifndef EKAT_SCALAR_TRAITS_HPP
 #define EKAT_SCALAR_TRAITS_HPP
 
+#include "ekat/ekat_assert.hpp"
+
 #include "Kokkos_Core.hpp"
 
 #include <limits>
 #include <climits>
-#include <type_traits>
 #include <typeinfo>
 
 #ifdef KOKKOS_ENABLE_CUDA
@@ -14,21 +15,41 @@
 
 namespace ekat {
 
+/*
+ * A struct to hold some traits information on certain scalar types
+ * 
+ * The traits include some utility function (like quiet_NaN() or invalid),
+ * as well as some type information, such as whether the template argument
+ * is a simd type.
+ */
+
 template<typename T>
 struct ScalarTraits {
+  // The type T, without any cv or reference
+  using value_type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 
-  using raw_type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+  // This non-specialized Traits struct is only meant for arithmetic types.
+  static_assert (std::is_arithmetic<value_type>::value,
+                 "Error! Template parameter 'T' in generic ScalarTraits must be a numeric type.\n");
 
-  static_assert (std::is_arithmetic<raw_type>::value, "Error! Template parameter 'T' in ScalarTraits must be a numeric type.\n");
+  // Whether this type is a simd type
+  static constexpr bool is_simd = false;
+
+  // A human-readable type for T. This generic class defaults to type_info impl.
+  static std::string name () {
+    return typeid(T).name();
+  }
+
+  // ===== Special values for T ===== //
 
   KOKKOS_INLINE_FUNCTION
-  static const raw_type quiet_NaN () {
-    ekat_kassert_msg(std::is_floating_point<raw_type>::value,
+  static const value_type quiet_NaN () {
+    ekat_kassert_msg(std::is_floating_point<value_type>::value,
                        "Error! NaN is only available for floating point types.\n");
 #ifdef __CUDA_ARCH__
-    if (std::is_same<raw_type,float>::value) {
+    if (std::is_same<value_type,float>::value) {
       return CUDART_NAN_F;
-    } else if (std::is_same<raw_type,double>::value) {
+    } else if (std::is_same<value_type,double>::value) {
       return CUDART_NAN;
     } else {
       ekat_kerror_msg ("Error! No NaN provided for this floating point type.\n");
@@ -36,37 +57,36 @@ struct ScalarTraits {
       return 0;
     }
 #else
-    return std::numeric_limits<raw_type>::quiet_NaN();
+    return std::numeric_limits<value_type>::quiet_NaN();
 #endif
   }
 
   KOKKOS_INLINE_FUNCTION
-  static const raw_type invalid () {
+  static const value_type invalid () {
     // For a floating point, return NaN. For an integer, return largest possible number
-    raw_type val(0);
+    value_type val(0);
 
-    if (std::is_floating_point<raw_type>::value) {
-      val = ScalarTraits<raw_type>::quiet_NaN();
+    if (std::is_floating_point<value_type>::value) {
+      val = ScalarTraits<value_type>::quiet_NaN();
     } else {
       // If cuda supported numeric_limits, we would not need all these ifs
-      if (std::is_same<raw_type,int>::value) {
-        val = static_cast<raw_type>(INT_MAX);
-      } else if (std::is_same<raw_type,unsigned int>::value) {
-        val = static_cast<raw_type>(UINT_MAX);
-      } else if (std::is_same<raw_type,long>::value) {
-        val = static_cast<raw_type>(LONG_MAX);
+      if (std::is_same<value_type,int>::value) {
+        val = static_cast<value_type>(INT_MAX);
+      } else if (std::is_same<value_type,unsigned int>::value) {
+        val = static_cast<value_type>(UINT_MAX);
+      } else if (std::is_same<value_type,long>::value) {
+        val = static_cast<value_type>(LONG_MAX);
       } else if (std::is_same<T,unsigned long>::value) {
-        val = static_cast<raw_type>(ULONG_MAX);
-      } else if (std::is_same<raw_type,long long>::value) {
-        val = static_cast<raw_type>(LLONG_MAX);
-      } else if (std::is_same<raw_type,unsigned long long>::value) {
-        val = static_cast<raw_type>(ULLONG_MAX);
+        val = static_cast<value_type>(ULONG_MAX);
+      } else if (std::is_same<value_type,long long>::value) {
+        val = static_cast<value_type>(LLONG_MAX);
+      } else if (std::is_same<value_type,unsigned long long>::value) {
+        val = static_cast<value_type>(ULLONG_MAX);
       }
     }
     return val;
   }
 };
-
 
 } // namespace ekat
 

@@ -1,4 +1,5 @@
 include(CMakeParseArguments) # Needed for backwards compatibility
+include(EkatUtils) # To check macro args
 
 # This function takes the following mandatory arguments:
 #    - target_name: the name of the executable
@@ -27,7 +28,7 @@ include(CMakeParseArguments) # Needed for backwards compatibility
 set (CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/catch2/include)
 
 function(EkatCreateUnitTest target_name target_srcs)
-  set(options OPTIONAL EXCLUDE_MAIN_CPP)
+  set(options OPTIONAL EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
   set(oneValueArgs DEP MPI_EXEC_NAME MPI_NP_FLAG)
   set(multiValueArgs
     MPI_RANKS THREADS
@@ -38,6 +39,7 @@ function(EkatCreateUnitTest target_name target_srcs)
 
   # ecut = Ekat Create Unit Test
   cmake_parse_arguments(ecut "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+  CheckUnrecognizedArgs(EkatCreateUnitTest ecut "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
   # Set link directories (must be done BEFORE add_executable is called)
   if (ecut_LIBS_DIRS)
@@ -48,6 +50,10 @@ function(EkatCreateUnitTest target_name target_srcs)
   add_executable (${target_name} ${target_srcs})
   if (NOT ecut_EXCLUDE_MAIN_CPP)
     target_link_libraries(${target_name} PUBLIC ekat_test_main)
+  endif ()
+
+  if (NOT ecut_EXCLUDE_TEST_SESSION)
+    target_link_libraries(${target_name} PUBLIC ekat_test_session)
   endif ()
 
   set (TEST_INCLUDE_DIRS

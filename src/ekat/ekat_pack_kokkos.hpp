@@ -1,8 +1,9 @@
 #ifndef EKAT_PACK_KOKKOS_HPP
 #define EKAT_PACK_KOKKOS_HPP
 
-#include "ekat_pack.hpp"
-#include "ekat_config.h"
+#include "ekat/ekat_pack.hpp"
+#include "ekat/kokkos/ekat_kokkos_utils.hpp"
+#include "ekat/ekat.hpp"
 
 #include "Kokkos_Core.hpp"
 
@@ -241,24 +242,6 @@ KOKKOS_FORCEINLINE_FUNCTION
 util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
   return vp;
-}
-
-template <typename T>
-using BigPack = Pack<T, EKAT_PACK_SIZE>;
-template <typename T>
-using SmallPack = Pack<T, EKAT_SMALL_PACK_SIZE>;
-using IntSmallPack = SmallPack<Int>;
-
-template <typename T, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<SmallPack<T>**, Parms...> >
-smallize (const Kokkos::View<BigPack<T>**, Parms...>& vp) {
-  return repack<EKAT_SMALL_PACK_SIZE>(vp);
-}
-
-template <typename T, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<SmallPack<T>*, Parms...> >
-smallize (const Kokkos::View<BigPack<T>*, Parms...>& vp) {
-  return repack<EKAT_SMALL_PACK_SIZE>(vp);
 }
 
 //

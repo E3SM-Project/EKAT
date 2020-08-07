@@ -2,16 +2,17 @@
 #define EKAT_KOKKOS_UTILS_HPP
 
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
-#include "ekat/ekat_types.hpp"
+#include "ekat/ekat_type_traits.hpp"
 #include "ekat/std_meta/ekat_std_type_traits.hpp"
-#include "ekat/util/ekat_utils.hpp"
 #include "ekat/util/ekat_arch.hpp"
+#include "ekat/ekat_assert.hpp"
+#include "ekat/ekat_type_traits.hpp"
+#include "ekat/ekat.hpp"
 
 #include "Kokkos_Random.hpp"
 
-#include <chrono>
 #include <cassert>
-#include <type_traits>
+#include <cstring>
 
 // This file should not be merged with ekat/ekat_kokkos_meta.hpp.
 // That file contains functionalities that *ideally* should be in kokkos
@@ -24,24 +25,6 @@
 namespace ekat {
 namespace util {
 
-// Retrieve the underlying scalar type from a MD array type
-template<typename MDArrayType>
-struct ValueType {
-private:
-  using no_ref = typename std::remove_reference<MDArrayType>::type;
-  using no_arr = typename std::remove_all_extents<no_ref>::type;
-public:
-  using type = typename remove_all_pointers<no_arr>::type;
-};
-
-template<typename DataType>
-struct GetRanks {
-private:
-  using dimension = typename Kokkos::View<DataType>::traits::dimension;
-public:
-  enum : int { rank = dimension::rank };
-  enum : int { rank_dynamic = dimension::rank_dynamic };
-};
 
 template<typename DataTypeOut, typename DataTypeIn, typename... Props>
 typename std::enable_if<GetRanks<DataTypeOut>::rank_dynamic==0,
@@ -119,22 +102,27 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 #endif
 
 /*
- * TeamUtils contains utilities for getting concurrency info for
- * thread teams. Don't use _TeamUtilsCommonBase directly, use
- * TeamUtils.
+ * TeamUtils contains utilities for getting concurrency info for thread teams.
+ * You cannot use it directly (protected c-tor. You must use TeamUtils.
+ * NOTE: the ValueType template arg is the type of scalars of the views that
+ *       you intend to do parallel work on. We need to know that, because if
+ *       the ValueType=float, we have 2x concurrency available on GPU
+ *       compared to ValueType=double.
  */
 
-template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
-class _TeamUtilsCommonBase
+template <typename ValueType, typename ExeSpace = Kokkos::DefaultExecutionSpace>
+class TeamUtilsCommonBase
 {
- protected:
+protected:
   int _team_size, _num_teams, _max_threads, _league_size;
 
- public:
   template <typename TeamPolicy>
-  _TeamUtilsCommonBase(const TeamPolicy& policy)
+  TeamUtilsCommonBase(const TeamPolicy& policy)
   {
-    _max_threads = ExeSpace::concurrency() / ( (!is_single_precision<Real>::value && OnGpu<ExeSpace>::value) ? 2 : 1);
+    _max_threads = ExeSpace::concurrency();
+    if (!is_single_precision<ValueType>::value && OnGpu<ExeSpace>::value) {
+      _max_threads /= 2;
+    }
     const int team_size = policy.team_size();
     _num_teams = _max_threads / team_size;
     _team_size = _max_threads / _num_teams;
@@ -143,8 +131,13 @@ class _TeamUtilsCommonBase
     // We will never run more teams than the policy needs
     _num_teams = _num_teams > _league_size ? _league_size : _num_teams;
 
-    ekat_assert_msg(_num_teams > 0, "Should always be able to run at least 1 team. max_thrds=" << _max_threads << " team_size=" << team_size << " league_size=" << _league_size);
+    ekat_assert_msg(_num_teams > 0, "Should always be able to run at least 1 team."
+                                    "\n max_thrds   = " + std::to_string(_max_threads) +
+                                    "\n team_size   = " + std::to_string(team_size) +
+                                    "\n league_size = " + std::to_string(_league_size) + "\n");
   }
+
+public:
 
   // How many thread teams can run concurrently
   int get_num_concurrent_teams() const { return _num_teams; }
@@ -170,13 +163,13 @@ class _TeamUtilsCommonBase
   { }
 };
 
-template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
-class TeamUtils : public _TeamUtilsCommonBase<ExeSpace>
+template <typename ValueType, typename ExeSpace = Kokkos::DefaultExecutionSpace>
+class TeamUtils : public TeamUtilsCommonBase<ValueType, ExeSpace>
 {
  public:
   template <typename TeamPolicy>
-  TeamUtils(const TeamPolicy& policy, const Real& = 1.0) :
-    _TeamUtilsCommonBase<ExeSpace>(policy)
+  TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
+    TeamUtilsCommonBase<ValueType, ExeSpace>(policy)
   { }
 };
 
@@ -184,19 +177,19 @@ class TeamUtils : public _TeamUtilsCommonBase<ExeSpace>
  * Specialization for OpenMP execution space
  */
 #ifdef KOKKOS_ENABLE_OPENMP
-template <>
-class TeamUtils<Kokkos::OpenMP> : public _TeamUtilsCommonBase<Kokkos::OpenMP>
+template <typename ValueType>
+class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueType,Kokkos::OpenMP>
 {
  public:
   template <typename TeamPolicy>
-  TeamUtils(const TeamPolicy& policy, const Real& = 1.0) :
-    _TeamUtilsCommonBase<Kokkos::OpenMP>(policy)
+  TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
+    TeamUtilsCommonBase<ValueType,Kokkos::OpenMP>(policy)
   { }
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION
   int get_workspace_idx(const MemberType& /*team_member*/) const
-  { return omp_get_thread_num() / _team_size; }
+  { return omp_get_thread_num() / this->_team_size; }
 };
 #endif
 
@@ -204,8 +197,8 @@ class TeamUtils<Kokkos::OpenMP> : public _TeamUtilsCommonBase<Kokkos::OpenMP>
  * Specialization for Cuda execution space.
  */
 #ifdef KOKKOS_ENABLE_CUDA
-template <>
-class TeamUtils<Kokkos::Cuda> : public _TeamUtilsCommonBase<Kokkos::Cuda>
+template <typename ValueType>
+class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,Kokkos::Cuda>
 {
   using Device = Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>;
   using flag_type = int; // this appears to be the smallest type that correctly handles atomic operations
@@ -220,8 +213,8 @@ class TeamUtils<Kokkos::Cuda> : public _TeamUtilsCommonBase<Kokkos::Cuda>
 
  public:
   template <typename TeamPolicy>
-  TeamUtils(const TeamPolicy& policy, const Real& overprov_factor = 1.0) :
-    _TeamUtilsCommonBase<Kokkos::Cuda>(policy),
+  TeamUtils(const TeamPolicy& policy, const double& overprov_factor = 1.0) :
+    TeamUtilsCommonBase<ValueType,Kokkos::Cuda>(policy),
     _num_ws_slots(_league_size > _num_teams
                   ? (overprov_factor * _num_teams > _league_size ? _league_size : overprov_factor * _num_teams)
                   : _num_teams),
@@ -292,6 +285,39 @@ subview (const Kokkos::View<T**, Parms...>& v_in, const int i) {
   return util::Unmanaged<Kokkos::View<T*, Parms...> >(
     &v_in.impl_map().reference(i, 0), v_in.extent(1));
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+// Replacements for namespace std functions that don't run on the GPU.
+KOKKOS_INLINE_FUNCTION
+size_t strlen(const char* str)
+{
+  ekat_kassert(str != NULL);
+  const char *char_ptr;
+  for (char_ptr = str; ; ++char_ptr)  {
+    if (*char_ptr == '\0') return char_ptr - str;
+  }
+}
+KOKKOS_INLINE_FUNCTION
+void strcpy(char* dst, const char* src)
+{
+  ekat_kassert(dst != NULL && src != NULL);
+  while(*dst++ = *src++);
+}
+KOKKOS_INLINE_FUNCTION
+int strcmp(const char* first, const char* second)
+{
+  while(*first && (*first == *second))
+  {
+    first++;
+    second++;
+  }
+  return *(const unsigned char*)first - *(const unsigned char*)second;
+}
+#else
+using std::strlen;
+using std::strcpy;
+using std::strcmp;
+#endif // KOKKOS_ENABLE_CUDA
 
 } // namespace util
 } // namespace ekat

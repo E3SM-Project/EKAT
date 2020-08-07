@@ -1,64 +1,47 @@
-# This cmake utility allows you to build ekat just by adding
+# This cmake utility allows you to build ekat just by doing
 #
 #   Include(Ekat)
+#   BuildEkat(/path/to/ekat/source)
 #
 # to your CMakeLists.txt. The advantage over manually adding the
 # ekat subdirectory is that this script can check whether ekat was
-# already built with the desired configuration, and avoid rebuilding
-# it. For instance, say some of your subprojects need ekat in single
-# precision, and some need it in double precision. We would need
-# something like this
-#
-#  set (EKAT_DOUBLE_PRECISION ON)
-#  add_subdirectory(path/to/ekat some/binary/folder/ekat_dp)
-#
-#  set (EKAT_DOUBLE_PRECISION OFF)
-#  add_subdirectory(path/to/ekat some/binary/folder/ekat_dp)
-#
-# However, before adding the subdir, you need to make sure that
-# the binary folder is 'available', that is, nobody has yet tried to
-# build ekat with that precision. This script can do that for you
+# already built, and avoid rebuilding it (which would yield a cmake error.
+# You could do the same manually, but using this script you can keep
+# some of the book-keeping logic out of your project, which you
+# will need if some parts of your project (perhaps some submodules)
+# are trying to use Ekat as well, and might try to build it internally.
+# Additionally, the BuildEkat macro can allow you to inherit some config
+# options from your projec, see comment below.
 
 # Define global properties for EKAT_DOUBLE_BUILT and EKAT_SINGLE_BUILT
 # to ensure ekat (with the desired precision) is built only once
 define_property(GLOBAL
-                PROPERTY EKAT_DOUBLE_BUILT
-                BRIEF_DOCS "Whether ekat subdir (with precision set to double) has already been processed"
-                FULL_DOCS "This property is used by cmake to ensure that EKAT
-                           submodule directory is only processed once (with add_subdirectory).")
-define_property(GLOBAL
-                PROPERTY EKAT_SINGLE_BUILT
-                BRIEF_DOCS "Whether ekat subdir (with precision set to single) has already been processed"
+                PROPERTY EKAT_BUILT
+                BRIEF_DOCS "Whether ekat subdir has already been processed"
                 FULL_DOCS "This property is used by cmake to ensure that EKAT
                            submodule directory is only processed once (with add_subdirectory).")
 
-get_property(IS_EKAT_DOUBLE_BUILT GLOBAL PROPERTY EKAT_DOUBLE_BUILT SET)
-get_property(IS_EKAT_SINGLE_BUILT GLOBAL PROPERTY EKAT_SINGLE_BUILT SET)
+get_property(IS_EKAT_BUILT GLOBAL PROPERTY EKAT_BUILT SET)
 
-# This macro builds EKAT with the desired precision (if not built already)
-# The user can also pass an additional variable PREFIX, which will be used
+# This macro builds EKAT library (if not done already)
+# The user can pass an additional variable PREFIX, which will be used
 # to initialize all the EKAT_BLAH variable to the value stored in ${PREFIX}_BLAH.
 # If ${PREFIX}_BLAH is not set, a default will be used.
 # Furthermore, we give the user the ability to override ${PREFIX}_BLAH by
 # explicitly passing BLAH blahVal in the macro call.
 # E.g., consider this:
 #
-#  buildEkat ("DOUBLE" PREFIX "MY_PROJECT" TEST_MAX_THREADS 1)
+#  BuildEkat (../../ekat PREFIX "MY_PROJECT" TEST_MAX_THREADS 1)
 #
-# It would build Ekat in double precision, set all the EKAT_XYZ var to match ${MY_PROJECT}_XYZ,
-# but it would make sure that EKAT_TEST_MAX_THREADS is 1, regardless of what the
-# corresponding MY_PROJECT_TEST_MAX_THREADS is
-macro (buildEkat PRECISION)
-
-  string (TOUPPER "${PRECISION}" EKAT_PRECISION)
-
-  if (NOT "${EKAT_PRECISION}" STREQUAL "DOUBLE" AND
-      NOT "${EKAT_PRECISION}" STREQUAL "SINGLE")
-    message (FATAL_ERROR "Error! Unsupported precision for ekat. Valid options are: 'SINGLE', 'DOUBLE'.")
-  endif ()
+# It would build Ekat from the src tree found in ../../ekat (and error out
+# if the path is wrong), set all the EKAT_XYZ var to match ${MY_PROJECT}_XYZ (or
+# some predefined default, if ${MY_PROJECT}_XYZ is not set), but it would make
+# sure that EKAT_TEST_MAX_THREADS is 1, regardless of what the corresponding
+# MY_PROJECT_TEST_MAX_THREADS is
+macro (BuildEkat EKAT_SOURCE_DIR)
 
   # Process EKAT only if not already done
-  if (NOT IS_EKAT_${EKAT_PRECISION}_BUILT)
+  if (NOT IS_EKAT_BUILT)
 
     # First, build kokkos (if not already built), cause some of our defaults depend on it
     # Note: if kokkos is already built, this is a no-op
@@ -67,17 +50,18 @@ macro (buildEkat PRECISION)
     set(options)
     set(oneValueArgs
       PREFIX
-      TEST_MAX_THREADS
-      TEST_THREADS_INC
-      PACK_SIZE
-      SMALL_PACK_SIZE
-      POSSIBLY_NO_PACK
-      POSSIBLY_NO_PACK_SIZE
       MPI_ERRORS_ARE_FATAL
       CONSTEXPR_ASSERT
       MIMIC_GPU
-      STRICT_FP
+      # The following are only for testing
       ENABLE_TESTS
+      TEST_MAX_THREADS
+      TEST_THREADS_INC
+      TEST_PACK_SIZE
+      TEST_SMALL_PACK_SIZE
+      TEST_POSSIBLY_NO_PACK
+      TEST_POSSIBLY_NO_PACK_SIZE
+      TEST_STRICT_FP
     )
     set(multiValueArgs)
     cmake_parse_arguments(BUILD_EKAT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -89,27 +73,19 @@ macro (buildEkat PRECISION)
     # DO NOT set defaults, or you may override something
     setVars("BUILD_EKAT" FALSE)
 
-    # Note: we need to set EKAT_DOUBLE_PRECISION in the cache, or ekat will overwrite it
-    #       when calling  option(EKAT_DOUBLE_PRECISION ...)
-    if ("${EKAT_PRECISION}" STREQUAL "DOUBLE")
-      set (EKAT_DOUBLE_PRECISION ON  CACHE BOOL "Whether EKAT will be built in double precision")
-    else ()
-      set (EKAT_DOUBLE_PRECISION OFF CACHE BOOL "Whether EKAT will be built in double precision")
-    endif()
-
-    if (NOT EKAT_SOURCE_DIR)
-      message (FATAL_ERROR "Error! Please, specify path to EKAT in EKAT_SOURCE_DIR.\n")
+    if (NOT IS_DIRECTORY EKAT_SOURCE_DIR)
+      message (FATAL_ERROR "Error! The provided EKAT_SOURCE_DIR does not appear to be a directory.\n")
     endif()
     if (NOT EXISTS ${EKAT_SOURCE_DIR}/ekat_config.h.in)
-      message (FATAL_ERROR "Error! Something is wrong with EKAT_SOURCE_DIR."
+      message (FATAL_ERROR "Error! Something is wrong with EKAT_SOURCE_DIR.\n"
                            "       No 'ekat_config.h.in' file was found in '${EKAT_SOURCE_DIR}'")
     endif()
     add_subdirectory (${EKAT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/externals/ekat_${EKAT_PRECISION})
 
-    # Make sure that future includes of this script don't rebuild the same configuration
-    set_property(GLOBAL PROPERTY EKAT_${EKAT_PRECISION}_BUILT TRUE)
+    # Make sure that future includes of this script don't rebuild ekat
+    set_property(GLOBAL PROPERTY EKAT_BUILT TRUE)
   else ()
-    message ("Using Ekat with ${PRECISION} precision previously configured in this project.\n")
+    message ("Using Ekat previously configured in this project.\n")
   endif()
 endmacro()
 
@@ -135,7 +111,40 @@ macro (setVars PREFIX SET_DEFAULTS)
     set(setVars_CUDA_BUILD FALSE)
   endif ()
 
-  # Testing variables
+  ### Needed to configure ekat ###
+
+  if (DEFINED ${PREFIX}_MIMIC_GPU)
+    set (EKAT_MIMIC_GPU ${${PREFIX}_MIMIC_GPU} CACHE BOOL "")
+  endif()
+
+  if (DEFINED ${PREFIX}_MPI_ERRORS_ARE_FATAL)
+    set (EKAT_MPI_ERRORS_ARE_FATAL ${${PREFIX}_MPI_ERRORS_ARE_FATAL} CACHE BOOL "")
+  endif()
+
+  if (DEFINED ${PREFIX}_FPMODEL)
+    set (EKAT_FPMODEL ${${PREFIX}_FPMODEL} CACHE STRING "")
+  elseif (setVars_DEBUG_BUILD AND SET_DEFAULTS)
+    set (EKAT_FPMODEL "strict" CACHE STRING "")
+  endif()
+
+  if (DEFINED ${PREFIX}_PACK_CHECK_BOUNDS)
+    set (EKAT_PACK_CHECK_BOUNDS ${${PREFIX}_PACK_CHECK_BOUNDS} CACHE BOOL "")
+  endif()
+
+  if (DEFINED ${PREFIX}_DISABLE_TPL_WARNINGS)
+    set (EKAT_DISABLE_TPL_WARNINGS ${${PREFIX}_DISABLE_TPL_WARNINGS} CACHE BOOL "")
+  elseif (SET_DEFAULTS)
+    set (EKAT_DISABLE_TPL_WARNINGS OFF CACHE BOOL "")
+  endif()
+
+  if (DEFINED ${PREFIX}_ENABLE_TESTS)
+    set (EKAT_ENABLE_TESTS ${${PREFIX}_ENABLE_TESTS} CACHE BOOL "")
+  elseif (SET_DEFAULTS)
+    set (EKAT_ENABLE_TESTS ON CACHE BOOL "")
+  endif()
+
+  ### Needed only if EKAT_ENABLE_TESTS=ON ###
+
   if (DEFINED ${PREFIX}_TEST_MAX_THREADS)
     set (EKAT_TEST_MAX_THREADS ${${PREFIX}_TEST_MAX_THREADS} CACHE STRING "")
   elseif (SET_DEFAULTS)
@@ -148,67 +157,42 @@ macro (setVars PREFIX SET_DEFAULTS)
     set (EKAT_TEST_THREAD_INC 1 CACHE STRING "")
   endif()
 
-  if (DEFINED ${PREFIX}_MIMIC_GPU)
-    set (EKAT_MIMIC_GPU ${${PREFIX}_MIMIC_GPU} CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_FPMODEL)
-    set (EKAT_FPMODEL ${${PREFIX}_FPMODEL} CACHE STRING "")
+  if (DEFINED ${PREFIX}_TEST_STRICT_FP)
+    set (EKAT_TEST_STRICT_FP ${${PREFIX}_TEST_STRICT_FP} CACHE STRING "")
   elseif (setVars_DEBUG_BUILD AND SET_DEFAULTS)
-    set (EKAT_FPMODEL "strict" CACHE STRING "")
+    set (EKAT_TEST_STRICT_FP ON CACHE BOOL "")
   endif()
 
-  if (DEFINED ${PREFIX}_ENABLE_TESTS)
-    set (EKAT_ENABLE_TESTS ${${PREFIX}_ENABLE_TESTS} CACHE BOOL "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_ENABLE_TESTS ON CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_DISABLE_TPL_WARNINGS)
-    set (EKAT_DISABLE_TPL_WARNINGS ${${PREFIX}_DISABLE_TPL_WARNINGS} CACHE BOOL "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_DISABLE_TPL_WARNINGS OFF CACHE BOOL "")
-  endif()
-
-  # Packs variables
-  if (DEFINED ${PREFIX}_PACK_SIZE)
-    set (EKAT_PACK_SIZE ${${PREFIX}_PACK_SIZE} CACHE STRING "")
+  if (DEFINED ${PREFIX}_TEST_PACK_SIZE)
+    set (EKAT_TEST_PACK_SIZE ${${PREFIX}_TEST_PACK_SIZE} CACHE STRING "")
   elseif (SET_DEFAULTS)
     if (EKAT_CUDA_BUILD)
-      set (EKAT_PACK_SIZE 1 CACHE STRING "")
+      set (EKAT_TEST_PACK_SIZE 1 CACHE STRING "")
     else ()
-      set (EKAT_PACK_SIZE 16 CACHE STRING "")
+      set (EKAT_TEST_PACK_SIZE 16 CACHE STRING "")
     endif()
   endif()
 
-  if (DEFINED ${PREFIX}_SMALL_PACK_SIZE)
-    set (EKAT_SMALL_PACK_SIZE ${${PREFIX}_SMALL_PACK_SIZE} CACHE STRING "")
+  if (DEFINED ${PREFIX}_TEST_SMALL_PACK_SIZE)
+    set (EKAT_TEST_SMALL_PACK_SIZE ${${PREFIX}_TEST_SMALL_PACK_SIZE} CACHE STRING "")
   elseif (SET_DEFAULTS)
-    set (EKAT_SMALL_PACK_SIZE ${EKAT_PACK_SIZE} CACHE STRING "")
+    set (EKAT_TEST_SMALL_PACK_SIZE ${EKAT_TEST_PACK_SIZE} CACHE STRING "")
   endif()
 
-  if (DEFINED ${PREFIX}_PACK_CHECK_BOUNDS)
-    set (EKAT_PACK_CHECK_BOUNDS ${${PREFIX}_PACK_CHECK_BOUNDS} CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_POSSIBLY_NO_PACK)
-    set (EKAT_POSSIBLY_NO_PACK ${${PREFIX}_POSSIBLY_NO_PACK} CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_POSSIBLY_NO_PACK_SIZE)
-    set (EKAT_POSSIBLY_NO_PACK_SIZE ${${PREFIX}_POSSIBLY_NO_PACK_SIZE} CACHE STRING "")
+  if (DEFINED ${PREFIX}_TEST_POSSIBLY_NO_PACK)
+    set (EKAT_TEST_POSSIBLY_TEST_NO_PACK ${${PREFIX}_TEST_POSSIBLY_NO_PACK} CACHE STRING "")
   elseif (SET_DEFAULTS)
-    set (EKAT_POSSIBLY_NO_PACK_SIZE ${EKAT_PACK_SIZE} CACHE STRING "")
+    if ("${KOKKOS_GMAKE_ARCH}" STREQUAL "SKX")
+      set (EKAT_TEST_POSSIBLY_TEST_NO_PACK TRUE)
+    else ()
+      set (EKAT_TEST_POSSIBLY_NO_PACK FALSE)
+    endif ()
   endif()
 
-  # MPI
-  if (DEFINED ${PREFIX}_MPI_ERRORS_ARE_FATAL)
-    set (EKAT_MPI_ERRORS_ARE_FATAL ${${PREFIX}_MPI_ERRORS_ARE_FATAL} CACHE BOOL "")
-  endif()
+  ### Cleanup ###
 
-  # Cleanup
   unset (setVars_CMAKE_BUILD_TYPE_ci)
   unset (setVars_DEBUG_BUILD)
   unset (setVars_CUDA_BUILD)
   unset (setVars_CUDA_POS)
-endmacro ()
+endmacro (BuildEkat)

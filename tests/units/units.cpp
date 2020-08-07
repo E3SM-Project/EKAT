@@ -36,9 +36,6 @@ TEST_CASE("units_framework", "") {
     constexpr RationalConstant two = 2*one;
     constexpr ScalingFactor root2 (2,RationalConstant{1,2});
 
-    // I need a runtime number for runtime checks
-    const RationalConstant three(3);
-
     // Verify operations
     REQUIRE( root2*root2 == two );
     REQUIRE( sqrt(two) == root2 );
@@ -49,6 +46,7 @@ TEST_CASE("units_framework", "") {
     REQUIRE(to_string(root2,Format::Float)=="2^0.5");
 
 #if defined(EKAT_CONSTEXPR_ASSERT) && !defined(NDEBUG)
+    const RationalConstant three(3);
     REQUIRE_THROWS(sqrt(-three));
 #endif
   }

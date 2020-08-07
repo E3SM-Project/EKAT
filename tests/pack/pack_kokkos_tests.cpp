@@ -1,9 +1,10 @@
 #include <catch2/catch.hpp>
 
 #include "ekat/ekat_pack_kokkos.hpp"
-#include "ekat/ekat_types.hpp"
-#include "ekat/util/ekat_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
+
+#include "ekat_test_config.h"
 
 namespace {
 

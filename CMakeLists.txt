@@ -36,31 +36,7 @@ set (EKAT_TPL_INCLUDE_DIRS ${EKAT_TPL_INCLUDE_DIRS_INTERNAL} CACHE INTERNAL "Lis
 ###  EKAT CONFIG OPTIONS ###
 ############################
 
-# By default, we build ekat in double precision
-option (EKAT_DOUBLE_PRECISION " Whether EKAT should be built with double precision floating points." ON)
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
-set (EKAT_PACK_SIZE       16 CACHE STRING
-  " The number of scalars in a pack::Pack and Mask.
-   Larger packs have good performance on conditional-free loops due to improved caching.")
-set (EKAT_SMALL_PACK_SIZE  8 CACHE STRING
-  " The number of scalars in a pack::SmallPack and SmallMask. Smaller packs can have better performance in loops with conditionals, since more of the packs will have masks with uniform value.")
-
-# For some routines, SKX may have better performance with pksize=1
-# The following lines are meant to set up another variable to store
-# this pack size, which is usually equal to EKAT_PACK_SIZE,
-# but may be equal to 1 if EKAT_POSSIBLY_NO_PACK is set to TRUE
-# For example, by default we trigger this special behavior on SKX
-if ("${KOKKOS_GMAKE_ARCH}" STREQUAL "SKX")
-  set(DEFAULT_POSSIBLY_NO_PACK TRUE)
-endif ()
-set(EKAT_POSSIBLY_NO_PACK ${DEFAULT_POSSIBLY_NO_PACK} CACHE BOOL
-  " Set possibly-no-pack to this value. You can set it to something else to restore packs on SKX for testing.")
-
-set (DEFAULT_POSSIBLY_NO_PACK_SIZE ${EKAT_PACK_SIZE})
-if (EKAT_POSSIBLY_NO_PACK)
-  set (DEFAULT_POSSIBLY_NO_PACK_SIZE 1)
-endif ()
-set (EKAT_POSSIBLY_NO_PACK_SIZE ${DEFAULT_POSSIBLY_NO_PACK_SIZE})
 
 ############################
 ###     EKAT LIBRARY     ###
@@ -98,4 +74,4 @@ endif()
 include (EkatUtils)
 EkatConfigFile (${EKAT_SOURCE_DIR}/ekat_config.h.in
                 ${EKAT_BINARY_DIR}/ekat_config.h
-                ${EKAT_BINARY_DIR}/ekat_config.f)
+                F90_FILE ${EKAT_BINARY_DIR}/ekat_config.f)

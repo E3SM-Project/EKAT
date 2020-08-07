@@ -1,10 +1,11 @@
 #ifndef EKAT_TRIDIAG_HPP
 #define EKAT_TRIDIAG_HPP
 
-#include <cassert>
+#include "ekat/util/ekat_math_utils.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "ekat/util/ekat_utils.hpp"
+
+#include <cassert>
 
 namespace ekat {
 namespace tridiag {

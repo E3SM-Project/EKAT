@@ -3,6 +3,8 @@
 #include "ekat/ekat_workspace.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
 
+#include "ekat_test_config.h"
+
 namespace unit_test {
 
 using namespace ekat;
@@ -35,11 +37,11 @@ static void unittest_workspace_overprovision()
   const int nk = OnGpu<ExeSpace>::value ? 128 : (max_threads < 7 ? max_threads : 7);
 
   const auto temp_policy = ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, nk);
-  TeamUtils<ExeSpace> tu_temp(temp_policy);
+  TeamUtils<Real,ExeSpace> tu_temp(temp_policy);
   const int num_conc = tu_temp.get_max_concurrent_threads() / temp_policy.team_size();
 
-  constexpr Real op_fact = WSM::GPU_DEFAULT_OVERPROVISION_FACTOR;
-  constexpr Real explicit_op_fact = op_fact * 2.0;
+  constexpr double op_fact = WSM::GPU_DEFAULT_OVERPROVISION_FACTOR;
+  constexpr double explicit_op_fact = op_fact * 2.0;
 
   const int ni_under   = (num_conc / 2) + 1;
   const int ni_conc    = num_conc;

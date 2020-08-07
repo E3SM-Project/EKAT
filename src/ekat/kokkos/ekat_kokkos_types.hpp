@@ -1,25 +1,14 @@
-#ifndef EKAT_TYPES_HPP
-#define EKAT_TYPES_HPP
+#ifndef EKAT_KOKKOS_TYPES_HPP
+#define EKAT_KOKKOS_TYPES_HPP
 
 #include "ekat_config.h"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 
 /*
- * Header contains globally useful types for ekat.
- * The global Int and Real types are defined here along
- * with a type dictionary for accessing commonly-used
- * Kokkos types.
+ * Header contains globally useful kokkos-related types for ekat.
  */
 
 namespace ekat {
-
-#ifdef EKAT_DOUBLE_PRECISION
-using Real = double;
-#else
-using Real = float;
-#endif
-
-typedef int Int;
 
 #if defined KOKKOS_COMPILER_GNU
 // See https://github.com/kokkos/kokkos-kernels/issues/129
@@ -80,31 +69,6 @@ struct KokkosTypes
   using view_1d_ptr_carray = Kokkos::Array<const util::Unmanaged<view_1d<Scalar> >*, N>;
 };
 
-// Memory traits
-using MemoryManaged   = Kokkos::MemoryTraits<Kokkos::Restrict>;
-using MemoryUnmanaged = Kokkos::MemoryTraits<Kokkos::Restrict | Kokkos::Unmanaged>;
-
-namespace util {
-// Helper structure templated on a type T. It establishes
-//  1) if T is a pack
-//  2) what's the underlying scalar type
-// The default impl says T is not a pack, and that the scalar type is T itself.
-
-template<typename T>
-struct ScalarProperties {
-  using scalar_type = T;
-  static constexpr bool is_pack = false;
-};
-
-} // namespace util
-
-// An enum to be used with object that have 'repository'-like behavior
-enum class RepoState {
-  Clean,
-  Open,
-  Closed
-};
-
 } // namespace ekat
 
-#endif // EKAT_TYPES_HPP
+#endif // EKAT_KOKKOS_TYPES_HPP

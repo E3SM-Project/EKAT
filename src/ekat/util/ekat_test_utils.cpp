@@ -8,6 +8,10 @@
 namespace ekat {
 namespace util {
 
+bool argv_matches(const std::string& s, const std::string& short_opt, const std::string& long_opt) {
+  return (s == short_opt) || (s == long_opt) || s == ("-" + short_opt);
+}
+
 int get_test_device (const int mpi_rank)
 {
   // Set to -1 by default, which leaves kokkos in full control

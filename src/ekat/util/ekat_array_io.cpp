@@ -1,7 +1,4 @@
-#include "ekat/ekat_types.hpp"
-#include "ekat/util/ekat_utils.hpp"
-#include "ekat/util/file_utils.hpp"
-#include "ekat/ekat_assert.hpp"
+#include "ekat/util/ekat_file_utils.hpp"
 
 #include <sys/stat.h>
 
@@ -36,7 +33,17 @@ bool array_io_file_exists (const char* filename) {
   return exists;
 }
 
-bool array_io_write (const char* filename, ekat::Real** a, const int n) {
+// F90 has C linking, so we need to duplicate the function for single/double precision
+bool array_io_write_double (const char* filename, double** a, const int n) {
+  try {
+    ekat::util::write(filename, *a, n);
+    return true;
+  } catch (std::exception& e) {
+    std::cerr << "array_io_write failed with: " << e.what() << "\n";
+    return false;
+  }
+}
+bool array_io_write_float (const char* filename, float** a, const int n) {
   try {
     ekat::util::write(filename, *a, n);
     return true;
@@ -46,7 +53,16 @@ bool array_io_write (const char* filename, ekat::Real** a, const int n) {
   }
 }
 
-bool array_io_read (const char* filename, ekat::Real** a, const int n) {
+bool array_io_read_double (const char* filename, double** a, const int n) {
+  try {
+    ekat::util::read(filename, *a, n);
+    return true;
+  } catch (std::exception& e) {
+    std::cerr << "array_io_read failed with: " << e.what() << "\n";
+    return false;
+  }
+}
+bool array_io_read_float (const char* filename, float** a, const int n) {
   try {
     ekat::util::read(filename, *a, n);
     return true;
