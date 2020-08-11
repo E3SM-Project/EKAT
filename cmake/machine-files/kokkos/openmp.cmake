@@ -1,0 +1,4 @@
+# Settings used when OpenMP is the Kokkos backend
+
+set(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION TRUE CACHE BOOL "")
+set(KOKKOS_ENABLE_OPENMP TRUE CACHE BOOL "")
