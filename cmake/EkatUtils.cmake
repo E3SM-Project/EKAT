@@ -1,4 +1,4 @@
-macro (CheckUnrecognizedArgs macroName parsePrefix validOptions validOneValueArgs validMultiValueArgs)
+macro (CheckMacroArgs macroName parsePrefix validOptions validOneValueArgs validMultiValueArgs)
   if (${parsePrefix}_UNPARSED_ARGUMENTS)
     message (AUTHOR_WARNING
              "Warning: the following arguments to macro ${macroName} were not recognized:\n"
@@ -8,6 +8,12 @@ macro (CheckUnrecognizedArgs macroName parsePrefix validOptions validOneValueArg
              "   oneValueArgs: ${validOneValueArgs}\n"             
              "   multiValueArgs: ${validMultiValueArgs}\n")
   endif ()
+
+  if (${parsePrefix}_KEYWORDS_MISSING_VALUES)
+    message (FATAL_ERROR
+             "Warning: the following keywords in macro ${macroName} were used, but no argument was provided:\n"
+             "   ${${parsePrefix}_KEYWORDS_MISSING_VALUES}\n")
+  endif ()
 endmacro ()
 
 macro (EkatConfigFile CONFIG_FILE_IN CONFIG_FILE_C)
@@ -16,7 +22,7 @@ macro (EkatConfigFile CONFIG_FILE_IN CONFIG_FILE_C)
   set(multiValueArgs)
 
   cmake_parse_arguments(EKAT_CONFIGURE_FILE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
-  CheckUnrecognizedArgs(EkatConfigFile EKAT_CONFIGURE_FILE "${options}" "${oneValueArgs}" "${multiValueArgs}")
+  CheckMacroArgs(EkatConfigFile EKAT_CONFIGURE_FILE "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
   # Generate temporary config file
   if (EKAT_CONFIGURE_FILE_AT_ONLY)
@@ -50,18 +56,18 @@ macro (EkatConfigFile CONFIG_FILE_IN CONFIG_FILE_C)
     # Run the configure macro
     configure_file (${CONFIG_FILE_IN} ${CONFIG_FILE_C})
 
-    if (NOT "${EKAT_CONFIGURE_FILE_F90_FILE}" STREQUAL "<UNDEFINED>")
+    if (EKAT_CONFIGURE_FILE_F90_FILE)
       # run sed to change '/*...*/' comments into '!/*...*/'
       execute_process(COMMAND sed "s;^/;!/;g"
                       WORKING_DIRECTORY ${EKAT_BINARY_DIR}
                       INPUT_FILE ${CONFIG_FILE_C}
-                      OUTPUT_FILE ${CONFIG_FILE_F90})
+                      OUTPUT_FILE ${EKAT_CONFIGURE_FILE_F90_FILE})
 
       # do the same for '//...' comments (turn them into '! ...'
       execute_process(COMMAND sed "s;^//;!;g"
                       WORKING_DIRECTORY ${EKAT_BINARY_DIR}
                       INPUT_FILE ${CONFIG_FILE_C}
-                      OUTPUT_FILE ${CONFIG_FILE_F90})
+                      OUTPUT_FILE ${EKAT_CONFIGURE_FILE_F90_FILE})
     endif()
   endif()
 

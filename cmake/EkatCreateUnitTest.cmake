@@ -39,7 +39,7 @@ function(EkatCreateUnitTest target_name target_srcs)
 
   # ecut = Ekat Create Unit Test
   cmake_parse_arguments(ecut "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
-  CheckUnrecognizedArgs(EkatCreateUnitTest ecut "${options}" "${oneValueArgs}" "${multiValueArgs}")
+  CheckMacroArgs(EkatCreateUnitTest ecut "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
   # Set link directories (must be done BEFORE add_executable is called)
   if (ecut_LIBS_DIRS)
