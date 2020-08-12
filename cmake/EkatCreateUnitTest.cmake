@@ -38,12 +38,19 @@ function(EkatCreateUnitTest target_name target_srcs)
     LABELS)
 
   # ecut = Ekat Create Unit Test
-  cmake_parse_arguments(ecut "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+  cmake_parse_arguments(ecut "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   CheckMacroArgs(EkatCreateUnitTest ecut "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+  # Strip leading/trailing whitespaces from some vars, to avoid either cmake errors
+  # (e.g., in target_link_libraries) or compiler errors (e.g. if COMPILER_DEFS=" ")
+  string(STRIP "${ecut_LIBS}" ecut_LIBS)
+  string(STRIP "${ecut_COMPILER_DEFS}" ecut_COMPILER_DEFS)
+  string(STRIP "${ecut_LIBS_DIRS}" ecut_LIBS_DIRS)
+  string(STRIP "${ecut_INCLUDE_DIRS}" ecut_LIBS_DIRS)
 
   # Set link directories (must be done BEFORE add_executable is called)
   if (ecut_LIBS_DIRS)
-    link_directories(${ecut_LIBS_DIRS})
+    link_directories("${ecut_LIBS_DIRS}")
   endif()
 
   # Create the executable
@@ -65,6 +72,7 @@ function(EkatCreateUnitTest target_name target_srcs)
 
   # Set all target properties
   target_include_directories(${target_name} PUBLIC ${TEST_INCLUDE_DIRS})
+
   if (ecut_LIBS)
     target_link_libraries(${target_name} PUBLIC "${ecut_LIBS}")
   endif()

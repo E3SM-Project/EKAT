@@ -13,8 +13,7 @@
 # Additionally, the BuildEkat macro can allow you to inherit some config
 # options from your projec, see comment below.
 
-# Define global properties for EKAT_DOUBLE_BUILT and EKAT_SINGLE_BUILT
-# to ensure ekat (with the desired precision) is built only once
+# Define global property for EKAT_BUILT to ensure ekat is built only once
 define_property(GLOBAL
                 PROPERTY EKAT_BUILT
                 BRIEF_DOCS "Whether ekat subdir has already been processed"
@@ -73,21 +72,23 @@ macro (BuildEkat EKAT_SOURCE_DIR)
     # DO NOT set defaults, or you may override something
     setVars("BUILD_EKAT" FALSE)
 
-    if (NOT IS_DIRECTORY EKAT_SOURCE_DIR)
-      message (FATAL_ERROR "Error! The provided EKAT_SOURCE_DIR does not appear to be a directory.\n")
+    if (NOT IS_DIRECTORY ${EKAT_SOURCE_DIR})
+      message (FATAL_ERROR
+               "Error! The provided EKAT_SOURCE_DIR does not appear to be a directory.\n"
+               "  Provided dir: ${EKAT_SOURCE_DIR}")
     endif()
     if (NOT EXISTS ${EKAT_SOURCE_DIR}/ekat_config.h.in)
       message (FATAL_ERROR "Error! Something is wrong with EKAT_SOURCE_DIR.\n"
                            "       No 'ekat_config.h.in' file was found in '${EKAT_SOURCE_DIR}'")
     endif()
-    add_subdirectory (${EKAT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/externals/ekat_${EKAT_PRECISION})
+    add_subdirectory (${EKAT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/externals/ekat)
 
     # Make sure that future includes of this script don't rebuild ekat
     set_property(GLOBAL PROPERTY EKAT_BUILT TRUE)
   else ()
     message ("Using Ekat previously configured in this project.\n")
   endif()
-endmacro()
+endmacro(BuildEkat)
 
 # Set EKAT_BLAH variables from ${PREFIX}_BLAH variables. If the latter are not
 # defined, use some defaults
@@ -195,4 +196,4 @@ macro (setVars PREFIX SET_DEFAULTS)
   unset (setVars_DEBUG_BUILD)
   unset (setVars_CUDA_BUILD)
   unset (setVars_CUDA_POS)
-endmacro (BuildEkat)
+endmacro (setVars)

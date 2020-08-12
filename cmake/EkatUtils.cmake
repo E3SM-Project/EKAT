@@ -10,7 +10,7 @@ macro (CheckMacroArgs macroName parsePrefix validOptions validOneValueArgs valid
   endif ()
 
   if (${parsePrefix}_KEYWORDS_MISSING_VALUES)
-    message (FATAL_ERROR
+    message (AUTHOR_WARNING
              "Warning: the following keywords in macro ${macroName} were used, but no argument was provided:\n"
              "   ${${parsePrefix}_KEYWORDS_MISSING_VALUES}\n")
   endif ()
@@ -21,7 +21,7 @@ macro (EkatConfigFile CONFIG_FILE_IN CONFIG_FILE_C)
   set(oneValueArgs F90_FILE)
   set(multiValueArgs)
 
-  cmake_parse_arguments(EKAT_CONFIGURE_FILE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+  cmake_parse_arguments(EKAT_CONFIGURE_FILE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   CheckMacroArgs(EkatConfigFile EKAT_CONFIGURE_FILE "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
   # Generate temporary config file

@@ -66,7 +66,6 @@ option (EKAT_ENABLE_TESTS "Whether tests should be built." ON)
 
 if (EKAT_ENABLE_TESTS)
   enable_testing()
-  option (EKAT_STRICT_FP " Whether EKAT tests should adopt a strict fp model testing." ON)
   add_subdirectory(tests)
 endif()
 
