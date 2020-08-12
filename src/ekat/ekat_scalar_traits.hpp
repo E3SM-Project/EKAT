@@ -25,10 +25,24 @@ namespace ekat {
 
 template<typename T>
 struct ScalarTraits {
-  // The type T, without any cv or reference
-  using value_type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+  // It's important to distinguish between value_type and scalar_type.
+  //  - value_type is the type of T, stripped of cv qualifiers and reference (if any).
+  //  - scalar_type is the building block that makes up T.
+  // For built-in scalars (float, int, double,...) they coincide. However,
+  // for "vector-like" scalars (e.g., a simd type), they will differ.
+  // For instance:
+  //   using Vector3D = const std::array<double,3>;
+  //   using VT = ScalarTraits<Vector3D>::value_type;
+  //   using ST = ScalarTraits<Vector3D>::scalar_type;
+  // In the above, VT=std::array<double,3>, while ST=double.
+  // In other words, scalar_type is whatever makes up T.
+
+  using value_type  = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+  using scalar_type = value_type;
 
   // This non-specialized Traits struct is only meant for arithmetic types.
+  // Specialization of the class for, say, simd types, might want to perform the
+  // check on scalar_type instead (or maybe not even on that, if they allow nested simd types).
   static_assert (std::is_arithmetic<value_type>::value,
                  "Error! Template parameter 'T' in generic ScalarTraits must be a numeric type.\n");
 

@@ -1,12 +1,12 @@
 #ifndef EKAT_FACTORY_HPP
 #define EKAT_FACTORY_HPP
 
+#include "ekat/ekat_assert.hpp"
+#include "ekat/ekat_type_traits.hpp"
+
 #include <string>
 #include <sstream>
 #include <map>
-
-#include "ekat/ekat_assert.hpp"
-#include "ekat/util/ekat_utils.hpp"
 
 namespace ekat
 {
@@ -66,7 +66,7 @@ public:
 
 private:
   std::string print_registered_products () const {
-    return print_registered_products_impl<check_overloads::StreamExists<key_type>::value>();
+    return print_registered_products_impl<StreamExists<key_type>::value>();
   }
 
   template<int OpStreamExists>

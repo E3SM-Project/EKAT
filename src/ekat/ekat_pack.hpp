@@ -541,22 +541,25 @@ OnlyPack<PackType> range (const typename PackType::scalar& start) {
 template<typename T, int N>
 struct ScalarTraits<pack::Pack<T,N>> {
 
-  using inner_value_type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
-  using value_type = pack::Pack<T,N>;
-
   using inner_traits = ScalarTraits<T>;
 
-  // Note: if T is not an arithmetic type, this will throw.
-  static_assert (!inner_traits::is_simd, "Error! We do not allow nested pack structures, for now.\n");
+  using value_type  = pack::Pack<T,N>;
+  using scalar_type = typename inner_traits::scalar_type;
 
+  // TODO: should we allow a pack of packs? For now, I assume the answer is NO.
+  //       So in order to FORBID pack<pack<T,N>>, check that inner_traits::value_type
+  //       is an arithmetic type.
+  static_assert (std::is_arithmetic<typename inner_traits::value_type>::value,
+                 "Error! We do not allow nested pack structures, for now.\n");
 
   // This seems funky. But write down a pow of 2 and a non-pow of 2 in binary (both positive), and you'll see why it works
   static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
 
+  // Roll our own (hopefully verbose enough) name for this type.
   static std::string name () {
     return "Pack<" + inner_traits::name() + "," + std::to_string(N) + ">";
   }
-  static constexpr bool is_pack = true;
+  static constexpr bool is_simd = true;
 
   KOKKOS_INLINE_FUNCTION
   static const value_type quiet_NaN () {
