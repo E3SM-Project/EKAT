@@ -17,7 +17,7 @@ macro (CheckMacroArgs macroName parsePrefix validOptions validOneValueArgs valid
 endmacro ()
 
 macro (EkatConfigFile CONFIG_FILE_IN CONFIG_FILE_C)
-  set(options OPTIONAL AT_ONLY)
+  set(options AT_ONLY)
   set(oneValueArgs F90_FILE)
   set(multiValueArgs)
 

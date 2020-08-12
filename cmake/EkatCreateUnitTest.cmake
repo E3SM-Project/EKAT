@@ -28,7 +28,7 @@ include(EkatUtils) # To check macro args
 set (CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/catch2/include)
 
 function(EkatCreateUnitTest target_name target_srcs)
-  set(options OPTIONAL EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
+  set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
   set(oneValueArgs DEP MPI_EXEC_NAME MPI_NP_FLAG)
   set(multiValueArgs
     MPI_RANKS THREADS
