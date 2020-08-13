@@ -9,7 +9,6 @@ set(EKAT_SOURCES
   util/ekat_string_utils.cpp
   util/ekat_arch.cpp
   util/ekat_test_utils.cpp
-  util/ekat_time_stamp.cpp
 )
 
 add_library(ekat ${EKAT_SOURCES})
