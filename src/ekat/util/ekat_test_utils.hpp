@@ -3,8 +3,22 @@
 
 #include <ekat/ekat_pack.hpp>
 
+#include <map>
+
 namespace ekat {
 namespace util {
+
+struct TestSession {
+  static TestSession& get () {
+    static TestSession s;
+    return s;
+  }
+
+  std::map<std::string,std::string> params;
+private:
+  TestSession() = default;
+};
+
 
 template <typename RealType, typename rngAlg, typename PDF>
 void genRandArray(RealType *const x, int length, rngAlg &engine, PDF &&pdf) {

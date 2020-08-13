@@ -11,17 +11,6 @@
 void ekat_initialize_test_session (int argc, char** argv);
 void ekat_finalize_test_session ();
 
-struct TestSession {
-  static TestSession& get () {
-    static TestSession s;
-    return s;
-  }
-
-  std::map<std::string,std::string> params;
-private:
-  TestSession() = default;
-};
-
 int main (int argc, char **argv) {
 
   // Initialize MPI
@@ -32,7 +21,7 @@ int main (int argc, char **argv) {
     if (cmd_line_arg=="") {
       return;
     }
-    auto& ts = TestSession::get();
+    auto& ts = ekat::util::TestSession::get();
 
     std::stringstream input(cmd_line_arg);
     std::string option;
