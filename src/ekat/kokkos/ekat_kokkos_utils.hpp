@@ -2,6 +2,7 @@
 #define EKAT_KOKKOS_UTILS_HPP
 
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/ekat_type_traits.hpp"
 #include "ekat/std_meta/ekat_std_type_traits.hpp"
 #include "ekat/util/ekat_arch.hpp"
@@ -215,10 +216,10 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
   template <typename TeamPolicy>
   TeamUtils(const TeamPolicy& policy, const double& overprov_factor = 1.0) :
     TeamUtilsCommonBase<ValueType,Kokkos::Cuda>(policy),
-    _num_ws_slots(_league_size > _num_teams
-                  ? (overprov_factor * _num_teams > _league_size ? _league_size : overprov_factor * _num_teams)
-                  : _num_teams),
-    _need_ws_sharing(_league_size > _num_ws_slots),
+    _num_ws_slots(this->_league_size > this->_num_teams
+                  ? (overprov_factor * this->_num_teams > this->_league_size ? this->_league_size : overprov_factor * this->_num_teams)
+                  : this->_num_teams),
+    _need_ws_sharing(this->_league_size > _num_ws_slots),
     _open_ws_slots("open_ws_slots", _need_ws_sharing ? _num_ws_slots : 0),
     _rand_pool()
   {

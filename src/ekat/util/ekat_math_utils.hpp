@@ -15,11 +15,21 @@ namespace util {
 
 #ifdef KOKKOS_ENABLE_CUDA
 // Replacements for namespace std functions that don't run on the GPU.
-template <typename T> KOKKOS_INLINE_FUNCTION
-const T& min (const T& a, const T& b) { return a < b ? a : b; }
-template <typename T> KOKKOS_INLINE_FUNCTION
-const T& max (const T& a, const T& b) { return a > b ? a : b; }
-KOKKOS_INLINE_FUNCTION bool isfinite (const Real& a) {
+template <typename T>
+KOKKOS_INLINE_FUNCTION
+const T& min (const T& a, const T& b) {
+  return a < b ? a : b;
+}
+
+template <typename T>
+KOKKOS_INLINE_FUNCTION
+const T& max (const T& a, const T& b) {
+  return a > b ? a : b;
+}
+
+template <typename T>
+KOKKOS_INLINE_FUNCTION
+bool isfinite (const T& a) {
   return a == a && a != INFINITY && a != -INFINITY;
 }
 

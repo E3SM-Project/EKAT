@@ -1,7 +1,8 @@
 #include <ekat/util/ekat_test_utils.hpp>
-#include <ekat/ekat_assert.hpp>
+#include "ekat/ekat_assert.hpp"
+#include "ekat/util/ekat_string_utils.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #include <cstdlib>
 

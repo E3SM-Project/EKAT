@@ -66,7 +66,7 @@ struct ScalarTraits {
     } else if (std::is_same<value_type,double>::value) {
       return CUDART_NAN;
     } else {
-      ekat_kerror_msg ("Error! No NaN provided for this floating point type.\n");
+      EKAT_KERNEL_ERROR_MSG ("Error! No NaN provided for this floating point type.\n");
       // Silence compiler warning
       return 0;
     }

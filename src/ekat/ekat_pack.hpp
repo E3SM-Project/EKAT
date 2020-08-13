@@ -276,7 +276,7 @@ ekat_pack_gen_bin_op_all(/)
 
 ekat_pack_gen_unary_op(-)
 
-#define ekat_pack_gen_unary_fn(fn, impl)                            \
+#define ekat_pack_gen_unary_fn(fn, impl)                              \
   template <typename PackType>                                        \
   KOKKOS_INLINE_FUNCTION                                              \
   OnlyPack<PackType> fn (const PackType& p) {                         \
@@ -285,6 +285,7 @@ ekat_pack_gen_unary_op(-)
     for (int i = 0; i < PackType::n; ++i) s[i] = impl(p[i]);          \
     return s;                                                         \
   }
+
 #define ekat_pack_gen_unary_stdfn(fn) ekat_pack_gen_unary_fn(fn, std::fn)
 ekat_pack_gen_unary_stdfn(abs)
 ekat_pack_gen_unary_stdfn(exp)
