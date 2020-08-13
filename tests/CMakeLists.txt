@@ -1,16 +1,44 @@
 ################### BEGIN OF EKAT TESTING OPTIONS ###################
 
 # Set defaults for EKAT testing
-set (EKAT_TEST_MAX_THREADS 16 CACHE STRING "Max number of threads for tests")
+# Note: Determine some of the defaults based on Kokkos backend
+
+#######################
+###    THREADING    ###
+#######################
+
+if (KOKKOS_ENABLE_CUDA)
+  set (DEFAULT_MAX_THREADS 1)
+else ()
+  set (DEFAULT_MAX_THREADS 16)
+endif ()
+
+set (EKAT_TEST_MAX_THREADS ${DEFAULT_MAX_THREADS} CACHE STRING "Max number of threads for tests")
 set (EKAT_TEST_THREAD_INC 1  CACHE STRING "Increment for threads for tests")
+
+#######################
+###    PRECISION    ###
+#######################
 
 option (EKAT_TEST_SINGLE_PRECISION "Whether tests should be performed in single precision" OFF)
 option (EKAT_TEST_DOUBLE_PRECISION "Whether tests should be performed in double precision" ON)
 
-set (EKAT_TEST_PACK_SIZE       16 CACHE STRING
+#######################
+###     PACKS       ###
+#######################
+
+if (KOKKOS_ENABLE_CUDA)
+  set (DEFAULT_PACK_SIZE 1)
+  set (DEFAULT_SMALL_PACK_SIZE 1)
+else ()
+  set (DEFAULT_PACK_SIZE 16)
+  set (DEFAULT_SMALL_PACK_SIZE 8)
+endif ()
+
+set (EKAT_TEST_PACK_SIZE       ${DEFAULT_PACK_SIZE} CACHE STRING
   " The number of scalars in a pack::Pack and Mask.
    Larger packs have good performance on conditional-free loops due to improved caching.")
-set (EKAT_TEST_SMALL_PACK_SIZE  8 CACHE STRING
+set (EKAT_TEST_SMALL_PACK_SIZE  ${DEFAULT_SMALL_PACK_SIZE} CACHE STRING
   " The number of scalars in a pack::SmallPack and SmallMask. Smaller packs can have better performance in loops with conditionals, since more of the packs will have masks with uniform value.")
 
 # For some routines, SKX may have better performance with pksize=1
@@ -20,17 +48,23 @@ set (EKAT_TEST_SMALL_PACK_SIZE  8 CACHE STRING
 # For example, by default we trigger this special behavior on SKX
 if ("${KOKKOS_GMAKE_ARCH}" STREQUAL "SKX")
   set(DEFAULT_POSSIBLY_NO_PACK TRUE)
+  set (DEFAULT_POSSIBLY_NO_PACK_SIZE 1)
+else()
+  set(DEFAULT_POSSIBLY_NO_PACK FALSE)
+set (DEFAULT_POSSIBLY_NO_PACK_SIZE ${EKAT_TEST_PACK_SIZE})
 endif ()
+
 set(EKAT_TEST_POSSIBLY_NO_PACK ${DEFAULT_POSSIBLY_NO_PACK} CACHE BOOL
   " Set possibly-no-pack to this value. You can set it to something else to restore packs on SKX for testing.")
-
-set (DEFAULT_POSSIBLY_NO_PACK_SIZE ${EKAT_TEST_PACK_SIZE})
-if (EKAT_TEST_POSSIBLY_NO_PACK)
-  set (DEFAULT_POSSIBLY_NO_PACK_SIZE 1)
-endif ()
 set (EKAT_TEST_POSSIBLY_NO_PACK_SIZE ${DEFAULT_POSSIBLY_NO_PACK_SIZE} CACHE STRING "")
 
+#######################
+###      MISC       ###
+#######################
+
 option (EKAT_TEST_STRICT_FP " Whether EKAT tests should adopt a strict fp model testing." ON)
+
+#################### END OF EKAT TESTING OPTIONS ##########################
 
 # If only one between single and double precision is enabled, there's no need
 # to add a suffix to tests names. If, on the other hand, they are both enabled,
@@ -42,8 +76,6 @@ else()
   set (SP_POSTFIX "")
   set (DP_POSTFIX "")
 endif()
-
- #################### END OF EKAT TESTING OPTIONS ##########################
 
 # Create test config.h file
 include (EkatUtils)
