@@ -26,7 +26,7 @@ namespace ekat {
 template<typename T>
 struct ScalarTraits {
   // It's important to distinguish between value_type and scalar_type.
-  //  - value_type is the type of T, stripped of cv qualifiers and reference (if any).
+  //  - value_type is the type of T (stripped of cv qualifiers and reference, see partial specializations below).
   //  - scalar_type is the building block that makes up T.
   // For built-in scalars (float, int, double,...) they coincide. However,
   // for "vector-like" scalars (e.g., a simd type), they will differ.
@@ -37,7 +37,7 @@ struct ScalarTraits {
   // In the above, VT=std::array<double,3>, while ST=double.
   // In other words, scalar_type is whatever makes up T.
 
-  using value_type  = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+  using value_type  = T;
   using scalar_type = value_type;
 
   // This non-specialized Traits struct is only meant for arithmetic types.
@@ -101,6 +101,21 @@ struct ScalarTraits {
     return val;
   }
 };
+
+// Partial specialization, so that if T has cv qualifiers or reference,
+// they get stripped. This way, specializations on different T's, need
+// not to have specializations for const/volatile and &.
+template<typename T>
+struct ScalarTraits<const T> : ScalarTraits<T> {};
+
+template<typename T>
+struct ScalarTraits<volatile T> : ScalarTraits<T> {};
+
+template<typename T>
+struct ScalarTraits<T&> : ScalarTraits<T> {};
+
+template<typename T>
+struct ScalarTraits<T&&> : ScalarTraits<T> {};
 
 } // namespace ekat
 
