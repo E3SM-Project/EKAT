@@ -12,8 +12,8 @@ macro (EkatSetNvccWrapper)
     # Before starting the project, wrap mpicxx in the ekat_mpicxx script, which
     # takes care of setting OMPI_CXX to point to nvcc_wrapper
 
-    if (NOT KOKKOS_SOURCE_DIR)
-      message (FATAL_ERROR "Error! When calling 'EkatSetNvccWrapper', KOKKOS_SOURCE_DIR must be already set.")
+    if (NOT Kokkos_SOURCE_DIR)
+      message (FATAL_ERROR "Error! When calling 'EkatSetNvccWrapper', Kokkos_SOURCE_DIR must be already set.")
     endif ()
 
     configure_file(${MPICXX_WRAPPER_SOURCE_DIR}/ekat_mpicxx.in ${CMAKE_BINARY_DIR}/bin/ekat_mpicxx @ONLY)

@@ -5,6 +5,18 @@ list(APPEND CMAKE_MODULE_PATH
      ${CMAKE_CURRENT_SOURCE_DIR}/cmake
 )
 
+# We should avoid cxx bindings in mpi; they are already deprecated,
+# and can cause headaches at link time, cause they require -lmpi_cxx
+# (for openpmi; -lmpicxx for mpich) flag.
+include(EkatMpiUtils)
+DisableMpiCxxBindings()
+
+# If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
+if (KOKKOS_ENABLE_CUDA)
+  include (EkatSetNvccWrapper)
+  EkatSetNvccWrapper()
+endif()
+
 # EKAT has mostly C++, but some Fortran too
 project (EKAT CXX Fortran)
 
