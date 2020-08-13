@@ -228,7 +228,7 @@ repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
   static_assert(new_pack_size > 0 &&
                 new_pack_size % old_pack_size == 0,
                 "Old pack size must divide new pack size.");
-  ekat_kassert(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
+  EKAT_KERNEL_ASSERT(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
   return util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >(
     reinterpret_cast<Pack<T, new_pack_size>*>(vp.data()),
     vp.extent_int(0) / (new_pack_size / old_pack_size));

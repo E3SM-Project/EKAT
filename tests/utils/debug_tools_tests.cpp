@@ -178,10 +178,10 @@ TEST_CASE ("fpes","") {
 TEST_CASE ("assert-macros") {
   printf ("*) testing assert macros...\n");
   auto test_req_msg = [](const bool test, const std::string& msg) {
-    ekat_require_msg(test,msg);
+    EKAT_REQUIRE_MSG(test,msg);
   };
   auto test_err_msg = [](const std::string& msg) {
-    ekat_error_msg(msg);
+    EKAT_ERROR_MSG(msg);
   };
   REQUIRE_THROWS (test_req_msg(1>3,"Uh? I wonder what Sharkowsky would have to say about this...\n"));
 

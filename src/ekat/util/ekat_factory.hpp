@@ -130,7 +130,7 @@ create (const key_type& key,ConstructorArgs&& ...args)
   // Note: this check is redundant, since, if negative, the next one would fail too.
   //       However, this check is symptomatic of a larger problem (not registering product)
   //       than simply not finding the requested one (perhaps because of spelling).
-  ekat_require_msg(m_register.size()>0,
+  EKAT_REQUIRE_MSG(m_register.size()>0,
                      "[" + m_factory_name + "] Error!\n"
                      "        There are no products registered in the factory.\n"
                      "        Did you forget to call 'register_product'?\n");
@@ -138,7 +138,7 @@ create (const key_type& key,ConstructorArgs&& ...args)
   auto it = m_register.find(key);
 
   // Check that the requested product is registered
-  ekat_require_msg(it!=m_register.end(),
+  EKAT_REQUIRE_MSG(it!=m_register.end(),
                      "[" + m_factory_name + "] Error!\n"
                      "        The key '" + key + "' is not associated to any registered product.\n"
                      "        The list of registered product is: " + print_registered_products() + "\n"

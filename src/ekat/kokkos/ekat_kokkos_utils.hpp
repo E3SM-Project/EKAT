@@ -131,7 +131,7 @@ protected:
     // We will never run more teams than the policy needs
     _num_teams = _num_teams > _league_size ? _league_size : _num_teams;
 
-    ekat_assert_msg(_num_teams > 0, "Should always be able to run at least 1 team."
+    EKAT_ASSERT_MSG(_num_teams > 0, "Should always be able to run at least 1 team."
                                     "\n max_thrds   = " + std::to_string(_max_threads) +
                                     "\n team_size   = " + std::to_string(team_size) +
                                     "\n league_size = " + std::to_string(_league_size) + "\n");
@@ -279,9 +279,9 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
 template <typename T, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
 Unmanaged<Kokkos::View<T*, Parms...> >
 subview (const Kokkos::View<T**, Parms...>& v_in, const int i) {
-  ekat_kassert(v_in.data() != nullptr);
-  ekat_kassert(i < v_in.extent_int(0));
-  ekat_kassert(i >= 0);
+  EKAT_KERNEL_ASSERT(v_in.data() != nullptr);
+  EKAT_KERNEL_ASSERT(i < v_in.extent_int(0));
+  EKAT_KERNEL_ASSERT(i >= 0);
   return util::Unmanaged<Kokkos::View<T*, Parms...> >(
     &v_in.impl_map().reference(i, 0), v_in.extent(1));
 }
@@ -291,7 +291,7 @@ subview (const Kokkos::View<T**, Parms...>& v_in, const int i) {
 KOKKOS_INLINE_FUNCTION
 size_t strlen(const char* str)
 {
-  ekat_kassert(str != NULL);
+  EKAT_KERNEL_ASSERT(str != NULL);
   const char *char_ptr;
   for (char_ptr = str; ; ++char_ptr)  {
     if (*char_ptr == '\0') return char_ptr - str;
@@ -300,7 +300,7 @@ size_t strlen(const char* str)
 KOKKOS_INLINE_FUNCTION
 void strcpy(char* dst, const char* src)
 {
-  ekat_kassert(dst != NULL && src != NULL);
+  EKAT_KERNEL_ASSERT(dst != NULL && src != NULL);
   while(*dst++ = *src++);
 }
 KOKKOS_INLINE_FUNCTION

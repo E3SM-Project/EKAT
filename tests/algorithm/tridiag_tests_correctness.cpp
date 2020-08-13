@@ -29,7 +29,7 @@ struct Solver {
     case cr_scalar: return "cr_scalar";
     case bfb: return "bfb";
     case bfbf90: return "bfbf90";
-    default: ekat_require_msg(false, "Not a valid solver: " << e);
+    default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
     }
   }
 
@@ -263,13 +263,13 @@ struct Solve<true, APack, DataPack> {
                                    dl.data(), d.data(), du.data(), Xs.data());
         }
       } else {
-        ekat_require_msg(false, "bfbf90 does not support nprob > 1");
+        EKAT_REQUIRE_MSG(false, "bfbf90 does not support nprob > 1");
       }
       deep_copy(A, Am);
       deep_copy(X, Xm);
     } break;
     default:
-      ekat_require_msg(false, "Same pack size: " << Solver::convert(tc.solver));
+      EKAT_REQUIRE_MSG(false, "Same pack size: " << Solver::convert(tc.solver));
     }
   }
 };
@@ -329,7 +329,7 @@ struct Solve<false, APack, DataPack> {
       Kokkos::parallel_for(policy, f);
     } break;
     default:
-      ekat_require_msg(false, "Different pack size: " << Solver::convert(tc.solver));
+      EKAT_REQUIRE_MSG(false, "Different pack size: " << Solver::convert(tc.solver));
     }
   }
 };

@@ -69,12 +69,12 @@ TimeStamp::TimeStamp(const int yy,
  , m_ss(ss)
 {
   // Check the days and seconds numbers are non-negative.
-  ekat_require_msg (mm>=0, "Error! Month is negative.\n");
-  ekat_require_msg (mm<=11, "Error! Month is too large.\n");
-  ekat_require_msg (dd>=0, "Error! Day is negative.\n");
-  ekat_require_msg (dd<(is_leap(m_yy) ? leap_days[mm] : nonleap_days[mm]), "Error! Day is too large.\n");
-  ekat_require_msg (ss>=0, "Error! Seconds are negative.\n");
-  ekat_require_msg (ss<constants::seconds_per_day, "Error! Seconds are too large.\n");
+  EKAT_REQUIRE_MSG (mm>=0, "Error! Month is negative.\n");
+  EKAT_REQUIRE_MSG (mm<=11, "Error! Month is too large.\n");
+  EKAT_REQUIRE_MSG (dd>=0, "Error! Day is negative.\n");
+  EKAT_REQUIRE_MSG (dd<(is_leap(m_yy) ? leap_days[mm] : nonleap_days[mm]), "Error! Day is too large.\n");
+  EKAT_REQUIRE_MSG (ss>=0, "Error! Seconds are negative.\n");
+  EKAT_REQUIRE_MSG (ss<constants::seconds_per_day, "Error! Seconds are too large.\n");
 
   // Adjust if input numbers are too large
   int carry;
@@ -100,7 +100,7 @@ std::string TimeStamp::to_string () const {
 }
 
 TimeStamp& TimeStamp::operator+=(const double seconds) {
-  ekat_require_msg(is_valid(), "Error! The time stamp contains uninitialized values.\n"
+  EKAT_REQUIRE_MSG(is_valid(), "Error! The time stamp contains uninitialized values.\n"
                                  "       To use this object, use operator= with a valid rhs first.\n");
 
   int carry;

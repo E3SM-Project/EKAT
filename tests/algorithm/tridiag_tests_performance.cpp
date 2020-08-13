@@ -20,7 +20,7 @@ std::string Solver::convert (Enum e) {
   switch (e) {
   case thomas: return "thomas";
   case cr: return "cr";
-  default: ekat_require_msg(false, "Not a valid solver: " << e);
+  default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
   }
 }
 
@@ -152,7 +152,7 @@ void run (const Input& in) {
   const bool on_gpu = ekat::util::OnGpu<Kokkos::DefaultExecutionSpace>::value;
   const int nA = in.oneA ? 1 : in.nrhs;
 
-  ekat_require_msg( ! in.pack || in.method != Solver::cr, "CR has no pack version.");
+  EKAT_REQUIRE_MSG( ! in.pack || in.method != Solver::cr, "CR has no pack version.");
 
   TridiagArrays<Real> A, Acopy;
   DataArrays<Real> B, X, Y;
@@ -210,7 +210,7 @@ void run (const Input& in) {
   switch (in.method) {
   case Solver::thomas: {
     if (on_gpu) {
-      ekat_require_msg(
+      EKAT_REQUIRE_MSG(
         in.oneA, "On GPU, only 1 A/team is supported in the Thomas algorithm.");
       t0 = gettime();
       const auto f = KOKKOS_LAMBDA (const MT& team) {

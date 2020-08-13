@@ -28,11 +28,11 @@ int main (int argc, char **argv) {
     while (getline(input,option,',')) {
       // Split option according to key=val
       auto pos = option.find('=');
-      ekat_require_msg(pos!=std::string::npos, "Error! Badly formatted command line options.\n");
+      EKAT_REQUIRE_MSG(pos!=std::string::npos, "Error! Badly formatted command line options.\n");
       std::string key = option.substr(0,pos);
       std::string val = option.substr(pos+1);
-      ekat_require_msg(key!="", "Error! Empty key found in the list of command line options.\n");
-      ekat_require_msg(val!="", "Error! Empty value for key '" + key + "'.\n");
+      EKAT_REQUIRE_MSG(key!="", "Error! Empty key found in the list of command line options.\n");
+      EKAT_REQUIRE_MSG(val!="", "Error! Empty value for key '" + key + "'.\n");
       ts.params[key] = val;
     }
   };
@@ -43,7 +43,7 @@ int main (int argc, char **argv) {
              ("list of parameters to forward to the test");
   catch_session.cli(cli);
 
-  ekat_require_msg(catch_session.applyCommandLine(argc,argv)==0,
+  EKAT_REQUIRE_MSG(catch_session.applyCommandLine(argc,argv)==0,
                      "Error! Something went wrong while parsing command line.\n");
 
   // If we are on a gpu build, we might have a test device id to use

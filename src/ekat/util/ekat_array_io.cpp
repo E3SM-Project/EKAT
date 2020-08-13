@@ -9,7 +9,7 @@ namespace util {
 template <typename Scalar>
 void write (const char* filename, Scalar* a, const int n) {
   FILEPtr fid(fopen(filename, "w"));
-  ekat_require_msg( fid, "Could not open " << filename << " for writing.");
+  EKAT_REQUIRE_MSG( fid, "Could not open " << filename << " for writing.");
   write<int>(&n, 1, fid);
   write<Scalar>(a, n, fid);
 }
@@ -17,10 +17,10 @@ void write (const char* filename, Scalar* a, const int n) {
 template <typename Scalar>
 void read (const char* filename, Scalar* a, const int n) {
   FILEPtr fid(fopen(filename, "r"));
-  ekat_require_msg( fid, "Could not open " << filename << " for reading.");
+  EKAT_REQUIRE_MSG( fid, "Could not open " << filename << " for reading.");
   int n_file;
   read<int>(&n_file, 1, fid);
-  ekat_require_msg(n_file == n, "Expected " << n << " but got " << n_file);
+  EKAT_REQUIRE_MSG(n_file == n, "Expected " << n << " but got " << n_file);
   read<Scalar>(a, n, fid);
 }
 } // namespace util

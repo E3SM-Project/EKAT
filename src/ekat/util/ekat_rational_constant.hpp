@@ -167,11 +167,11 @@ inline std::string to_string (const RationalConstant& rat, const Format fmt = Fo
       }
       break;
     case Format::Auto:
-      ekat_require_msg(rat.get_format()!=Format::Auto, "Error! No format specified in the rational constant.\n");
+      EKAT_REQUIRE_MSG(rat.get_format()!=Format::Auto, "Error! No format specified in the rational constant.\n");
       ss << to_string(rat,rat.get_format());
       break;
     default:
-      ekat_require_msg(false,"Error! Unrecognized format for printing RationalConstant.\n");
+      EKAT_REQUIRE_MSG(false,"Error! Unrecognized format for printing RationalConstant.\n");
       
   }
   return ss.str();

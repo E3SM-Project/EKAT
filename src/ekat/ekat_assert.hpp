@@ -19,7 +19,7 @@
  */
 
 // Internal do not call directly
-#define impl_throw(condition, msg, exception_type)                      \
+#define IMPL_THROW(condition, msg, exception_type)                      \
   do {                                                                  \
     if ( ! (condition) ) {                                              \
       std::stringstream _ss_;                                           \
@@ -29,32 +29,32 @@
     }                                                                   \
   } while(0)
 
-#define impl_kthrow(condition, msg)             \
+#define IMPL_KERNEL_THROW(condition, msg)             \
   do {                                          \
     if ( ! (condition) )                        \
       Kokkos::abort(#condition "\n" msg);       \
   } while (0)
 
 #ifndef NDEBUG
-#define ekat_assert(condition)                impl_throw(condition, "",  std::logic_error)
-#define ekat_assert_msg(condition, msg)       impl_throw(condition, msg, std::logic_error)
-#define ekat_kassert(condition)               impl_kthrow(condition, "")
-#define ekat_kassert_msg(condition, msg)      impl_kthrow(condition, msg)
+#define EKAT_ASSERT(condition)                      IMPL_THROW(condition, "",  std::logic_error)
+#define EKAT_ASSERT_MSG(condition, msg)             IMPL_THROW(condition, msg, std::logic_error)
+#define EKAT_KERNEL_ASSERT(condition)               IMPL_KERNEL_THROW(condition, "")
+#define EKAT_KERNEL_ASSERT_MSG(condition, msg)      IMPL_KERNEL_THROW(condition, msg)
 #else
-#define ekat_assert(condition)  ((void) (0))
-#define ekat_assert_msg(condition, msg)  ((void) (0))
-#define ekat_kassert(condition) ((void) (0))
-#define ekat_kassert_msg(condition, msg) ((void) (0))
+#define EKAT_ASSERT(condition)  ((void) (0))
+#define EKAT_ASSERT_MSG(condition, msg)  ((void) (0))
+#define EKAT_KERNEL_ASSERT(condition) ((void) (0))
+#define EKAT_KERNEL_ASSERT_MSG(condition, msg) ((void) (0))
 #endif
 
-#define ekat_require(condition)                 impl_throw(condition, "", std::logic_error)
-#define ekat_require_msg(condition, msg)        impl_throw(condition, msg, std::logic_error)
+#define EKAT_REQUIRE(condition)                       IMPL_THROW(condition, "", std::logic_error)
+#define EKAT_REQUIRE_MSG(condition, msg)              IMPL_THROW(condition, msg, std::logic_error)
 
-#define ekat_krequire(condition)                impl_kthrow(condition, "")
-#define ekat_krequire_msg(condition, msg)       impl_kthrow(condition, msg)
+#define EKAT_KERNEL_REQUIRE(condition)                IMPL_KERNEL_THROW(condition, "")
+#define EKAT_KERNEL_REQUIRE_MSG(condition, msg)       IMPL_KERNEL_THROW(condition, msg)
 
-#define ekat_error_msg(msg)                     ekat_require_msg(false, msg)
-#define ekat_kerror_msg(msg)                    ekat_krequire_msg(false, msg)
+#define EKAT_ERROR_MSG(msg)                           EKAT_REQUIRE_MSG(false, msg)
+#define EKAT_KERNEL_ERROR_MSG(msg)                    EKAT_KERNEL_REQUIRE_MSG(false, msg)
 
 // Macros to do asserts inside constexpr functions
 // This is not necessary with C++14, where constexpr functions are "regular"

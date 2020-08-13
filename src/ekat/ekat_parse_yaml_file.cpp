@@ -92,7 +92,7 @@ void parse_node<YAML::NodeType::Scalar> (
     const std::string& key,
     ParameterList& list)
 {
-  ekat_require_msg (node.Type()==YAML::NodeType::Scalar,
+  EKAT_REQUIRE_MSG (node.Type()==YAML::NodeType::Scalar,
                       "Error! Actual node type incompatible with template parameter.\n");
 
   // Extract scalar as string, then try some casts
@@ -115,7 +115,7 @@ void parse_node<YAML::NodeType::Sequence> (
     const std::string& key,
     ParameterList& list)
 {
-  ekat_require_msg (node.Type()==YAML::NodeType::Sequence,
+  EKAT_REQUIRE_MSG (node.Type()==YAML::NodeType::Sequence,
                       "Error! Actual node type incompatible with template parameter.\n");
 
   constexpr int str_type = 0;
@@ -132,7 +132,7 @@ void parse_node<YAML::NodeType::Sequence> (
                           ? dbl_type
                           : (is_bool(str) ? bool_type : str_type));
 
-    ekat_require_msg(seq_type==-1 || seq_type==ith_type,
+    EKAT_REQUIRE_MSG(seq_type==-1 || seq_type==ith_type,
                        "Error! Found a squence with entries of mixed types.\n"
                        "       Common case is a sequence with int and doubles, such as\n"
                        "          [ 2.3 1 ]\n");
@@ -179,7 +179,7 @@ void parse_node<YAML::NodeType::Map> (
     ParameterList& list)
 {
   using YNT = YAML::NodeType;
-  ekat_require_msg (node.Type()==YNT::Map,
+  EKAT_REQUIRE_MSG (node.Type()==YNT::Map,
                       "Error! Actual node type incompatible with template parameter.\n");
 
   ParameterList& sublist = list.sublist(key);
@@ -220,7 +220,7 @@ void parse_yaml_file (const std::string& fname, ParameterList& params) {
   try {
     root = YAML::LoadFile(fname);
   } catch (YAML::BadFile&) {
-    ekat_error_msg ("Error! Something went wrong while opening file " + fname + "'.\n");
+    EKAT_ERROR_MSG ("Error! Something went wrong while opening file " + fname + "'.\n");
   }
   ParameterList temp(params.name());
   parse_node<YAML::NodeType::Map> (root, temp.name(), temp);
