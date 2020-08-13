@@ -107,7 +107,8 @@ struct Solve<true, APack, DataPack> {
     assert(nprob > 1 || APack::n == 1);
     assert(nprob > 1 || A.extent_int(2) == 1);
 
-    using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
+    using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace,
+                                          Kokkos::LaunchBounds<512,2> >;
     using MT = typename TeamPolicy::member_type;
     TeamPolicy policy(1, tc.n_kokkos_thread, tc.n_kokkos_vec);
 
