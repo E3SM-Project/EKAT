@@ -243,7 +243,9 @@ macro (SetCompilerFlags)
 
   # NOTE: This won't work on batch machines where the architecture of the
   # interactive node is different than the compute nodes.
-  if (NOT DEFINED AVX_VERSION)
+  # Also, disable this on KNL, since FindAVX will find 512, but -xCORE-AVX512
+  # only works on skx.
+  if (NOT DEFINED AVX_VERSION AND NOT KOKKOS_ARCH STREQUAL "KNL")
     include(FindAVX)
     FindAVX()
     if (AVX512_FOUND)
