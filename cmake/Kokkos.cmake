@@ -18,15 +18,11 @@ if (NOT IS_EKAT_KOKKOS_BUILT)
   endif()
   set(Kokkos_BINARY_DIR ${CMAKE_BINARY_DIR}/externals/kokkos)
 
-  # We want Kokkos to be in debug mode if the host project is in debug mode. This is a bit hacky
-  # since we can't use Kokkos_GMAKE_DEVICES yet.
-  if (NOT DEFINED Kokkos_ENABLE_Debug)
-    set(NO_DEBUG_ARGS Volta70 Pascal60)
-    if (CMAKE_BUILD_TYPE_ci STREQUAL "debug" AND NOT Kokkos_ARCH IN_LIST NO_DEBUG_ARGS)
-      set(Kokkos_ENABLE_Debug TRUE)
-    else()
-      set(Kokkos_ENABLE_Debug FALSE)
-    endif()
+  # Enable Kokkos debug if the host project is in debug mode.
+  if (CMAKE_BUILD_TYPE_ci STREQUAL "debug")
+    set(Kokkos_ENABLE_Debug TRUE  CACHE BOOL "Enable Kokkos Debug")
+  else()
+    set(Kokkos_ENABLE_Debug FALSE CACHE BOOL "Enable Kokkos Debug")
   endif()
 
   add_subdirectory(${Kokkos_SOURCE_DIR} ${Kokkos_BINARY_DIR})
