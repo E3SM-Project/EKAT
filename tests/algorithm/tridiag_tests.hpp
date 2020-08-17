@@ -91,7 +91,7 @@ int matvec (TridiagDiag dl, TridiagDiag d, TridiagDiag du, XArray X, YArray Y,
 }
 
 template <typename Array>
-Real reldif (const Array& a, const Array& b, const int nrhs) {
+Real rel_diff (const Array& a, const Array& b, const int nrhs) {
   assert(a.extent_int(0) == b.extent_int(0));
   assert(a.extent_int(1) == b.extent_int(1));
   assert(a.rank == 2);

@@ -393,7 +393,7 @@ Real relerr (Data<APack, DataPack>& dt) {
   matvec(dl, d, du, scalarize(Xm), scalarize(Ym), dt.nprob, dt.nrhs);
   const auto Bm = create_mirror_view(dt.B);
   deep_copy(Bm, dt.B);
-  const auto re = reldif(scalarize(Bm), scalarize(Ym), dt.nrhs);
+  const auto re = rel_diff(scalarize(Bm), scalarize(Ym), dt.nrhs);
   return re;
 }
 
@@ -487,7 +487,7 @@ void run_property_test_on_config (const TestConfig& tc) {
           std::stringstream ss;
           ss << Solver::convert(tc.solver) << " " << tc.n_kokkos_thread
              << " " << tc.n_kokkos_vec << " | " << nrow << " " << nrhs << " "
-             << A_many << " | log10 reldif " << std::log10(re);
+             << A_many << " | log10 rel_diff " << std::log10(re);
           std::cout << "FAIL: " << ss.str() << "\n";
         }
         REQUIRE(pass);

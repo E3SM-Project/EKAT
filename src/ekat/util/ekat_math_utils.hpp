@@ -73,7 +73,7 @@ void set_min_max (const Integer& lim0, const Integer& lim1,
 }
 
 template <typename Real> KOKKOS_INLINE_FUNCTION
-Real reldif (const Real& a, const Real& b) {
+Real rel_diff (const Real& a, const Real& b) {
   return std::abs(b - a)/std::abs(a);
 }
 

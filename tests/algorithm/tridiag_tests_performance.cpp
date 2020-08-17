@@ -441,7 +441,7 @@ void run (const Input& in) {
            subview(Xm, in.nprob-1, ALL(), ALL()),
            subview(Ym, in.nprob-1, ALL(), ALL()),
            nA, in.nrhs);
-    re = reldif(subview(Bm, in.nprob-1, ALL(), ALL()),
+    re = rel_diff(subview(Bm, in.nprob-1, ALL(), ALL()),
                 subview(Ym, in.nprob-1, ALL(), ALL()),
                 in.nrhs);
   }
