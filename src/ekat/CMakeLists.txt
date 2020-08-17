@@ -5,7 +5,7 @@ set(EKAT_SOURCES
   ekat_parameter_list.cpp
   ekat_parse_yaml_file.cpp
   util/ekat_array_io.cpp
-  util/array_io_mod.f90
+  util/ekat_array_io_mod.f90
   util/ekat_string_utils.cpp
   util/ekat_arch.cpp
   util/ekat_test_utils.cpp
