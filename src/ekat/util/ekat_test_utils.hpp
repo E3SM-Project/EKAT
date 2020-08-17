@@ -1,7 +1,7 @@
 #ifndef EKAT_TEST_UTILS_HPP
 #define EKAT_TEST_UTILS_HPP
 
-#include <ekat/ekat_pack.hpp>
+#include "ekat/ekat_pack.hpp"
 
 #include <map>
 

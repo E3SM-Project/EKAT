@@ -9,7 +9,7 @@
 #include "ekat/ekat_scalar_traits.hpp"
 #include "ekat/ekat_type_traits.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 namespace ekat {
 namespace pack {

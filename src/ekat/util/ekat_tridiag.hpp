@@ -3,7 +3,7 @@
 
 #include "ekat/util/ekat_math_utils.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #include <cassert>
 

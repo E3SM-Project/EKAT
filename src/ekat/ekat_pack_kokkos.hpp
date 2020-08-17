@@ -5,7 +5,7 @@
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
 #include "ekat/ekat.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #include <vector>
 

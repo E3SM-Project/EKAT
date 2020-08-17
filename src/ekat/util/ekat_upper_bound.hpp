@@ -1,7 +1,7 @@
 #ifndef EKAT_UPPER_BOUND_HPP
 #define EKAT_UPPER_BOUND_HPP
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #ifndef KOKKOS_ENABLE_CUDA
 # include <algorithm>

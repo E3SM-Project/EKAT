@@ -3,7 +3,7 @@
 
 #include "ekat/ekat.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #ifndef KOKKOS_ENABLE_CUDA
 # include <cmath>

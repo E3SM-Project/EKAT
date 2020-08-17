@@ -2,7 +2,7 @@
 #include "ekat/ekat_assert.hpp"
 #include "ekat/util/ekat_arch.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #include <vector>
 

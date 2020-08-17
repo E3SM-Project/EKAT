@@ -3,7 +3,7 @@
 
 #include "ekat/ekat_assert.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #include <limits>
 #include <climits>
