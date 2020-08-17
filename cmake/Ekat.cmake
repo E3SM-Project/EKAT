@@ -1,4 +1,4 @@
-# This cmake utility allows you to build ekat just by doing
+# This cmake utility allows you to build ekat just by adding
 #
 #   Include(Ekat)
 #   BuildEkat(/path/to/ekat/source)

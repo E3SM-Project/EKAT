@@ -104,7 +104,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 
 /*
  * TeamUtils contains utilities for getting concurrency info for thread teams.
- * You cannot use it directly (protected c-tor. You must use TeamUtils.
+ * You cannot use it directly (protected c-tor). You must use TeamUtils.
  * NOTE: the ValueType template arg is the type of scalars of the views that
  *       you intend to do parallel work on. We need to know that, because if
  *       the ValueType=float, we have 2x concurrency available on GPU
