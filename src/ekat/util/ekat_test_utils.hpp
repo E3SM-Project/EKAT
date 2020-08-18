@@ -60,7 +60,7 @@ void catch2_req_pk_sensitive(const Scalar lhs, const Scalar rhs)
   }
 }
 
-// Check whether a string (from argv) mathces a predefined option name,
+// Check whether a string (from argv) matches a predefined option name,
 // either in its short or long form. It is meant to check something like this:
 //
 //   bool is_num_problems = argv_matches(argv[1], "-np", "--num_problems");

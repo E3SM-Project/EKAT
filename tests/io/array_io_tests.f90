@@ -5,14 +5,14 @@ contains
   function test_array_io() result(nerr) bind(c)
     ! Precision independent use clauses
     use iso_c_binding
-    use array_io_mod, only: array_io_file_exists
+    use ekat_array_io_mod, only: array_io_file_exists
 
 #ifdef EKAT_DOUBLE_PRECISION
     use iso_c_binding, only: c_real=>c_double
-    use array_io_mod, only: array_io_write=>array_io_write_double, array_io_read=>array_io_read_double
+    use ekat_array_io_mod, only: array_io_write=>array_io_write_double, array_io_read=>array_io_read_double
 #elif defined(EKAT_SINGLE_PRECISION)
     use iso_c_binding, only: c_real=>c_float
-    use array_io_mod, only: array_io_write=>array_io_write_float, array_io_read=>array_io_read_float
+    use ekat_array_io_mod, only: array_io_write=>array_io_write_float, array_io_read=>array_io_read_float
 #endif
 
     integer(kind=c_int) :: nerr

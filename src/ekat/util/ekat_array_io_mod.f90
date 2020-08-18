@@ -1,4 +1,4 @@
-module array_io_mod
+module ekat_array_io_mod
   interface
      function array_io_file_exists(filename) result(exists) bind(c)
        use iso_c_binding
@@ -36,4 +36,4 @@ module array_io_mod
        logical(kind=c_bool) :: ok
      end function array_io_read_float
   end interface
-end module array_io_mod
+end module ekat_array_io_mod
