@@ -3,10 +3,10 @@
 #include "tridiag_tests.hpp"
 
 extern "C" {
-  void tridiag_diagdom_bfb_a1x1(int n, ekat::Real* dl, ekat::Real* d,
-                                ekat::Real* du, ekat::Real* x);
-  void tridiag_diagdom_bfb_a1xm(int n, int nrhs, ekat::Real* dl, ekat::Real* d,
-                                ekat::Real* du, ekat::Real* x);
+  void tridiag_diagdom_bfb_a1x1(int n, Real* dl, Real* d,
+                                Real* du, Real* x);
+  void tridiag_diagdom_bfb_a1xm(int n, int nrhs, Real* dl, Real* d,
+                                Real* du, Real* x);
 }
 
 namespace ekat {
@@ -29,7 +29,7 @@ struct Solver {
     case cr_scalar: return "cr_scalar";
     case bfb: return "bfb";
     case bfbf90: return "bfbf90";
-    default: ekat_require_msg(false, "Not a valid solver: " << e);
+    default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
     }
   }
 
@@ -107,7 +107,8 @@ struct Solve<true, APack, DataPack> {
     assert(nprob > 1 || APack::n == 1);
     assert(nprob > 1 || A.extent_int(2) == 1);
 
-    using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
+    using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace,
+                                          Kokkos::LaunchBounds<512,2> >;
     using MT = typename TeamPolicy::member_type;
     TeamPolicy policy(1, tc.n_kokkos_thread, tc.n_kokkos_vec);
 
@@ -263,13 +264,13 @@ struct Solve<true, APack, DataPack> {
                                    dl.data(), d.data(), du.data(), Xs.data());
         }
       } else {
-        ekat_require_msg(false, "bfbf90 does not support nprob > 1");
+        EKAT_REQUIRE_MSG(false, "bfbf90 does not support nprob > 1");
       }
       deep_copy(A, Am);
       deep_copy(X, Xm);
     } break;
     default:
-      ekat_require_msg(false, "Same pack size: " << Solver::convert(tc.solver));
+      EKAT_REQUIRE_MSG(false, "Same pack size: " << Solver::convert(tc.solver));
     }
   }
 };
@@ -329,7 +330,7 @@ struct Solve<false, APack, DataPack> {
       Kokkos::parallel_for(policy, f);
     } break;
     default:
-      ekat_require_msg(false, "Different pack size: " << Solver::convert(tc.solver));
+      EKAT_REQUIRE_MSG(false, "Different pack size: " << Solver::convert(tc.solver));
     }
   }
 };
@@ -392,7 +393,7 @@ Real relerr (Data<APack, DataPack>& dt) {
   matvec(dl, d, du, scalarize(Xm), scalarize(Ym), dt.nprob, dt.nrhs);
   const auto Bm = create_mirror_view(dt.B);
   deep_copy(Bm, dt.B);
-  const auto re = reldif(scalarize(Bm), scalarize(Ym), dt.nrhs);
+  const auto re = rel_diff(scalarize(Bm), scalarize(Ym), dt.nrhs);
   return re;
 }
 
@@ -433,7 +434,6 @@ template <int A_pack_size, int data_pack_size>
 void run_property_test_on_config (const TestConfig& tc) {
   using namespace ekat::tridiag::test;
 
-  using ekat::Real;
   using APack = ekat::pack::Pack<Real, A_pack_size>;
   using DataPack = ekat::pack::Pack<Real, data_pack_size>;
 
@@ -487,7 +487,7 @@ void run_property_test_on_config (const TestConfig& tc) {
           std::stringstream ss;
           ss << Solver::convert(tc.solver) << " " << tc.n_kokkos_thread
              << " " << tc.n_kokkos_vec << " | " << nrow << " " << nrhs << " "
-             << A_many << " | log10 reldif " << std::log10(re);
+             << A_many << " | log10 rel_diff " << std::log10(re);
           std::cout << "FAIL: " << ss.str() << "\n";
         }
         REQUIRE(pass);
@@ -505,7 +505,6 @@ template <int A_pack_size, int data_pack_size>
 void run_bfb_test_on_config (TestConfig& tc) {
   using namespace ekat::tridiag::test;
 
-  using ekat::Real;
   using APack = ekat::pack::Pack<Real, A_pack_size>;
   using DataPack = ekat::pack::Pack<Real, data_pack_size>;
 
@@ -566,14 +565,14 @@ void run_bfb_test () {
 
 TEST_CASE("property", "tridiag") {
   ekat::tridiag::test::correct::run_property_test<1,1>();
-  if (EKAT_PACK_SIZE > 1) {
-    ekat::tridiag::test::correct::run_property_test<1, EKAT_PACK_SIZE>();
-    ekat::tridiag::test::correct::run_property_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
+  if (EKAT_TEST_PACK_SIZE > 1) {
+    ekat::tridiag::test::correct::run_property_test<1, EKAT_TEST_PACK_SIZE>();
+    ekat::tridiag::test::correct::run_property_test<EKAT_TEST_PACK_SIZE, EKAT_TEST_PACK_SIZE>();
   }
 }
 
 TEST_CASE("bfb", "tridiag") {
   ekat::tridiag::test::correct::run_bfb_test<1,1>();
-  if (EKAT_PACK_SIZE > 1)
-    ekat::tridiag::test::correct::run_bfb_test<EKAT_PACK_SIZE, EKAT_PACK_SIZE>();
+  if (EKAT_TEST_PACK_SIZE > 1)
+    ekat::tridiag::test::correct::run_bfb_test<EKAT_TEST_PACK_SIZE, EKAT_TEST_PACK_SIZE>();
 }

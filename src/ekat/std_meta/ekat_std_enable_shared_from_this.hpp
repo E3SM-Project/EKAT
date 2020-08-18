@@ -60,7 +60,7 @@ public:
 
   // Make sure the input pointer is indeed a pointer to self
   void setSelfPointer (const std::shared_ptr<T>& ptr) {
-    ekat_require_msg(ptr.get()==this, "Error! Cannot set self pointer to something different from 'this'.\n");
+    EKAT_REQUIRE_MSG(ptr.get()==this, "Error! Cannot set self pointer to something different from 'this'.\n");
     m_self = ptr;
   }
 

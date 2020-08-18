@@ -4,8 +4,9 @@
 
 #include <sstream>
 
+#include "ekat/ekat_assert.hpp"
 #include "ekat/util/ekat_arch.hpp"
-#include "ekat/ekat_types.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 
 /*
  * Implementations of ekat_arch.hpp functions.
@@ -28,12 +29,11 @@ std::string active_avx_string () {
   return s;
 }
 
-std::string config_string () {
+std::string ekat_config_string () {
   std::stringstream ss;
   ss << "ExecSpace name: " << DefaultDevice::execution_space::name() << "\n";
   ss << "ExecSpace initialized: " << (DefaultDevice::execution_space::impl_is_initialized() ? "yes" : "no") << "\n";
-  ss << "sizeof(Real) " << sizeof(Real)
-     << " avx " << active_avx_string()
+  ss << " avx " << active_avx_string()
      // << " packsize " << EKAT_PACK_SIZE
      << " compiler " <<
 #if defined __INTEL_COMPILER
@@ -43,13 +43,10 @@ std::string config_string () {
 #else
     "unknown"
 #endif
-     << " FPE " <<
-#ifdef EKAT_FPE
-    "on"
-#else
-    "off"
-#endif
-     << " #threads " <<
+     << " default FPE mask " <<
+      ( ekat_default_fpes == 0 ? "0 (NONE) \n" :
+        std::to_string(ekat_default_fpes) + " (FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW)")
+     << " #host threads " <<
 #ifdef KOKKOS_ENABLE_OPENMP
          Kokkos::OpenMP::concurrency()
 #elif defined _OPENMP

@@ -5,7 +5,19 @@ set (PACK_TESTS_SRCS
   pack_tests.cpp
   pack_kokkos_tests.cpp
 )
-EkatCreateUnitTest(packs "${PACK_TESTS_SRCS}"
-  LIBS ekat
-  INCLUDE_DIRS "${EKAT_INCLUDE_DIRS}"
-)
+
+if (EKAT_TEST_DOUBLE_PRECISION)
+  EkatCreateUnitTest(packs${DP_POSTFIX} "${PACK_TESTS_SRCS}"
+    LIBS ekat
+    INCLUDE_DIRS "${EKAT_INCLUDE_DIRS}"
+  )
+  target_compile_definitions(packs${DP_POSTFIX} PRIVATE EKAT_TEST_DOUBLE_PRECISION)
+endif ()
+
+if (EKAT_TEST_SINGLE_PRECISION)
+  EkatCreateUnitTest(packs${SP_POSTFIX} "${PACK_TESTS_SRCS}"
+    LIBS ekat
+    INCLUDE_DIRS "${EKAT_INCLUDE_DIRS}"
+  )
+  target_compile_definitions(packs${SP_POSTFIX} PRIVATE EKAT_TEST_SINGLE_PRECISION)
+endif ()

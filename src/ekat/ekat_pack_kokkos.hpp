@@ -1,10 +1,11 @@
 #ifndef EKAT_PACK_KOKKOS_HPP
 #define EKAT_PACK_KOKKOS_HPP
 
-#include "ekat_pack.hpp"
-#include "ekat_config.h"
+#include "ekat/ekat_pack.hpp"
+#include "ekat/kokkos/ekat_kokkos_utils.hpp"
+#include "ekat/ekat.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 #include <vector>
 
@@ -227,7 +228,7 @@ repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
   static_assert(new_pack_size > 0 &&
                 new_pack_size % old_pack_size == 0,
                 "Old pack size must divide new pack size.");
-  ekat_kassert(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
+  EKAT_KERNEL_ASSERT(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
   return util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >(
     reinterpret_cast<Pack<T, new_pack_size>*>(vp.data()),
     vp.extent_int(0) / (new_pack_size / old_pack_size));
@@ -241,24 +242,6 @@ KOKKOS_FORCEINLINE_FUNCTION
 util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
   return vp;
-}
-
-template <typename T>
-using BigPack = Pack<T, EKAT_PACK_SIZE>;
-template <typename T>
-using SmallPack = Pack<T, EKAT_SMALL_PACK_SIZE>;
-using IntSmallPack = SmallPack<Int>;
-
-template <typename T, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<SmallPack<T>**, Parms...> >
-smallize (const Kokkos::View<BigPack<T>**, Parms...>& vp) {
-  return repack<EKAT_SMALL_PACK_SIZE>(vp);
-}
-
-template <typename T, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<SmallPack<T>*, Parms...> >
-smallize (const Kokkos::View<BigPack<T>*, Parms...>& vp) {
-  return repack<EKAT_SMALL_PACK_SIZE>(vp);
 }
 
 //

@@ -2,10 +2,11 @@
 #define EKAT_TRIDIAG_TESTS_HPP
 
 #include "ekat/util/ekat_tridiag.hpp"
-#include "ekat/util/ekat_utils.hpp"
 #include "ekat/util/ekat_arch.hpp"
 #include "ekat/ekat_pack.hpp"
 #include "ekat/ekat_pack_kokkos.hpp"
+
+#include "ekat_test_config.h"
 
 namespace ekat {
 namespace tridiag {
@@ -90,17 +91,17 @@ int matvec (TridiagDiag dl, TridiagDiag d, TridiagDiag du, XArray X, YArray Y,
 }
 
 template <typename Array>
-ekat::Real reldif (const Array& a, const Array& b, const int nrhs) {
+Real rel_diff (const Array& a, const Array& b, const int nrhs) {
   assert(a.extent_int(0) == b.extent_int(0));
   assert(a.extent_int(1) == b.extent_int(1));
   assert(a.rank == 2);
   assert(b.rank == 2);
-  ekat::Real num = 0, den = 0;
+  Real num = 0, den = 0;
   for (int i = 0; i < a.extent_int(0); ++i)
     for (int j = 0; j < nrhs; ++j) {
       if (std::isnan(a(i,j)) || std::isnan(b(i,j)) ||
           std::isinf(a(i,j)) || std::isinf(b(i,j))) {
-        return std::numeric_limits<ekat::Real>::infinity();
+        return std::numeric_limits<Real>::infinity();
       }
       num = std::max(num, std::abs(a(i,j) - b(i,j)));
       den = std::max(den, std::abs(a(i,j)));
@@ -125,7 +126,7 @@ struct Input {
   bool parse(int argc, char** argv);
 };
 
-template <typename Real>
+template <typename RealType>
 void run(const Input& in);
 }
 

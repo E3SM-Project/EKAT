@@ -3,8 +3,8 @@
 
 namespace ekat {
 
-void initialize_ekat_session();
-void initialize_ekat_session(int argc, char **argv);
+void initialize_ekat_session(bool print_config = true);
+void initialize_ekat_session(int argc, char **argv, bool print_config = true);
 
 // A version callable from Fortran, which can help
 // in case of errors to correctly shut down Kokkos

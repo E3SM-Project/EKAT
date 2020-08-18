@@ -1,11 +1,10 @@
 #ifndef EKAT_LIN_INTERP_HPP
 #define EKAT_LIN_INTERP_HPP
 
-#include "ekat/ekat_types.hpp"
-#include "ekat/util/ekat_utils.hpp"
 #include "ekat/util/ekat_upper_bound.hpp"
 #include "ekat/ekat_assert.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/ekat_pack.hpp"
 #include "ekat/ekat_pack_kokkos.hpp"
 
@@ -34,18 +33,23 @@ namespace util {
       li.lin_interp(team_member, x1col, x2col, subview(y1c, i), subview(y2c, i));
     });
 
+  Note: testing has shown that LinInterp runs better on SKX with pack_size=1.
+
  */
 
-template <typename ScalarT, typename DeviceT=DefaultDevice>
+template <typename ScalarT, int PackSize, typename DeviceT=DefaultDevice>
 struct LinInterp
 {
   //
   // ------- Types --------
   //
 
+  // Expose input template args
   using Scalar = ScalarT;
   using Device = DeviceT;
+  static constexpr int LI_PACKN = PackSize;
 
+  // Other utility types
   using KT = KokkosTypes<Device>;
 
   template <typename S>
@@ -56,9 +60,6 @@ struct LinInterp
   using ExeSpace    = typename KT::ExeSpace;
   using MemberType  = typename KT::MemberType;
   using TeamPolicy  = typename KT::TeamPolicy;
-
-  // Testing has shown that li runs better on SKX with pk=1
-  static constexpr int LI_PACKN = EKAT_POSSIBLY_NO_PACK_SIZE;
 
   using Pack    = ekat::pack::Pack<Scalar, LI_PACKN>;
   using IntPack = ekat::pack::Pack<int, LI_PACKN>;
@@ -113,9 +114,9 @@ struct LinInterp
   view_2d<IntPack> m_indx_map; // [x2-idx] -> x1-idx
 };
 
-#include "ekat_lin_interp_impl.hpp"
-
 } //namespace util
 } //namespace ekat
 
-#endif
+#include "ekat_lin_interp_impl.hpp"
+
+#endif // EKAT_LIN_INTERP_HPP

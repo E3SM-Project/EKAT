@@ -3,6 +3,7 @@
 #include "ekat/util/ekat_lin_interp.hpp"
 #include "ekat/util/ekat_test_utils.hpp"
 
+#include "ekat_test_config.h"
 #include <random>
 #include <vector>
 #include <algorithm>
@@ -10,13 +11,12 @@
 extern "C" {
 
 // This will link to the fortran reference implementation
-void linear_interp_c(const ekat::Real* x1, const ekat::Real* x2, const ekat::Real* y1, ekat::Real* y2, int km1, int km2, int ncol, ekat::Real minthresh);
+void linear_interp_c(const Real* x1, const Real* x2, const Real* y1, Real* y2, int km1, int km2, int ncol, Real minthresh);
 
 }
 
 namespace {
 
-using ekat::Real;
 using vector_2d_t = std::vector<std::vector<Real> >;
 
 const Real* flatten(const vector_2d_t& data)
@@ -85,8 +85,8 @@ TEST_CASE("lin_interp", "soak") {
       populate_li_input(km1, km2, x1[i].data(), y1[i].data(), x2[i].data(), &generator);
     }
 
-    using LIV = ekat::util::LinInterp<Real>;
-    using Pack = ekat::pack::BigPack<Real>;
+    using LIV = ekat::util::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
+    using Pack = ekat::pack::Pack<Real,EKAT_TEST_PACK_SIZE>;
     LIV vect(ncol, km1, km2, minthresh);
     const int km1_pack = ekat::pack::npack<Pack>(km1);
     const int km2_pack = ekat::pack::npack<Pack>(km2);
@@ -180,7 +180,7 @@ TEST_CASE("lin_interp", "soak") {
       Kokkos::deep_copy(y2kvm, y2kv);
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km2; ++j) {
-          ekat::util::catch2_req_pk_sensitive<ekat::util::StrictFP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
+          ekat::util::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
         }
       }
     }

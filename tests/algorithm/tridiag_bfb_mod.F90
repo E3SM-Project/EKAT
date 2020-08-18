@@ -1,5 +1,4 @@
-#include "ekat_config.f"
-#ifdef EKAT_DOUBLE_PRECISION
+#ifdef EKAT_TEST_DOUBLE_PRECISION
 # define c_real c_double
 #else
 # define c_real c_float

@@ -2,6 +2,10 @@
 
 #include "tridiag_tests.hpp"
 
+#include "ekat/util/ekat_test_utils.hpp"
+
+#include "ekat_test_config.h"
+
 namespace ekat {
 namespace tridiag {
 namespace test {
@@ -16,7 +20,7 @@ std::string Solver::convert (Enum e) {
   switch (e) {
   case thomas: return "thomas";
   case cr: return "cr";
-  default: ekat_require_msg(false, "Not a valid solver: " << e);
+  default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
   }
 }
 
@@ -33,30 +37,30 @@ Input::Input ()
 {}
 
 bool Input::parse (int argc, char** argv) {
-  using ekat::util::eq;
+  using ekat::util::argv_matches;
   for (int i = 1; i < argc; ++i) {
-    if (eq(argv[i], "-m", "--method")) {
+    if (argv_matches(argv[i], "-m", "--method")) {
       expect_another_arg(i, argc);
       method = Solver::convert(argv[++i]);
       if (method == Solver::error) {
         std::cout << "Not a solver: " << argv[i] << "\n";
         return false;
       }
-    } else if (eq(argv[i], "-np", "--nprob")) {
+    } else if (argv_matches(argv[i], "-np", "--nprob")) {
       expect_another_arg(i, argc);
       nprob = std::atoi(argv[++i]);
-    } else if (eq(argv[i], "-nr", "--nrow")) {
+    } else if (argv_matches(argv[i], "-nr", "--nrow")) {
       expect_another_arg(i, argc);
       nrow = std::atoi(argv[++i]);
-    } else if (eq(argv[i], "-nc", "--nrhs")) {
+    } else if (argv_matches(argv[i], "-nc", "--nrhs")) {
       expect_another_arg(i, argc);
       nrhs = std::atoi(argv[++i]);
-    } else if (eq(argv[i], "-1a", "--oneA")) {
+    } else if (argv_matches(argv[i], "-1a", "--oneA")) {
       oneA = true;
-    } else if (eq(argv[i], "-nw", "--nwarp")) {
+    } else if (argv_matches(argv[i], "-nw", "--nwarp")) {
       expect_another_arg(i, argc);
       nwarp = std::atoi(argv[++i]);
-    } else if (eq(argv[i], "-nop", "--nopack")) {
+    } else if (argv_matches(argv[i], "-nop", "--nopack")) {
       pack = false;
     } else {
       std::cout << "Unexpected arg: " << argv[i] << "\n";
@@ -134,8 +138,8 @@ void run (const Input& in) {
   using ekat::pack::npack;
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
   using MT = typename TeamPolicy::member_type;
-  using APack = ekat::pack::Pack<Real, EKAT_SMALL_PACK_SIZE>;
-  using DataPack = ekat::pack::Pack<Real, EKAT_SMALL_PACK_SIZE>;
+  using APack = ekat::pack::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
+  using DataPack = ekat::pack::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
 
   const auto gettime = [&] () {
     return std::chrono::steady_clock::now();
@@ -148,7 +152,7 @@ void run (const Input& in) {
   const bool on_gpu = ekat::util::OnGpu<Kokkos::DefaultExecutionSpace>::value;
   const int nA = in.oneA ? 1 : in.nrhs;
 
-  ekat_require_msg( ! in.pack || in.method != Solver::cr, "CR has no pack version.");
+  EKAT_REQUIRE_MSG( ! in.pack || in.method != Solver::cr, "CR has no pack version.");
 
   TridiagArrays<Real> A, Acopy;
   DataArrays<Real> B, X, Y;
@@ -206,7 +210,7 @@ void run (const Input& in) {
   switch (in.method) {
   case Solver::thomas: {
     if (on_gpu) {
-      ekat_require_msg(
+      EKAT_REQUIRE_MSG(
         in.oneA, "On GPU, only 1 A/team is supported in the Thomas algorithm.");
       t0 = gettime();
       const auto f = KOKKOS_LAMBDA (const MT& team) {
@@ -437,7 +441,7 @@ void run (const Input& in) {
            subview(Xm, in.nprob-1, ALL(), ALL()),
            subview(Ym, in.nprob-1, ALL(), ALL()),
            nA, in.nrhs);
-    re = reldif(subview(Bm, in.nprob-1, ALL(), ALL()),
+    re = rel_diff(subview(Bm, in.nprob-1, ALL(), ALL()),
                 subview(Ym, in.nprob-1, ALL(), ALL()),
                 in.nrhs);
   }
@@ -445,7 +449,7 @@ void run (const Input& in) {
     std::cout << "run: " << " re " << re << "\n";
 }
 
-template void run<ekat::Real>(const Input&);
+template void run<Real>(const Input&);
 
 } // namespace perf
 } // namespace test

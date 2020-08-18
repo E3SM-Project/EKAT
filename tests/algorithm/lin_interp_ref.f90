@@ -1,12 +1,10 @@
-#include "ekat_config.f"
-
 module ekat_ut
 
   use iso_c_binding, only: c_int, c_double, c_float
 
   implicit none
 
-#ifdef EKAT_DOUBLE_PRECISION
+#ifdef EKAT_TEST_DOUBLE_PRECISION
   integer, parameter :: c_real = c_double
 #else
   integer, parameter :: c_real = c_float

@@ -1,7 +1,14 @@
+#ifndef EKAT_LIN_INTERP_HPP
+#include "ekat_lin_interp.hpp"
+#endif
+
+namespace ekat {
+namespace util {
+
 // Never include this header directly, only ekat_lin_interp.hpp should include it
 
-template <typename ScalarT, typename DeviceT>
-LinInterp<ScalarT, DeviceT>::LinInterp(int ncol, int km1, int km2, Scalar minthresh) :
+template <typename ScalarT, int PackSize, typename DeviceT>
+LinInterp<ScalarT, PackSize, DeviceT>::LinInterp(int ncol, int km1, int km2, Scalar minthresh) :
   m_ncol(ncol),
   m_km1(km1),
   m_km2(km2),
@@ -12,10 +19,10 @@ LinInterp<ScalarT, DeviceT>::LinInterp(int ncol, int km1, int km2, Scalar minthr
   m_indx_map("m_indx_map", ncol, ekat::pack::npack<IntPack>(km2))
 {}
 
-template<typename ScalarT, typename DeviceT>
+template <typename ScalarT, int PackSize, typename DeviceT>
 template<typename V>
 KOKKOS_INLINE_FUNCTION
-void LinInterp<ScalarT, DeviceT>::setup(const MemberType& team,
+void LinInterp<ScalarT, PackSize, DeviceT>::setup(const MemberType& team,
                                         const V& x1,
                                         const V& x2) const
 {
@@ -23,10 +30,10 @@ void LinInterp<ScalarT, DeviceT>::setup(const MemberType& team,
 }
 
 // Linearly interpolate y(x1) onto coordinates x2
-template <typename ScalarT, typename DeviceT>
+template <typename ScalarT, int PackSize, typename DeviceT>
 template <typename V>
 KOKKOS_INLINE_FUNCTION
-void LinInterp<ScalarT, DeviceT>::lin_interp(const MemberType& team,
+void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(const MemberType& team,
                                              const V& x1,
                                              const V& x2,
                                              const V& y1,
@@ -40,9 +47,9 @@ void LinInterp<ScalarT, DeviceT>::lin_interp(const MemberType& team,
                   ekat::pack::repack<Pack::n>(y2));
 }
 
-template <typename ScalarT, typename DeviceT>
+template <typename ScalarT, int PackSize, typename DeviceT>
 KOKKOS_INLINE_FUNCTION
-void LinInterp<ScalarT, DeviceT>::lin_interp_impl(
+void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
   const MemberType& team,
   const LinInterp& liv,
   const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
@@ -79,9 +86,9 @@ void LinInterp<ScalarT, DeviceT>::lin_interp_impl(
     });
 }
 
-template <typename ScalarT, typename DeviceT>
+template <typename ScalarT, int PackSize, typename DeviceT>
 KOKKOS_INLINE_FUNCTION
-void LinInterp<ScalarT, DeviceT>::setup_impl(
+void LinInterp<ScalarT, PackSize, DeviceT>::setup_impl(
   const MemberType& team, const LinInterp& liv, const view_1d<const Pack>& x1, const view_1d<const Pack>& x2)
 {
   auto x1s = ekat::pack::scalarize(x1);
@@ -102,3 +109,6 @@ void LinInterp<ScalarT, DeviceT>::setup_impl(
       }
     });
 }
+
+} // namespace util
+} // namespace ekat

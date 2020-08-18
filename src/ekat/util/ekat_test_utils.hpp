@@ -1,18 +1,12 @@
 #ifndef EKAT_TEST_UTILS_HPP
 #define EKAT_TEST_UTILS_HPP
 
-#include <ekat/ekat_types.hpp>
-#include <ekat/ekat_pack.hpp>
-#include <ekat/util/ekat_string_utils.hpp>
+#include "ekat/ekat_pack.hpp"
+
+#include <map>
 
 namespace ekat {
 namespace util {
-
-#ifdef EKAT_STRICT_FP
-constexpr bool StrictFP = true;
-#else
-constexpr bool StrictFP = false;
-#endif
 
 struct TestSession {
   static TestSession& get () {
@@ -25,15 +19,9 @@ private:
   TestSession() = default;
 };
 
-template <typename rngAlg, typename PDF>
-void genRandArray(int *const x, int length, rngAlg &engine, PDF &&pdf) {
-  for (int i = 0; i < length; ++i) {
-    x[i] = pdf(engine);
-  }
-}
 
-template <typename rngAlg, typename PDF>
-void genRandArray(Real *const x, int length, rngAlg &engine, PDF &&pdf) {
+template <typename RealType, typename rngAlg, typename PDF>
+void genRandArray(RealType *const x, int length, rngAlg &engine, PDF &&pdf) {
   for (int i = 0; i < length; ++i) {
     x[i] = pdf(engine);
   }
@@ -71,6 +59,15 @@ void catch2_req_pk_sensitive(const Scalar lhs, const Scalar rhs)
     }
   }
 }
+
+// Check whether a string (from argv) matches a predefined option name,
+// either in its short or long form. It is meant to check something like this:
+//
+//   bool is_num_problems = argv_matches(argv[1], "-np", "--num_problems");
+//
+// Additionally, we also check if the input matches the short option name with an extra '-',
+// so in the above example we would also check "--np".
+bool argv_matches(const std::string& str, const std::string& short_opt, const std::string& long_opt);
 
 // This routine tries to detect the device id that the current MPI rank
 // should use during a test.

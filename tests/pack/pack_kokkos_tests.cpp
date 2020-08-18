@@ -1,9 +1,10 @@
 #include <catch2/catch.hpp>
 
 #include "ekat/ekat_pack_kokkos.hpp"
-#include "ekat/ekat_types.hpp"
-#include "ekat/util/ekat_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
+
+#include "ekat_test_config.h"
 
 namespace {
 
@@ -358,23 +359,23 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
           const int pk_idx = k % pk_sizes[i];
 
           if (i == 0) {
-            ekat_krequire(p1_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            EKAT_KERNEL_REQUIRE(p1_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p1_d[j](view_idx)[pk_idx] += i+j;
           }
           else if (i == 1) {
-            ekat_krequire(p2_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            EKAT_KERNEL_REQUIRE(p2_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p2_d[j](view_idx)[pk_idx] += i+j;
           }
           else if (i == 2) {
-            ekat_krequire(p4_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            EKAT_KERNEL_REQUIRE(p4_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p4_d[j](view_idx)[pk_idx] += i+j;
           }
           else if (i == 3) {
-            ekat_krequire(p8_d[j](view_idx)[pk_idx] == k*(i+j+1));
+            EKAT_KERNEL_REQUIRE(p8_d[j](view_idx)[pk_idx] == k*(i+j+1));
             p8_d[j](view_idx)[pk_idx] += i+j;
           }
           else {
-            ekat_krequire_msg(false, "Unhandled i");
+            EKAT_KERNEL_REQUIRE_MSG(false, "Unhandled i");
           }
         }
       }
@@ -504,13 +505,13 @@ void host_device_packs_2d(bool transpose)
               curr_scalar = &(p8_d[j](k1, view_idx)[pk_idx]);
             }
             else {
-              ekat_krequire_msg(false, "Unhandled i");
+              EKAT_KERNEL_REQUIRE_MSG(false, "Unhandled i");
             }
             if (transpose) {
-              //ekat_krequire(*curr_scalar == k2*(i+j+1) + k1*(i-j-1));
+              //EKAT_KERNEL_REQUIRE(*curr_scalar == k2*(i+j+1) + k1*(i-j-1));
             }
             else {
-              ekat_krequire(*curr_scalar == k1*(i+j+1) + k2*(i-j-1));
+              EKAT_KERNEL_REQUIRE(*curr_scalar == k1*(i+j+1) + k2*(i-j-1));
             }
             *curr_scalar += i+j;
           }

@@ -14,7 +14,7 @@
 #include <iostream>
 #include "ekat/ekat_assert.hpp"
 #include "ekat/std_meta/ekat_std_utils.hpp"
-#include "ekat/util/ekat_utils.hpp"
+#include "ekat/ekat_type_traits.hpp"
 
 namespace ekat {
 namespace util{
@@ -68,7 +68,7 @@ class any {
     holder () = default;
 
     template<typename T>
-    typename std::enable_if<!check_overloads::StreamExists<T>::value>::type
+    typename std::enable_if<!StreamExists<T>::value>::type
     print_impl (std::ostream& os) const {
 
       os << "Error! Trying to print object of type '" << type().name() << "',"
@@ -76,7 +76,7 @@ class any {
     }
 
     template<typename T>
-    typename std::enable_if<check_overloads::StreamExists<T>::value>::type
+    typename std::enable_if<StreamExists<T>::value>::type
     print_impl (std::ostream& os) const {
       os << *m_value;
     }

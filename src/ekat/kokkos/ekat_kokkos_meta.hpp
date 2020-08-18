@@ -1,7 +1,7 @@
 #ifndef EKAT_KOKKOS_META_HPP
 #define EKAT_KOKKOS_META_HPP
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
 namespace ekat {
 namespace util {

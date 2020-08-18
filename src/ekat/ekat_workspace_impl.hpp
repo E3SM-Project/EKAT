@@ -1,7 +1,6 @@
 #ifndef EKAT_WSM_IMPL_HPP
 #define EKAT_WSM_IMPL_HPP
 
-#include "ekat/util/ekat_utils.hpp"
 #include "ekat/ekat_assert.hpp"
 
 #include <map>
@@ -14,7 +13,7 @@ namespace ekat {
  */
 
 template <typename T, typename D>
-WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy, const Real& overprov_factor) :
+WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy, const double& overprov_factor) :
   m_tu(policy, overprov_factor),
   m_max_ws_idx(m_tu.get_num_ws_slots()),
   m_reserve( (sizeof(T) > 2*sizeof(int)) ? 1 :
@@ -211,7 +210,7 @@ void WorkspaceManager<T, D>::Workspace::take_many_contiguous_unsafe(
   // Verify contiguous
   for (int n = 0; n < static_cast<int>(N); ++n) {
     const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
-    ekat_kassert(m_parent.get_next<S>(space) == m_next_slot + n + 1);
+    EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
   }
 #endif
 
@@ -379,8 +378,8 @@ void WorkspaceManager<T, D>::Workspace::change_num_used(int change_by) const
 {
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
     int curr_used = m_parent.m_num_used(m_ws_idx) += change_by;
-    ekat_kassert(curr_used <= m_parent.m_max_used);
-    ekat_kassert(curr_used >= 0);
+    EKAT_KERNEL_ASSERT(curr_used <= m_parent.m_max_used);
+    EKAT_KERNEL_ASSERT(curr_used >= 0);
     if (curr_used > m_parent.m_high_water(m_ws_idx)) {
       m_parent.m_high_water(m_ws_idx) = curr_used;
     }
@@ -396,14 +395,14 @@ void WorkspaceManager<T, D>::Workspace::change_indv_meta(
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
     const int slot = m_parent.get_index<S>(space);
     if (!release) {
-      ekat_kassert(util::strlen(name) < m_max_name_len); // leave one char for null terminator
-      ekat_kassert(util::strlen(name) > 0);
-      ekat_kassert(!m_parent.m_active(m_ws_idx, slot));
+      EKAT_KERNEL_ASSERT(util::strlen(name) < m_max_name_len); // leave one char for null terminator
+      EKAT_KERNEL_ASSERT(util::strlen(name) > 0);
+      EKAT_KERNEL_ASSERT(!m_parent.m_active(m_ws_idx, slot));
       char* val = &(m_parent.m_curr_names(m_ws_idx, slot, 0));
       util::strcpy(val, name);
     }
     else {
-      ekat_kassert(m_parent.m_active(m_ws_idx, slot));
+      EKAT_KERNEL_ASSERT(m_parent.m_active(m_ws_idx, slot));
       name = get_name(space);
     }
     const int name_idx = get_name_idx(name, !release);
@@ -430,7 +429,7 @@ int WorkspaceManager<T, D>::Workspace::get_name_idx(const char* name, bool add) 
       break;
     }
   }
-  ekat_kassert(name_idx != -1);
+  EKAT_KERNEL_ASSERT(name_idx != -1);
   return name_idx;
 }
 #endif
@@ -464,7 +463,7 @@ void WorkspaceManager<T, D>::Workspace::release_many_contiguous(
   // Verify contiguous
   for (int n = 0; n < static_cast<int>(N) - 1; ++n) {
     const auto& space = *ptrs[n];
-    ekat_kassert(m_parent.get_next<S>(space) == m_parent.get_index<S>(space) + 1);
+    EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_parent.get_index<S>(space) + 1);
   }
 #endif
 

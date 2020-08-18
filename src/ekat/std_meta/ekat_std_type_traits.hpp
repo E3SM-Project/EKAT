@@ -16,8 +16,6 @@
 
 namespace ekat {
 
-namespace util {
-
 // =============== type_traits utils ============== //
 
 // <type_traits> has remove_all_extents but lacks the analogous
@@ -41,8 +39,6 @@ template<typename T>
 struct remove_all_consts<T*> {
   using type = typename remove_all_consts<T>::type*;
 };
-
-} // namespace util
 
 } // namespace ekat
 

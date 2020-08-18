@@ -3,6 +3,7 @@
 
 #include "tridiag_tests.hpp"
 #include "ekat/ekat_session.hpp"
+#include "ekat_test_config.h"
 
 int main (int argc, char **argv) {
   int num_failed = 0;
@@ -11,7 +12,7 @@ int main (int argc, char **argv) {
       // Performance test.
       ekat::tridiag::test::perf::Input in;
       const auto stat = in.parse(argc, argv);
-      if (stat) ekat::tridiag::test::perf::run<ekat::Real>(in);
+      if (stat) ekat::tridiag::test::perf::run<Real>(in);
     } else {
       // Correctness tests.
       num_failed = Catch::Session().run(argc, argv);

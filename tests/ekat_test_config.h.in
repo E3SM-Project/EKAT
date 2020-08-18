@@ -1,0 +1,29 @@
+#ifndef EKAT_TEST_CONFIG_H
+#define EKAT_TEST_CONFIG_H
+
+// This config file is only meant to be used for Ekat's unit tests
+// When creating a test in CMake, if you intend to use 'Real' as the
+// floating point type, you must add a compile definition,
+// either EKAT_DOUBLE_PRECISION or EKAT_SINGLE_PRECISION,
+// or else the type Real will not be defined.
+// If your test does not use Real, then you don't need any compile definition.
+
+#ifdef EKAT_TEST_DOUBLE_PRECISION
+using Real = double;
+#elif EKAT_TEST_SINGLE_PRECISION
+using Real = float;
+#endif
+
+// The number of scalars in a default pack::Pack and Mask.
+#cmakedefine EKAT_TEST_PACK_SIZE ${EKAT_TEST_PACK_SIZE}
+
+// The number of scalars in a default pack::SmallPack and SmallMask.
+#cmakedefine EKAT_TEST_SMALL_PACK_SIZE ${EKAT_TEST_SMALL_PACK_SIZE}
+
+// The number of scalars in a possibly-no-pack. Use this packsize when a routine does better with pksize=1 on some architectures (SKX).
+#cmakedefine EKAT_TEST_POSSIBLY_NO_PACK_SIZE ${EKAT_TEST_POSSIBLY_NO_PACK_SIZE}
+
+// Whether fp model is strict
+#cmakedefine01 EKAT_TEST_STRICT_FP
+
+#endif

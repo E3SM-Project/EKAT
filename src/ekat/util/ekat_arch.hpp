@@ -13,7 +13,7 @@ namespace util {
 
 std::string active_avx_string();
 
-std::string config_string();
+std::string ekat_config_string();
 
 template <typename ExeSpace>
 struct OnGpu { enum : bool { value = false }; };

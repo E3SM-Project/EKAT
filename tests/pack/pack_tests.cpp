@@ -1,8 +1,8 @@
 #include "catch2/catch.hpp"
 
 #include "ekat/ekat_pack.hpp"
-#include "ekat/ekat_types.hpp"
-#include "ekat/util/ekat_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
+#include "ekat_test_config.h"
 
 namespace {
 
@@ -16,8 +16,8 @@ double cube(double x) {
 
 template <int PACKN>
 struct TestMask {
-  typedef ekat::pack::Mask<PACKN> Mask;
-  typedef ekat::pack::Pack<int, PACKN> Pack;
+  using Mask = ekat::pack::Mask<PACKN>;
+  using Pack = ekat::pack::Pack<int, PACKN>;
 
   static int sum_true (const Mask& m) {
     int sum1 = 0, sum2 = 0, sum3 = 0;
@@ -82,9 +82,9 @@ TEST_CASE("Mask", "ekat::pack") {
 
 template <typename Scalar, int PACKN>
 struct TestPack {
-  typedef ekat::pack::Mask<PACKN> Mask;
-  typedef ekat::pack::Pack<Scalar, PACKN> Pack;
-  typedef typename Pack::scalar scalar;
+  using Mask = ekat::pack::Mask<PACKN>;
+  using Pack = ekat::pack::Pack<Scalar, PACKN>;
+  using scalar = typename Pack::scalar;
 
   static const double tol;
 
@@ -117,13 +117,12 @@ struct TestPack {
     c = limit ? 3.2 : 41.5;
   }
 
-  static void setup_pow (Pack& a, Pack& b, scalar& c,
-                         const bool limit = false) {
+  static void setup_pow (Pack& a, Pack& b, scalar& c) {
     setup(a, b, c, true, true);
   }
 
   static void test_conversion () {
-    typedef ekat::pack::Pack<ekat::Int, PACKN> IntPack;
+    using IntPack = ekat::pack::Pack<ekat::Int, PACKN>;
     Pack a;
     IntPack a_int_true;
     vector_novec for (int i = 0; i < Pack::n; ++i) {
@@ -298,12 +297,12 @@ const double TestPack<Scalar,PACKN>::tol =
   2*std::numeric_limits<Scalar>::epsilon();
 
 TEST_CASE("Pack", "ekat::pack") {
-  TestPack<int,EKAT_PACK_SIZE>::run();
-  TestPack<long,EKAT_PACK_SIZE>::run();
-  TestPack<float,EKAT_PACK_SIZE>::run();
-  TestPack<double,EKAT_PACK_SIZE>::run();
+  TestPack<int,EKAT_TEST_PACK_SIZE>::run();
+  TestPack<long,EKAT_TEST_PACK_SIZE>::run();
+  TestPack<float,EKAT_TEST_PACK_SIZE>::run();
+  TestPack<double,EKAT_TEST_PACK_SIZE>::run();
 
-  if (EKAT_PACK_SIZE != 1) {
+  if (EKAT_TEST_PACK_SIZE != 1) {
 #ifndef __INTEL_COMPILER
     // Intel emits "remark: simd loop has only one iteration", and
     // apparently this cannot be silenced with pragma warning, so skip
@@ -317,9 +316,15 @@ TEST_CASE("Pack", "ekat::pack") {
 }
 
 TEST_CASE("isnan", "ekat::pack") {
+#ifdef EKAT_DOUBLE_PRECISION
+  using Real = double;
+#else
+  using Real = float;
+#endif
+
   using namespace ekat;
-  using pt = pack::Pack<Real, EKAT_PACK_SIZE>;
-  using mt = pack::Mask<EKAT_PACK_SIZE>;
+  using pt = pack::Pack<Real, EKAT_TEST_PACK_SIZE>;
+  using mt = pack::Mask<EKAT_TEST_PACK_SIZE>;
 
   using pvt = typename KokkosTypes<DefaultDevice>::view_1d<pt>;
   using mvt = typename KokkosTypes<DefaultDevice>::view_1d<mt>;
@@ -346,7 +351,7 @@ TEST_CASE("isnan", "ekat::pack") {
 
   const mt& mz = mzero_h(0);
   const mt& mn = mnan_h(0);
-  for (int i=0; i<EKAT_PACK_SIZE; ++i) {
+  for (int i=0; i<EKAT_TEST_PACK_SIZE; ++i) {
     REQUIRE (!mz[i]); // the view 'zero' should not contain nans
     REQUIRE (mn[i]);  // the view 'nan'  should contain nans
   }
