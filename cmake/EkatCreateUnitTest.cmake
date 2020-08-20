@@ -46,7 +46,7 @@ function(EkatCreateUnitTest target_name target_srcs)
   string(STRIP "${ecut_LIBS}" ecut_LIBS)
   string(STRIP "${ecut_COMPILER_DEFS}" ecut_COMPILER_DEFS)
   string(STRIP "${ecut_LIBS_DIRS}" ecut_LIBS_DIRS)
-  string(STRIP "${ecut_INCLUDE_DIRS}" ecut_LIBS_DIRS)
+  string(STRIP "${ecut_INCLUDE_DIRS}" ecut_INCLUDE_DIRS)
 
   # Set link directories (must be done BEFORE add_executable is called)
   if (ecut_LIBS_DIRS)
@@ -71,7 +71,7 @@ function(EkatCreateUnitTest target_name target_srcs)
   )
 
   # Set all target properties
-  target_include_directories(${target_name} PUBLIC ${TEST_INCLUDE_DIRS})
+  target_include_directories(${target_name} PUBLIC "${TEST_INCLUDE_DIRS}")
 
   if (ecut_LIBS)
     target_link_libraries(${target_name} PUBLIC "${ecut_LIBS}")
