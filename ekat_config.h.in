@@ -14,6 +14,6 @@
 #cmakedefine EKAT_MIMIC_GPU
 
 // Add a substitute for GNU feenableexcept if necessary
-#cmakedefine EKAT_NEEDS_FEENABLEEXCEPT
+#cmakedefine EKAT_HAVE_FEENABLEEXCEPT
 
 #endif

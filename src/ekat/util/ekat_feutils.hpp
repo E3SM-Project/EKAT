@@ -3,7 +3,7 @@
 
 #include "ekat/ekat.hpp"
 
-#ifdef EKAT_NEEDS_FEENABLEEXCEPT
+#ifndef EKAT_HAVE_FEENABLEEXCEPT
 
 #include <fenv.h>
 
