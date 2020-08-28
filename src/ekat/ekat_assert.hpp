@@ -6,8 +6,6 @@
 #include <assert.h>
 #include <stdexcept>  // For std::logic_error
 
-#include <cfenv>  // For FPE environment
-
 /*
  * Asserts and error checking macros/functions.
  *
@@ -105,23 +103,16 @@ void runtime_abort(const std::string& message, int code = -1);
  *          to re-enable them after you're done.
  */
 
-static unsigned int constexpr ekat_default_fpes =
-#ifdef EKAT_FPE
-  FE_DIVBYZERO |
-  FE_INVALID   |
-  FE_OVERFLOW;
-#else
-  0;
-#endif
+int get_default_fpes ();
 
 void enable_fpes (const int mask);
 void disable_fpes (const int mask);
 
 inline void enable_default_fpes () {
-  enable_fpes(ekat_default_fpes);
+  enable_fpes(get_default_fpes());
 }
 inline void disable_default_fpes () {
-  disable_fpes(ekat_default_fpes);
+  disable_fpes(get_default_fpes());
 }
 
 int get_enabled_fpes ();

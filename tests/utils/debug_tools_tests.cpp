@@ -3,8 +3,11 @@
 #include "ekat/ekat_assert.hpp"
 #include <csignal>
 #include <unistd.h>
-#include  <csetjmp>
+#include <csetjmp>
 #include <iostream>
+
+// To manually access some FPE stuff
+#include <cfenv>
 
 namespace {
 
@@ -17,20 +20,20 @@ void signal_handler (int /* signum */) {
   std::longjmp(JumpBuffer,gSignalStatus);
 }
 
-int has_fe_divbyzero (int mask) {
+int has_fe_divbyzero (const int mask) {
   return (mask & FE_DIVBYZERO ? 1 : 0);
 }
 
-int has_fe_overflow (int mask) {
+int has_fe_overflow (const int mask) {
   return (mask & FE_OVERFLOW ? 1 : 0);
 }
 
-int has_fe_invalid (int mask) {
+int has_fe_invalid (const int mask) {
   return (mask & FE_INVALID ? 1 : 0);
 }
 
 int run_fpe_tests () {
-  int mask = ekat::get_enabled_fpes();
+  const int mask = ekat::get_enabled_fpes();
 
   std::cout << " tests mask: " << mask << "\n";
 
@@ -125,7 +128,7 @@ TEST_CASE ("fpes","") {
   SECTION ("default-fpes") {
     printf ("*) testing default fpes...\n");
     feclearexcept(FE_ALL_EXCEPT);
-    int mask = ekat::get_enabled_fpes();
+    const int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
@@ -143,7 +146,7 @@ TEST_CASE ("fpes","") {
     feclearexcept(FE_ALL_EXCEPT);
     disable_all_fpes();
     enable_fpes(FE_DIVBYZERO);
-    int mask = ekat::get_enabled_fpes();
+    const int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
@@ -161,7 +164,7 @@ TEST_CASE ("fpes","") {
     feclearexcept(FE_ALL_EXCEPT);
     enable_fpes(FE_ALL_EXCEPT);
     disable_fpes(FE_DIVBYZERO);
-    int mask = ekat::get_enabled_fpes();
+    const int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
