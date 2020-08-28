@@ -103,10 +103,10 @@ void runtime_abort(const std::string& message, int code = -1);
  *          to re-enable them after you're done.
  */
 
-unsigned int get_default_fpes ();
+int get_default_fpes ();
 
-void enable_fpes (const unsigned int mask);
-void disable_fpes (const unsigned int mask);
+void enable_fpes (const int mask);
+void disable_fpes (const int mask);
 
 inline void enable_default_fpes () {
   enable_fpes(get_default_fpes());

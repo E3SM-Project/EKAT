@@ -20,20 +20,20 @@ void signal_handler (int /* signum */) {
   std::longjmp(JumpBuffer,gSignalStatus);
 }
 
-int has_fe_divbyzero (const unsigned int mask) {
+int has_fe_divbyzero (const int mask) {
   return (mask & FE_DIVBYZERO ? 1 : 0);
 }
 
-int has_fe_overflow (const unsigned int mask) {
+int has_fe_overflow (const int mask) {
   return (mask & FE_OVERFLOW ? 1 : 0);
 }
 
-int has_fe_invalid (const unsigned int mask) {
+int has_fe_invalid (const int mask) {
   return (mask & FE_INVALID ? 1 : 0);
 }
 
 int run_fpe_tests () {
-  const unsigned int mask = ekat::get_enabled_fpes();
+  const int mask = ekat::get_enabled_fpes();
 
   std::cout << " tests mask: " << mask << "\n";
 
@@ -128,7 +128,7 @@ TEST_CASE ("fpes","") {
   SECTION ("default-fpes") {
     printf ("*) testing default fpes...\n");
     feclearexcept(FE_ALL_EXCEPT);
-    const unsigned int mask = ekat::get_enabled_fpes();
+    const int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
@@ -146,7 +146,7 @@ TEST_CASE ("fpes","") {
     feclearexcept(FE_ALL_EXCEPT);
     disable_all_fpes();
     enable_fpes(FE_DIVBYZERO);
-    const unsigned int mask = ekat::get_enabled_fpes();
+    const int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
@@ -164,7 +164,7 @@ TEST_CASE ("fpes","") {
     feclearexcept(FE_ALL_EXCEPT);
     enable_fpes(FE_ALL_EXCEPT);
     disable_fpes(FE_DIVBYZERO);
-    const unsigned int mask = ekat::get_enabled_fpes();
+    const int mask = ekat::get_enabled_fpes();
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);

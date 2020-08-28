@@ -8,7 +8,7 @@
 #ifndef EKAT_HAVE_FEENABLEEXCEPT
 
 namespace ekat {
-static int
+inline int
 fegetexcept (void)
 {
   static fenv_t fenv;
@@ -16,11 +16,11 @@ fegetexcept (void)
   return fegetenv (&fenv) ? -1 : (fenv.__control & FE_ALL_EXCEPT);
 }
 
-static int
-feenableexcept (unsigned int excepts)
+inline int
+feenableexcept (int excepts)
 {
   static fenv_t fenv;
-  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
+  int new_excepts = excepts & FE_ALL_EXCEPT,
                old_excepts;  // previous masks
 
   if ( fegetenv (&fenv) ) return -1;
@@ -33,11 +33,11 @@ feenableexcept (unsigned int excepts)
   return ( fesetenv (&fenv) ? -1 : old_excepts );
 }
 
-static int
-fedisableexcept (unsigned int excepts)
+inline int
+fedisableexcept (int excepts)
 {
   static fenv_t fenv;
-  unsigned int new_excepts = excepts & FE_ALL_EXCEPT,
+  int new_excepts = excepts & FE_ALL_EXCEPT,
                old_excepts;  // all previous masks
 
   if ( fegetenv (&fenv) ) return -1;
