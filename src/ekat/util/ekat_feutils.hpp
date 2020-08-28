@@ -3,9 +3,9 @@
 
 #include "ekat/ekat.hpp"
 
-#ifndef EKAT_HAVE_FEENABLEEXCEPT
+#include <cfenv>
 
-#include <fenv.h>
+#ifndef EKAT_HAVE_FEENABLEEXCEPT
 
 namespace ekat {
 static int
@@ -53,4 +53,4 @@ fedisableexcept (unsigned int excepts)
 } // namespace ekat
 #endif // EKAT_NEEDS_FEENABLEEXCEPT
 
-#endif
+#endif // EKAT_FEUTILS_HPP

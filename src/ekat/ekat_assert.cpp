@@ -33,7 +33,17 @@ void runtime_abort(const std::string& message, int code) {
 
 } // namespace ekat
 
-void enable_fpes (const int mask) {
+unsigned int get_default_fpes () {
+#ifdef EKAT_FPE
+  return (FE_DIVBYZERO |
+          FE_INVALID   |
+          FE_OVERFLOW);
+#else
+  return 0;
+#endif
+}
+
+void enable_fpes (const unsigned int mask) {
   // Make sure we don't throw because one of those exceptions
   // was already set, due to previous calculations
   feclearexcept(mask);
@@ -41,7 +51,7 @@ void enable_fpes (const int mask) {
   feenableexcept(mask);
 }
 
-void disable_fpes (const int mask) {
+void disable_fpes (const unsigned int mask) {
   fedisableexcept(mask);
 }
 
