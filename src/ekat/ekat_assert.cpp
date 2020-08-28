@@ -4,6 +4,7 @@
 
 #include "ekat_assert.hpp"
 #include "ekat_session.hpp"
+#include "util/ekat_feutils.hpp"
 
 namespace ekat {
 namespace error {

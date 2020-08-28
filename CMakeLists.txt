@@ -50,6 +50,12 @@ set (EKAT_TPL_INCLUDE_DIRS ${EKAT_TPL_INCLUDE_DIRS_INTERNAL} CACHE INTERNAL "Lis
 
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 
+include(CheckSymbolExists)
+check_symbol_exists(feenableexcept "fenv.h" HAVE_FEENABLEEXCEPT)
+if (NOT HAVE_FEENABLEEXCEPT)
+  option(EKAT_NEEDS_FEENABLEEXCEPT "compiler does not include feenableexcept." ON)
+endif()
+
 ############################
 ###     EKAT LIBRARY     ###
 ############################
