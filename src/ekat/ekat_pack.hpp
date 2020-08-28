@@ -372,7 +372,7 @@ KOKKOS_INLINE_FUNCTION
 OnlyPack<PackType> pow (const PackType& a, const ScalarType/*&*/ b) {
   PackType s;
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    s[i] = std::pow<typename PackType::scalar>(a[i], b);
+    s[i] = std::pow(a[i], b);
   return s;
 }
 
@@ -381,7 +381,7 @@ KOKKOS_INLINE_FUNCTION
 OnlyPack<PackType> pow (const ScalarType a, const PackType& b) {
   PackType s;
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    s[i] = std::pow<typename PackType::scalar>(a, b[i]);
+    s[i] = std::pow(a, b[i]);
   return s;
 }
 
@@ -390,7 +390,7 @@ KOKKOS_INLINE_FUNCTION
 OnlyPack<PackType> pow (const PackType& a, const PackType& b) {
   PackType s;
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    s[i] = std::pow<typename PackType::scalar>(a[i], b[i]);
+    s[i] = std::pow(a[i], b[i]);
   return s;
 }
 
