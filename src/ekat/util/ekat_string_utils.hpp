@@ -37,6 +37,28 @@ std::string strint (const std::string& s, const int i);
 // Conver the string to all upper case
 std::string upper_case (const std::string& s);
 
+// Computing similarity index between s1 and s2 using Jaro algorithm
+// For a quick description of the Jaro similarity index, see, e.g.,
+//   https://en.wikipedia.org/wiki/Jaro-Winkler_distance#Jaro_Similarity
+// This utility can be used to provide feedback to the user, when
+// a wrong string keyword is used, but the code has a pool of valid
+// strings to check the input against, and provide potential matches,
+// like with "string 'balh' not found; did you mean 'blah'?"
+double jaro_similarity (const std::string& s1, const std::string& s2);
+
+// Computing similarity index between s1 and s2 using Jaro-Winkler algorithm,
+// which is an "adjusted" version of the Jaro one.
+// For meaning and bounds for the optional arguments l, p, see e.g.
+//      https://en.wikipedia.org/wiki/Jaro-Winkler_distance
+// This routine computes jaro similarity (sj), and if sj>thresholds,
+// it performs the winkler adjustment, otherwise returns sj.
+double jaro_winkler_similarity (const std::string& s1, const std::string& s2,
+                                const int l = 4,
+                                const double p = 0.1,
+                                const double threshold = 0.7);
+
+// ==================== Case Insensitive string =================== //
+
 // A no-overhead class that inherits from std::string, which we only
 // use to trigger different behavior in the ==,!=,<,<= operators.
 class CaseInsensitiveString final : public std::string

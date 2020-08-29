@@ -112,6 +112,49 @@ TEST_CASE("string","string") {
   REQUIRE(items[0]=="item1");
   REQUIRE(items[1]=="item2");
   REQUIRE(items[2]=="item3");
+
+  // Jaro and Jaro-Winkler similarity tests
+
+  // Benchmark list (including expected similarity values) from Winkler paper
+  //  https://www.census.gov/srd/papers/pdf/rrs2006-02.pdf
+  // Note: Winkler clamps all values below 0.7 to 0. I don't like that,
+  //       so I had to remove some entries.
+
+  //                          LHS         RHS       JARO   JARO-WINKLER
+  using entry_type = std::tuple<std::string,std::string,double, double>;
+
+  std::vector<entry_type> benchmark =
+    {
+      entry_type{ "shackleford", "shackelford", 0.970, 0.982 },
+      entry_type{ "dunningham" , "cunnigham"  , 0.896, 0.896 },
+      entry_type{ "nichleson"  , "nichulson"  , 0.926, 0.956 },
+      entry_type{ "jones"      , "johnson"    , 0.790, 0.832 },
+      entry_type{ "massey"     , "massie"     , 0.889, 0.933 },
+      entry_type{ "abroms"     , "abrams"     , 0.889, 0.922 },
+      entry_type{ "jeraldine"  , "geraldine"  , 0.926, 0.926 },
+      entry_type{ "marhta"     , "martha"     , 0.944, 0.961 },
+      entry_type{ "michelle"   , "michael"    , 0.869, 0.921 },
+      entry_type{ "julies"     , "julius"     , 0.889, 0.933 },
+      entry_type{ "tanya"      , "tonya"      , 0.867, 0.880 },
+      entry_type{ "dwayne"     , "duane"      , 0.822, 0.840 },
+      entry_type{ "sean"       , "susan"      , 0.783, 0.805 },
+      entry_type{ "jon"        , "john"       , 0.917, 0.933 },
+    };
+
+  const double tol = 0.005;
+  for (const auto& entry : benchmark) {
+    const auto& s1 = std::get<0>(entry);
+    const auto& s2 = std::get<1>(entry);
+    double sj  = util::jaro_similarity(s1,s2);
+    double sjw = util::jaro_winkler_similarity(s1,s2);
+
+    const double sj_ex = std::get<2>(entry);
+    const double sjw_ex = std::get<3>(entry);
+
+    REQUIRE (std::fabs(sj-sj_ex)<tol);
+    REQUIRE (std::fabs(sjw-sjw_ex)<tol);
+  }
+
 }
 
 } // empty namespace
