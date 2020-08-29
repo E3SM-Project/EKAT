@@ -53,6 +53,7 @@ int run_fpe_tests () {
   double zero = 0.0;
   double inf, nan, ovfl;
   int ntests = 0;
+  int threw;
 
   // Run the tests.
   // Note: sometimes a FPE is not thrown when the bad number
@@ -61,51 +62,67 @@ int run_fpe_tests () {
   //       by 1.0 before testing that the FPE was thrown.
   
   // Test 1/0
+  threw = 0;
   if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==has_fe_divbyzero(mask));
-    printf ("  - 1/0 threw.\n");
     ++ntests;
     gSignalStatus = 0;
-    fesetenv(&fenv);
+    threw = 1;
   } else {
     inf = one/zero;
     inf *= 1.0;
   }
+  REQUIRE (threw==has_fe_divbyzero(mask));
+  if (threw==1) {
+    printf ("  - 1/0 threw.\n");
+  }
+  fesetenv(&fenv);
 
   // Test 0/0
+  threw = 0;
   if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==1);
-    printf ("  - 0/0 threw.\n");
     ++ntests;
     gSignalStatus = 0;
-    fesetenv(&fenv);
+    threw = 1;
   } else {
     nan = zero/zero;
   }
+  REQUIRE (threw==has_fe_invalid(mask));
+  if (threw==1) {
+    printf ("  - 0/0 threw.\n");
+  }
+  fesetenv(&fenv);
 
   // Test invalid arg
+  threw = 0;
   if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==1);
-    printf ("  - Invalid arg threw.\n");
     ++ntests;
     gSignalStatus = 0;
-    fesetenv(&fenv);
+    threw = 1;
   } else {
     nan = std::sqrt(-1.0);
     nan *= 1.0;
   }
+  REQUIRE (threw==has_fe_invalid(mask));
+  if (threw==1) {
+    printf ("  - Invalid arg threw.\n");
+  }
+  fesetenv(&fenv);
 
   // Test overflow
+  threw = 0;
   if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==1);
-    printf ("  - Overflow threw.\n");
     ++ntests;
     gSignalStatus = 0;
-    fesetenv(&fenv);
+    threw = 1;
   } else {
     ovfl = exp(710.0);
     ovfl *= 1.0;
   }
+  REQUIRE (threw==has_fe_overflow(mask));
+  if (threw==1) {
+    printf ("  - Overflow threw.\n");
+  }
+  fesetenv(&fenv);
 
   (void) inf;
   (void) nan;
