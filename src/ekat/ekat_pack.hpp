@@ -66,6 +66,11 @@ struct Mask {
     return b;
   }
 
+  // Are all slots false?
+  KOKKOS_FORCEINLINE_FUNCTION bool none () const {
+    return !any();
+  }
+
 private:
   type d[n];
 };

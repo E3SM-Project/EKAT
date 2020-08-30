@@ -33,10 +33,12 @@ struct TestMask {
     {
       Mask m(false);
       REQUIRE( ! m.any());
+      REQUIRE(   m.none());
     }
     {
       Mask m(true);
       REQUIRE(m.any());
+      REQUIRE(!m.none());
       REQUIRE( ! ( ! m).any());
       for (int i = 0; i < Mask::n; ++i) REQUIRE(m[i]);
       REQUIRE(sum_true(m) == Mask::n);
