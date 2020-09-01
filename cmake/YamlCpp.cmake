@@ -12,7 +12,7 @@ if (NOT IS_YAMLCPP_ALREADY_BUILT)
 
   if (NOT YAMLCPP_SOURCE_DIR)
     message (STATUS "YAMLCPP_SOURCE_DIR not specified: using submodule version.\n")
-    set (YAMLCPP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/extern/yaml-cpp")
+    set (YAMLCPP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/extern/yaml-cpp" CACHE STRING "yaml-cpp submodule source directory")
   elseif (NOT EXISTS ${YAMLCPP_SOURCE_DIR})
     message (FATAL_ERROR "Error! Please specify a valid source folder for yamlcpp.\n"
                          "       Provided path: ${YAMLCPP_SOURCE_DIR}")
