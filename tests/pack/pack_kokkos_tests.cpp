@@ -117,7 +117,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array1 a1("a1", 10);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 160);
   }
 
@@ -125,7 +125,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array2 a1("a2", 10, 4);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 10);
     REQUIRE(a2.extent_int(1) == 128);
   }
@@ -134,7 +134,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array3 a1("a3", 3, 2, 4);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 3);
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 32);
@@ -144,7 +144,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array4 a1("a4", 3, 2, 4, 2);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 3);
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 4);
@@ -154,7 +154,7 @@ TEST_CASE("scalarize", "ekat::pack") {
 
 template <int repack_size, typename Src, typename Dst>
 OnlyRank<Src, 1> repack_test (const Src& a_src, const Dst& a) {
-  static_assert(Dst::memory_traits::Unmanaged, "Um");
+  static_assert(Dst::memory_traits::is_unmanaged, "Um");
   static_assert(Dst::value_type::n == repack_size, "Pack::n");
   REQUIRE(a.extent_int(0) == (Src::value_type::n/repack_size)*a_src.extent_int(0));
   compare(scalarize(a_src), scalarize(a));
@@ -162,7 +162,7 @@ OnlyRank<Src, 1> repack_test (const Src& a_src, const Dst& a) {
 
 template <int repack_size, typename Src, typename Dst>
 OnlyRank<Src, 2> repack_test (const Src& a_src, const Dst& a) {
-  static_assert(Dst::memory_traits::Unmanaged, "Um");
+  static_assert(Dst::memory_traits::is_unmanaged, "Um");
   static_assert(Dst::value_type::n == repack_size, "Pack::n");
   REQUIRE(a.extent_int(0) == a_src.extent_int(0));
   REQUIRE(a.extent_int(1) == (Src::value_type::n/repack_size)*a_src.extent_int(1));

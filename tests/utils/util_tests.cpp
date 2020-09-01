@@ -38,8 +38,8 @@ TEST_CASE("Unmanaged", "ekat::ko") {
     V v("v", 10);
     typedef Unmanaged<V> VUm;
     VUm v_um(v);
-    static_assert( ! V::traits::memory_traits::Unmanaged, "Um");
-    static_assert(VUm::traits::memory_traits::Unmanaged, "Um");
+    static_assert( ! V::traits::memory_traits::is_unmanaged, "Um");
+    static_assert(VUm::traits::memory_traits::is_unmanaged, "Um");
   }
 
   {
@@ -50,15 +50,15 @@ TEST_CASE("Unmanaged", "ekat::ko") {
       V;
     V v("v", 2, 3, 4);
     typedef Unmanaged<V> VUm;
-    static_assert(VUm::traits::memory_traits::RandomAccess, "Um");
-    static_assert(VUm::traits::memory_traits::Unmanaged, "Um");
+    static_assert(VUm::traits::memory_traits::is_random_access, "Um");
+    static_assert(VUm::traits::memory_traits::is_unmanaged, "Um");
     VUm v_um(v);
     typedef Unmanaged<VUm> VUmUm;
-    static_assert(VUmUm::traits::memory_traits::RandomAccess, "Um");
-    static_assert(VUmUm::traits::memory_traits::Unmanaged, "Um");
-    static_assert( ! VUmUm::traits::memory_traits::Atomic, "Um");
-    static_assert( ! VUmUm::traits::memory_traits::Aligned, "Um");
-    static_assert( ! VUmUm::traits::memory_traits::Restrict, "Um");
+    static_assert(VUmUm::traits::memory_traits::is_random_access, "Um");
+    static_assert(VUmUm::traits::memory_traits::is_unmanaged, "Um");
+    static_assert( ! VUmUm::traits::memory_traits::is_atomic, "Um");
+    static_assert( ! VUmUm::traits::memory_traits::is_aligned, "Um");
+    static_assert( ! VUmUm::traits::memory_traits::is_restrict, "Um");
     VUmUm v_umum(v);
   }
 
@@ -67,13 +67,13 @@ TEST_CASE("Unmanaged", "ekat::ko") {
                          Kokkos::HostSpace,
                          Kokkos::MemoryTraits<Kokkos::Atomic | Kokkos::Aligned | Kokkos::Restrict> >
       V;
-    static_assert( ! V::traits::memory_traits::Unmanaged, "Um");
+    static_assert( ! V::traits::memory_traits::is_unmanaged, "Um");
     V v("v");
     typedef Unmanaged<V>::const_type CVUm;
-    static_assert(CVUm::traits::memory_traits::Atomic, "Um");
-    static_assert(CVUm::traits::memory_traits::Aligned, "Um");
-    static_assert(CVUm::traits::memory_traits::Restrict, "Um");
-    static_assert(CVUm::traits::memory_traits::Unmanaged, "Um");
+    static_assert(CVUm::traits::memory_traits::is_atomic, "Um");
+    static_assert(CVUm::traits::memory_traits::is_aligned, "Um");
+    static_assert(CVUm::traits::memory_traits::is_restrict, "Um");
+    static_assert(CVUm::traits::memory_traits::is_unmanaged, "Um");
 
     using Kokkos::Impl::ViewMapping;
     static_assert(ViewMapping<CVUm::traits, V::traits, void>::is_assignable,
