@@ -32,7 +32,7 @@ std::string active_avx_string () {
 std::string ekat_config_string () {
   std::stringstream ss;
   ss << "ExecSpace name: " << DefaultDevice::execution_space::name() << "\n";
-  ss << "ExecSpace initialized: " << (DefaultDevice::execution_space::is_initialized() ? "yes" : "no") << "\n";
+  ss << "ExecSpace initialized: " << (DefaultDevice::execution_space::impl_is_initialized() ? "yes" : "no") << "\n";
   ss << " avx " << active_avx_string()
      // << " packsize " << EKAT_PACK_SIZE
      << " compiler " <<
