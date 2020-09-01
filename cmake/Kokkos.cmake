@@ -12,13 +12,11 @@ if (NOT IS_EKAT_KOKKOS_BUILT)
 
   if (NOT Kokkos_SOURCE_DIR)
     message (STATUS "Kokkos_SOURCE_DIR not specified: using submodule version.")
-    if(DEFINED Kokkos_ENABLE_DEPRECATED_CODE AND NOT Kokkos_ENABLE_DEPRECATED_CODE)
-      message(FATAL_ERROR "Kokkos submodule cannot be used without\n"
+    if(DEFINED Kokkos_ENABLE_DEPRECATED_CODE AND Kokkos_ENABLE_DEPRECATED_CODE)
+      message(FATAL_ERROR "Kokkos submodule cannot be used with\n"
                           "Kokkos_ENABLE_DEPRECATED_CODE.")
     endif()
-    message (STATUS "(Setting Kokkos_ENABLE_DEPRECATED_CODE=TRUE)")
     set (Kokkos_SOURCE_DIR "${PROJECT_SOURCE_DIR}/extern/kokkos" CACHE STRING "Kokkos submodule source directory")
-    set (Kokkos_ENABLE_DEPRECATED_CODE TRUE CACHE BOOL "Enable Kokkos deprecated code")
   elseif (NOT EXISTS ${Kokkos_SOURCE_DIR})
     message (FATAL_ERROR "Error! Please specify a valid source folder for kokkos.\n"
                          "       Provided path: ${Kokkos_SOURCE_DIR}")
