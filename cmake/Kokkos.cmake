@@ -11,8 +11,14 @@ get_property(IS_EKAT_KOKKOS_BUILT GLOBAL PROPERTY EKAT_KOKKOS_BUILT SET)
 if (NOT IS_EKAT_KOKKOS_BUILT)
 
   if (NOT Kokkos_SOURCE_DIR)
-    message (STATUS "Kokkos_SOURCE_DIR not specified: using submodule version.\n")
+    message (STATUS "Kokkos_SOURCE_DIR not specified: using submodule version.")
+    if(DEFINED Kokkos_ENABLE_DEPRECATED_CODE AND NOT Kokkos_ENABLE_DEPRECATED_CODE)
+      message(FATAL_ERROR "Kokkos submodule cannot be used without\n"
+                          "Kokkos_ENABLE_DEPRECATED_CODE.")
+    endif()
+    message (STATUS "(Setting Kokkos_ENABLE_DEPRECATED_CODE=TRUE)")
     set (Kokkos_SOURCE_DIR "${PROJECT_SOURCE_DIR}/extern/kokkos")
+    set (Kokkos_ENABLE_DEPRECATED_CODE TRUE CACHE BOOL "Enable Kokkos deprecated code")
   elseif (NOT EXISTS ${Kokkos_SOURCE_DIR})
     message (FATAL_ERROR "Error! Please specify a valid source folder for kokkos.\n"
                          "       Provided path: ${Kokkos_SOURCE_DIR}")

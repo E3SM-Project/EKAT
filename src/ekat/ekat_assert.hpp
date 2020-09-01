@@ -31,6 +31,7 @@
   do {                                                              \
     if ( ! (condition) ) {                                          \
       printf("KERNEL CHECK FAILED:\n   %s\n   %s",#condition,msg);  \
+      fflush(stdout);                                               \
       Kokkos::abort("");                                            \
     }                                                               \
   } while (0)
