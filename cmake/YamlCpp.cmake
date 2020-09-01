@@ -1,7 +1,7 @@
 # Define a global property to check if yamlcpp has already been built
 define_property(GLOBAL
                 PROPERTY EKAT_YAMLCPP_BUILT
-                BRIEF_DOCS "Wheter yaml-cpp subdir has already been processed"
+                BRIEF_DOCS "Whether yaml-cpp subdir has already been processed"
                 FULL_DOCS "This property is used by cmake to ensure that yamlcpp
                            submodule directory is only processed once (with add_subdirectory).")
 
@@ -11,10 +11,14 @@ get_property(IS_EKAT_YAMLCPP_BUILT GLOBAL PROPERTY EKAT_YAMLCPP_BUILT SET)
 if (NOT IS_YAMLCPP_ALREADY_BUILT)
 
   if (NOT YAMLCPP_SOURCE_DIR)
-    message (FATAL_ERROR "Error! Please, specify path to yaml-cpp in YAMLCPP_SOURCE_DIR.\n")
+    message (STATUS "YAMLCPP_SOURCE_DIR not specified: using submodule version.\n")
+    set (YAMLCPP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/extern/yaml-cpp")
   elseif (NOT EXISTS ${YAMLCPP_SOURCE_DIR})
     message (FATAL_ERROR "Error! Please specify a valid source folder for yamlcpp.\n"
                          "       Provided path: ${YAMLCPP_SOURCE_DIR}")
+  else()
+    message (STATUS "Using yaml-cpp in ${YAMLCPP_SOURCE_DIR}.\n"
+                    "User-supplied yaml-cpp versions are not guaranteed to work.")
   endif()
   set (YAMLCPP_BINARY_DIR ${CMAKE_BINARY_DIR}/externals/yaml-cpp)
 
