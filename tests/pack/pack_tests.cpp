@@ -102,7 +102,7 @@ struct TestPack {
 
   static void setup (Pack& a, Pack& b, scalar& c,
                      const bool limit = false, const bool pve = false) {
-    using ekat::min;
+    using ekat::impl::min;
     vector_novec for (int i = 0; i < Pack::n; ++i) {
       const auto sign = pve ? 1 : (2*(i % 2) - 1);
       a[i] = i + 1.2;
@@ -265,9 +265,9 @@ struct TestPack {
     test_pack_gen_bin_op_all(*);
     test_pack_gen_bin_op_all(/);
 
-    test_pack_gen_bin_fn_all(ekat::min, ekat::min, setup);
-    test_pack_gen_bin_fn_all(ekat::max, ekat::max, setup);
-    test_pack_gen_bin_fn_all(ekat::pow, std::pow, setup_pow);
+    test_pack_gen_bin_fn_all(min, ekat::impl::min, setup);
+    test_pack_gen_bin_fn_all(max, ekat::impl::max, setup);
+    test_pack_gen_bin_fn_all(pow, std::pow, setup_pow);
 
     test_pack_gen_unary_op(-);
 

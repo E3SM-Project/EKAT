@@ -303,14 +303,14 @@ ekat_pack_gen_unary_stdfn(tanh)
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> min (const PackType& p) {
   typename PackType::scalar v(p[0]);
-  vector_disabled for (int i = 0; i < PackType::n; ++i) v = min(v, p[i]);
+  vector_disabled for (int i = 0; i < PackType::n; ++i) v = impl::min(v, p[i]);
   return v;
 }
 
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> max (const PackType& p) {
   typename PackType::scalar v(p[0]);
-  vector_simd for (int i = 0; i < PackType::n; ++i) v = max(v, p[i]);
+  vector_simd for (int i = 0; i < PackType::n; ++i) v = impl::max(v, p[i]);
   return v;
 }
 
@@ -319,7 +319,7 @@ template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar>
 min (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackType& p) {
   vector_disabled for (int i = 0; i < PackType::n; ++i)
-    if (mask[i]) init = min(init, p[i]);
+    if (mask[i]) init = impl::min(init, p[i]);
   return init;
 }
 
@@ -328,7 +328,7 @@ template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar>
 max (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackType& p) {
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    if (mask[i]) init = max(init, p[i]);
+    if (mask[i]) init = impl::max(init, p[i]);
   return init;
 }
 
@@ -364,8 +364,8 @@ max (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackTy
   ekat_pack_gen_bin_fn_ps(fn, impl)           \
   ekat_pack_gen_bin_fn_sp(fn, impl)
 
-ekat_pack_gen_bin_fn_all(min, min)
-ekat_pack_gen_bin_fn_all(max, max)
+ekat_pack_gen_bin_fn_all(min, impl::min)
+ekat_pack_gen_bin_fn_all(max, impl::max)
 
 // On Intel 17 for KNL, I'm getting a ~1-ulp diff on const Scalar& b. I don't
 // understand its source. But, in any case, I'm writing a separate impl here to
@@ -498,7 +498,7 @@ OnlyPackReturn<PackType, Mask<PackType::n>>
 isnan (const PackType& p) {
   Mask<PackType::n> m;
   vector_simd for (int i = 0; i < PackType::n; ++i) {
-    m.set(i, is_nan(p[i]));
+    m.set(i, impl::is_nan(p[i]));
   }
   return m;
 }

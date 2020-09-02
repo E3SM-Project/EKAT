@@ -6,7 +6,6 @@
 
 TEST_CASE("units_framework", "") {
   using namespace ekat;
-  using namespace ekat::units;
 
   SECTION ("rational_constant") {
     constexpr RationalConstant quarter(1,4);

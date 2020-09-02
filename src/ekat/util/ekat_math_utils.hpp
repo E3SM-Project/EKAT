@@ -12,6 +12,8 @@
 
 namespace ekat {
 
+namespace impl {
+
 #ifdef KOKKOS_ENABLE_CUDA
 // Replacements for namespace std functions that don't run on the GPU.
 template <typename T>
@@ -40,6 +42,7 @@ const T* max_element (const T* const begin, const T* const end) {
       me = it;
   return me;
 }
+
 #else
 using std::min;
 using std::max;
@@ -60,21 +63,23 @@ bool is_nan (const RealT& a) {
 template <typename Integer> KOKKOS_INLINE_FUNCTION
 void set_min_max (const Integer& lim0, const Integer& lim1,
                   Integer& min, Integer& max) {
-  min = min(lim0, lim1);
-  max = max(lim0, lim1);
+  min = impl::min(lim0, lim1);
+  max = impl::max(lim0, lim1);
 }
 
 template <typename Integer, typename Integer1> KOKKOS_INLINE_FUNCTION
 void set_min_max (const Integer& lim0, const Integer& lim1,
                   Integer& min, Integer& max, const Integer1& vector_size) {
-  min = min(lim0, lim1) / vector_size;
-  max = max(lim0, lim1) / vector_size;
+  min = impl::min(lim0, lim1) / vector_size;
+  max = impl::max(lim0, lim1) / vector_size;
 }
 
 template <typename Real> KOKKOS_INLINE_FUNCTION
 Real rel_diff (const Real& a, const Real& b) {
   return std::abs(b - a)/std::abs(a);
 }
+
+} // namespace impl
 
 struct TransposeDirection {
   enum Enum { c2f, f2c };
