@@ -62,7 +62,7 @@ void WorkspaceManager<T, D>::report() const
     std::cout << "  For wsidx " << t << std::endl;
     for (int n = 0; n < m_max_names; ++n) {
       const char* name = &(host_all_names(t, n, 0));
-      if (strcmp(name, "") == 0) {
+      if (impl::strcmp(name, "") == 0) {
         break;
       }
       else {
@@ -395,11 +395,11 @@ void WorkspaceManager<T, D>::Workspace::change_indv_meta(
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
     const int slot = m_parent.get_index<S>(space);
     if (!release) {
-      EKAT_KERNEL_ASSERT(strlen(name) < m_max_name_len); // leave one char for null terminator
-      EKAT_KERNEL_ASSERT(strlen(name) > 0);
+      EKAT_KERNEL_ASSERT(impl::strlen(name) < m_max_name_len); // leave one char for null terminator
+      EKAT_KERNEL_ASSERT(impl::strlen(name) > 0);
       EKAT_KERNEL_ASSERT(!m_parent.m_active(m_ws_idx, slot));
       char* val = &(m_parent.m_curr_names(m_ws_idx, slot, 0));
-      strcpy(val, name);
+      impl::strcpy(val, name);
     }
     else {
       EKAT_KERNEL_ASSERT(m_parent.m_active(m_ws_idx, slot));
@@ -419,12 +419,12 @@ int WorkspaceManager<T, D>::Workspace::get_name_idx(const char* name, bool add) 
   int name_idx = -1;
   for (int n = 0; n < m_max_names; ++n) {
     char* old_name = &(m_parent.m_all_names(m_ws_idx, n, 0));
-    if (strcmp(old_name, name) == 0) {
+    if (impl::strcmp(old_name, name) == 0) {
       name_idx = n;
       break;
     }
-    else if (add && strcmp(old_name, "") == 0) {
-      strcpy(old_name, name);
+    else if (add && impl::strcmp(old_name, "") == 0) {
+      impl::strcpy(old_name, name);
       name_idx = n;
       break;
     }

@@ -285,6 +285,8 @@ subview (const Kokkos::View<T**, Parms...>& v_in, const int i) {
     &v_in.impl_map().reference(i, 0), v_in.extent(1));
 }
 
+namespace impl {
+
 #ifdef KOKKOS_ENABLE_CUDA
 // Replacements for namespace std functions that don't run on the GPU.
 KOKKOS_INLINE_FUNCTION
@@ -317,6 +319,8 @@ using std::strlen;
 using std::strcpy;
 using std::strcmp;
 #endif // KOKKOS_ENABLE_CUDA
+
+} // namespace impl
 
 } // namespace ekat
 
