@@ -46,7 +46,7 @@ set (EKAT_TEST_SMALL_PACK_SIZE  ${DEFAULT_SMALL_PACK_SIZE} CACHE STRING
 # this pack size, which is usually equal to EKAT_TEST_PACK_SIZE,
 # but may be equal to 1 if EKAT_TEST_POSSIBLY_NO_PACK is set to TRUE
 # For example, by default we trigger this special behavior on SKX
-if ("${KOKKOS_GMAKE_ARCH}" STREQUAL "SKX")
+if (Kokkos_ARCH_SKX)
   set(DEFAULT_POSSIBLY_NO_PACK TRUE)
   set (DEFAULT_POSSIBLY_NO_PACK_SIZE 1)
 else()

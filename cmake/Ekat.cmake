@@ -104,14 +104,6 @@ macro (setVars PREFIX SET_DEFAULTS)
     set (setVars_DEBUG_BUILD FALSE)
   endif ()
 
-  # Determine if this is a Cuda build.
-  string(FIND "${Kokkos_DEVICES}" "Cuda" setVars_CUDA_POS)
-  if (${setVars_CUDA_POS} GREATER -1)
-    set(setVars_CUDA_BUILD TRUE)
-  else ()
-    set(setVars_CUDA_BUILD FALSE)
-  endif ()
-
   ### Needed to configure ekat ###
 
   if (DEFINED ${PREFIX}_MIMIC_GPU)
@@ -167,7 +159,7 @@ macro (setVars PREFIX SET_DEFAULTS)
   if (DEFINED ${PREFIX}_TEST_PACK_SIZE)
     set (EKAT_TEST_PACK_SIZE ${${PREFIX}_TEST_PACK_SIZE} CACHE STRING "")
   elseif (SET_DEFAULTS)
-    if (EKAT_CUDA_BUILD)
+    if (Kokkos_ENABLE_CUDA)
       set (EKAT_TEST_PACK_SIZE 1 CACHE STRING "")
     else ()
       set (EKAT_TEST_PACK_SIZE 16 CACHE STRING "")
@@ -194,6 +186,5 @@ macro (setVars PREFIX SET_DEFAULTS)
 
   unset (setVars_CMAKE_BUILD_TYPE_ci)
   unset (setVars_DEBUG_BUILD)
-  unset (setVars_CUDA_BUILD)
   unset (setVars_CUDA_POS)
 endmacro (setVars)
