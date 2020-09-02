@@ -37,6 +37,9 @@ endif()
 # EKAT has mostly C++, but some Fortran too
 project (EKAT CXX Fortran)
 
+# Report the installation prefix.
+message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+
 ###########################
 ###      EKAT TPLS      ###
 ###########################
@@ -57,6 +60,11 @@ list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 include(YamlCpp)
 list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${YAMLCPP_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
+install(TARGETS ${YAMLCPP_LIBRARIES} DESTINATION lib)
+file(GLOB_RECURSE YAMLCPP_HEADERS
+     LIST_DIRECTORIES FALSE
+     "${PROJECT_SOURCE_DIR}/extern/yaml-cpp/include/yaml-cpp/*")
+install(FILES ${YAMLCPP_HEADERS} DESTINATION include/yaml-cpp)
 
 set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
 set (EKAT_TPL_INCLUDE_DIRS ${EKAT_TPL_INCLUDE_DIRS_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs include directories")
@@ -81,7 +89,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   # (perhaps clang generally) doesn't like this and requires -std=c++14 for these features.
   set(CMAKE_CXX_STANDARD 14)
 endif()
-
 
 ############################
 ###     EKAT LIBRARY     ###
@@ -119,3 +126,6 @@ include (EkatUtils)
 EkatConfigFile (${EKAT_SOURCE_DIR}/ekat_config.h.in
                 ${EKAT_BINARY_DIR}/ekat_config.h
                 F90_FILE ${EKAT_BINARY_DIR}/ekat_config.f)
+install(FILES ${EKAT_BINARY_DIR}/ekat_config.h
+              ${EKAT_BINARY_DIR}/ekat_config.f
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ekat)
