@@ -270,13 +270,13 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
   }
 }
 
-// 2d - set transpose to true if host data is coming from fortran
+// 2d - set do_transpose to true if host data is coming from fortran
 template <typename SizeT, size_t N, typename ViewT>
 void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
                     const Kokkos::Array<SizeT, N>& dim1_sizes,
                     const Kokkos::Array<SizeT, N>& dim2_sizes,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
@@ -290,7 +290,7 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
     auto host_view = Kokkos::create_mirror_view(views[n]);
 
     ScalarT* the_data = nullptr;
-    if (transpose) {
+    if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size);
       the_data = tdata.data();
       transpose<TransposeDirection::f2c>(data[n], the_data, dim1_size, dim2_size);
@@ -330,14 +330,14 @@ template <typename SizeT, size_t N, typename ViewT>
 void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
                     const SizeT dim1_size, const SizeT dim2_size,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes;
   for (size_t i = 0; i < N; ++i) {
     dim1_sizes[i] = dim1_size;
     dim2_sizes[i] = dim2_size;
   }
-  host_to_device(data, dim1_sizes, dim2_sizes, views, transpose);
+  host_to_device(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
 //
@@ -365,13 +365,13 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
   }
 }
 
-// 2d - set transpose to true if host data is going to fortran
+// 2d - set do_transpose to true if host data is going to fortran
 template <typename SizeT, size_t N, typename ViewT>
 void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
                     const Kokkos::Array<SizeT, N>& dim1_sizes,
                     const Kokkos::Array<SizeT, N>& dim2_sizes,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
@@ -385,7 +385,7 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
     Kokkos::deep_copy(host_view, views[n]);
 
     ScalarT* the_data = nullptr;
-    if (transpose) {
+    if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size);
       the_data = tdata.data();
     }
@@ -403,7 +403,7 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
       }
     }
 
-    if (transpose) {
+    if (do_transpose) {
       transpose<TransposeDirection::c2f>(the_data, data[n], dim1_size, dim2_size);
     }
   }
@@ -427,14 +427,14 @@ template <typename SizeT, size_t N, typename ViewT>
 void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
                     const SizeT dim1_size, const SizeT dim2_size,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes;
   for (size_t i = 0; i < N; ++i) {
     dim1_sizes[i] = dim1_size;
     dim2_sizes[i] = dim2_size;
   }
-  device_to_host(data, dim1_sizes, dim2_sizes, views, transpose);
+  device_to_host(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
 } // namespace ekat
