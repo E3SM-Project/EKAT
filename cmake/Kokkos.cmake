@@ -12,7 +12,7 @@ if (NOT IS_EKAT_KOKKOS_BUILT)
 
   if (NOT Kokkos_SOURCE_DIR)
     message (STATUS "Kokkos_SOURCE_DIR not specified: using submodule version.")
-    if(DEFINED Kokkos_ENABLE_DEPRECATED_CODE AND Kokkos_ENABLE_DEPRECATED_CODE)
+    if(Kokkos_ENABLE_DEPRECATED_CODE)
       message(FATAL_ERROR "Kokkos submodule cannot be used with\n"
                           "Kokkos_ENABLE_DEPRECATED_CODE.")
     endif()
