@@ -62,7 +62,7 @@ void WorkspaceManager<T, D>::report() const
     std::cout << "  For wsidx " << t << std::endl;
     for (int n = 0; n < m_max_names; ++n) {
       const char* name = &(host_all_names(t, n, 0));
-      if (util::strcmp(name, "") == 0) {
+      if (strcmp(name, "") == 0) {
         break;
       }
       else {
@@ -114,7 +114,7 @@ void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm, const view_2
 {
   Kokkos::parallel_for(
     "WorkspaceManager ctor",
-    util::ExeSpaceUtils<ExeSpace>::get_default_team_policy(max_ws_idx, max_used),
+    ExeSpaceUtils<ExeSpace>::get_default_team_policy(max_ws_idx, max_used),
     KOKKOS_LAMBDA(const MemberType& team) {
       Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, max_used), [&] (int i) {
@@ -126,7 +126,7 @@ void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm, const view_2
 template <typename T, typename D>
 template <typename S>
 KOKKOS_FORCEINLINE_FUNCTION
-int WorkspaceManager<T, D>::set_next_and_get_index(const util::Unmanaged<view_1d<S> >& space, int next) const
+int WorkspaceManager<T, D>::set_next_and_get_index(const Unmanaged<view_1d<S> >& space, int next) const
 {
   const auto metadata = reinterpret_cast<int*>(reinterpret_cast<T*>(space.data()) - m_reserve);
   metadata[1] = next;
@@ -136,10 +136,10 @@ int WorkspaceManager<T, D>::set_next_and_get_index(const util::Unmanaged<view_1d
 template <typename T, typename D>
 template <typename S>
 KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
+Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
 WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) const
 {
-  return util::Unmanaged<view_1d<S> >(
+  return Unmanaged<view_1d<S> >(
     reinterpret_cast<S*>(&m_data(team_idx, slot*m_total) + m_reserve),
     sizeof(T) == sizeof(S) ?
     m_size :
@@ -173,7 +173,7 @@ WorkspaceManager<T, D>::Workspace::~Workspace()
 template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-util::Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> > WorkspaceManager<T, D>::Workspace::take(
+Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> > WorkspaceManager<T, D>::Workspace::take(
   const char* name) const
 {
 #ifndef NDEBUG
@@ -366,7 +366,7 @@ void WorkspaceManager<T, D>::Workspace::print() const
 template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-const char* WorkspaceManager<T, D>::Workspace::get_name_impl(const util::Unmanaged<view_1d<S> >& space) const
+const char* WorkspaceManager<T, D>::Workspace::get_name_impl(const Unmanaged<view_1d<S> >& space) const
 {
   const int slot = m_parent.get_index<S>(space);
   return &(m_parent.m_curr_names(m_ws_idx, slot, 0));
@@ -390,16 +390,16 @@ template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
 void WorkspaceManager<T, D>::Workspace::change_indv_meta(
-  const util::Unmanaged<view_1d<S> >& space, const char* name, bool release) const
+  const Unmanaged<view_1d<S> >& space, const char* name, bool release) const
 {
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
     const int slot = m_parent.get_index<S>(space);
     if (!release) {
-      EKAT_KERNEL_ASSERT(util::strlen(name) < m_max_name_len); // leave one char for null terminator
-      EKAT_KERNEL_ASSERT(util::strlen(name) > 0);
+      EKAT_KERNEL_ASSERT(strlen(name) < m_max_name_len); // leave one char for null terminator
+      EKAT_KERNEL_ASSERT(strlen(name) > 0);
       EKAT_KERNEL_ASSERT(!m_parent.m_active(m_ws_idx, slot));
       char* val = &(m_parent.m_curr_names(m_ws_idx, slot, 0));
-      util::strcpy(val, name);
+      strcpy(val, name);
     }
     else {
       EKAT_KERNEL_ASSERT(m_parent.m_active(m_ws_idx, slot));
@@ -419,12 +419,12 @@ int WorkspaceManager<T, D>::Workspace::get_name_idx(const char* name, bool add) 
   int name_idx = -1;
   for (int n = 0; n < m_max_names; ++n) {
     char* old_name = &(m_parent.m_all_names(m_ws_idx, n, 0));
-    if (util::strcmp(old_name, name) == 0) {
+    if (strcmp(old_name, name) == 0) {
       name_idx = n;
       break;
     }
-    else if (add && util::strcmp(old_name, "") == 0) {
-      util::strcpy(old_name, name);
+    else if (add && strcmp(old_name, "") == 0) {
+      strcpy(old_name, name);
       name_idx = n;
       break;
     }
@@ -437,7 +437,7 @@ int WorkspaceManager<T, D>::Workspace::get_name_idx(const char* name, bool add) 
 template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::release_impl(const util::Unmanaged<view_1d<S> >& space) const
+void WorkspaceManager<T, D>::Workspace::release_impl(const Unmanaged<view_1d<S> >& space) const
 {
 #ifndef NDEBUG
   change_num_used(-1);

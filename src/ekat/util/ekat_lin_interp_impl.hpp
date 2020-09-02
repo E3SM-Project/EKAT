@@ -3,7 +3,6 @@
 #endif
 
 namespace ekat {
-namespace util {
 
 // Never include this header directly, only ekat_lin_interp.hpp should include it
 
@@ -12,11 +11,11 @@ LinInterp<ScalarT, PackSize, DeviceT>::LinInterp(int ncol, int km1, int km2, Sca
   m_ncol(ncol),
   m_km1(km1),
   m_km2(km2),
-  m_km1_pack(ekat::pack::npack<Pack>(km1)),
-  m_km2_pack(ekat::pack::npack<Pack>(km2)),
+  m_km1_pack(ekat::npack<Pack>(km1)),
+  m_km2_pack(ekat::npack<Pack>(km2)),
   m_minthresh(minthresh),
-  m_policy(util::ExeSpaceUtils<ExeSpace>::get_default_team_policy(ncol, m_km2_pack)),
-  m_indx_map("m_indx_map", ncol, ekat::pack::npack<IntPack>(km2))
+  m_policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ncol, m_km2_pack)),
+  m_indx_map("m_indx_map", ncol, ekat::npack<IntPack>(km2))
 {}
 
 template <typename ScalarT, int PackSize, typename DeviceT>
@@ -26,7 +25,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup(const MemberType& team,
                                         const V& x1,
                                         const V& x2) const
 {
-  setup_impl(team, *this, ekat::pack::repack<Pack::n>(x1), ekat::pack::repack<Pack::n>(x2));
+  setup_impl(team, *this, ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2));
 }
 
 // Linearly interpolate y(x1) onto coordinates x2
@@ -41,10 +40,10 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(const MemberType& team,
 {
   lin_interp_impl(team,
                   *this,
-                  ekat::pack::repack<Pack::n>(x1),
-                  ekat::pack::repack<Pack::n>(x2),
-                  ekat::pack::repack<Pack::n>(y1),
-                  ekat::pack::repack<Pack::n>(y2));
+                  ekat::repack<Pack::n>(x1),
+                  ekat::repack<Pack::n>(x2),
+                  ekat::repack<Pack::n>(y1),
+                  ekat::repack<Pack::n>(y2));
 }
 
 template <typename ScalarT, int PackSize, typename DeviceT>
@@ -55,8 +54,8 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
   const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
   const view_1d<Pack>& y2)
 {
-  auto x1s = ekat::pack::scalarize(x1);
-  auto y1s = ekat::pack::scalarize(y1);
+  auto x1s = ekat::scalarize(x1);
+  auto y1s = ekat::scalarize(y1);
 
   const int i = team.league_rank();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, liv.m_km2_pack), [&] (Int k2) {
@@ -75,8 +74,8 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
       }
       else {
         Pack x1p, x1p1, y1p, y1p1;
-        ekat::pack::index_and_shift<1>(x1s, indx_pk, x1p, x1p1);
-        ekat::pack::index_and_shift<1>(y1s, indx_pk, y1p, y1p1);
+        ekat::index_and_shift<1>(x1s, indx_pk, x1p, x1p1);
+        ekat::index_and_shift<1>(y1s, indx_pk, y1p, y1p1);
         const auto& x2p = x2(k2);
 
         y2(k2) = y1p + (y1p1-y1p)*(x2p-x1p)/(x1p1-x1p);
@@ -91,7 +90,7 @@ KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::setup_impl(
   const MemberType& team, const LinInterp& liv, const view_1d<const Pack>& x1, const view_1d<const Pack>& x2)
 {
-  auto x1s = ekat::pack::scalarize(x1);
+  auto x1s = ekat::scalarize(x1);
 
   const int i = team.league_rank();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, liv.m_km2_pack), [&] (Int k2) {
@@ -100,7 +99,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup_impl(
         auto begin = x1s.data();
         auto upper = begin + liv.m_km1;
 
-        auto ub = util::upper_bound(begin, upper, x1_indv);
+        auto ub = upper_bound(begin, upper, x1_indv);
         int x1_idx = ub - begin;
         if (x1_idx > 0) {
           --x1_idx;
@@ -110,5 +109,4 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup_impl(
     });
 }
 
-} // namespace util
 } // namespace ekat

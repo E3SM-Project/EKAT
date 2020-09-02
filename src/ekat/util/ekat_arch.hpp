@@ -9,7 +9,6 @@
  */
 
 namespace ekat {
-namespace util {
 
 std::string active_avx_string();
 
@@ -21,7 +20,6 @@ struct OnGpu { enum : bool { value = false }; };
 template <> struct OnGpu<Kokkos::Cuda> { enum : bool { value = true }; };
 #endif
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_ARCH_HPP

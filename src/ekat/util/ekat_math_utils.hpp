@@ -11,7 +11,6 @@
 #endif
 
 namespace ekat {
-namespace util {
 
 #ifdef KOKKOS_ENABLE_CUDA
 // Replacements for namespace std functions that don't run on the GPU.
@@ -61,15 +60,15 @@ bool is_nan (const RealT& a) {
 template <typename Integer> KOKKOS_INLINE_FUNCTION
 void set_min_max (const Integer& lim0, const Integer& lim1,
                   Integer& min, Integer& max) {
-  min = util::min(lim0, lim1);
-  max = util::max(lim0, lim1);
+  min = min(lim0, lim1);
+  max = max(lim0, lim1);
 }
 
 template <typename Integer, typename Integer1> KOKKOS_INLINE_FUNCTION
 void set_min_max (const Integer& lim0, const Integer& lim1,
                   Integer& min, Integer& max, const Integer1& vector_size) {
-  min = util::min(lim0, lim1) / vector_size;
-  max = util::max(lim0, lim1) / vector_size;
+  min = min(lim0, lim1) / vector_size;
+  max = max(lim0, lim1) / vector_size;
 }
 
 template <typename Real> KOKKOS_INLINE_FUNCTION
@@ -93,7 +92,6 @@ void transpose(const Scalar* sv, Scalar* dv, Int ni, Int nk) {
         dv[nk*i + k] = sv[ni*k + i];
 }
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_MATH_UTILS_HPP

@@ -21,7 +21,7 @@ int main (int argc, char **argv) {
     if (cmd_line_arg=="") {
       return;
     }
-    auto& ts = ekat::util::TestSession::get();
+    auto& ts = ekat::TestSession::get();
 
     std::stringstream input(cmd_line_arg);
     std::string option;
@@ -55,7 +55,7 @@ int main (int argc, char **argv) {
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  int dev_id = ekat::util::get_test_device(rank);
+  int dev_id = ekat::get_test_device(rank);
   // Create it outside the if, so its c_str pointer survives
   std::string new_arg;
   if (dev_id>=0) {

@@ -12,7 +12,6 @@
 #include <Kokkos_Core.hpp>
 
 namespace ekat {
-namespace pack {
 
 /* API for using "packed" data in ekat. Packs are just bundles of N
    scalars within a single object. Using packed data makes it much easier
@@ -304,14 +303,14 @@ ekat_pack_gen_unary_stdfn(tanh)
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> min (const PackType& p) {
   typename PackType::scalar v(p[0]);
-  vector_disabled for (int i = 0; i < PackType::n; ++i) v = util::min(v, p[i]);
+  vector_disabled for (int i = 0; i < PackType::n; ++i) v = min(v, p[i]);
   return v;
 }
 
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> max (const PackType& p) {
   typename PackType::scalar v(p[0]);
-  vector_simd for (int i = 0; i < PackType::n; ++i) v = util::max(v, p[i]);
+  vector_simd for (int i = 0; i < PackType::n; ++i) v = max(v, p[i]);
   return v;
 }
 
@@ -320,7 +319,7 @@ template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar>
 min (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackType& p) {
   vector_disabled for (int i = 0; i < PackType::n; ++i)
-    if (mask[i]) init = util::min(init, p[i]);
+    if (mask[i]) init = min(init, p[i]);
   return init;
 }
 
@@ -329,7 +328,7 @@ template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar>
 max (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackType& p) {
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    if (mask[i]) init = util::max(init, p[i]);
+    if (mask[i]) init = max(init, p[i]);
   return init;
 }
 
@@ -365,8 +364,8 @@ max (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackTy
   ekat_pack_gen_bin_fn_ps(fn, impl)           \
   ekat_pack_gen_bin_fn_sp(fn, impl)
 
-ekat_pack_gen_bin_fn_all(min, util::min)
-ekat_pack_gen_bin_fn_all(max, util::max)
+ekat_pack_gen_bin_fn_all(min, min)
+ekat_pack_gen_bin_fn_all(max, max)
 
 // On Intel 17 for KNL, I'm getting a ~1-ulp diff on const Scalar& b. I don't
 // understand its source. But, in any case, I'm writing a separate impl here to
@@ -499,7 +498,7 @@ OnlyPackReturn<PackType, Mask<PackType::n>>
 isnan (const PackType& p) {
   Mask<PackType::n> m;
   vector_simd for (int i = 0; i < PackType::n; ++i) {
-    m.set(i, util::is_nan(p[i]));
+    m.set(i, is_nan(p[i]));
   }
   return m;
 }
@@ -540,16 +539,14 @@ OnlyPack<PackType> range (const typename PackType::scalar& start) {
 #undef ekat_mask_gen_bin_op_mm
 #undef ekat_mask_gen_bin_op_mb
 
-} // namespace pack
-
 // Specialization of ScalarTraits struct for Pack types
 
 template<typename T, int N>
-struct ScalarTraits<pack::Pack<T,N>> {
+struct ScalarTraits<Pack<T,N>> {
 
   using inner_traits = ScalarTraits<T>;
 
-  using value_type  = pack::Pack<T,N>;
+  using value_type  = Pack<T,N>;
   using scalar_type = typename inner_traits::scalar_type;
 
   // TODO: should we allow a pack of packs? For now, I assume the answer is NO.

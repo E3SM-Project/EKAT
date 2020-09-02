@@ -7,7 +7,6 @@
 #include "ekat/ekat_assert.hpp"
 
 namespace ekat {
-namespace util {
 
 enum class Format {
   Float,
@@ -172,7 +171,7 @@ inline std::string to_string (const RationalConstant& rat, const Format fmt = Fo
       break;
     default:
       EKAT_REQUIRE_MSG(false,"Error! Unrecognized format for printing RationalConstant.\n");
-      
+
   }
   return ss.str();
 }
@@ -182,7 +181,6 @@ inline std::ostream& operator<< (std::ostream& out, const RationalConstant& rat)
   return out;
 }
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_RATIONAL_CONSTANT_HPP

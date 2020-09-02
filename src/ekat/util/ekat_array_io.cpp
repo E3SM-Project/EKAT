@@ -5,7 +5,6 @@
 #include <iostream>
 
 namespace ekat {
-namespace util {
 template <typename Scalar>
 void write (const char* filename, Scalar* a, const int n) {
   FILEPtr fid(fopen(filename, "w"));
@@ -23,7 +22,6 @@ void read (const char* filename, Scalar* a, const int n) {
   EKAT_REQUIRE_MSG(n_file == n, "Expected " << n << " but got " << n_file);
   read<Scalar>(a, n, fid);
 }
-} // namespace util
 } // namespace ekat
 
 extern "C" {
@@ -36,7 +34,7 @@ bool array_io_file_exists (const char* filename) {
 // F90 has C linking, so we need to duplicate the function for single/double precision
 bool array_io_write_double (const char* filename, double** a, const int n) {
   try {
-    ekat::util::write(filename, *a, n);
+    ekat::write(filename, *a, n);
     return true;
   } catch (std::exception& e) {
     std::cerr << "array_io_write failed with: " << e.what() << "\n";
@@ -45,7 +43,7 @@ bool array_io_write_double (const char* filename, double** a, const int n) {
 }
 bool array_io_write_float (const char* filename, float** a, const int n) {
   try {
-    ekat::util::write(filename, *a, n);
+    ekat::write(filename, *a, n);
     return true;
   } catch (std::exception& e) {
     std::cerr << "array_io_write failed with: " << e.what() << "\n";
@@ -55,7 +53,7 @@ bool array_io_write_float (const char* filename, float** a, const int n) {
 
 bool array_io_read_double (const char* filename, double** a, const int n) {
   try {
-    ekat::util::read(filename, *a, n);
+    ekat::read(filename, *a, n);
     return true;
   } catch (std::exception& e) {
     std::cerr << "array_io_read failed with: " << e.what() << "\n";
@@ -64,7 +62,7 @@ bool array_io_read_double (const char* filename, double** a, const int n) {
 }
 bool array_io_read_float (const char* filename, float** a, const int n) {
   try {
-    ekat::util::read(filename, *a, n);
+    ekat::read(filename, *a, n);
     return true;
   } catch (std::exception& e) {
     std::cerr << "array_io_read failed with: " << e.what() << "\n";

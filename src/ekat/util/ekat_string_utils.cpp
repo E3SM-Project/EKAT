@@ -5,7 +5,6 @@
 #include <sstream>
 
 namespace ekat {
-namespace util {
 
 void strip (std::string& str, const char c) {
   auto new_end = std::remove(str.begin(),str.end(),c);
@@ -168,5 +167,4 @@ bool caseInsensitiveLessEqualString (const std::string& s1, const std::string& s
   return s1.size()<=s2.size();
 }
 
-} // namespace util
 } // namespace ekat

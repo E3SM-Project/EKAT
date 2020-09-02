@@ -9,7 +9,6 @@
 #include "ekat/ekat_pack_kokkos.hpp"
 
 namespace ekat {
-namespace util {
 
 /*
  * LinInterp is a class for doing fast linear interpolations within Kokkos
@@ -61,8 +60,8 @@ struct LinInterp
   using MemberType  = typename KT::MemberType;
   using TeamPolicy  = typename KT::TeamPolicy;
 
-  using Pack    = ekat::pack::Pack<Scalar, LI_PACKN>;
-  using IntPack = ekat::pack::Pack<int, LI_PACKN>;
+  using Pack    = ekat::Pack<Scalar, LI_PACKN>;
+  using IntPack = ekat::Pack<int, LI_PACKN>;
 
   //
   // ------ public API -------
@@ -114,7 +113,6 @@ struct LinInterp
   view_2d<IntPack> m_indx_map; // [x2-idx] -> x1-idx
 };
 
-} //namespace util
 } //namespace ekat
 
 #include "ekat_lin_interp_impl.hpp"

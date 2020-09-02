@@ -11,9 +11,6 @@
 namespace ekat
 {
 
-namespace util
-{
-
 template<typename AbstractProduct,
          typename KeyType,
          typename PointerType,
@@ -170,7 +167,6 @@ print_registered_products_impl () const {
   return ss.str();
 }
 
-} // namespace util
-} // namespace ekat 
+} // namespace ekat
 
 #endif // EKAT_FACTORY_HPP

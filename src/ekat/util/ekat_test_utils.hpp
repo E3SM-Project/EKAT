@@ -6,7 +6,6 @@
 #include <map>
 
 namespace ekat {
-namespace util {
 
 struct TestSession {
   static TestSession& get () {
@@ -28,7 +27,7 @@ void genRandArray(RealType *const x, int length, rngAlg &engine, PDF &&pdf) {
 }
 
 template <typename rngAlg, typename PDF, typename ScalarType, int N>
-void genRandArray(pack::Pack<ScalarType,N> *const x, int length, rngAlg &engine, PDF &&pdf) {
+void genRandArray(Pack<ScalarType,N> *const x, int length, rngAlg &engine, PDF &&pdf) {
   for (int i = 0; i < length; ++i) {
     for (int j = 0; j < N; ++j) {
       x[i][j] = pdf(engine);
@@ -96,7 +95,6 @@ bool argv_matches(const std::string& str, const std::string& short_opt, const st
 //         kokkos device, it returns -1.
 int get_test_device (const int mpi_rank);
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_TEST_UTILS_HPP

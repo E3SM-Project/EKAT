@@ -57,15 +57,15 @@ void initialize_ekat_session (bool print_config) {
     ekat_impl::initialize_kokkos();
   }
 
-  if (print_config) 
-    std::cout << util::ekat_config_string() << "\n";
+  if (print_config)
+    std::cout << ekat_config_string() << "\n";
 }
 
 void initialize_ekat_session (int argc, char **argv, bool print_config) {
   enable_default_fpes ();
   Kokkos::initialize(argc, argv);
-  if (print_config) 
-    std::cout << util::ekat_config_string() << "\n";
+  if (print_config)
+    std::cout << ekat_config_string() << "\n";
 }
 
 extern "C" {
