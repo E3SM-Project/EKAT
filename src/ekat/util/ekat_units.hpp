@@ -8,6 +8,12 @@
 namespace ekat
 {
 
+namespace units
+{
+
+// In the units namespace, it's ok to use some stuff from the util namespace
+using namespace prefixes;
+
 constexpr int NUM_BASIC_UNITS = 7;
 constexpr const char* BASIC_UNITS_SYMBOLS[7] = {"m", "s", "kg", "K", "A", "mol", "cd"};
 
@@ -311,6 +317,8 @@ const Units H    = Wb/A;         // henri        (inductance)
 const Units Sv   = J/kg;         // sievert      (radiation dose)
 const Units rem  = Sv/100;       // rem          (radiation dose)
 const Units Hz   = 1/s;          // hertz        (frequency)
+
+} // namespace units
 
 } // namespace ekat
 

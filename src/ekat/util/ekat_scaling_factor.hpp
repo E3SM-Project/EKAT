@@ -139,6 +139,7 @@ inline std::ostream& operator<< (std::ostream& out, const ScalingFactor& s) {
 }
 
 
+namespace prefixes {
 constexpr ScalingFactor nano  = ScalingFactor(10,-9);
 constexpr ScalingFactor micro = ScalingFactor(10,-6);
 constexpr ScalingFactor milli = ScalingFactor(10,-3);
@@ -150,6 +151,7 @@ constexpr ScalingFactor hecto = ScalingFactor(10, 2);
 constexpr ScalingFactor kilo  = ScalingFactor(10, 3);
 constexpr ScalingFactor mega  = ScalingFactor(10, 6);
 constexpr ScalingFactor giga  = ScalingFactor(10, 9);
+} // namespace prefixes
 
 } // namespace ekat
 
