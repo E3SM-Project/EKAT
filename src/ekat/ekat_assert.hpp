@@ -27,12 +27,12 @@
     }                                                                   \
   } while(0)
 
-#define IMPL_KERNEL_THROW(condition, msg)                           \
-  do {                                                              \
-    if ( ! (condition) ) {                                          \
-      printf("KERNEL CHECK FAILED:\n   %s\n   %s",#condition,msg);  \
-      Kokkos::abort("");                                            \
-    }                                                               \
+#define IMPL_KERNEL_THROW(condition, msg)                             \
+  do {                                                                \
+    if ( ! (condition) ) {                                            \
+      printf("KERNEL CHECK FAILED:\n   %s\n   %s\n",#condition,msg);  \
+      Kokkos::abort("");                                              \
+    }                                                                 \
   } while (0)
 
 #ifndef NDEBUG

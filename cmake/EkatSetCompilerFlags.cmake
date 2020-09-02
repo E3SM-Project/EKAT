@@ -217,8 +217,7 @@ macro (SetCompilerFlags)
   ##############################################################################
   # OpenMP
   ##############################################################################
-  string(FIND "${KOKKOS_GMAKE_DEVICES}" "OpenMP" openmp_str_pos)
-  if (${openmp_str_pos} GREATER -1)
+  if (Kokkos_ENABLE_OPENMP)
     find_package(OpenMP)
     if(OPENMP_FOUND)
       message(STATUS "Found OpenMP Flags")
@@ -245,7 +244,7 @@ macro (SetCompilerFlags)
   # interactive node is different than the compute nodes.
   # Also, disable this on KNL, since FindAVX will find 512, but -xCORE-AVX512
   # only works on skx.
-  if (NOT DEFINED AVX_VERSION AND NOT KOKKOS_ARCH STREQUAL "KNL")
+  if (NOT DEFINED AVX_VERSION AND NOT Kokkos_ARCH_KNL)
     include(FindAVX)
     FindAVX()
     if (AVX512_FOUND)
