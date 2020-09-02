@@ -12,7 +12,7 @@ include(EkatMpiUtils)
 DisableMpiCxxBindings()
 
 # If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
-if (KOKKOS_ENABLE_CUDA)
+if (Kokkos_ENABLE_CUDA)
   include (EkatSetNvccWrapper)
   EkatSetNvccWrapper()
 endif()
