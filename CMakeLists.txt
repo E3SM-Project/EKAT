@@ -11,6 +11,23 @@ list(APPEND CMAKE_MODULE_PATH
 include(EkatMpiUtils)
 DisableMpiCxxBindings()
 
+# Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
+if (NOT Kokkos_SOURCE_DIR)
+  message (STATUS "Kokkos_SOURCE_DIR not specified: using submodule version.")
+  set (Kokkos_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/kokkos" CACHE STRING "Kokkos submodule source directory")
+  if(Kokkos_ENABLE_DEPRECATED_CODE)
+    message(FATAL_ERROR "Kokkos submodule cannot be used with\n"
+                        "Kokkos_ENABLE_DEPRECATED_CODE.")
+  endif()
+elseif (NOT EXISTS ${Kokkos_SOURCE_DIR})
+  message (FATAL_ERROR "Error! Please specify a valid source folder for kokkos.\n"
+                       "       Provided path: ${Kokkos_SOURCE_DIR}")
+else()
+  message (STATUS "Using Kokkos in ${Kokkos_SOURCE_DIR}.\n"
+                  "User-supplied Kokkos versions are not guaranteed to work.")
+endif()
+
+
 # If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
 if (Kokkos_ENABLE_CUDA)
   include (EkatSetNvccWrapper)
