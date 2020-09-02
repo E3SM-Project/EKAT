@@ -44,7 +44,8 @@ if (NOT IS_EKAT_KOKKOS_BUILT)
 
   if (EKAT_DISABLE_TPL_WARNINGS)
     include (EkatUtils)
-    EkatDisableAllWarning(kokkos)
+    EkatDisableAllWarning(kokkoscore)
+    EkatDisableAllWarning(kokkoscontainers)
   endif ()
 
   # Make sure it is processed only once

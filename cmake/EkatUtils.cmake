@@ -80,7 +80,7 @@ macro (EkatDisableAllWarning targetName)
   endif ()
 
   # Better let the user know, just in case he wasn't expecting this.
-  message (STATUS "WARNING: Disabling all warnings for target ${targetName}")
+  message (STATUS "Disabling all warnings for target ${targetName}")
 
   # Add flags to ignore warnings to the target, for all Ekat-supported languages (C, CXX, Fortran)
   # Make the flag compiler-dependent. Notice that only one of the $<$<C_COMPILER_ID:blah>: "blahblah">
