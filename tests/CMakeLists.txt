@@ -7,7 +7,7 @@
 ###    THREADING    ###
 #######################
 
-if (KOKKOS_ENABLE_CUDA)
+if (Kokkos_ENABLE_CUDA)
   set (DEFAULT_MAX_THREADS 1)
 else ()
   set (DEFAULT_MAX_THREADS 16)
@@ -27,7 +27,7 @@ option (EKAT_TEST_DOUBLE_PRECISION "Whether tests should be performed in double 
 ###     PACKS       ###
 #######################
 
-if (KOKKOS_ENABLE_CUDA)
+if (Kokkos_ENABLE_CUDA)
   set (DEFAULT_PACK_SIZE 1)
   set (DEFAULT_SMALL_PACK_SIZE 1)
 else ()
