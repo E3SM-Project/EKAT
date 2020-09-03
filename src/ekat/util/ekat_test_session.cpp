@@ -4,7 +4,7 @@
  * This small file contains the default implementation of a test session
  * initialization/finalization. These implementation simply call the
  * correspondinf ekat session intialization/finalization.
- * 
+ *
  * If your application needs to perform additional initialization or finalization
  * work, you MUST define these functions in a cpp file. Your implementation should
  * likely call EKAT's session initialization/finalization, but are allowed to do

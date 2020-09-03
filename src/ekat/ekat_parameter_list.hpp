@@ -41,7 +41,7 @@ public:
 private:
 
   std::string                           m_name;
-  std::map<std::string,util::any>       m_params;
+  std::map<std::string,any>             m_params;
   std::map<std::string,ParameterList>   m_sublists;
 };
 
@@ -53,7 +53,7 @@ inline T& ParameterList::get (const std::string& name) {
   error::runtime_check ( isParameter(name),
                         "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
-  return util::any_cast<T>(m_params[name]);
+  return any_cast<T>(m_params[name]);
 }
 
 template<typename T>
@@ -61,7 +61,7 @@ inline const T& ParameterList::get (const std::string& name) const {
   error::runtime_check ( isParameter(name),
                         "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
-  return util::any_cast<T>(m_params.at(name));
+  return any_cast<T>(m_params.at(name));
 }
 
 template<typename T>

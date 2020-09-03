@@ -20,7 +20,6 @@
  */
 
 namespace ekat {
-namespace util {
 
 // Strip character c from input string
 void strip (std::string& str, const char c);
@@ -115,7 +114,6 @@ operator<= (const S1& s1, const S2& s2) {
   return caseInsensitiveLessEqualString(s1,s2);
 }
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_STRING_UTILS_HPP

@@ -4,7 +4,6 @@
 #include <Kokkos_Core.hpp>
 
 namespace ekat {
-namespace util {
 
 // Kokkos-related types not specific to the app. Thus, do not include
 // app-specific array types here; rather, include only those things that one
@@ -39,7 +38,6 @@ using Unmanaged =
                  // already there.
                  Kokkos::Unmanaged> >;
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_KOKKOS_META_HPP

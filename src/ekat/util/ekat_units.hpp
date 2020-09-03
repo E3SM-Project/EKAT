@@ -12,25 +12,22 @@ namespace units
 {
 
 // In the units namespace, it's ok to use some stuff from the util namespace
-using util::RationalConstant;
-using util::ScalingFactor;
-using util::Format;
-using namespace util::prefixes;
+using namespace prefixes;
 
 constexpr int NUM_BASIC_UNITS = 7;
 constexpr const char* BASIC_UNITS_SYMBOLS[7] = {"m", "s", "kg", "K", "A", "mol", "cd"};
 
 /*
  *  Units: a class to store physical units in terms of fundamental ones
- *  
+ *
  *  Units is morally storing 8 numbers:
  *   - a scaling factor
  *   - the exponents of the 7 base units
  *  So if a quantity has units kPa, it will store
- *  
+ *
  *    - a scaling factor of 1000
  *    - the exponents [ -1, -2, 1, 0, 0, 0, 0 ]
- *  
+ *
  *  since kPa = 1000 kg m^-1 s ^-2.
  *
  *  A few arithmetic operators as well as pow/sqrt functions are overloaded,
@@ -271,7 +268,7 @@ inline std::string to_string(const Units& x) {
   }
 
   // Remove leading/trailing whitespaces
-  return util::trim(s);
+  return trim(s);
 }
 
 inline std::ostream& operator<< (std::ostream& out, const Units& x) {

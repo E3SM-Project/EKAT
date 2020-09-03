@@ -12,7 +12,6 @@ namespace {
 
 TEST_CASE("data_type", "[kokkos_utils]") {
   using namespace ekat;
-  using namespace ekat::util;
 
   // Check meta-util that allows to reshape a view
   Kokkos::View<double*> v1d("",100);
@@ -24,7 +23,6 @@ TEST_CASE("data_type", "[kokkos_utils]") {
 }
 
 TEST_CASE("team_policy", "[kokkos_utils]") {
-  using namespace ekat::util;
   using namespace ekat;
 
   using Device = DefaultDevice;
@@ -52,7 +50,6 @@ TEST_CASE("team_policy", "[kokkos_utils]") {
 TEST_CASE("team_utils_omp", "[kokkos_utils]")
 {
 #ifdef KOKKOS_ENABLE_OPENMP
-  using namespace ekat::util;
   using namespace ekat;
 
   using Device = DefaultDevice;
@@ -136,7 +133,6 @@ TEST_CASE("team_utils_omp", "[kokkos_utils]")
 
 void test_utils_large_ni(const double saturation_multiplier)
 {
-  using namespace ekat::util;
   using namespace ekat;
 
   using Device = DefaultDevice;

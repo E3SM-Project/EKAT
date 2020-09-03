@@ -9,7 +9,6 @@
 #include "ekat_test_config.h"
 
 namespace ekat {
-namespace tridiag {
 namespace test {
 
 template <typename TridiagDiag>
@@ -131,7 +130,6 @@ void run(const Input& in);
 }
 
 } // namespace test
-} // namespace tridiag
 } // namespace ekat
 
 #endif // EKAT_TRIDIAG_TESTS_HPP

@@ -10,7 +10,6 @@
 #include <vector>
 
 namespace ekat {
-namespace pack {
 
 /* These functions combine Pack, Mask, and Kokkos::Views.
  */
@@ -90,9 +89,9 @@ index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_c
 
 // 4d
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<T****, Parms...> >
+Unmanaged<Kokkos::View<T****, Parms...> >
 scalarize (const Kokkos::View<Pack<T, pack_size>****, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<T****, Parms...> >(
+  return Unmanaged<Kokkos::View<T****, Parms...> >(
     reinterpret_cast<T*>(vp.data()),
     vp.extent_int(0), vp.extent_int(1), vp.extent_int(2),
     pack_size * vp.extent_int(3));
@@ -100,9 +99,9 @@ scalarize (const Kokkos::View<Pack<T, pack_size>****, Parms...>& vp) {
 
 // 4d const
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<const T****, Parms...> >
+Unmanaged<Kokkos::View<const T****, Parms...> >
 scalarize (const Kokkos::View<const Pack<T, pack_size>****, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<const T****, Parms...> >(
+  return Unmanaged<Kokkos::View<const T****, Parms...> >(
     reinterpret_cast<const T*>(vp.data()),
     vp.extent_int(0), vp.extent_int(1), vp.extent_int(2),
     pack_size * vp.extent_int(3));
@@ -110,51 +109,51 @@ scalarize (const Kokkos::View<const Pack<T, pack_size>****, Parms...>& vp) {
 
 // 3d
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<T***, Parms...> >
+Unmanaged<Kokkos::View<T***, Parms...> >
 scalarize (const Kokkos::View<Pack<T, pack_size>***, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<T***, Parms...> >(
+  return Unmanaged<Kokkos::View<T***, Parms...> >(
     reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
     pack_size * vp.extent_int(2));
 }
 
 // 3d const
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<const T***, Parms...> >
+Unmanaged<Kokkos::View<const T***, Parms...> >
 scalarize (const Kokkos::View<const Pack<T, pack_size>***, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<const T***, Parms...> >(
+  return Unmanaged<Kokkos::View<const T***, Parms...> >(
     reinterpret_cast<const T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
     pack_size * vp.extent_int(2));
 }
 
 // 2d
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<T**, Parms...> >
+Unmanaged<Kokkos::View<T**, Parms...> >
 scalarize (const Kokkos::View<Pack<T, pack_size>**, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<T**, Parms...> >(
+  return Unmanaged<Kokkos::View<T**, Parms...> >(
     reinterpret_cast<T*>(vp.data()), vp.extent_int(0), pack_size * vp.extent_int(1));
 }
 
 // 2d const
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<const T**, Parms...> >
+Unmanaged<Kokkos::View<const T**, Parms...> >
 scalarize (const Kokkos::View<const Pack<T, pack_size>**, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<const T**, Parms...> >(
+  return Unmanaged<Kokkos::View<const T**, Parms...> >(
     reinterpret_cast<const T*>(vp.data()), vp.extent_int(0), pack_size * vp.extent_int(1));
 }
 
 // 1d
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<T*, Parms...> >
+Unmanaged<Kokkos::View<T*, Parms...> >
 scalarize (const Kokkos::View<Pack<T, pack_size>*, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<T*, Parms...> >(
+  return Unmanaged<Kokkos::View<T*, Parms...> >(
     reinterpret_cast<T*>(vp.data()), pack_size * vp.extent_int(0));
 }
 
 // 1d const
 template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<const T*, Parms...> >
+Unmanaged<Kokkos::View<const T*, Parms...> >
 scalarize (const Kokkos::View<const Pack<T, pack_size>*, Parms...>& vp) {
-  return util::Unmanaged<Kokkos::View<const T*, Parms...> >(
+  return Unmanaged<Kokkos::View<const T*, Parms...> >(
     reinterpret_cast<const T*>(vp.data()), pack_size * vp.extent_int(0));
 }
 
@@ -167,12 +166,12 @@ template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
           typename std::enable_if<(old_pack_size > new_pack_size), int>::type = 0>
 KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >
+Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>**, Parms...>& vp) {
   static_assert(new_pack_size > 0 &&
                 old_pack_size % new_pack_size == 0,
                 "New pack size must divide old pack size.");
-  return util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >(
+  return Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >(
     reinterpret_cast<Pack<T, new_pack_size>*>(vp.data()),
     vp.extent_int(0),
     (old_pack_size / new_pack_size) * vp.extent_int(1));
@@ -183,11 +182,11 @@ template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
           typename std::enable_if<(old_pack_size < new_pack_size), int>::type = 0>
 KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >
+Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>**, Parms...>& vp) {
   static_assert(new_pack_size % old_pack_size == 0,
                 "New pack size must divide old pack size.");
-  return util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >(
+  return Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >(
     reinterpret_cast<Pack<T, new_pack_size>*>(vp.data()),
     vp.extent_int(0),
     (new_pack_size / old_pack_size) * vp.extent_int(1));
@@ -198,7 +197,7 @@ template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
           typename std::enable_if<(new_pack_size == old_pack_size), int>::type = 0>
 KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >
+Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>**, Parms...>& vp) {
   return vp;
 }
@@ -208,12 +207,12 @@ template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
           typename std::enable_if<(old_pack_size > new_pack_size), int>::type = 0>
 KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
+Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
   static_assert(new_pack_size > 0 &&
                 old_pack_size % new_pack_size == 0,
                 "New pack size must divide old pack size.");
-  return util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >(
+  return Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >(
     reinterpret_cast<Pack<T, new_pack_size>*>(vp.data()),
     (old_pack_size / new_pack_size) * vp.extent_int(0));
 }
@@ -223,13 +222,13 @@ template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
           typename std::enable_if<(old_pack_size < new_pack_size), int>::type = 0>
 KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
+Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
   static_assert(new_pack_size > 0 &&
                 new_pack_size % old_pack_size == 0,
                 "Old pack size must divide new pack size.");
   EKAT_KERNEL_ASSERT(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
-  return util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >(
+  return Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >(
     reinterpret_cast<Pack<T, new_pack_size>*>(vp.data()),
     vp.extent_int(0) / (new_pack_size / old_pack_size));
 }
@@ -239,7 +238,7 @@ template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
           typename std::enable_if<(old_pack_size == new_pack_size), int>::type = 0>
 KOKKOS_FORCEINLINE_FUNCTION
-util::Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
+Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
   return vp;
 }
@@ -271,13 +270,13 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
   }
 }
 
-// 2d - set transpose to true if host data is coming from fortran
+// 2d - set do_transpose to true if host data is coming from fortran
 template <typename SizeT, size_t N, typename ViewT>
 void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
                     const Kokkos::Array<SizeT, N>& dim1_sizes,
                     const Kokkos::Array<SizeT, N>& dim2_sizes,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
@@ -291,10 +290,10 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
     auto host_view = Kokkos::create_mirror_view(views[n]);
 
     ScalarT* the_data = nullptr;
-    if (transpose) {
+    if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size);
       the_data = tdata.data();
-      util::transpose<util::TransposeDirection::f2c>(data[n], the_data, dim1_size, dim2_size);
+      transpose<TransposeDirection::f2c>(data[n], the_data, dim1_size, dim2_size);
     }
     else {
       the_data = const_cast<ScalarT*>(data[n]);
@@ -331,14 +330,14 @@ template <typename SizeT, size_t N, typename ViewT>
 void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
                     const SizeT dim1_size, const SizeT dim2_size,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes;
   for (size_t i = 0; i < N; ++i) {
     dim1_sizes[i] = dim1_size;
     dim2_sizes[i] = dim2_size;
   }
-  host_to_device(data, dim1_sizes, dim2_sizes, views, transpose);
+  host_to_device(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
 //
@@ -366,13 +365,13 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
   }
 }
 
-// 2d - set transpose to true if host data is going to fortran
+// 2d - set do_transpose to true if host data is going to fortran
 template <typename SizeT, size_t N, typename ViewT>
 void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
                     const Kokkos::Array<SizeT, N>& dim1_sizes,
                     const Kokkos::Array<SizeT, N>& dim2_sizes,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
@@ -386,7 +385,7 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
     Kokkos::deep_copy(host_view, views[n]);
 
     ScalarT* the_data = nullptr;
-    if (transpose) {
+    if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size);
       the_data = tdata.data();
     }
@@ -404,8 +403,8 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
       }
     }
 
-    if (transpose) {
-      util::transpose<util::TransposeDirection::c2f>(the_data, data[n], dim1_size, dim2_size);
+    if (do_transpose) {
+      transpose<TransposeDirection::c2f>(the_data, data[n], dim1_size, dim2_size);
     }
   }
 }
@@ -428,17 +427,16 @@ template <typename SizeT, size_t N, typename ViewT>
 void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
                     const SizeT dim1_size, const SizeT dim2_size,
                     Kokkos::Array<ViewT, N>& views,
-                    bool transpose=false)
+                    bool do_transpose=false)
 {
   Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes;
   for (size_t i = 0; i < N; ++i) {
     dim1_sizes[i] = dim1_size;
     dim2_sizes[i] = dim2_size;
   }
-  device_to_host(data, dim1_sizes, dim2_sizes, views, transpose);
+  device_to_host(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
-} // namespace pack
 } // namespace ekat
 
 #endif // EKAT_PACK_KOKKOS_HPP

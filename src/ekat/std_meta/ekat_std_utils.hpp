@@ -8,7 +8,6 @@
 #include <set>
 
 namespace ekat {
-namespace util {
 
 // This function returns an iterator which is of the same type of c.begin()
 template<typename ContainerType, typename T>
@@ -37,8 +36,6 @@ template<typename ContainerType, typename T>
 int count (const ContainerType& c, const T& value) {
   return std::count(c.begin(), c.end(), value);
 }
-
-} // namespace util
 
 // A set of weak_ptr would not compile, due to the lack of operator<.
 // To overcome this, one could add a Compare type to the set template

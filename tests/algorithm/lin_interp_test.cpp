@@ -85,11 +85,11 @@ TEST_CASE("lin_interp", "soak") {
       populate_li_input(km1, km2, x1[i].data(), y1[i].data(), x2[i].data(), &generator);
     }
 
-    using LIV = ekat::util::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
-    using Pack = ekat::pack::Pack<Real,EKAT_TEST_PACK_SIZE>;
+    using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
+    using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
     LIV vect(ncol, km1, km2, minthresh);
-    const int km1_pack = ekat::pack::npack<Pack>(km1);
-    const int km2_pack = ekat::pack::npack<Pack>(km2);
+    const int km1_pack = ekat::npack<Pack>(km1);
+    const int km2_pack = ekat::npack<Pack>(km2);
     typename LIV::template view_2d<Pack>
       x1kv("x1kv", ncol, km1_pack),
       x2kv("x2kv", ncol, km2_pack),
@@ -133,9 +133,9 @@ TEST_CASE("lin_interp", "soak") {
       const Real* x2flat = flatten(x2);
       const Real* y1flat = flatten(y1);
 
-      ekat::util::transpose<ekat::util::TransposeDirection::c2f>(x1flat, x1f.data(), ncol, km1);
-      ekat::util::transpose<ekat::util::TransposeDirection::c2f>(y1flat, y1f.data(), ncol, km1);
-      ekat::util::transpose<ekat::util::TransposeDirection::c2f>(x2flat, x2f.data(), ncol, km2);
+      ekat::transpose<ekat::TransposeDirection::c2f>(x1flat, x1f.data(), ncol, km1);
+      ekat::transpose<ekat::TransposeDirection::c2f>(y1flat, y1f.data(), ncol, km1);
+      ekat::transpose<ekat::TransposeDirection::c2f>(x2flat, x2f.data(), ncol, km2);
 
       delete[] x1flat;
       delete[] x2flat;
@@ -147,7 +147,7 @@ TEST_CASE("lin_interp", "soak") {
       linear_interp_c(x1f.data(), x2f.data(), y1f.data(), y2f.data(), km1, km2, ncol, minthresh);
 
       std::vector<Real> y2c(ncol*km2);
-      ekat::util::transpose<ekat::util::TransposeDirection::f2c>(y2f.data(), y2c.data(), ncol, km2);
+      ekat::transpose<ekat::TransposeDirection::f2c>(y2f.data(), y2c.data(), ncol, km2);
 
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km2; ++j) {
@@ -163,14 +163,14 @@ TEST_CASE("lin_interp", "soak") {
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
         const int i = team_member.league_rank();
         vect.setup(team_member,
-                   ekat::util::subview(x1kv, i),
-                   ekat::util::subview(x2kv, i));
+                   ekat::subview(x1kv, i),
+                   ekat::subview(x2kv, i));
         team_member.team_barrier();
         vect.lin_interp(team_member,
-                        ekat::util::subview(x1kv, i),
-                        ekat::util::subview(x2kv, i),
-                        ekat::util::subview(y1kv, i),
-                        ekat::util::subview(y2kv, i));
+                        ekat::subview(x1kv, i),
+                        ekat::subview(x2kv, i),
+                        ekat::subview(y1kv, i),
+                        ekat::subview(y2kv, i));
       });
     }
 
@@ -180,7 +180,7 @@ TEST_CASE("lin_interp", "soak") {
       Kokkos::deep_copy(y2kvm, y2kv);
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km2; ++j) {
-          ekat::util::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
+          ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
         }
       }
     }

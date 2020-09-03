@@ -7,7 +7,6 @@
 #include "ekat_test_config.h"
 
 namespace ekat {
-namespace tridiag {
 namespace test {
 namespace perf {
 
@@ -32,12 +31,12 @@ Solver::Enum Solver::convert (const std::string& s) {
 
 Input::Input ()
   : method(Solver::cr), nprob(2048), nrow(128), nrhs(43), nwarp(-1),
-    pack( ! ekat::util::OnGpu<Kokkos::DefaultExecutionSpace>::value),
+    pack( ! ekat::OnGpu<Kokkos::DefaultExecutionSpace>::value),
     oneA(false)
 {}
 
 bool Input::parse (int argc, char** argv) {
-  using ekat::util::argv_matches;
+  using ekat::argv_matches;
   for (int i = 1; i < argc; ++i) {
     if (argv_matches(argv[i], "-m", "--method")) {
       expect_another_arg(i, argc);
@@ -134,12 +133,12 @@ void run (const Input& in) {
   using Kokkos::deep_copy;
   using Kokkos::subview;
   using Kokkos::ALL;
-  using ekat::pack::scalarize;
-  using ekat::pack::npack;
+  using ekat::scalarize;
+  using ekat::npack;
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
   using MT = typename TeamPolicy::member_type;
-  using APack = ekat::pack::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
-  using DataPack = ekat::pack::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
+  using APack = ekat::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
+  using DataPack = ekat::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
 
   const auto gettime = [&] () {
     return std::chrono::steady_clock::now();
@@ -149,7 +148,7 @@ void run (const Input& in) {
     return 1e-6*std::chrono::duration_cast<std::chrono::microseconds>(tf - t0).count();
   };
 
-  const bool on_gpu = ekat::util::OnGpu<Kokkos::DefaultExecutionSpace>::value;
+  const bool on_gpu = ekat::OnGpu<Kokkos::DefaultExecutionSpace>::value;
   const int nA = in.oneA ? 1 : in.nrhs;
 
   EKAT_REQUIRE_MSG( ! in.pack || in.method != Solver::cr, "CR has no pack version.");
@@ -219,7 +218,7 @@ void run (const Input& in) {
         const auto d  = get_diag(A, ip, 1);
         const auto du = get_diag(A, ip, 2);
         const auto x = get_xs(X, ip);
-        ekat::tridiag::thomas(team, dl, d, du, x);
+        ekat::thomas(team, dl, d, du, x);
       };
       Kokkos::parallel_for(policy, f);
       Kokkos::fence();
@@ -262,7 +261,7 @@ void run (const Input& in) {
                 const auto d  = get_diag(A, ip, 1);
                 const auto du = get_diag(A, ip, 2);
                 const auto x  = get_x(Xp, ip);
-                ekat::tridiag::thomas(dl, d, du, x);
+                ekat::thomas(dl, d, du, x);
               };
               Kokkos::single(Kokkos::PerTeam(team), single);
             };
@@ -276,7 +275,7 @@ void run (const Input& in) {
                   const auto d  = get_diag(A, ip, 1);
                   const auto du = get_diag(A, ip, 2);
                   const auto x  = get_xs(Xp, ip);
-                  ekat::tridiag::thomas(dl, d, du, x);
+                  ekat::thomas(dl, d, du, x);
                 };
                 Kokkos::single(Kokkos::PerTeam(team), single);
               };
@@ -291,7 +290,7 @@ void run (const Input& in) {
                   const auto x  = get_xs(Xp, ip);
                   assert(x.extent_int(1) == nrhs);
                   assert(d.extent_int(1) == nrhs);
-                  ekat::tridiag::thomas(dl, d, du, x);
+                  ekat::thomas(dl, d, du, x);
                 };
                 Kokkos::single(Kokkos::PerTeam(team), single);
               };
@@ -335,7 +334,7 @@ void run (const Input& in) {
                 const auto d  = get_diag(A, ip, 1);
                 const auto du = get_diag(A, ip, 2);
                 const auto x  = get_x(X, ip);
-                ekat::tridiag::thomas(dl, d, du, x);
+                ekat::thomas(dl, d, du, x);
               };
               Kokkos::single(Kokkos::PerTeam(team), single);
             };
@@ -349,7 +348,7 @@ void run (const Input& in) {
                   const auto d  = get_diag(A, ip, 1);
                   const auto du = get_diag(A, ip, 2);
                   const auto x  = get_xs(X, ip);
-                  ekat::tridiag::thomas(dl, d, du, x);
+                  ekat::thomas(dl, d, du, x);
                 };
                 Kokkos::single(Kokkos::PerTeam(team), single);
               };
@@ -364,7 +363,7 @@ void run (const Input& in) {
                   const auto x  = get_xs(X, ip);
                   assert(x.extent_int(1) == in.nrhs);
                   assert(d.extent_int(1) == in.nrhs);
-                  ekat::tridiag::thomas(dl, d, du, x);
+                  ekat::thomas(dl, d, du, x);
                 };
                 Kokkos::single(Kokkos::PerTeam(team), single);
               };
@@ -388,7 +387,7 @@ void run (const Input& in) {
         const auto d  = get_diag(A, ip, 1);
         const auto du = get_diag(A, ip, 2);
         const auto x  = get_x(X, ip);
-        ekat::tridiag::cr(team, dl, d, du, x);
+        ekat::cr(team, dl, d, du, x);
       };
       Kokkos::parallel_for(policy, f);
     } else {
@@ -399,7 +398,7 @@ void run (const Input& in) {
           const auto d  = get_diag(A, ip, 1);
           const auto du = get_diag(A, ip, 2);
           const auto x  = get_xs(X, ip);
-          ekat::tridiag::cr(team, dl, d, du, x);
+          ekat::cr(team, dl, d, du, x);
         };
         Kokkos::parallel_for(policy, f);
       } else {
@@ -411,7 +410,7 @@ void run (const Input& in) {
           const auto x  = get_xs(X, ip);
           assert(x.extent_int(1) == in.nrhs);
           assert(d.extent_int(1) == in.nrhs);
-          ekat::tridiag::cr(team, dl, d, du, x);
+          ekat::cr(team, dl, d, du, x);
         };
         Kokkos::parallel_for(policy, f);
       }
@@ -453,5 +452,4 @@ template void run<Real>(const Input&);
 
 } // namespace perf
 } // namespace test
-} // namespace tridiag
 } // namespace ekat

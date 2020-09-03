@@ -13,7 +13,6 @@
  */
 
 namespace ekat {
-namespace util {
 
 std::string active_avx_string () {
   std::string s;
@@ -58,5 +57,4 @@ std::string ekat_config_string () {
   return ss.str();
 }
 
-} // namespace util
 } // namespace ekat

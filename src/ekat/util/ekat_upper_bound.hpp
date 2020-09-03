@@ -8,7 +8,6 @@
 #endif
 
 namespace ekat {
-namespace util {
 
 /*
  * The implementation below is a modified version of
@@ -59,7 +58,6 @@ const T* upper_bound(const T* first, const T* last, const T& value)
 using std::upper_bound;
 #endif
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_UPPER_BOUND_HPP

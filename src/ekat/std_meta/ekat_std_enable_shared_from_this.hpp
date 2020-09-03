@@ -8,8 +8,6 @@
 
 namespace ekat {
 
-namespace util {
-
 // ================= std::enable_shared_from_this =============== //
 
 /*
@@ -36,8 +34,8 @@ namespace util {
  * enable_shared_from_this<B>, which would fail. Adding an extra template
  * parameter to make_shared would make the signature of the function
  * too different from the one in the std namespace, making the switch
- * from util::make_shared to std::make_shared in the future too complicated.
- * Long story short: use util::enable_shared_from_this, but be diligent,
+ * from make_shared to std::make_shared in the future too complicated.
+ * Long story short: use enable_shared_from_this, but be diligent,
  * and set it up correctly when you create a shared_ptr (assuming you want
  * to exploit the feature of enable_shared_from_this).
  */
@@ -68,8 +66,6 @@ protected:
 
   std::weak_ptr<T>  m_self;
 };
-
-} // namespace util
 
 } // namespace ekat
 

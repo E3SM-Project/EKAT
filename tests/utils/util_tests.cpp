@@ -31,7 +31,7 @@ TEST_CASE("type_traits", "") {
 
 // This is just a compilation test.
 TEST_CASE("Unmanaged", "ekat::ko") {
-  using ekat::util::Unmanaged;
+  using ekat::Unmanaged;
 
   {
     typedef Kokkos::View<double*> V;
@@ -43,7 +43,7 @@ TEST_CASE("Unmanaged", "ekat::ko") {
   }
 
   {
-    typedef Kokkos::View<ekat::pack::Pack<double, EKAT_TEST_PACK_SIZE>***,
+    typedef Kokkos::View<ekat::Pack<double, EKAT_TEST_PACK_SIZE>***,
                          Kokkos::LayoutLeft,
                          Kokkos::HostSpace,
                          Kokkos::MemoryTraits<Kokkos::RandomAccess> >
@@ -63,7 +63,7 @@ TEST_CASE("Unmanaged", "ekat::ko") {
   }
 
   {
-    typedef Kokkos::View<ekat::pack::Pack<int, EKAT_TEST_PACK_SIZE>[10],
+    typedef Kokkos::View<ekat::Pack<int, EKAT_TEST_PACK_SIZE>[10],
                          Kokkos::HostSpace,
                          Kokkos::MemoryTraits<Kokkos::Atomic | Kokkos::Aligned | Kokkos::Restrict> >
       V;
@@ -91,10 +91,10 @@ TEST_CASE("Unmanaged", "ekat::ko") {
 TEST_CASE("string","string") {
   using namespace ekat;
 
-  util::CaseInsensitiveString cis1 = "field_1";
-  util::CaseInsensitiveString cis2 = "fIeLd_1";
-  util::CaseInsensitiveString cis3 = "field_2";
-  util::CaseInsensitiveString cis4 = "feld_1";
+  CaseInsensitiveString cis1 = "field_1";
+  CaseInsensitiveString cis2 = "fIeLd_1";
+  CaseInsensitiveString cis3 = "field_2";
+  CaseInsensitiveString cis4 = "feld_1";
 
   REQUIRE (cis1==cis2);
   REQUIRE (cis1!=cis3);
@@ -104,10 +104,10 @@ TEST_CASE("string","string") {
   std::string my_str  = "item 1  ; item2;  item3 ";
   std::string my_list = "item1;item2;item3";
 
-  util::strip(my_str,' ');
+  strip(my_str,' ');
   REQUIRE(my_str==my_list);
 
-  auto items = util::split(my_list,';');
+  auto items = split(my_list,';');
   REQUIRE(items.size()==3);
   REQUIRE(items[0]=="item1");
   REQUIRE(items[1]=="item2");
@@ -145,8 +145,8 @@ TEST_CASE("string","string") {
   for (const auto& entry : benchmark) {
     const auto& s1 = std::get<0>(entry);
     const auto& s2 = std::get<1>(entry);
-    double sj  = util::jaro_similarity(s1,s2);
-    double sjw = util::jaro_winkler_similarity(s1,s2);
+    double sj  = jaro_similarity(s1,s2);
+    double sjw = jaro_winkler_similarity(s1,s2);
 
     const double sj_ex = std::get<2>(entry);
     const double sjw_ex = std::get<3>(entry);
