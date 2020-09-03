@@ -37,6 +37,9 @@ endif()
 # EKAT has mostly C++, but some Fortran too
 project (EKAT CXX Fortran)
 
+# Report the installation prefix.
+message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+
 ###########################
 ###      EKAT TPLS      ###
 ###########################
@@ -82,7 +85,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
-
 ############################
 ###     EKAT LIBRARY     ###
 ############################
@@ -119,3 +121,6 @@ include (EkatUtils)
 EkatConfigFile (${EKAT_SOURCE_DIR}/ekat_config.h.in
                 ${EKAT_BINARY_DIR}/ekat_config.h
                 F90_FILE ${EKAT_BINARY_DIR}/ekat_config.f)
+install(FILES ${EKAT_BINARY_DIR}/ekat_config.h
+              ${EKAT_BINARY_DIR}/ekat_config.f
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ekat)

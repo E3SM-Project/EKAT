@@ -12,6 +12,56 @@ set(EKAT_SOURCES
 )
 
 add_library(ekat ${EKAT_SOURCES})
+install(TARGETS ekat DESTINATION lib)
+
+# Make sure headers can be installed.
+set(EKAT_HEADERS
+  ekat_pack.hpp
+  ekat_parse_yaml_file.hpp
+  ekat_workspace.hpp
+  ekat_pack_kokkos.hpp
+  ekat_scalar_traits.hpp
+  ekat_workspace_impl.hpp
+  ekat_assert.hpp
+  ekat.hpp
+  ekat_parameter_list.hpp
+  ekat_session.hpp
+  ekat_macros.hpp
+  ekat_type_traits.hpp
+)
+install(FILES ${EKAT_HEADERS} DESTINATION include/ekat)
+set(EKAT_KOKKOS_HEADERS
+  kokkos/ekat_kokkos_meta.hpp
+  kokkos/ekat_kokkos_types.hpp
+  kokkos/ekat_kokkos_utils.hpp
+)
+install(FILES ${EKAT_KOKKOS_HEADERS} DESTINATION include/ekat/kokkos)
+install(FILES mpi/ekat_comm.hpp DESTINATION include/ekat/mpi)
+set(EKAT_STD_META_HEADERS
+  std_meta/ekat_std_any.hpp
+  std_meta/ekat_std_enable_shared_from_this.hpp
+  std_meta/ekat_std_type_traits.hpp
+  std_meta/ekat_std_utils.hpp
+)
+install(FILES ${EKAT_STD_META_HEADERS} DESTINATION include/ekat/std_meta)
+set(EKAT_STD_UTIL_HEADERS
+  util/ekat_feutils.hpp
+  util/ekat_rational_constant.hpp
+  util/ekat_test_utils.hpp
+  util/ekat_arch.hpp
+  util/ekat_file_utils.hpp
+  util/ekat_scaling_factor.hpp
+  util/ekat_tridiag.hpp
+  util/ekat_lin_interp.hpp
+  util/ekat_units.hpp
+  util/ekat_lin_interp_impl.hpp
+  util/ekat_string_utils.hpp
+  util/ekat_upper_bound.hpp
+  util/ekat_math_utils.hpp
+  util/ekat_factory.hpp
+  util/ekat_md_array.hpp
+)
+install(FILES ${EKAT_UTIL_HEADERS} DESTINATION include/ekat/util)
 
 target_include_directories(ekat PUBLIC ${EKAT_INCLUDE_DIRS})
 target_include_directories(ekat SYSTEM PUBLIC ${EKAT_TPL_INCLUDE_DIRS})
