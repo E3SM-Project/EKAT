@@ -198,7 +198,7 @@ static void unittest_workspace()
 #ifndef NDEBUG
           char buf[8] = "ws";
           buf[2] = 48 + w; // 48 is offset to integers in ascii
-          if (strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+          if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
           if (ws.get_num_used() != 4) ++nerrs_local;
 #endif
           for (int i = 0; i < ints_per_ws; ++i) {
@@ -262,7 +262,7 @@ static void unittest_workspace()
 #ifndef NDEBUG
                 char buf[8] = "ws";
                 buf[2] = 48 + w; // 48 is offset to integers in ascii
-                if (strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+                if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
                 if (ws.get_num_used() != 4) ++nerrs_local;
 #endif
                 for (int i = 0; i < ints_per_ws; ++i) {
@@ -331,7 +331,7 @@ static void unittest_workspace()
 #ifndef NDEBUG
                   char buf[8] = "ws";
                   buf[2] = 48 + w; // 48 is offset to integers in ascii
-                  if (strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+                  if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
                   ++exp_num_active;
                   if (!ws.template is_active<int>(wssub[w])) ++nerrs_local;
 #endif
