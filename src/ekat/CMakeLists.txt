@@ -88,6 +88,7 @@ set_target_properties(ekat PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_B
 add_library(ekat_test_main util/ekat_catch_main.cpp)
 target_link_libraries(ekat_test_main PUBLIC ekat)
 target_include_directories(ekat_test_main PUBLIC ${EKAT_SOURCE_DIR}/extern/catch2/include)
+install(TARGETS ekat_test_main DESTINATION lib)
 
 # Pre-compile ekat_test_session.cpp into its own mini-library.
 # This mini-library has to be linked if you are ok relying on Ekat's test session
@@ -99,3 +100,4 @@ target_include_directories(ekat_test_main PUBLIC ${EKAT_SOURCE_DIR}/extern/catch
 add_library(ekat_test_session util/ekat_test_session.cpp)
 target_link_libraries(ekat_test_session PUBLIC ekat)
 target_include_directories(ekat_test_session PUBLIC ${EKAT_SOURCE_DIR}/extern/catch2/include)
+install(TARGETS ekat_test_session DESTINATION lib)
