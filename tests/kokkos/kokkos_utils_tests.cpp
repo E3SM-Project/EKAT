@@ -4,6 +4,8 @@
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/util/ekat_arch.hpp"
 
+#include "ekat/ekat_pack.hpp"
+
 #include "ekat_test_config.h"
 
 #include <thread>
@@ -192,6 +194,108 @@ TEST_CASE("team_utils_large_ni", "[kokkos_utils]")
   test_utils_large_ni(10);
   test_utils_large_ni(1);
   test_utils_large_ni(.5);
+}
+
+template<typename Scalar, int n_teams, int work_per_team>
+void test_parallel_reduce()
+{
+  using Device = ekat::DefaultDevice;
+  using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
+  using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
+
+#ifdef KOKKOS_ENABLE_OPENMP
+  const int n = omp_get_max_threads();
+  // test will not work with more than 16 threads
+  if (n > 16)
+  {
+    WARN("Skipped because this test doesn't support more than 16 threads");
+    return;
+  }
+#endif
+
+  const int length = n_teams*work_per_team;
+  Kokkos::View<Scalar*, ExeSpace> data("data", length);
+  const auto data_h = Kokkos::create_mirror_view(data);
+  auto raw = data_h.data();
+  for (int i = 0; i < length; ++i)
+    raw[i] = 1.0/(i+1);
+  Kokkos::deep_copy(data, data_h);
+
+  Kokkos::View<Scalar*> results ("results", n_teams);
+  const auto results_h = Kokkos::create_mirror_view(results);
+
+  std::vector<Real> serial_results(n_teams);
+  for (unsigned int t=0; t<n_teams; ++t)
+    for (unsigned int w=0; w<work_per_team; ++w)
+    {
+      const int i = t*work_per_team + w;
+      serial_results[t] += 1.0/(i+1);
+    }
+
+  const auto policy =
+    ekat::ExeSpaceUtils<ExeSpace>::get_default_team_policy(n_teams, work_per_team);
+  Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
+    const int t = team.league_rank();
+    Scalar team_result = Scalar();
+
+    const int begin = t*work_per_team;
+    const int end = begin + work_per_team;
+    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce(team, begin, end,
+        [&] (const int k, Scalar& reduction_value) {
+                 reduction_value += data[k];
+               }, true/*serialize*/, team_result);
+
+    results(t) = team_result;
+    });
+
+  Kokkos::deep_copy(results_h, results);
+
+  for (unsigned int t=0; t<n_teams; ++t)
+    REQUIRE(results_h(t) == serial_results[t]);
+}
+
+TEST_CASE("parallel_reduce", "[kokkos_utils]")
+{
+  test_parallel_reduce<Real, 5, 10>();
+}
+
+template<typename Scalar>
+void test_reduce_add()
+{
+  using Device = ekat::DefaultDevice;
+  using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
+  
+#ifdef KOKKOS_ENABLE_OPENMP
+  const int n = omp_get_max_threads();
+  // test will not work with more than 16 threads
+  if (n > 16)
+  {
+    WARN("Skipped because this test doesn't support more than 16 threads");
+    return;
+  }
+#endif  
+    
+  Scalar start = Scalar(0.5);
+  Scalar serial_result = start;
+  Scalar reduce_add_result = start;
+  REQUIRE(reduce_add_result == serial_result);
+   
+  using PackType = ekat::Pack<Scalar,8>;
+  PackType pack;
+  for (int i=0; i<PackType::n; ++i)
+  {
+    Scalar pack_val = 1.0/(i+1);
+    serial_result += pack_val;
+    pack[i] = pack_val;		 
+  }
+
+  ekat::ExeSpaceUtils<ExeSpace>::reduce_add<PackType,Scalar,true/*serialize*/>(pack,reduce_add_result);
+  REQUIRE(reduce_add_result == serial_result);
+}
+
+TEST_CASE("reduce_add", "[kokkos_utils]")
+{
+  test_reduce_add<Real>();
 }
 
 } // anonymous namespace

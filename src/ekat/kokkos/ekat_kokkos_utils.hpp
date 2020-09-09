@@ -9,6 +9,7 @@
 #include "ekat/ekat_assert.hpp"
 #include "ekat/ekat_type_traits.hpp"
 #include "ekat/ekat.hpp"
+#include "ekat/ekat_macros.hpp"
 
 #include "Kokkos_Random.hpp"
 
@@ -77,6 +78,60 @@ struct ExeSpaceUtils {
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
     return TeamPolicy(ni, team_size);
   }
+
+  template <typename TeamMember, class Lambda, typename ValueType>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+			const int& begin,
+			const int& end,
+                        const Lambda& lambda,
+                        const bool serialize,
+                        ValueType& result)
+  {
+    if (serialize)
+    {
+      // We want to get C++ on GPU to match F90 on CPU. Thus, need to
+      // serialize parallel reductions.
+
+      // All threads init result.
+      // NOTE: we *need* an automatic temporary, since we do not know
+      //       where 'result' comes from. If result itself is an automatic
+      //       variable, using it would be fine (only one vector lane would
+      //       actually have a nonzero value after the single). But if
+      //       result is taken from a view, then all vector lanes would
+      //       see the updated value before the vector_reduce call,
+      //       which will cause the final answer to be multiplied by the
+      //       size of the warp.
+      auto local_tmp = Kokkos::reduction_identity<ValueType>::sum();
+
+      Kokkos::single(Kokkos::PerThread(team),[&] {
+      for (int k=begin; k<end; ++k)
+        lambda(k, local_tmp);
+        });
+
+      result = local_tmp;
+    }
+    else
+      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
+  }
+
+  template<typename PackType, typename ValueType, bool Serialize=false>
+  static KOKKOS_INLINE_FUNCTION
+  void reduce_add (const PackType& p,
+                   ValueType& result)
+  {
+    if (Serialize)
+    {
+      for (int i = 0; i < PackType::n; ++i)
+        result += p[i];
+    }
+    else
+    {
+      typename PackType::scalar sum = p[0];
+      vector_simd for (int i = 1; i < PackType::n; ++i) sum += p[i];
+      result += sum;
+    }
+  }
 };
 
 /*
@@ -96,6 +151,66 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
     return TeamPolicy(ni, team_size);
+  }
+
+
+
+  template <typename TeamMember, class Lambda, typename ValueType/*, bool Serialize=true*/>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+			const int& begin,
+			const int& end,
+                        const Lambda& lambda,
+                        const bool serialize,
+                        ValueType& result)
+  {
+    if (serialize)
+    {
+      // We want to get C++ on GPU to match F90 on CPU. Thus, need to
+      // serialize parallel reductions.
+
+      // All threads init result.
+      // NOTE: we *need* an automatic temporary, since we do not know
+      //       where 'result' comes from. If result itself is an automatic
+      //       variable, using it would be fine (only one vector lane would
+      //       actually have a nonzero value after the single). But if
+      //       result is taken from a view, then all vector lanes would
+      //       see the updated value before the vector_reduce call,
+      //       which will cause the final answer to be multiplied by the
+      //       size of the warp.
+      auto local_tmp = Kokkos::reduction_identity<ValueType>::sum();
+
+      Kokkos::single(Kokkos::PerThread(team),[&] {
+      for (int k=begin; k<end; ++k)
+        lambda(k, local_tmp);
+        });
+
+      // Broadcast result to all threads by doing sum of one thread's
+      // non-0 value and the rest of the 0s.
+      Kokkos::Impl::CudaTeamMember::vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
+
+      result = local_tmp;
+    }
+    else
+      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
+  }
+
+  template<typename PackType, typename ValueType, bool Serialize=false>
+  static KOKKOS_INLINE_FUNCTION
+  void reduce_add (const PackType& p,
+                   ValueType& result)
+  {
+    if (Serialize)
+    {
+      for (int i = 0; i < PackType::n; ++i)
+        result += p[i];
+    }
+    else
+    {
+      typename PackType::scalar sum = p[0];
+      vector_simd for (int i = 1; i < PackType::n; ++i) sum += p[i];
+      result += sum;
+    }
   }
 };
 #endif
