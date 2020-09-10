@@ -196,7 +196,7 @@ TEST_CASE("team_utils_large_ni", "[kokkos_utils]")
   test_utils_large_ni(.5);
 }
 
-template<typename Scalar, int length>
+template<typename Scalar, int length, int CheckResult>
 void test_parallel_reduce()
 {
   using Device = ekat::DefaultDevice;
@@ -206,8 +206,7 @@ void test_parallel_reduce()
 #ifdef KOKKOS_ENABLE_OPENMP
   const int n = omp_get_max_threads();
   // test will not work with more than 16 threads
-  if (n > 16)
-  {
+  if (n > 16) {
     WARN("Skipped because this test doesn't support more than 16 threads");
     return;
   }
@@ -217,13 +216,15 @@ void test_parallel_reduce()
   const auto data_h = Kokkos::create_mirror_view(data);
   auto raw = data_h.data();
   for (int i = 0; i < length; ++i)
-    raw[i] = std::pow(0.5,i);
+    raw[i] = 1.0/(i+1);
   Kokkos::deep_copy(data, data_h);
 
   Kokkos::View<Scalar*> results ("results", 1);
   const auto results_h = Kokkos::create_mirror_view(results);
 
-  const Scalar serial_result = (1.0-std::pow(0.5,length))/(1.0-0.5);
+  Scalar serial_result = Scalar();
+  for (int i = 0; i < length; ++i)
+    serial_result += 1.0/(i+1);
 
   const auto policy =
     ekat::ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, length);
@@ -232,21 +233,29 @@ void test_parallel_reduce()
 
     const int begin = 0;
     const int end = length;
-    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce(team, begin, end,
+    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce(team, begin, end, 
         [&] (const int k, Scalar& reduction_value) {
-                 reduction_value += data[k];
-               }, team_result);
+              reduction_value += data[k];
+        }, team_result);
 
-    results(0) = team_result;
+      results(0) = team_result;
     });
 
   Kokkos::deep_copy(results_h, results);
-  REQUIRE(results_h(0) == serial_result);
+  if (CheckResult) { 
+    REQUIRE(results_h(0) == serial_result);
+  }
 }
 
 TEST_CASE("parallel_reduce", "[kokkos_utils]")
 {
-  test_parallel_reduce<Real, 20>();
+  test_parallel_reduce<Real, 15,
+#ifdef EKAT_TEST_STRICT_FP
+      true
+#else
+      false
+#endif
+      >();
 }
 
 template<typename Scalar>
