@@ -201,15 +201,6 @@ void test_parallel_reduce()
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
 
-#ifdef KOKKOS_ENABLE_OPENMP
-  const int n = omp_get_max_threads();
-  // test will not work with more than 16 threads
-  if (n > 16) {
-    WARN("Skipped because this test doesn't support more than 16 threads");
-    return;
-  }
-#endif
-
   Kokkos::View<Scalar*, ExeSpace> data("data", length);
   const auto data_h = Kokkos::create_mirror_view(data);
   auto raw = data_h.data();
@@ -242,6 +233,8 @@ void test_parallel_reduce()
   Kokkos::deep_copy(results_h, results);
   if (Serialize) {
     REQUIRE(results_h(0) == serial_result);
+  } else {
+    REQUIRE(std::abs(results_h(0) - serial_result) <= 10*std::numeric_limits<Scalar>::epsilon());
   }
 }
 
