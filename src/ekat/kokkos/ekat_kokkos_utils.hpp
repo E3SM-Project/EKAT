@@ -28,7 +28,7 @@ namespace ekat {
 
 namespace impl {
 
-  template <typename TeamMember, class Lambda, typename ValueType, bool Serialize>
+template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
                       const int& begin,
@@ -125,13 +125,7 @@ struct ExeSpaceUtils {
     return TeamPolicy(ni, team_size);
   }
 
-  template <typename TeamMember, class Lambda, typename ValueType, bool Serialize =
-#ifdef EKAT_TEST_STRICT_FP
-      true
-#else
-      true //This is a hack for now since EKAT_TEST_STICT_FP is not recognized in src/
-#endif
-      >
+  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
 			const int& begin,
@@ -139,7 +133,7 @@ struct ExeSpaceUtils {
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
+    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
   }
 
   template<typename PackType, typename ValueType, bool Serialize =
@@ -186,13 +180,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 
 
 
-  template <typename TeamMember, class Lambda, typename ValueType, bool Serialize =
- #ifdef EKAT_TEST_STRICT_FP
-        true
- #else
-        true //This is a hack for now since EKAT_TEST_STICT_FP is not recognized in src/
- #endif
-        >
+  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
 			const int& begin,
@@ -200,7 +188,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
+    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
   }
 
   template<typename PackType, typename ValueType, bool Serialize =

@@ -196,7 +196,7 @@ TEST_CASE("team_utils_large_ni", "[kokkos_utils]")
   test_utils_large_ni(.5);
 }
 
-template<typename Scalar, int length, int CheckResult>
+template<typename Scalar, int length, bool Serialize>
 void test_parallel_reduce()
 {
   using Device = ekat::DefaultDevice;
@@ -233,7 +233,7 @@ void test_parallel_reduce()
 
     const int begin = 0;
     const int end = length;
-    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce(team, begin, end, 
+    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce<Serialize>(team, begin, end,
         [&] (const int k, Scalar& reduction_value) {
               reduction_value += data[k];
         }, team_result);
@@ -242,20 +242,15 @@ void test_parallel_reduce()
     });
 
   Kokkos::deep_copy(results_h, results);
-  if (CheckResult) { 
+  if (Serialize) {
     REQUIRE(results_h(0) == serial_result);
   }
 }
 
 TEST_CASE("parallel_reduce", "[kokkos_utils]")
 {
-  test_parallel_reduce<Real, 15,
-#ifdef EKAT_TEST_STRICT_FP
-      true
-#else
-      false
-#endif
-      >();
+  test_parallel_reduce<Real,15,true> ();
+  test_parallel_reduce<Real,15,false> ();
 }
 
 template<typename Scalar>
