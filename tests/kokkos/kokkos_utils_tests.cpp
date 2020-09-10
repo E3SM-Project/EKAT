@@ -253,43 +253,4 @@ TEST_CASE("parallel_reduce", "[kokkos_utils]")
   test_parallel_reduce<Real,15,false> ();
 }
 
-template<typename Scalar>
-void test_reduce_add()
-{
-  using Device = ekat::DefaultDevice;
-  using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
-  
-#ifdef KOKKOS_ENABLE_OPENMP
-  const int n = omp_get_max_threads();
-  // test will not work with more than 16 threads
-  if (n > 16)
-  {
-    WARN("Skipped because this test doesn't support more than 16 threads");
-    return;
-  }
-#endif  
-    
-  Scalar start = Scalar(0.5);
-  Scalar serial_result = start;
-  Scalar reduce_add_result = start;
-  REQUIRE(reduce_add_result == serial_result);
-   
-  using PackType = ekat::Pack<Scalar,8>;
-  PackType pack;
-  for (int i=0; i<PackType::n; ++i)
-  {
-    Scalar pack_val = 1.0/(i+1);
-    serial_result += pack_val;
-    pack[i] = pack_val;		 
-  }
-
-  ekat::ExeSpaceUtils<ExeSpace>::reduce_add<PackType,Scalar,true/*serialize*/>(pack,reduce_add_result);
-  REQUIRE(reduce_add_result == serial_result);
-}
-
-TEST_CASE("reduce_add", "[kokkos_utils]")
-{
-  test_reduce_add<Real>();
-}
-
 } // anonymous namespace

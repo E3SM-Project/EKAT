@@ -135,28 +135,6 @@ struct ExeSpaceUtils {
   {
     impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
   }
-
-  template<typename PackType, typename ValueType, bool Serialize =
-#ifdef EKAT_TEST_STRICT_FP
-      true
-#else
-      true //This is a hack for now since EKAT_TEST_STICT_FP is not recognized in src/
-#endif
-      >
-  static KOKKOS_INLINE_FUNCTION
-  void reduce_add (const PackType& p,
-                   ValueType& result)
-  {
-    if (Serialize) {
-      for (int i = 0; i < PackType::n; ++i) {
-        result += p[i];
-      }
-    } else {
-      typename PackType::scalar sum = p[0];
-      vector_simd for (int i = 1; i < PackType::n; ++i) sum += p[i];
-      result += sum;
-    }
-  }
 };
 
 /*
@@ -178,8 +156,6 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
     return TeamPolicy(ni, team_size);
   }
 
-
-
   template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
@@ -189,20 +165,6 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
                         ValueType& result)
   {
     impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
-  }
-
-  template<typename PackType, typename ValueType, bool Serialize =
-#ifdef EKAT_TEST_STRICT_FP
-       true
-#else
-       true //This is a hack for now since EKAT_TEST_STICT_FP is not recognized in src/
-#endif
-                >
-  static KOKKOS_INLINE_FUNCTION
-  void reduce_add (const PackType& p,
-                   ValueType& result)
-  {
-    ExeSpaceUtils<Kokkos::DefaultExecutionSpace>::reduce_add(p, result);
   }
 };
 #endif
