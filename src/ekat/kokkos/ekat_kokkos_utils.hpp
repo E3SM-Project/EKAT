@@ -95,7 +95,6 @@ struct ExeSpaceUtils {
   {
     if (Serialize)
     {
-      std::cout << "Serialize" << std::endl;
       // We want to get C++ on GPU to match F90 on CPU. Thus, need to
       // serialize parallel reductions.
 
@@ -124,7 +123,6 @@ struct ExeSpaceUtils {
       result = local_tmp;
     }
     else {
-      std::cout << "Not Serialize" << std::endl;
       Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
     }
   }
