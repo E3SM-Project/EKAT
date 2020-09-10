@@ -9,7 +9,6 @@
 #include "ekat/ekat_assert.hpp"
 #include "ekat/ekat_type_traits.hpp"
 #include "ekat/ekat.hpp"
-#include "ekat/ekat_macros.hpp"
 
 #include "Kokkos_Random.hpp"
 
@@ -128,8 +127,8 @@ struct ExeSpaceUtils {
   template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
-			const int& begin,
-			const int& end,
+                        const int& begin,
+                        const int& end,
                         const Lambda& lambda,
                         ValueType& result)
   {
@@ -159,8 +158,8 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
   template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
-			const int& begin,
-			const int& end,
+                        const int& begin,
+                        const int& end,
                         const Lambda& lambda,
                         ValueType& result)
   {
