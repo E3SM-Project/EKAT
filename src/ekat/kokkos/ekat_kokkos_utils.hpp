@@ -139,7 +139,7 @@ struct ExeSpaceUtils {
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, Serialize, result);
+    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
   }
 
   template<typename PackType, typename ValueType, bool Serialize =
