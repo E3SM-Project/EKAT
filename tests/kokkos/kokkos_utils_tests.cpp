@@ -4,8 +4,6 @@
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/util/ekat_arch.hpp"
 
-#include "ekat/ekat_pack.hpp"
-
 #include "ekat_test_config.h"
 
 #include <thread>
