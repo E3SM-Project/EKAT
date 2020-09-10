@@ -27,7 +27,7 @@ namespace ekat {
 
 namespace impl {
 
-template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
+template <typename TeamMember, typename Lambda, typename ValueType, bool Serialize>
 static KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
                       const int& begin,
@@ -106,7 +106,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
  * for a parallel kernel. On non-GPU archictures, we will generally have
  * thread teams of 1.
  */
-template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
+  template <bool Serialize, typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
   using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
@@ -124,7 +124,7 @@ struct ExeSpaceUtils {
     return TeamPolicy(ni, team_size);
   }
 
-  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
+  template <typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
                         const int& begin,
@@ -132,7 +132,7 @@ struct ExeSpaceUtils {
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
+    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
   }
 };
 
@@ -143,7 +143,7 @@ struct ExeSpaceUtils {
  * threads than the main kernel loop has indices.
  */
 #ifdef KOKKOS_ENABLE_CUDA
-template <>
+template <bool Serialize>
 struct ExeSpaceUtils<Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
 
@@ -155,7 +155,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
     return TeamPolicy(ni, team_size);
   }
 
-  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
+  template <typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
                         const int& begin,
@@ -163,7 +163,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
+    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
   }
 };
 #endif

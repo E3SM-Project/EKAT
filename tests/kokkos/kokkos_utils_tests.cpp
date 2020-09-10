@@ -30,7 +30,7 @@ TEST_CASE("team_policy", "[kokkos_utils]") {
 
   for (int nk: {128, 122, 255, 42}) {
     const int ni = 1000;
-    const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk);
+    const auto p = ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(ni, nk);
     REQUIRE(p.league_size() == ni);
     if (OnGpu<ExeSpace>::value) {
       if (nk == 42) {
@@ -64,7 +64,7 @@ TEST_CASE("team_utils_omp", "[kokkos_utils]")
 
   const int ni = n*5;
   for (int s = 1; s <= n; ++s) {
-    const auto p = ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(ni, s);
+    const auto p = ExeSpaceUtils<false,ExeSpace>::get_team_policy_force_team_size(ni, s);
     TeamUtils<ExeSpace> tu(p);
     const int c = tu.get_num_concurrent_teams();
     typename KokkosTypes<Device>::template view_2d<int> ws_idxs("ws_idxs", ni, s);
@@ -141,13 +141,13 @@ void test_utils_large_ni(const double saturation_multiplier)
 
   const int nk = 128;
   const double overprov_factor = 1.5;
-  const auto temp_policy = ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, nk);
+  const auto temp_policy = ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(1, nk);
   TeamUtils<Real,ExeSpace> tu_temp(temp_policy);
   const int num_conc = tu_temp.get_max_concurrent_threads() / temp_policy.team_size();
 
   int ni = num_conc*saturation_multiplier;
   if (ni == 0) ni = 1;
-  const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk);
+  const auto p = ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(ni, nk);
   TeamUtils<Real,ExeSpace> tu(p, overprov_factor);
 
   REQUIRE(p.league_size() == ni);
@@ -216,13 +216,13 @@ void test_parallel_reduce()
     serial_result += 1.0/(i+1);
 
   const auto policy =
-    ekat::ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, length);
+    ekat::ExeSpaceUtils<Serialize,ExeSpace>::get_default_team_policy(1, length);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar();
 
     const int begin = 0;
     const int end = length;
-    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce<Serialize>(team, begin, end,
+    ekat::ExeSpaceUtils<Serialize,ExeSpace>::parallel_reduce(team, begin, end,
         [&] (const int k, Scalar& reduction_value) {
               reduction_value += data[k];
         }, team_result);
