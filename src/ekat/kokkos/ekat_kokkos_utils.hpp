@@ -106,7 +106,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
  * for a parallel kernel. On non-GPU archictures, we will generally have
  * thread teams of 1.
  */
-  template <bool Serialize, typename ExeSpace = Kokkos::DefaultExecutionSpace>
+template <bool Serialize, typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
   using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
@@ -144,7 +144,7 @@ struct ExeSpaceUtils {
  */
 #ifdef KOKKOS_ENABLE_CUDA
 template <bool Serialize>
-struct ExeSpaceUtils<Kokkos::Cuda> {
+struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
 
   static TeamPolicy get_default_team_policy (Int ni, Int nk) {
