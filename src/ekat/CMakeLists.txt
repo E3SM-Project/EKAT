@@ -44,7 +44,7 @@ set(EKAT_STD_META_HEADERS
   std_meta/ekat_std_utils.hpp
 )
 install(FILES ${EKAT_STD_META_HEADERS} DESTINATION include/ekat/std_meta)
-set(EKAT_STD_UTIL_HEADERS
+set(EKAT_UTIL_HEADERS
   util/ekat_feutils.hpp
   util/ekat_rational_constant.hpp
   util/ekat_test_utils.hpp
