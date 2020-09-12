@@ -25,6 +25,52 @@
 
 namespace ekat {
 
+namespace impl {
+
+template <typename TeamMember, typename Lambda, typename ValueType, bool Serialize>
+static KOKKOS_INLINE_FUNCTION
+void parallel_reduce (const TeamMember& team,
+                      const int& begin,
+                      const int& end,
+                      const Lambda& lambda,
+                      ValueType& result)
+{
+  if (Serialize) {
+    // We want to get C++ on GPU to match F90 on CPU. Thus, need to
+    // serialize parallel reductions.
+
+    // All threads init result.
+    // NOTE: we *need* an automatic temporary, since we do not know
+    //       where 'result' comes from. If result itself is an automatic
+    //       variable, using it would be fine (only one vector lane would
+    //       actually have a nonzero value after the single). But if
+    //       result is taken from a view, then all vector lanes would
+    //       see the updated value before the vector_reduce call,
+    //       which will cause the final answer to be multiplied by the
+    //       size of the warp.
+    auto local_tmp = Kokkos::reduction_identity<ValueType>::sum();
+
+    Kokkos::single(Kokkos::PerThread(team),[&] {
+        for (int k=begin; k<end; ++k) {
+          lambda(k, local_tmp);
+        }
+      });
+
+#ifdef KOKKOS_ENABLE_CUDA
+    // Broadcast result to all threads by doing sum of one thread's
+    // non-0 value and the rest of the 0s.
+    Kokkos::Impl::CudaTeamMember::vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
+#endif
+
+   result = local_tmp;
+  } else {
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
+  }
+}
+
+} //namespace impl
+
+
 template<typename DataTypeOut, typename DataTypeIn, typename... Props>
 typename std::enable_if<GetRanks<DataTypeOut>::rank_dynamic==0,
                         typename ekat::Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
@@ -60,7 +106,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
  * for a parallel kernel. On non-GPU archictures, we will generally have
  * thread teams of 1.
  */
-template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
+template <bool Serialize, typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
   using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
@@ -77,6 +123,17 @@ struct ExeSpaceUtils {
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
     return TeamPolicy(ni, team_size);
   }
+
+  template <typename TeamMember, typename Lambda, typename ValueType>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+                        const int& begin,
+                        const int& end,
+                        const Lambda& lambda,
+                        ValueType& result)
+  {
+    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
+  }
 };
 
 /*
@@ -86,8 +143,8 @@ struct ExeSpaceUtils {
  * threads than the main kernel loop has indices.
  */
 #ifdef KOKKOS_ENABLE_CUDA
-template <>
-struct ExeSpaceUtils<Kokkos::Cuda> {
+template <bool Serialize>
+struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
 
   static TeamPolicy get_default_team_policy (Int ni, Int nk) {
@@ -96,6 +153,17 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
     return TeamPolicy(ni, team_size);
+  }
+
+  template <typename TeamMember, typename Lambda, typename ValueType>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+                        const int& begin,
+                        const int& end,
+                        const Lambda& lambda,
+                        ValueType& result)
+  {
+    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
   }
 };
 #endif
