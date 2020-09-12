@@ -157,6 +157,25 @@ struct TestPack {
       REQUIRE(p[i] == static_cast<scalar>(42 + i));
   }
 
+  template<bool Serialize>
+  static void test_reduce_sum () {
+    const scalar a = 0.5;
+    scalar serial_result = scalar(a);
+    Pack p;
+    for (int i=0; i<Pack::n; ++i) {
+      p[i] = 1.0/(i+1);
+      serial_result += p[i];
+    }
+
+    scalar result = ekat::reduce_sum<Serialize>(p, a);
+
+    if (Serialize) {
+      REQUIRE(result== serial_result);
+    } else {
+      REQUIRE(std::abs(result - serial_result) <= 10*std::numeric_limits<Scalar>::epsilon());
+    }
+  }
+
 #define test_pack_gen_assign_op_all(op) do {        \
     Pack a, b;                                      \
     scalar c;                                       \
@@ -291,6 +310,9 @@ struct TestPack {
     test_conversion();
     test_unary_min_max();
     test_range();
+
+    test_reduce_sum<true>();
+    test_reduce_sum<false>();
   }
 };
 

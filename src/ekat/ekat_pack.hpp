@@ -314,6 +314,22 @@ OnlyPackReturn<PackType, typename PackType::scalar> max (const PackType& p) {
   return v;
 }
 
+// return a+p[0]+p[1]+...
+template <bool Serialize, typename PackType, typename Scalar> KOKKOS_INLINE_FUNCTION
+OnlyPackReturn<PackType, typename PackType::scalar> reduce_sum (const PackType& p, const Scalar a=Scalar()) {
+  Scalar return_val = Scalar(a);
+  if (Serialize) {
+    for (int i = 0; i < PackType::n; ++i) {
+      return_val += p[i];
+    }
+  } else {
+    typename PackType::scalar sum = p[0];
+    vector_simd for (int i = 1; i < PackType::n; ++i) sum += p[i];
+    return_val += sum;
+  }
+  return return_val;
+}
+
 // min(init, min(p(mask)))
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar>
