@@ -28,10 +28,15 @@ namespace ekat {
 
 namespace impl {
 
-template <bool Serialize, typename TeamMember, typename LoopBoundaryType, typename Lambda, typename ValueType>
+// Computes a general parallel reduction. If Serialize=true, this reduction is computed
+// one element in order, useful for BFB testing with serial routines.
+// If Serialize=false, this function simply calls Kokkos::parallel_reduce().
+// If result contains a value, the output is result+reduction
+template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
-                      const LoopBoundaryType& loop_boundaries,
+                      const int& begin,
+                      const int& end,
                       const Lambda& lambda,
                       ValueType& result)
 {
@@ -48,10 +53,10 @@ void parallel_reduce (const TeamMember& team,
     //       see the updated value before the vector_reduce call,
     //       which will cause the final answer to be multiplied by the
     //       size of the warp.
-    auto local_tmp = Kokkos::reduction_identity<ValueType>::sum();
+    auto local_tmp = result;
 
     Kokkos::single(Kokkos::PerThread(team),[&] {
-        for (int k=loop_boundaries.start; k<loop_boundaries.end; ++k) {
+        for (int k=begin; k<end; ++k) {
           lambda(k, local_tmp);
         }
       });
@@ -64,27 +69,39 @@ void parallel_reduce (const TeamMember& team,
 
    result = local_tmp;
   } else {
-    Kokkos::parallel_reduce(loop_boundaries, lambda, result);
+    const ValueType initial(result);
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
+    result += initial;
   }
 }
 
-template <bool Serialize, int TotalSize, int VectorSize, typename TeamMember, typename InputProvider, typename ValueType>
+/*
+ * Computes a reduction over the view described by 'input' for entries 'input([begin,end))'
+ * The variable 'input' should be an operator s.t. 'input(k)' returns a Pack of size 'vector_size'.
+ * The variable 'total_size' represents the total number of 'ValueType' entries in the view. The
+ * computed reduction is added to 'result'.
+ */
+template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
 void view_reduction (const TeamMember& team,
-                     const int& begin,
-                     const int& end,
+                     const int total_size,
+                     const int vector_size,
+                     const int begin,
+                     const int end,
                      const InputProvider& input,
                      ValueType& result)
 {
-  if (Serialize) {
-    const int  n_packs        = end - begin;
-    const bool has_garbage    = (TotalSize % VectorSize == 0 ? false : true);
-    const int  last_pack_size = (has_garbage ? TotalSize % VectorSize : VectorSize);
-    const int  loop_length    = (has_garbage ? n_packs-1 : n_packs);
+  const int  n_packs        = (total_size + vector_size - 1)/vector_size;
+  const bool has_garbage    = (end==n_packs && total_size % vector_size != 0 ? true : false);
+  const int  loop_end       = (has_garbage ? end-1 : end);
+  const int  last_pack_size = (has_garbage ? total_size % vector_size : vector_size);
 
-    impl::parallel_reduce<Serialize>(team,Kokkos::ThreadVectorRange(team, loop_length),
+  // For parallel computation, perform a packed reduction
+  if (!Serialize) {
+    impl::parallel_reduce<Serialize>(team, begin, loop_end,
                                      [&](const int k, ValueType& local_sum) {
-        local_sum = ekat::reduce_sum<Serialize>(input(k),local_sum);
+        // Sum over pack entries and add to local_sum
+        ekat::reduce_sum<Serialize>(input(k),local_sum);
     }, result);
       
     // If last pack has garbage, we did not include it in the previous reduction,
@@ -92,16 +109,21 @@ void view_reduction (const TeamMember& team,
     if (has_garbage) {
       Kokkos::single(Kokkos::PerTeam(team),[&] {
         for (int j=0; j<last_pack_size; ++j) {
-          result += input(begin+n_packs-1)[j];
+          result += input(end-1)[j];
         }
       });
     }
   } else {
-    impl::parallel_reduce<Serialize>(team,Kokkos::ThreadVectorRange(team, TotalSize),
+    // For the serial computation, just loop over the total number of pack elements
+    // and determine their place in input
+    const int total_start = begin*vector_size;
+    const int total_end = (has_garbage ? loop_end*vector_size + last_pack_size : loop_end*vector_size);
+
+    impl::parallel_reduce<Serialize>(team,total_start,total_end,
                                      [&](const int k, ValueType& local_sum) {
-      if (VectorSize>1) {
-        const int ilev = k / VectorSize;
-        const int ivec = k % VectorSize;
+      if (vector_size > 1) {
+        const int ilev = k / vector_size;
+        const int ivec = k % vector_size;
         local_sum += input(ilev)[ivec];
       } else {
         local_sum += input(k)[0];
@@ -165,25 +187,28 @@ struct ExeSpaceUtils {
     return TeamPolicy(ni, team_size);
   }
 
-  template <typename TeamMember, typename LoopBoundaryType, typename Lambda, typename ValueType>
+  template <typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
-                        const LoopBoundaryType& loop_boundaries,
+                        const int& begin,
+                        const int& end,
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<Serialize, TeamMember, LoopBoundaryType, Lambda, ValueType>(team, loop_boundaries, lambda, result);
+    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
   }
 
-  template <int TotalSize, int VectorSize, typename TeamMember, typename InputProvider, typename ValueType>
+  template <typename TeamMember, typename InputProvider, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void view_reduction (const TeamMember& team,
+                       const int& total_size,
+                       const int& vector_size,
                        const int& begin,
                        const int& end,
                        const InputProvider& input,
                        ValueType& result)
   {
-    impl::view_reduction<Serialize,TotalSize,VectorSize,TeamMember,InputProvider,ValueType>(team,begin,end,input,result);
+    impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,total_size,vector_size,begin,end,input,result);
   }
 };
 
@@ -206,25 +231,28 @@ struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
     return TeamPolicy(ni, team_size);
   }
 
-  template <typename TeamMember, typename LoopBoundaryType, typename Lambda, typename ValueType>
+  template <typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
-                        const LoopBoundaryType& loop_boundaries,
+                        const int& begin,
+                        const int& end,
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<Serialize, TeamMember, LoopBoundaryType, Lambda, ValueType>(team, loop_boundaries, lambda, result);
+    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
   }
 
-  template <int TotalSize, int VectorSize, typename TeamMember, typename InputProvider, typename ValueType>
+  template <typename TeamMember, typename InputProvider, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void view_reduction (const TeamMember& team,
+                       const int& total_size,
+                       const int& vector_size,
                        const int& begin,
                        const int& end,
                        const InputProvider& input,
                        ValueType& result)
   {
-    impl::view_reduction<Serialize,TotalSize,VectorSize,TeamMember,InputProvider,ValueType>(team,begin,end,input,result);
+    impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,total_size,vector_size,begin,end,input,result);
   }
 };
 #endif

@@ -159,7 +159,7 @@ struct TestPack {
 
   template<bool Serialize>
   static void test_reduce_sum () {
-    const scalar a = 0.5;
+    scalar a = 0.5;
     scalar serial_result = scalar(a);
     Pack p;
     for (int i=0; i<Pack::n; ++i) {
@@ -167,12 +167,12 @@ struct TestPack {
       serial_result += p[i];
     }
 
-    scalar result = ekat::reduce_sum<Serialize>(p, a);
+    ekat::reduce_sum<Serialize>(p, a);
 
     if (Serialize) {
-      REQUIRE(result== serial_result);
+      REQUIRE(a == serial_result);
     } else {
-      REQUIRE(std::abs(result - serial_result) <= 10*std::numeric_limits<Scalar>::epsilon());
+      REQUIRE(std::abs(a - serial_result) <= 10*std::numeric_limits<Scalar>::epsilon());
     }
   }
 
