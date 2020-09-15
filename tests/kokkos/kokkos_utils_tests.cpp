@@ -251,8 +251,7 @@ TEST_CASE("parallel_reduce", "[kokkos_utils]")
 
 
 template<typename Scalar, bool Serialize, int TotalSize, int VectorSize>
-void test_view_reduction(const Scalar a = Scalar(0.0),
-                         const int begin_=0, const int end_=0)
+void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize)
 {
   using Device = ekat::DefaultDevice;
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
@@ -262,24 +261,23 @@ void test_view_reduction(const Scalar a = Scalar(0.0),
   using ViewType = Kokkos::View<PackType*,ExeSpace>;
 
   const int view_length = ekat::npack<PackType>(TotalSize);
-  const int begin = begin_;
-  const int end = (end_==0 ? view_length : end_);
 
   // Each entry is given by data(k)[p] = 1/(k*Pack::n+p+1)
   Scalar serial_result = Scalar(a);
   ViewType data("data", view_length);
   const auto data_h = Kokkos::create_mirror_view(data);
-  auto raw = data_h.data();
+  auto raw = data_h.data(); 
   for (int k = 0; k < view_length; ++k) {
-    for (int p=0; p<VectorSize; ++p) {
-      if (k*VectorSize+p >= TotalSize) {
+    for (int p = 0; p < VectorSize; ++p) {
+      const int scalar_index = k*VectorSize+p;
+      if (scalar_index >= TotalSize) {
         // represents pack garbage
         raw[k][p] = ekat::ScalarTraits<Scalar>::invalid();
       } else {
         const Scalar val = 1.0/(k*VectorSize+p+1);
         raw[k][p] = val;
 
-        if (k >= begin && k < end) {
+        if (scalar_index >= begin && scalar_index < end) {
           serial_result += val;
         }
       }
@@ -296,7 +294,7 @@ void test_view_reduction(const Scalar a = Scalar(0.0),
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar(a);
 
-    ekat::ExeSpaceUtils<Serialize,ExeSpace>::view_reduction(team, TotalSize, VectorSize, begin, end, data, team_result);
+    ekat::ExeSpaceUtils<Serialize,ExeSpace>::view_reduction(team, begin, end, data, team_result);
 
     results(0) = team_result;
   });
@@ -313,29 +311,33 @@ void test_view_reduction(const Scalar a = Scalar(0.0),
 TEST_CASE("view_reduction", "[kokkos_utils]")
 {
   // VectorSize = 1
-  test_view_reduction<Real,true,8,1> ();
+
+  // Sum all entries
+  test_view_reduction<Real, true,8,1> ();
   test_view_reduction<Real,false,8,1> ();
 
-  // Begin and end not top or bottom and initial result!=0
-  test_view_reduction<Real,true,8,1> (1.0/3.0,2,5);
+  // Sum subset of entries, non-zero starting value
+  test_view_reduction<Real, true,8,1> (1.0/3.0,2,5);
   test_view_reduction<Real,false,8,1> (1.0/3.0,2,5);
 
 #ifndef KOKKOS_ENABLE_CUDA
-  // Full packs
-  test_view_reduction<Real,true,8,4> ();
+  // VectorSize > 1
+
+  // Full packs, sum all entries
+  test_view_reduction<Real, true,8,4> ();
   test_view_reduction<Real,false,8,4> ();
 
-  // Last pack not full
-  test_view_reduction<Real,true,7,4> ();
+  // Last pack not full, sum all entries
+  test_view_reduction<Real, true,7,4> ();
   test_view_reduction<Real,false,7,4> ();
 
-  // Only pack not full
-  test_view_reduction<Real,true,3,4> ();
+  // Only pack not full, sum all entries
+  test_view_reduction<Real, true,3,4> ();
   test_view_reduction<Real,false,3,4> ();
 
-  // Begin and end not top or bottom and initial result!=0
-  test_view_reduction<Real,true,16,3> (1.0/3.0,2,5);
-  test_view_reduction<Real,false,16,3> (1.0/3.0,2,5);
+  // Sum subset of entries, non-zero starting value
+  test_view_reduction<Real, true,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,16,3> (1.0/3.0,2,11);
 #endif
 }
 

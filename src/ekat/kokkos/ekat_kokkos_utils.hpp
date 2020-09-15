@@ -76,50 +76,62 @@ void parallel_reduce (const TeamMember& team,
 }
 
 /*
- * Computes a reduction over the view described by 'input' for entries 'input([begin,end))'
- * The variable 'input' should be an operator s.t. 'input(k)' returns a Pack of size 'vector_size'.
- * The variable 'total_size' represents the total number of 'ValueType' entries in the view. The
- * computed reduction is added to 'result'.
+ * Computes a reduction over a routine described by 'input' for entries 'scalarize(input)([begin,end))'
+ * The variable 'input' should be an operator s.t. 'input(k)' returns a Pack. The computed reduction is
+ * added to the value 'result'.
  */
 template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
 void view_reduction (const TeamMember& team,
-                     const int total_size,
-                     const int vector_size,
                      const int begin,
                      const int end,
                      const InputProvider& input,
                      ValueType& result)
 {
-  const int  n_packs        = (total_size + vector_size - 1)/vector_size;
-  const bool has_garbage    = (end==n_packs && total_size % vector_size != 0 ? true : false);
-  const int  loop_end       = (has_garbage ? end-1 : end);
-  const int  last_pack_size = (has_garbage ? total_size % vector_size : vector_size);
+  using PackType = typename std::remove_reference<decltype(input(0))>::type;
+  constexpr int vector_size = PackType::n;
 
-  // For parallel computation, perform a packed reduction
-  if (!Serialize) {
-    impl::parallel_reduce<Serialize>(team, begin, loop_end,
-                                     [&](const int k, ValueType& local_sum) {
-        // Sum over pack entries and add to local_sum
-        ekat::reduce_sum<Serialize>(input(k),local_sum);
-    }, result);
-      
-    // If last pack has garbage, we did not include it in the previous reduction,
-    // so manually add the last pack (only the non-garbage part)
-    if (has_garbage) {
+  // Perform a packed reduction over scalar indices
+  if (true) { // !Serialize) {
+    const bool has_garbage_begin = (begin%vector_size != 0 ? true : false);
+    const bool has_garbage_end   = (end%vector_size != 0 ? true : false);
+    const int pack_loop_begin    = (has_garbage_begin ? begin/vector_size + 1 : begin/vector_size);
+    const int pack_loop_end      = end/vector_size;
+
+    // If first pack has garbage, we will not include it in the below reduction,
+    // so manually add the first pack (only the non-garbage part)
+    if (has_garbage_begin) {
+      const int first_indx = begin%vector_size;
       Kokkos::single(Kokkos::PerTeam(team),[&] {
-        for (int j=0; j<last_pack_size; ++j) {
-          result += input(end-1)[j];
+        for (int j=first_indx; j<vector_size; ++j) {
+          result += input(pack_loop_begin-1)[j];
         }
       });
     }
-  } else {
+
+    // Complete packs to be reduced
+    if (pack_loop_begin != pack_loop_end) {
+      impl::parallel_reduce<Serialize>(team, pack_loop_begin, pack_loop_end,
+                                       [&](const int k, ValueType& local_sum) {
+          // Sum over pack entries and add to local_sum
+          ekat::reduce_sum<Serialize>(input(k),local_sum);
+      }, result);
+    }
+      
+    // If last pack has garbage, we did not include it in the main reduction,
+    // so manually add the last pack (only the non-garbage part)
+    if (has_garbage_end) {
+      const int last_indx = end%vector_size;
+      Kokkos::single(Kokkos::PerTeam(team),[&] {
+        for (int j=0; j<last_indx; ++j) {
+          result += input(pack_loop_end)[j];
+        }
+      });
+    }
+  } /*else {
     // For the serial computation, just loop over the total number of pack elements
     // and determine their place in input
-    const int total_start = begin*vector_size;
-    const int total_end = (has_garbage ? loop_end*vector_size + last_pack_size : loop_end*vector_size);
-
-    impl::parallel_reduce<Serialize>(team,total_start,total_end,
+    impl::parallel_reduce<Serialize>(team,begin,end,
                                      [&](const int k, ValueType& local_sum) {
       if (vector_size > 1) {
         const int ilev = k / vector_size;
@@ -129,7 +141,7 @@ void view_reduction (const TeamMember& team,
         local_sum += input(k)[0];
       }
     }, result);
-  }
+  }*/
 }
 } //namespace impl
 
@@ -201,14 +213,12 @@ struct ExeSpaceUtils {
   template <typename TeamMember, typename InputProvider, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void view_reduction (const TeamMember& team,
-                       const int& total_size,
-                       const int& vector_size,
                        const int& begin,
                        const int& end,
                        const InputProvider& input,
                        ValueType& result)
   {
-    impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,total_size,vector_size,begin,end,input,result);
+      impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,begin,end,input,result);
   }
 };
 
@@ -245,14 +255,12 @@ struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
   template <typename TeamMember, typename InputProvider, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void view_reduction (const TeamMember& team,
-                       const int& total_size,
-                       const int& vector_size,
                        const int& begin,
                        const int& end,
                        const InputProvider& input,
                        ValueType& result)
   {
-    impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,total_size,vector_size,begin,end,input,result);
+      impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,begin,end,input,result);
   }
 };
 #endif
