@@ -327,7 +327,7 @@ void reduce_sum (const PackType& p, typename PackType::scalar& sum) {
 // return sum = p[0]+p[1]+...
 template <bool Serialize, typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> reduce_sum (const PackType& p) {
-  typename PackType::scalar sum = PackType::scalar();
+  typename PackType::scalar sum = typename PackType::scalar(0);
   reduce_sum<Serialize>(p,sum);
   return sum;
 }

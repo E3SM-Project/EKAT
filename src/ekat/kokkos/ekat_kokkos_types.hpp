@@ -71,4 +71,13 @@ struct KokkosTypes
 
 } // namespace ekat
 
+// Kokkos-compatible reduction identity for arbitrary packs
+namespace Kokkos {
+template<typename PackType>
+struct reduction_identity {
+  KOKKOS_FORCEINLINE_FUNCTION
+  static PackType sum()  {return PackType(typename PackType::scalar(0));}
+};
+}
+
 #endif // EKAT_KOKKOS_TYPES_HPP

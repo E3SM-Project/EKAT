@@ -251,7 +251,7 @@ TEST_CASE("parallel_reduce", "[kokkos_utils]")
 
 
 template<typename Scalar, bool Serialize, int TotalSize, int VectorSize>
-void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize)
+void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize, bool use_lambda=false)
 {
   using Device = ekat::DefaultDevice;
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
@@ -294,7 +294,14 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar(a);
 
-    ekat::ExeSpaceUtils<Serialize,ExeSpace>::view_reduction(team, begin, end, data, team_result);
+    if (use_lambda) {
+      ekat::ExeSpaceUtils<Serialize,ExeSpace>::view_reduction(team, begin, end,
+                                                              [&] (const int k) -> PackType {
+                                                                return data(k);
+                                                              }, team_result);
+    } else {
+      ekat::ExeSpaceUtils<Serialize,ExeSpace>::view_reduction(team, begin, end, data, team_result);
+    }
 
     results(0) = team_result;
   });
@@ -316,9 +323,9 @@ TEST_CASE("view_reduction", "[kokkos_utils]")
   test_view_reduction<Real, true,8,1> ();
   test_view_reduction<Real,false,8,1> ();
 
-  // Sum subset of entries, non-zero starting value
-  test_view_reduction<Real, true,8,1> (1.0/3.0,2,5);
-  test_view_reduction<Real,false,8,1> (1.0/3.0,2,5);
+  // Sum subset of entries, non-zero starting value, lambda data representation
+  test_view_reduction<Real, true,8,1> (1.0/3.0,2,5,true);
+  test_view_reduction<Real,false,8,1> (1.0/3.0,2,5,true);
 
 #ifndef KOKKOS_ENABLE_CUDA
   // VectorSize > 1
