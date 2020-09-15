@@ -250,8 +250,8 @@ TEST_CASE("parallel_reduce", "[kokkos_utils]")
 }
 
 
-template<typename Scalar, bool Serialize, int TotalSize, int VectorSize>
-void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize, bool use_lambda=false)
+template<typename Scalar, bool Serialize, bool UseLambda, int TotalSize, int VectorSize>
+void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize)
 {
   using Device = ekat::DefaultDevice;
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
@@ -294,7 +294,7 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar(a);
 
-    if (use_lambda) {
+    if (UseLambda) {
       ekat::ExeSpaceUtils<Serialize,ExeSpace>::view_reduction(team, begin, end,
                                                               [&] (const int k) -> PackType {
                                                                 return data(k);
@@ -320,31 +320,43 @@ TEST_CASE("view_reduction", "[kokkos_utils]")
   // VectorSize = 1
 
   // Sum all entries
-  test_view_reduction<Real, true,8,1> ();
-  test_view_reduction<Real,false,8,1> ();
+  test_view_reduction<Real, true,true,8,1> ();
+  test_view_reduction<Real,false,true,8,1> ();
+  test_view_reduction<Real, true,false,8,1> ();
+  test_view_reduction<Real,false,false,8,1> ();
 
   // Sum subset of entries, non-zero starting value, lambda data representation
-  test_view_reduction<Real, true,8,1> (1.0/3.0,2,5,true);
-  test_view_reduction<Real,false,8,1> (1.0/3.0,2,5,true);
+  test_view_reduction<Real, true,true,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real,false,true,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real, true,false,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real,false,false,8,1> (1.0/3.0,2,5);
 
 #ifndef KOKKOS_ENABLE_CUDA
   // VectorSize > 1
 
   // Full packs, sum all entries
-  test_view_reduction<Real, true,8,4> ();
-  test_view_reduction<Real,false,8,4> ();
+  test_view_reduction<Real, true,true,8,4> ();
+  test_view_reduction<Real,false,true,8,4> ();
+  test_view_reduction<Real, true,false,8,4> ();
+  test_view_reduction<Real,false,false,8,4> ();
 
   // Last pack not full, sum all entries
-  test_view_reduction<Real, true,7,4> ();
-  test_view_reduction<Real,false,7,4> ();
+  test_view_reduction<Real, true,true,7,4> ();
+  test_view_reduction<Real,false,true,7,4> ();
+  test_view_reduction<Real, true,false,7,4> ();
+  test_view_reduction<Real,false,false,7,4> ();
 
   // Only pack not full, sum all entries
-  test_view_reduction<Real, true,3,4> ();
-  test_view_reduction<Real,false,3,4> ();
+  test_view_reduction<Real, true,true,3,4> ();
+  test_view_reduction<Real,false,true,3,4> ();
+  test_view_reduction<Real, true,false,3,4> ();
+  test_view_reduction<Real,false,false,3,4> ();
 
   // Sum subset of entries, non-zero starting value
-  test_view_reduction<Real, true,16,3> (1.0/3.0,2,11);
-  test_view_reduction<Real,false,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real, true,true,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,true,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real, true,false,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,false,16,3> (1.0/3.0,2,11);
 #endif
 }
 
