@@ -76,7 +76,7 @@ namespace Kokkos {
 template<typename PackType>
 struct reduction_identity {
   KOKKOS_FORCEINLINE_FUNCTION
-  static PackType sum()  {return PackType(typename PackType::scalar(0));}
+  static PackType sum()  {return PackType(0);}
 };
 }
 

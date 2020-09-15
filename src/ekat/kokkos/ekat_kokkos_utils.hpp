@@ -32,11 +32,12 @@ namespace impl {
 // one element in order, useful for BFB testing with serial routines.
 // If Serialize=false, this function simply calls Kokkos::parallel_reduce().
 // If result contains a value, the output is result+reduction
+// For typical application, begin and end are pack indices.
 template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
-                      const int& begin,
-                      const int& end,
+                      const int& begin, // pack index
+                      const int& end, // pack index
                       const Lambda& lambda,
                       ValueType& result)
 {
@@ -119,7 +120,7 @@ void view_reduction (const TeamMember& team,
           ekat::reduce_sum<Serialize>(input(k),local_sum);
       }, result);
     } else {
-      PackType packed_result(typename PackType::scalar(0));
+      PackType packed_result(0);
       impl::parallel_reduce<Serialize>(team, pack_loop_begin, pack_loop_end,
                                        [&](const int k, PackType& local_packed_sum) {
           // Sum packs
@@ -201,8 +202,8 @@ struct ExeSpaceUtils {
   template <typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
-                        const int& begin,
-                        const int& end,
+                        const int& begin, // pack index
+                        const int& end, // pack index
                         const Lambda& lambda,
                         ValueType& result)
   {
