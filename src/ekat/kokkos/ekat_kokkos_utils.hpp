@@ -42,11 +42,15 @@ namespace ekat {
 
 namespace impl {
 
-// Computes a general parallel reduction. If Serialize=true, this reduction is computed
-// one element in order, useful for BFB testing with serial routines.
-// If Serialize=false, this function simply calls Kokkos::parallel_reduce().
-// If result contains a value, the output is result+reduction
-// For typical application, begin and end are pack indices.
+/*
+ * Computes a general parallel reduction. If Serialize=true, this reduction is computed
+ * one element in order, useful for BFB testing with serial routines.
+ * If Serialize=false, this function simply calls Kokkos::parallel_reduce().
+ * If result contains a value, the output is result+reduction
+ * For typical application, begin and end are pack indices.
+ * NOTE: we do not provide an overload with Serialized defaulted, since this fcn is an impl
+ *       detail, and, normally, should not be used by customer apps
+ */
 template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
@@ -94,6 +98,8 @@ void parallel_reduce (const TeamMember& team,
  * Computes a reduction over a routine described by 'input' for entries 'scalarize(input)([begin,end))'
  * The variable 'input' should be an operator s.t. 'input(k)' returns a Pack. The computed reduction is
  * added to the value 'result'.
+ * NOTE: we do not provide an overload with Serialized defaulted, since this fcn is an impl
+ *       detail, and, normally, should not be used by customer apps
  */
 template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
@@ -195,7 +201,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
  * for a parallel kernel. On non-GPU archictures, we will generally have
  * thread teams of 1.
  */
-template <bool Serialize, typename ExeSpace = Kokkos::DefaultExecutionSpace>
+template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
   using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
@@ -213,7 +219,23 @@ struct ExeSpaceUtils {
     return TeamPolicy(ni, team_size);
   }
 
-  template <typename TeamMember, typename Lambda, typename ValueType>
+  // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
+  //       The latter is better when bool needs a default, the former is
+  //       better when bool must be specified, but we want T to be deduced.
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename Lambda, typename ValueType, bool Serialize = ekatBFB>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+                        const int& begin, // pack index
+                        const int& end, // pack index
+                        const Lambda& lambda,
+                        ValueType& result)
+  {
+    parallel_reduce<Serialize>(team, begin, end, lambda, result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
                         const int& begin, // pack index
@@ -224,7 +246,20 @@ struct ExeSpaceUtils {
     impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
   }
 
-  template <typename TeamMember, typename InputProvider, typename ValueType>
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename InputProvider, typename ValueType, bool Serialize = ekatBFB>
+  static KOKKOS_INLINE_FUNCTION
+  void view_reduction (const TeamMember& team,
+                       const int& begin, // scalar index
+                       const int& end, // scalar index
+                       const InputProvider& input,
+                       ValueType& result)
+  {
+      view_reduction<Serialize>(team,begin,end,input,result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void view_reduction (const TeamMember& team,
                        const int& begin, // scalar index
@@ -243,8 +278,8 @@ struct ExeSpaceUtils {
  * threads than the main kernel loop has indices.
  */
 #ifdef KOKKOS_ENABLE_CUDA
-template <bool Serialize>
-struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
+template <>
+struct ExeSpaceUtils<Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
 
   static TeamPolicy get_default_team_policy (Int ni, Int nk) {
@@ -255,7 +290,23 @@ struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
     return TeamPolicy(ni, team_size);
   }
 
-  template <typename TeamMember, typename Lambda, typename ValueType>
+  // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
+  //       The latter is better when bool needs a default, the former is
+  //       better when bool must be specified, but we want T to be deduced.
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename Lambda, typename ValueType, bool Serialize = ekatBFB>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+                        const int& begin,
+                        const int& end,
+                        const Lambda& lambda,
+                        ValueType& result)
+  {
+    parallel_reduce<Serialize>(team, begin, end, lambda, result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
                         const int& begin,
@@ -266,7 +317,20 @@ struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
     impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
   }
 
-  template <typename TeamMember, typename InputProvider, typename ValueType>
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename InputProvider, typename ValueType, bool Serialize = ekatBFB>
+  static KOKKOS_INLINE_FUNCTION
+  void view_reduction (const TeamMember& team,
+                       const int& begin,
+                       const int& end,
+                       const InputProvider& input,
+                       ValueType& result)
+  {
+      view_reduction<Serialize>(team,begin,end,input,result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
   static KOKKOS_INLINE_FUNCTION
   void view_reduction (const TeamMember& team,
                        const int& begin,

@@ -14,7 +14,7 @@ LinInterp<ScalarT, PackSize, DeviceT>::LinInterp(int ncol, int km1, int km2, Sca
   m_km1_pack(ekat::npack<Pack>(km1)),
   m_km2_pack(ekat::npack<Pack>(km2)),
   m_minthresh(minthresh),
-  m_policy(ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(ncol, m_km2_pack)),
+  m_policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ncol, m_km2_pack)),
   m_indx_map("m_indx_map", ncol, ekat::npack<IntPack>(km2))
 {}
 

@@ -230,7 +230,7 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
 
   typename KokkosTypes<DefaultDevice>::template view_1d<TestBigPack> test_k_array("test_k_array", num_bigs);
   Kokkos::parallel_reduce("unittest_pack",
-                          ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(1, 1),
+                          ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, 1),
                           KOKKOS_LAMBDA(const MemberType& team, int& total_errs) {
 
     int nerrs_local = 0;

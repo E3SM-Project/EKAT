@@ -16,4 +16,7 @@
 // Add a substitute for GNU feenableexcept if necessary
 #cmakedefine EKAT_HAVE_FEENABLEEXCEPT
 
-#endif
+// Decide whether ekat defaults to BFB behavior when possible/appropriate
+#cmakedefine01 EKAT_DEFAULT_BFB
+
+#endif // EKAT_CONFIG_H

@@ -114,7 +114,7 @@ void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm, const view_2
 {
   Kokkos::parallel_for(
     "WorkspaceManager ctor",
-    ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(max_ws_idx, max_used),
+    ExeSpaceUtils<ExeSpace>::get_default_team_policy(max_ws_idx, max_used),
     KOKKOS_LAMBDA(const MemberType& team) {
       Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, max_used), [&] (int i) {

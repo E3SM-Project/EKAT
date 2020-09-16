@@ -315,7 +315,11 @@ OnlyPackReturn<PackType, typename PackType::scalar> max (const PackType& p) {
 }
 
 // sum = sum+p[0]+p[1]+...
-template <bool Serialize, typename PackType> KOKKOS_INLINE_FUNCTION
+// NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
+//       The latter is better when bool needs a default, the former is
+//       better when bool must be specified, but we want T to be deduced.
+template <bool Serialize, typename PackType>
+KOKKOS_INLINE_FUNCTION
 void reduce_sum (const PackType& p, typename PackType::scalar& sum) {
   if (Serialize) {
     for (int i = 0; i < PackType::n; ++i) sum += p[i];
@@ -324,12 +328,24 @@ void reduce_sum (const PackType& p, typename PackType::scalar& sum) {
   }
 }
 
+template <typename PackType, bool Serialize = ekatBFB>
+KOKKOS_INLINE_FUNCTION
+void reduce_sum (const PackType& p, typename PackType::scalar& sum) {
+  reduce_sum<Serialize>(p,sum);
+}
+
 // return sum = p[0]+p[1]+...
-template <bool Serialize, typename PackType> KOKKOS_INLINE_FUNCTION
+template <bool Serialize, typename PackType>
+KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> reduce_sum (const PackType& p) {
   typename PackType::scalar sum = typename PackType::scalar(0);
   reduce_sum<Serialize>(p,sum);
   return sum;
+}
+template <typename PackType, bool Serialize = ekatBFB>
+KOKKOS_INLINE_FUNCTION
+OnlyPackReturn<PackType, typename PackType::scalar> reduce_sum (const PackType& p) {
+  return reduce_sum<Serialize>(p);
 }
 
 // min(init, min(p(mask)))
