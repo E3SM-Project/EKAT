@@ -38,7 +38,7 @@ struct Mask {
   enum { n = PackSize };
 
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Mask () {}
+  Mask () {}
 
   // Init all slots of the Mask to 'init'.
   KOKKOS_FORCEINLINE_FUNCTION explicit Mask (const bool& init) {
@@ -156,7 +156,7 @@ struct Pack {
   typedef typename std::remove_const<ScalarType>::type scalar;
 
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack () {
+  Pack () {
     vector_simd for (int i = 0; i < n; ++i) {
       d[i] = ScalarTraits<scalar>::invalid();
     }
