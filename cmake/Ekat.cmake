@@ -1,3 +1,6 @@
+# Where ekat's tpls live
+set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "")
+
 # This cmake utility allows you to build ekat just by adding
 #
 #   Include(Ekat)
@@ -30,21 +33,17 @@ get_property(IS_EKAT_BUILT GLOBAL PROPERTY EKAT_BUILT SET)
 # explicitly passing BLAH blahVal in the macro call.
 # E.g., consider this:
 #
-#  BuildEkat (../../ekat PREFIX "MY_PROJECT" TEST_MAX_THREADS 1)
+#  BuildEkat (PREFIX "MY_PROJECT" TEST_MAX_THREADS 1)
 #
 # It would build Ekat from the src tree found in ../../ekat (and error out
 # if the path is wrong), set all the EKAT_XYZ var to match ${MY_PROJECT}_XYZ (or
 # some predefined default, if ${MY_PROJECT}_XYZ is not set), but it would make
 # sure that EKAT_TEST_MAX_THREADS is 1, regardless of what the corresponding
 # MY_PROJECT_TEST_MAX_THREADS is
-macro (BuildEkat EKAT_SOURCE_DIR)
+macro (BuildEkat)
 
   # Process EKAT only if not already done
   if (NOT IS_EKAT_BUILT)
-
-    # First, build kokkos (if not already built), cause some of our defaults depend on it
-    # Note: if kokkos is already built, this is a no-op
-    include (Kokkos)
 
     set(options)
     set(oneValueArgs
@@ -72,16 +71,7 @@ macro (BuildEkat EKAT_SOURCE_DIR)
     # DO NOT set defaults, or you may override something
     setVars("BUILD_EKAT" FALSE)
 
-    if (NOT IS_DIRECTORY ${EKAT_SOURCE_DIR})
-      message (FATAL_ERROR
-               "Error! The provided EKAT_SOURCE_DIR does not appear to be a directory.\n"
-               "  Provided dir: ${EKAT_SOURCE_DIR}")
-    endif()
-    if (NOT EXISTS ${EKAT_SOURCE_DIR}/ekat_config.h.in)
-      message (FATAL_ERROR "Error! Something is wrong with EKAT_SOURCE_DIR.\n"
-                           "       No 'ekat_config.h.in' file was found in '${EKAT_SOURCE_DIR}'")
-    endif()
-    add_subdirectory (${EKAT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/externals/ekat)
+    add_subdirectory (${EKAT_CMAKE_PATH}/../ ${CMAKE_BINARY_DIR}/externals/ekat)
 
     # Make sure that future includes of this script don't rebuild ekat
     set_property(GLOBAL PROPERTY EKAT_BUILT TRUE)
