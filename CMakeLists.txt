@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.3)
 
+set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
+
 # Add out own cmake goodies to cmake module search path
-list(APPEND CMAKE_MODULE_PATH
-     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-)
+list(APPEND CMAKE_MODULE_PATH ${EKAT_CMAKE_PATH})
 
 # We should avoid cxx bindings in mpi; they are already deprecated,
 # and can cause headaches at link time, cause they require -lmpi_cxx
@@ -52,12 +52,12 @@ set (EKAT_TPL_INCLUDE_DIRS_INTERNAL)
 set (EKAT_TPL_LIBRARIES_INTERNAL)
 
 # A good chunk of EKAT is a utility layer over kokkos
-include(Kokkos)
+include(${EKAT_CMAKE_PATH}/Kokkos.cmake)
 list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${Kokkos_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 # EKAT also has some yaml parsing utility
-include(YamlCpp)
+include(${EKAT_CMAKE_PATH}/YamlCpp.cmake)
 list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${YAMLCPP_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
 
