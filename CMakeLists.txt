@@ -69,11 +69,12 @@ set (EKAT_TPL_INCLUDE_DIRS ${EKAT_TPL_INCLUDE_DIRS_INTERNAL} CACHE INTERNAL "Lis
 ############################
 
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
-
+option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." OFF)
 
 ####################################
 ###  MAC-SPECIFIC CONFIG OPTIONS ###
 ####################################
+
 include(CheckSymbolExists)
 # Most of the FPE stuff was defined in c++99, but gnu has some additional non-std
 # functions that are helpful (such as feeenableexcept) --- Apple stopped including these

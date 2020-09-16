@@ -9,6 +9,7 @@
 #include "ekat/ekat_assert.hpp"
 #include "ekat/ekat_type_traits.hpp"
 #include "ekat/ekat.hpp"
+#include "ekat/ekat_pack.hpp"
 
 #include "Kokkos_Random.hpp"
 
@@ -23,15 +24,38 @@
 // that are probably not generic enough to appear in kokkos any time soon
 // (or ever), and are more app-specific.
 
+// Kokkos-compatible reduction identity for arbitrary packs
+namespace Kokkos {
+template<typename S, int N>
+struct reduction_identity<ekat::Pack<S,N>> {
+  using PackType = ekat::Pack<S,N>;
+
+  // Provide only sum, since that's our only use case, for now
+  KOKKOS_FORCEINLINE_FUNCTION
+  constexpr static PackType sum() {
+    return PackType (reduction_identity<S>::sum());
+  }
+};
+} // namespace Kokkos
+
 namespace ekat {
 
 namespace impl {
 
-template <typename TeamMember, typename Lambda, typename ValueType, bool Serialize>
+/*
+ * Computes a general parallel reduction. If Serialize=true, this reduction is computed
+ * one element in order, useful for BFB testing with serial routines.
+ * If Serialize=false, this function simply calls Kokkos::parallel_reduce().
+ * If result contains a value, the output is result+reduction
+ * For typical application, begin and end are pack indices.
+ * NOTE: we do not provide an overload with Serialized defaulted, since this fcn is an impl
+ *       detail, and, normally, should not be used by customer apps
+ */
+template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
 static KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
-                      const int& begin,
-                      const int& end,
+                      const int& begin, // pack index
+                      const int& end, // pack index
                       const Lambda& lambda,
                       ValueType& result)
 {
@@ -48,7 +72,7 @@ void parallel_reduce (const TeamMember& team,
     //       see the updated value before the vector_reduce call,
     //       which will cause the final answer to be multiplied by the
     //       size of the warp.
-    auto local_tmp = Kokkos::reduction_identity<ValueType>::sum();
+    auto local_tmp = result;
 
     Kokkos::single(Kokkos::PerThread(team),[&] {
         for (int k=begin; k<end; ++k) {
@@ -64,10 +88,81 @@ void parallel_reduce (const TeamMember& team,
 
    result = local_tmp;
   } else {
+    const ValueType initial(result);
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
+    result += initial;
   }
 }
 
+/*
+ * Computes a reduction over a routine described by 'input' for entries 'scalarize(input)([begin,end))'
+ * The variable 'input' should be an operator s.t. 'input(k)' returns a Pack. The computed reduction is
+ * added to the value 'result'.
+ * NOTE: we do not provide an overload with Serialized defaulted, since this fcn is an impl
+ *       detail, and, normally, should not be used by customer apps
+ */
+template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
+static KOKKOS_INLINE_FUNCTION
+void view_reduction (const TeamMember& team,
+                     const int begin, // scalar index
+                     const int end, // scalar index
+                     const InputProvider& input,
+                     ValueType& result)
+{
+  using PackType = typename std::remove_reference<decltype(input(0))>::type;
+  constexpr int vector_size = PackType::n;
+
+  // Perform a packed reduction over scalar indices
+  const bool has_garbage_begin = begin%vector_size != 0;
+  const bool has_garbage_end   = end%vector_size != 0;
+  const int  pack_loop_begin   = (has_garbage_begin ? begin/vector_size + 1 : begin/vector_size);
+  const int  pack_loop_end     = end/vector_size;
+
+  // If first pack has garbage, we will not include it in the below reduction,
+  // so manually add the first pack (only the non-garbage part)
+  if (has_garbage_begin) {
+    const PackType temp_input = input(pack_loop_begin-1);
+    const int first_indx = begin%vector_size;
+    Kokkos::single(Kokkos::PerTeam(team),[&] {
+      for (int j=first_indx; j<vector_size; ++j) {
+        result += temp_input[j];
+      }
+    });
+  }
+
+  // Complete packs to be reduced. If Serialize, reduce at pack the level, then
+  // sum into result. Else, sum up packs, then sum over resulting pack into result.
+  if (pack_loop_begin != pack_loop_end) {
+    if (Serialize) {
+      impl::parallel_reduce<Serialize>(team, pack_loop_begin, pack_loop_end,
+                                       [&](const int k, ValueType& local_sum) {
+          // Sum over pack entries and add to local_sum
+          ekat::reduce_sum<Serialize>(input(k),local_sum);
+      }, result);
+    } else {
+      PackType packed_result(0);
+      impl::parallel_reduce<Serialize>(team, pack_loop_begin, pack_loop_end,
+                                       [&](const int k, PackType& local_packed_sum) {
+          // Sum packs
+          local_packed_sum += input(k);
+      }, packed_result);
+
+      result += ekat::reduce_sum<Serialize>(packed_result);
+    }
+  }
+      
+  // If last pack has garbage, we did not include it in the main reduction,
+  // so manually add the last pack (only the non-garbage part)
+  if (has_garbage_end) {
+    const PackType temp_input = input(pack_loop_end);
+    const int last_indx = end%vector_size;
+    Kokkos::single(Kokkos::PerTeam(team),[&] {
+      for (int j=0; j<last_indx; ++j) {
+        result += temp_input[j];
+      }
+    });
+  }
+}
 } //namespace impl
 
 
@@ -106,7 +201,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
  * for a parallel kernel. On non-GPU archictures, we will generally have
  * thread teams of 1.
  */
-template <bool Serialize, typename ExeSpace = Kokkos::DefaultExecutionSpace>
+template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
   using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
@@ -124,15 +219,55 @@ struct ExeSpaceUtils {
     return TeamPolicy(ni, team_size);
   }
 
-  template <typename TeamMember, typename Lambda, typename ValueType>
+  // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
+  //       The latter is better when bool needs a default, the former is
+  //       better when bool must be specified, but we want T to be deduced.
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename Lambda, typename ValueType, bool Serialize = ekatBFB>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
-                        const int& begin,
-                        const int& end,
+                        const int& begin, // pack index
+                        const int& end, // pack index
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
+    parallel_reduce<Serialize>(team, begin, end, lambda, result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+                        const int& begin, // pack index
+                        const int& end, // pack index
+                        const Lambda& lambda,
+                        ValueType& result)
+  {
+    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
+  }
+
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename InputProvider, typename ValueType, bool Serialize = ekatBFB>
+  static KOKKOS_INLINE_FUNCTION
+  void view_reduction (const TeamMember& team,
+                       const int& begin, // scalar index
+                       const int& end, // scalar index
+                       const InputProvider& input,
+                       ValueType& result)
+  {
+      view_reduction<Serialize>(team,begin,end,input,result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
+  static KOKKOS_INLINE_FUNCTION
+  void view_reduction (const TeamMember& team,
+                       const int& begin, // scalar index
+                       const int& end, // scalar index
+                       const InputProvider& input,
+                       ValueType& result)
+  {
+      impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,begin,end,input,result);
   }
 };
 
@@ -143,8 +278,8 @@ struct ExeSpaceUtils {
  * threads than the main kernel loop has indices.
  */
 #ifdef KOKKOS_ENABLE_CUDA
-template <bool Serialize>
-struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
+template <>
+struct ExeSpaceUtils<Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
 
   static TeamPolicy get_default_team_policy (Int ni, Int nk) {
@@ -155,7 +290,11 @@ struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
     return TeamPolicy(ni, team_size);
   }
 
-  template <typename TeamMember, typename Lambda, typename ValueType>
+  // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
+  //       The latter is better when bool needs a default, the former is
+  //       better when bool must be specified, but we want T to be deduced.
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename Lambda, typename ValueType, bool Serialize = ekatBFB>
   static KOKKOS_INLINE_FUNCTION
   void parallel_reduce (const TeamMember& team,
                         const int& begin,
@@ -163,7 +302,43 @@ struct ExeSpaceUtils<Serialize,Kokkos::Cuda> {
                         const Lambda& lambda,
                         ValueType& result)
   {
-    impl::parallel_reduce<TeamMember, Lambda, ValueType, Serialize>(team, begin, end, lambda, result);
+    parallel_reduce<Serialize>(team, begin, end, lambda, result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
+  static KOKKOS_INLINE_FUNCTION
+  void parallel_reduce (const TeamMember& team,
+                        const int& begin,
+                        const int& end,
+                        const Lambda& lambda,
+                        ValueType& result)
+  {
+    impl::parallel_reduce<Serialize, TeamMember, Lambda, ValueType>(team, begin, end, lambda, result);
+  }
+
+  // Uses ekatBFB as default for Serialize
+  template <typename TeamMember, typename InputProvider, typename ValueType, bool Serialize = ekatBFB>
+  static KOKKOS_INLINE_FUNCTION
+  void view_reduction (const TeamMember& team,
+                       const int& begin,
+                       const int& end,
+                       const InputProvider& input,
+                       ValueType& result)
+  {
+      view_reduction<Serialize>(team,begin,end,input,result);
+  }
+
+  // Requires user to specify whether to serialize or not
+  template <bool Serialize, typename TeamMember, typename InputProvider, typename ValueType>
+  static KOKKOS_INLINE_FUNCTION
+  void view_reduction (const TeamMember& team,
+                       const int& begin,
+                       const int& end,
+                       const InputProvider& input,
+                       ValueType& result)
+  {
+      impl::view_reduction<Serialize,TeamMember,InputProvider,ValueType>(team,begin,end,input,result);
   }
 };
 #endif

@@ -3,6 +3,7 @@
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/util/ekat_arch.hpp"
+#include "ekat/ekat_pack.hpp"
 
 #include "ekat_test_config.h"
 
@@ -30,7 +31,7 @@ TEST_CASE("team_policy", "[kokkos_utils]") {
 
   for (int nk: {128, 122, 255, 42}) {
     const int ni = 1000;
-    const auto p = ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(ni, nk);
+    const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk);
     REQUIRE(p.league_size() == ni);
     if (OnGpu<ExeSpace>::value) {
       if (nk == 42) {
@@ -64,7 +65,7 @@ TEST_CASE("team_utils_omp", "[kokkos_utils]")
 
   const int ni = n*5;
   for (int s = 1; s <= n; ++s) {
-    const auto p = ExeSpaceUtils<false,ExeSpace>::get_team_policy_force_team_size(ni, s);
+    const auto p = ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(ni, s);
     TeamUtils<ExeSpace> tu(p);
     const int c = tu.get_num_concurrent_teams();
     typename KokkosTypes<Device>::template view_2d<int> ws_idxs("ws_idxs", ni, s);
@@ -141,13 +142,13 @@ void test_utils_large_ni(const double saturation_multiplier)
 
   const int nk = 128;
   const double overprov_factor = 1.5;
-  const auto temp_policy = ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(1, nk);
+  const auto temp_policy = ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, nk);
   TeamUtils<Real,ExeSpace> tu_temp(temp_policy);
   const int num_conc = tu_temp.get_max_concurrent_threads() / temp_policy.team_size();
 
   int ni = num_conc*saturation_multiplier;
   if (ni == 0) ni = 1;
-  const auto p = ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(ni, nk);
+  const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk);
   TeamUtils<Real,ExeSpace> tu(p, overprov_factor);
 
   REQUIRE(p.league_size() == ni);
@@ -201,28 +202,30 @@ void test_parallel_reduce()
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
 
+  // Each entry is given by data(k) = 1/(k+1)
+  Scalar serial_result = Scalar();
   Kokkos::View<Scalar*, ExeSpace> data("data", length);
   const auto data_h = Kokkos::create_mirror_view(data);
   auto raw = data_h.data();
-  for (int i = 0; i < length; ++i)
-    raw[i] = 1.0/(i+1);
+  for (int i = 0; i < length; ++i) {
+    const Scalar val = Scalar(1.0/(i+1));
+    serial_result += val;
+    raw[i] = val;
+  }
   Kokkos::deep_copy(data, data_h);
 
   Kokkos::View<Scalar*> results ("results", 1);
   const auto results_h = Kokkos::create_mirror_view(results);
 
-  Scalar serial_result = Scalar();
-  for (int i = 0; i < length; ++i)
-    serial_result += 1.0/(i+1);
-
+  // parallel_for over 1 team, i.e. call parallel_reduce once
   const auto policy =
-    ekat::ExeSpaceUtils<Serialize,ExeSpace>::get_default_team_policy(1, length);
+    ekat::ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, length);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar();
 
     const int begin = 0;
     const int end = length;
-    ekat::ExeSpaceUtils<Serialize,ExeSpace>::parallel_reduce(team, begin, end,
+    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce<Serialize>(team, begin, end,
         [&] (const int k, Scalar& reduction_value) {
               reduction_value += data[k];
         }, team_result);
@@ -231,6 +234,8 @@ void test_parallel_reduce()
     });
 
   Kokkos::deep_copy(results_h, results);
+
+  // If serial computation, check bfb vs serial_result, else check to a tolerance
   if (Serialize) {
     REQUIRE(results_h(0) == serial_result);
   } else {
@@ -242,6 +247,117 @@ TEST_CASE("parallel_reduce", "[kokkos_utils]")
 {
   test_parallel_reduce<Real,15,true> ();
   test_parallel_reduce<Real,15,false> ();
+}
+
+
+template<typename Scalar, bool Serialize, bool UseLambda, int TotalSize, int VectorSize>
+void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize)
+{
+  using Device = ekat::DefaultDevice;
+  using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
+  using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
+  
+  using PackType = ekat::Pack<Scalar, VectorSize>;
+  using ViewType = Kokkos::View<PackType*,ExeSpace>;
+
+  const int view_length = ekat::npack<PackType>(TotalSize);
+
+  // Each entry is given by data(k)[p] = 1/(k*Pack::n+p+1)
+  Scalar serial_result = Scalar(a);
+  ViewType data("data", view_length);
+  const auto data_h = Kokkos::create_mirror_view(data);
+  auto raw = data_h.data(); 
+  for (int k = 0; k < view_length; ++k) {
+    for (int p = 0; p < VectorSize; ++p) {
+      const int scalar_index = k*VectorSize+p;
+      if (scalar_index >= TotalSize) {
+        // represents pack garbage
+        raw[k][p] = ekat::ScalarTraits<Scalar>::invalid();
+      } else {
+        const Scalar val = 1.0/(k*VectorSize+p+1);
+        raw[k][p] = val;
+
+        if (scalar_index >= begin && scalar_index < end) {
+          serial_result += val;
+        }
+      }
+    }
+  }
+  Kokkos::deep_copy(data, data_h);
+
+  Kokkos::View<Scalar*> results ("results", 1);
+  const auto results_h = Kokkos::create_mirror_view(results);
+
+  // parallel_for over 1 team, i.e. call view_reduction once
+  const auto policy =
+    ekat::ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, view_length);
+  Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
+    Scalar team_result = Scalar(a);
+
+    if (UseLambda) {
+      ekat::ExeSpaceUtils<ExeSpace>::view_reduction<Serialize>(team, begin, end,
+                                                               [&] (const int k) -> PackType {
+                                                                 return data(k);
+                                                               }, team_result);
+    } else {
+      ekat::ExeSpaceUtils<ExeSpace>::view_reduction<Serialize>(team, begin, end, data, team_result);
+    }
+
+    results(0) = team_result;
+  });
+
+  Kokkos::deep_copy(results_h, results);
+  // If serial computation, check bfb vs serial_result, else check to a tolerance
+  if (Serialize) {
+    REQUIRE(results_h(0)== serial_result);
+  } else {
+    REQUIRE(std::abs(results_h(0) - serial_result) <= 10*std::numeric_limits<Scalar>::epsilon());
+  }
+}
+
+TEST_CASE("view_reduction", "[kokkos_utils]")
+{
+  // VectorSize = 1
+
+  // Sum all entries
+  test_view_reduction<Real, true,true,8,1> ();
+  test_view_reduction<Real,false,true,8,1> ();
+  test_view_reduction<Real, true,false,8,1> ();
+  test_view_reduction<Real,false,false,8,1> ();
+
+  // Sum subset of entries, non-zero starting value, lambda data representation
+  test_view_reduction<Real, true,true,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real,false,true,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real, true,false,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real,false,false,8,1> (1.0/3.0,2,5);
+
+#ifndef KOKKOS_ENABLE_CUDA
+  // VectorSize > 1
+
+  // Full packs, sum all entries
+  test_view_reduction<Real, true,true,8,4> ();
+  test_view_reduction<Real,false,true,8,4> ();
+  test_view_reduction<Real, true,false,8,4> ();
+  test_view_reduction<Real,false,false,8,4> ();
+
+  // Last pack not full, sum all entries
+  test_view_reduction<Real, true,true,7,4> ();
+  test_view_reduction<Real,false,true,7,4> ();
+  test_view_reduction<Real, true,false,7,4> ();
+  test_view_reduction<Real,false,false,7,4> ();
+
+  // Only pack not full, sum all entries
+  test_view_reduction<Real, true,true,3,4> ();
+  test_view_reduction<Real,false,true,3,4> ();
+  test_view_reduction<Real, true,false,3,4> ();
+  test_view_reduction<Real,false,false,3,4> ();
+
+  // Sum subset of entries, non-zero starting value
+  test_view_reduction<Real, true,true,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,true,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real, true,false,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,false,16,3> (1.0/3.0,2,11);
+#endif
 }
 
 } // anonymous namespace

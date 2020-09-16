@@ -35,7 +35,7 @@ static void unittest_workspace_overprovision()
   const int max_threads = ExeSpace::concurrency();
   const int nk = OnGpu<ExeSpace>::value ? 128 : (max_threads < 7 ? max_threads : 7);
 
-  const auto temp_policy = ExeSpaceUtils<false,ExeSpace>::get_team_policy_force_team_size(1, nk);
+  const auto temp_policy = ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, nk);
   TeamUtils<Real,ExeSpace> tu_temp(temp_policy);
   const int num_conc = tu_temp.get_max_concurrent_threads() / temp_policy.team_size();
 
@@ -49,7 +49,7 @@ static void unittest_workspace_overprovision()
   const int ni_over    = num_conc * (explicit_op_fact + .5);
 
   for (const int ni_item : {ni_under, ni_conc, ni_between, ni_exact, ni_over}) {
-    TeamPolicy policy(ExeSpaceUtils<false,ExeSpace>::get_team_policy_force_team_size(ni_item, nk));
+    TeamPolicy policy(ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(ni_item, nk));
     WSM wsm(4, 4, policy);
 
     if (ni_item <= ni_exact) {
@@ -64,7 +64,7 @@ static void unittest_workspace_overprovision()
   }
 
   for (const int ni_item : {ni_under, ni_conc, ni_between, ni_exact, ni_over}) {
-    TeamPolicy policy(ExeSpaceUtils<false,ExeSpace>::get_team_policy_force_team_size(ni_item, nk));
+    TeamPolicy policy(ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(ni_item, nk));
     WSM wsm(4, 4, policy, explicit_op_fact);
 
     if (ni_item <= ni_exact) {
@@ -91,7 +91,7 @@ static void unittest_workspace()
   const int ni = 128;
   const int nk = 128;
 
-  TeamPolicy policy(ExeSpaceUtils<false,ExeSpace>::get_default_team_policy(ni, nk));
+  TeamPolicy policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk));
 
   {
     WorkspaceManager<double, Device> wsmd(17, num_ws, policy);
@@ -121,7 +121,7 @@ static void unittest_workspace()
   // Test host-explicit WorkspaceMgr
   {
     using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
-    typename KokkosTypes<HostDevice>::TeamPolicy policy_host(ExeSpaceUtils<false, typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk));
+    typename KokkosTypes<HostDevice>::TeamPolicy policy_host(ExeSpaceUtils<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk));
     WorkspaceManager<short, HostDevice> wsmh(16, num_ws, policy_host);
     wsmh.m_data(0, 0) = 0; // check on cuda machine
   }
