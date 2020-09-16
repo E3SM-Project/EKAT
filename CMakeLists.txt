@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.3)
 
 set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
 
-# Add out own cmake goodies to cmake module search path
-list(APPEND CMAKE_MODULE_PATH ${EKAT_CMAKE_PATH})
+# Add our own cmake goodies to cmake module search path
+list(APPEND CMAKE_MODULE_PATH
+     ${EKAT_CMAKE_PATH}
+     ${EKAT_CMAKE_PATH}/mpi
+     ${EKAT_CMAKE_PATH}/pkg_build
+)
 
 # We should avoid cxx bindings in mpi; they are already deprecated,
 # and can cause headaches at link time, cause they require -lmpi_cxx
@@ -12,14 +16,14 @@ include(EkatMpiUtils)
 DisableMpiCxxBindings()
 
 # Scripts containing macros needed to handle TPLs
-include(${EKAT_CMAKE_PATH}/Kokkos.cmake)
-include(${EKAT_CMAKE_PATH}/YamlCpp.cmake)
-
-# Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
-EkatSetKokkosSourceDir()
+include(EkatBuildKokkos)
+include(EkatBuildYamlCpp)
 
 # If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
 if (Kokkos_ENABLE_CUDA)
+  # Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
+  EkatSetKokkosSourceDir()
+
   include (EkatSetNvccWrapper)
   EkatSetNvccWrapper()
 endif()
@@ -42,12 +46,12 @@ set (EKAT_TPL_INCLUDE_DIRS_INTERNAL)
 set (EKAT_TPL_LIBRARIES_INTERNAL)
 
 # A good chunk of EKAT is a utility layer over kokkos
-EkatBuildKokkos()
+BuildKokkos()
 list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${Kokkos_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 # EKAT also has some yaml parsing utility
-EkatBuildYamlcpp()
+BuildYamlcpp()
 list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${YAMLCPP_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
 

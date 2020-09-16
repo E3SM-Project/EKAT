@@ -1,5 +1,5 @@
 # Where ekat's tpls live
-set (EKAT_EXTERN_PATH ${CMAKE_CURRENT_LIST_DIR}/../extern CACHE INTERNAL "")
+set (EKAT_EXTERN_PATH ${CMAKE_CURRENT_LIST_DIR}/../../extern CACHE INTERNAL "")
 
 # Define a global property to check if yamlcpp has already been built
 define_property(GLOBAL
@@ -13,7 +13,7 @@ get_property(IS_EKAT_YAMLCPP_BUILT GLOBAL PROPERTY EKAT_YAMLCPP_BUILT SET)
 # Make sure YAMLCPP_SOURCE_DIR is set. If not set, default to using submodule
 macro (EkatSetYamlcppSourceDir)
   if (NOT YAMLCPP_SOURCE_DIR)
-    message (STATUS "YAMLCPP_SOURCE_DIR not specified: using submodule version.\n")
+    message (STATUS "YAMLCPP_SOURCE_DIR not specified: using submodule version.")
     set (YAMLCPP_SOURCE_DIR "${EKAT_EXTERN_PATH}/yaml-cpp" CACHE STRING "yaml-cpp source directory")
   elseif (NOT EXISTS ${YAMLCPP_SOURCE_DIR})
     message (FATAL_ERROR "Error! Please specify a valid source folder for yamlcpp.\n"
@@ -28,7 +28,7 @@ macro (EkatSetYamlcppSourceDir)
 endmacro()
 
 # Process the libyaml subdirectory
-macro (EkatBuildYamlcpp)
+macro (BuildYamlcpp)
   if (NOT IS_YAMLCPP_ALREADY_BUILT)
 
     # Make sure YAMLCPP_SOURCE_DIR is set

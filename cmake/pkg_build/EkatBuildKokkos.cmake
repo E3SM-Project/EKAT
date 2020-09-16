@@ -1,5 +1,5 @@
 # Where ekat's tpls live
-set (EKAT_EXTERN_PATH ${CMAKE_CURRENT_LIST_DIR}/../extern CACHE INTERNAL "")
+set (EKAT_EXTERN_PATH ${CMAKE_CURRENT_LIST_DIR}/../../extern CACHE INTERNAL "")
 
 # Define a global property to check if Kokkos has already been built
 define_property(GLOBAL
@@ -32,7 +32,7 @@ macro(EkatSetKokkosSourceDir)
 endmacro()
 
 # Process the kokkos source directory
-macro(EkatBuildKokkos)
+macro(BuildKokkos)
   if (NOT IS_EKAT_KOKKOS_BUILT)
 
     # Make sure Kokkos_SOURCE_DIR is set
