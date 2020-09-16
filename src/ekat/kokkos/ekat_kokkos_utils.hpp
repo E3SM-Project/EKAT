@@ -24,6 +24,20 @@
 // that are probably not generic enough to appear in kokkos any time soon
 // (or ever), and are more app-specific.
 
+// Kokkos-compatible reduction identity for arbitrary packs
+namespace Kokkos {
+template<typename S, int N>
+struct reduction_identity<ekat::Pack<S,N>> {
+  using PackType = ekat::Pack<S,N>;
+
+  // Provide only sum, since that's our only use case, for now
+  KOKKOS_FORCEINLINE_FUNCTION
+  constexpr static PackType sum() {
+    return PackType (reduction_identity<S>::sum());
+  }
+};
+} // namespace Kokkos
+
 namespace ekat {
 
 namespace impl {
