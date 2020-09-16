@@ -19,3 +19,6 @@ if (EKAT_TEST_SINGLE_PRECISION)
   )
   target_compile_definitions(packs${SP_POSTFIX} PRIVATE EKAT_TEST_SINGLE_PRECISION)
 endif ()
+
+# Test pack index arithmetics utils
+EkatCreateUnitTest(pack_utils pack_utils_tests.cpp LIBS ekat)

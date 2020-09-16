@@ -1,13 +1,13 @@
 set(EKAT_SOURCES
-  mpi/ekat_comm.cpp
   ekat_assert.cpp
-  ekat_session.cpp
   ekat_parameter_list.cpp
   ekat_parse_yaml_file.cpp
+  ekat_session.cpp
+  mpi/ekat_comm.cpp
+  util/ekat_arch.cpp
   util/ekat_array_io.cpp
   util/ekat_array_io_mod.f90
   util/ekat_string_utils.cpp
-  util/ekat_arch.cpp
   util/ekat_test_utils.cpp
 )
 
@@ -16,18 +16,19 @@ install(TARGETS ekat DESTINATION lib)
 
 # Make sure headers can be installed.
 set(EKAT_HEADERS
-  ekat_pack.hpp
-  ekat_parse_yaml_file.hpp
-  ekat_workspace.hpp
-  ekat_pack_kokkos.hpp
-  ekat_scalar_traits.hpp
-  ekat_workspace_impl.hpp
-  ekat_assert.hpp
   ekat.hpp
-  ekat_parameter_list.hpp
-  ekat_session.hpp
+  ekat_assert.hpp
   ekat_macros.hpp
+  ekat_pack.hpp
+  ekat_pack_kokkos.hpp
+  ekat_pack_utils.hpp
+  ekat_parameter_list.hpp
+  ekat_parse_yaml_file.hpp
+  ekat_scalar_traits.hpp
+  ekat_session.hpp
   ekat_type_traits.hpp
+  ekat_workspace.hpp
+  ekat_workspace_impl.hpp
 )
 install(FILES ${EKAT_HEADERS} DESTINATION include/ekat)
 set(EKAT_KOKKOS_HEADERS
@@ -45,21 +46,21 @@ set(EKAT_STD_META_HEADERS
 )
 install(FILES ${EKAT_STD_META_HEADERS} DESTINATION include/ekat/std_meta)
 set(EKAT_UTIL_HEADERS
-  util/ekat_feutils.hpp
-  util/ekat_rational_constant.hpp
-  util/ekat_test_utils.hpp
   util/ekat_arch.hpp
-  util/ekat_file_utils.hpp
-  util/ekat_scaling_factor.hpp
-  util/ekat_tridiag.hpp
-  util/ekat_lin_interp.hpp
-  util/ekat_units.hpp
-  util/ekat_lin_interp_impl.hpp
-  util/ekat_string_utils.hpp
-  util/ekat_upper_bound.hpp
-  util/ekat_math_utils.hpp
   util/ekat_factory.hpp
+  util/ekat_feutils.hpp
+  util/ekat_file_utils.hpp
+  util/ekat_lin_interp.hpp
+  util/ekat_lin_interp_impl.hpp
+  util/ekat_math_utils.hpp
   util/ekat_md_array.hpp
+  util/ekat_rational_constant.hpp
+  util/ekat_scaling_factor.hpp
+  util/ekat_string_utils.hpp
+  util/ekat_test_utils.hpp
+  util/ekat_tridiag.hpp
+  util/ekat_units.hpp
+  util/ekat_upper_bound.hpp
 )
 install(FILES ${EKAT_UTIL_HEADERS} DESTINATION include/ekat/util)
 
