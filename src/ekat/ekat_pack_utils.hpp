@@ -23,7 +23,8 @@ namespace ekat {
 
 template<int PackSize>
 struct PackInfo {
-  static constexpr int N = PackSize;
+  // Expose the pack size
+  enum : int { N = PackSize };
 
   static_assert(N>0, "Error! Pack size must be positive.\n");
   // This seems funky, but write down a pow of 2 and a non-pow of 2 in binary (both positive),
@@ -45,14 +46,26 @@ struct PackInfo {
   // The amount of padding added to the last pack
   KOKKOS_INLINE_FUNCTION
   constexpr static int padding (const int array_length) {
-    return array_length % N;
+    return num_packs(array_length)*N - array_length;
+  }
+
+  // The end of the last pack
+  KOKKOS_INLINE_FUNCTION
+  constexpr static int last_vec_end (const int array_length) {
+    return N-padding(array_length);
   }
 
   // The end of a given pack. It is N for all packs, except possibly
   // for the last (if padding>0)
   KOKKOS_INLINE_FUNCTION
   constexpr static int vec_end (const int array_length, const int pack_idx) {
-    return (pack_idx+1)<num_packs(array_length) ? N : padding(array_length);
+    return (pack_idx+1)<num_packs(array_length) ? N : last_vec_end(array_length);
+  }
+
+  // Idx of the last pack
+  KOKKOS_INLINE_FUNCTION
+  constexpr static int last_pack_idx (const int array_length) {
+    return num_packs(array_length)-1;
   }
 
   // The pack index corresponding to a given array entry
