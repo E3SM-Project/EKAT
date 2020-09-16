@@ -1,3 +1,6 @@
+# Where ekat's tpls live
+set (EKAT_EXTERN_PATH ${CMAKE_CURRENT_LIST_DIR}/../extern CACHE INTERNAL "")
+
 # Define a global property to check if yamlcpp has already been built
 define_property(GLOBAL
                 PROPERTY EKAT_YAMLCPP_BUILT
@@ -7,12 +10,11 @@ define_property(GLOBAL
 
 get_property(IS_EKAT_YAMLCPP_BUILT GLOBAL PROPERTY EKAT_YAMLCPP_BUILT SET)
 
-# Process the libyaml subdirectory
-if (NOT IS_YAMLCPP_ALREADY_BUILT)
-
+# Make sure YAMLCPP_SOURCE_DIR is set. If not set, default to using submodule
+macro (EkatSetYamlcppSourceDir)
   if (NOT YAMLCPP_SOURCE_DIR)
     message (STATUS "YAMLCPP_SOURCE_DIR not specified: using submodule version.\n")
-    set (YAMLCPP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/extern/yaml-cpp" CACHE STRING "yaml-cpp submodule source directory")
+    set (YAMLCPP_SOURCE_DIR "${EKAT_EXTERN_PATH}/yaml-cpp" CACHE STRING "yaml-cpp source directory")
   elseif (NOT EXISTS ${YAMLCPP_SOURCE_DIR})
     message (FATAL_ERROR "Error! Please specify a valid source folder for yamlcpp.\n"
                          "       Provided path: ${YAMLCPP_SOURCE_DIR}")
@@ -20,23 +22,36 @@ if (NOT IS_YAMLCPP_ALREADY_BUILT)
     message (STATUS "Using yaml-cpp in ${YAMLCPP_SOURCE_DIR}.\n"
                     "User-supplied yaml-cpp versions are not guaranteed to work.")
   endif()
-  set (YAMLCPP_BINARY_DIR ${CMAKE_BINARY_DIR}/externals/yaml-cpp)
 
-  # We don't want testing or any yaml-cpp executable at all
-  option (YAML_CPP_BUILD_TOOLS "Enable parse tools" OFF)
-  option (YAML_CPP_BUILD_TESTS "Enable yaml-cpp tests" OFF)
-  add_subdirectory (${YAMLCPP_SOURCE_DIR} ${YAMLCPP_BINARY_DIR})
+  # IF the variable existed, but not in the cache, set it in the cache
+  set (YAMLCPP_SOURCE_DIR "${YAMLCPP_SOURCE_DIR}" CACHE STRING "yaml-cpp source directory")
+endmacro()
 
-  set (YAMLCPP_INCLUDE_DIRS
-     $<BUILD_INTERFACE:${YAMLCPP_SOURCE_DIR}/include>
-     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/yaml-cpp/include>)
-  set (YAMLCPP_LIBRARIES yaml-cpp)
+# Process the libyaml subdirectory
+macro (EkatBuildYamlcpp)
+  if (NOT IS_YAMLCPP_ALREADY_BUILT)
 
-  if (EKAT_DISABLE_TPL_WARNINGS)
-    include (EkatUtils)
-    EkatDisableAllWarning(yaml-cpp)
-  endif ()
+    # Make sure YAMLCPP_SOURCE_DIR is set
+    EkatSetYamlcppSourceDir()
 
-  # Make sure it is processed only once
-  set_property(GLOBAL PROPERTY EKAT_YAMLCPP_BUILT TRUE)
-endif()
+    set (YAMLCPP_BINARY_DIR ${CMAKE_BINARY_DIR}/externals/yaml-cpp)
+
+    # We don't want testing or any yaml-cpp executable at all
+    option (YAML_CPP_BUILD_TOOLS "Enable parse tools" OFF)
+    option (YAML_CPP_BUILD_TESTS "Enable yaml-cpp tests" OFF)
+    add_subdirectory (${YAMLCPP_SOURCE_DIR} ${YAMLCPP_BINARY_DIR})
+
+    set (YAMLCPP_INCLUDE_DIRS
+       $<BUILD_INTERFACE:${YAMLCPP_SOURCE_DIR}/include>
+       $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/yaml-cpp/include>)
+    set (YAMLCPP_LIBRARIES yaml-cpp)
+
+    if (EKAT_DISABLE_TPL_WARNINGS)
+      include (EkatUtils)
+      EkatDisableAllWarning(yaml-cpp)
+    endif ()
+
+    # Make sure it is processed only once
+    set_property(GLOBAL PROPERTY EKAT_YAMLCPP_BUILT TRUE)
+  endif()
+endmacro()

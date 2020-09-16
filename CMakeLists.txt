@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.3)
 
+set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
+
 # Add out own cmake goodies to cmake module search path
-list(APPEND CMAKE_MODULE_PATH
-     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-)
+list(APPEND CMAKE_MODULE_PATH ${EKAT_CMAKE_PATH})
 
 # We should avoid cxx bindings in mpi; they are already deprecated,
 # and can cause headaches at link time, cause they require -lmpi_cxx
@@ -11,22 +11,12 @@ list(APPEND CMAKE_MODULE_PATH
 include(EkatMpiUtils)
 DisableMpiCxxBindings()
 
-# Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
-if (NOT Kokkos_SOURCE_DIR)
-  message (STATUS "Kokkos_SOURCE_DIR not specified: using submodule version.")
-  set (Kokkos_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/kokkos" CACHE STRING "Kokkos submodule source directory")
-  if(Kokkos_ENABLE_DEPRECATED_CODE)
-    message(FATAL_ERROR "Kokkos submodule cannot be used with\n"
-                        "Kokkos_ENABLE_DEPRECATED_CODE.")
-  endif()
-elseif (NOT EXISTS ${Kokkos_SOURCE_DIR})
-  message (FATAL_ERROR "Error! Please specify a valid source folder for kokkos.\n"
-                       "       Provided path: ${Kokkos_SOURCE_DIR}")
-else()
-  message (STATUS "Using Kokkos in ${Kokkos_SOURCE_DIR}.\n"
-                  "User-supplied Kokkos versions are not guaranteed to work.")
-endif()
+# Scripts containing macros needed to handle TPLs
+include(${EKAT_CMAKE_PATH}/Kokkos.cmake)
+include(${EKAT_CMAKE_PATH}/YamlCpp.cmake)
 
+# Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
+EkatSetKokkosSourceDir()
 
 # If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
 if (Kokkos_ENABLE_CUDA)
@@ -52,12 +42,12 @@ set (EKAT_TPL_INCLUDE_DIRS_INTERNAL)
 set (EKAT_TPL_LIBRARIES_INTERNAL)
 
 # A good chunk of EKAT is a utility layer over kokkos
-include(Kokkos)
+EkatBuildKokkos()
 list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${Kokkos_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 # EKAT also has some yaml parsing utility
-include(YamlCpp)
+EkatBuildYamlcpp()
 list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${YAMLCPP_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
 
