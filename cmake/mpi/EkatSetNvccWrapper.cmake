@@ -18,5 +18,10 @@ macro (EkatSetNvccWrapper)
 
     configure_file(${MPICXX_WRAPPER_SOURCE_DIR}/ekat_mpicxx.in ${CMAKE_BINARY_DIR}/bin/ekat_mpicxx @ONLY)
     set(CMAKE_CXX_COMPILER ${CMAKE_BINARY_DIR}/bin/ekat_mpicxx CACHE STRING "" FORCE)
+
+    # Install ekat_mpicxx for downstream apps to use
+    include(GNUInstallDirs)
+    install (PROGRAMS ${CMAKE_BINARY_DIR}/bin/ekat_mpicxx
+             DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif ()
 endmacro()
