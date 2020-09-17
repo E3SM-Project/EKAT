@@ -135,10 +135,10 @@ install (FILES
   ${EKAT_CMAKE_PATH}/EkatCreateUnitTest.cmake
   ${EKAT_CMAKE_PATH}/EkatSetCompilerFlags.cmake
   ${EKAT_CMAKE_PATH}/EkatUtils.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat/cmake)
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
 
 install (DIRECTORY ${EKAT_CMAKE_PATH}/mpi
-         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat/cmake)
+         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
 
 install (DIRECTORY ${EKAT_CMAKE_PATH}/pkg_build
-         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat/cmake)
+         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
