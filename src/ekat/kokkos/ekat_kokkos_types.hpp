@@ -1,7 +1,7 @@
 #ifndef EKAT_KOKKOS_TYPES_HPP
 #define EKAT_KOKKOS_TYPES_HPP
 
-#include "ekat_config.h"
+#include "ekat/ekat_config.h"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 
 /*

@@ -31,6 +31,10 @@ endif()
 # EKAT has mostly C++, but some Fortran too
 project (EKAT CXX Fortran)
 
+set (EKAT_VERSION_MAJOR 1)
+set (EKAT_VERSION_MINOR 0)
+set (EKAT_VERSION_PATCH 0)
+
 # Report the installation prefix.
 message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 
@@ -42,21 +46,17 @@ option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when comp
 
 # WARNING: you CANNOT do list(APPEND var item1 ... item2) if var is a CACHE variable!
 # Therefore, use an internal var during tpl parsing, then set a cache var ONCE at the end
-set (EKAT_TPL_INCLUDE_DIRS_INTERNAL)
 set (EKAT_TPL_LIBRARIES_INTERNAL)
 
 # A good chunk of EKAT is a utility layer over kokkos
 BuildKokkos()
-list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${Kokkos_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 # EKAT also has some yaml parsing utility
 BuildYamlcpp()
-list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${YAMLCPP_INCLUDE_DIRS})
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
 
 set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
-set (EKAT_TPL_INCLUDE_DIRS ${EKAT_TPL_INCLUDE_DIRS_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs include directories")
 
 ############################
 ###  EKAT CONFIG OPTIONS ###
@@ -65,9 +65,9 @@ set (EKAT_TPL_INCLUDE_DIRS ${EKAT_TPL_INCLUDE_DIRS_INTERNAL} CACHE INTERNAL "Lis
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." OFF)
 
-####################################
-###  MAC-SPECIFIC CONFIG OPTIONS ###
-####################################
+############################################
+###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
+############################################
 
 include(CheckSymbolExists)
 # Most of the FPE stuff was defined in c++99, but gnu has some additional non-std
@@ -80,22 +80,12 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
-############################
-###     EKAT LIBRARY     ###
-############################
-
-# This is the only way to expose ekat's include dirs to host projects (if any)
-set (EKAT_INCLUDE_DIRS_LIST
-  ${EKAT_SOURCE_DIR}/src
-  ${EKAT_BINARY_DIR}
-  ${EKAT_BINARY_DIR}/src/ekat/ekat_f90_modules
-  ${EKAT_TPL_INCLUDE_DIRS}
-)
-
-set (EKAT_INCLUDE_DIRS "${EKAT_INCLUDE_DIRS_LIST}" CACHE INTERNAL "EKAT library include dirs")
-
 include(EkatSetCompilerFlags)
 SetCompilerFlags()
+
+############################
+###    EKAT LIBRARIES    ###
+############################
 
 add_subdirectory(src/ekat)
 
@@ -111,11 +101,44 @@ if (EKAT_ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
 
-# Generate configuration file
-include (EkatUtils)
-EkatConfigFile (${EKAT_SOURCE_DIR}/ekat_config.h.in
-                ${EKAT_BINARY_DIR}/ekat_config.h
-                F90_FILE ${EKAT_BINARY_DIR}/ekat_config.f)
-install(FILES ${EKAT_BINARY_DIR}/ekat_config.h
-              ${EKAT_BINARY_DIR}/ekat_config.f
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ekat)
+###########################################
+###   Package ekat as a CMake package   ###
+###########################################
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+CONFIGURE_PACKAGE_CONFIG_FILE(
+  cmake/EkatConfig.cmake.in
+  "${EKAT_BINARY_DIR}/EkatConfig.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake)
+
+WRITE_BASIC_PACKAGE_VERSION_FILE("${EKAT_BINARY_DIR}/EkatConfigVersion.cmake"
+    VERSION ${EKAT_VERSION_MAJOR}.${EKAT_VERSION_MINOR}.${EKAT_VERSION_PATCH}.
+    COMPATIBILITY SameMajorVersion)
+
+# Install the EkatConfig*.cmake files
+install(FILES
+  "${EKAT_BINARY_DIR}/EkatConfig.cmake"
+  "${EKAT_BINARY_DIR}/EkatConfigVersion.cmake"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat)
+
+# Install cmake targets
+install(EXPORT EkatTargets
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat)
+
+###########################################
+###   Install ekat cmake util scripts   ###
+###########################################
+
+install (FILES
+  ${EKAT_CMAKE_PATH}/EkatCreateUnitTest.cmake
+  ${EKAT_CMAKE_PATH}/EkatSetCompilerFlags.cmake
+  ${EKAT_CMAKE_PATH}/EkatUtils.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat/cmake)
+
+install (DIRECTORY ${EKAT_CMAKE_PATH}/mpi
+         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat/cmake)
+
+install (DIRECTORY ${EKAT_CMAKE_PATH}/pkg_build
+         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat/cmake)

@@ -1,3 +1,11 @@
+include(GNUInstallDirs)
+
+# Generate configuration file
+include (EkatUtils)
+EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
+                ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
+                F90_FILE ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f)
+
 set(EKAT_SOURCES
   ekat_assert.cpp
   ekat_parameter_list.cpp
@@ -11,11 +19,10 @@ set(EKAT_SOURCES
   util/ekat_test_utils.cpp
 )
 
-add_library(ekat ${EKAT_SOURCES})
-install(TARGETS ekat DESTINATION lib)
-
 # Make sure headers can be installed.
 set(EKAT_HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f
   ekat.hpp
   ekat_assert.hpp
   ekat_macros.hpp
@@ -29,23 +36,14 @@ set(EKAT_HEADERS
   ekat_type_traits.hpp
   ekat_workspace.hpp
   ekat_workspace_impl.hpp
-)
-install(FILES ${EKAT_HEADERS} DESTINATION include/ekat)
-set(EKAT_KOKKOS_HEADERS
   kokkos/ekat_kokkos_meta.hpp
   kokkos/ekat_kokkos_types.hpp
   kokkos/ekat_kokkos_utils.hpp
-)
-install(FILES ${EKAT_KOKKOS_HEADERS} DESTINATION include/ekat/kokkos)
-install(FILES mpi/ekat_comm.hpp DESTINATION include/ekat/mpi)
-set(EKAT_STD_META_HEADERS
+  mpi/ekat_comm.hpp
   std_meta/ekat_std_any.hpp
   std_meta/ekat_std_enable_shared_from_this.hpp
   std_meta/ekat_std_type_traits.hpp
   std_meta/ekat_std_utils.hpp
-)
-install(FILES ${EKAT_STD_META_HEADERS} DESTINATION include/ekat/std_meta)
-set(EKAT_UTIL_HEADERS
   util/ekat_arch.hpp
   util/ekat_factory.hpp
   util/ekat_feutils.hpp
@@ -62,10 +60,16 @@ set(EKAT_UTIL_HEADERS
   util/ekat_units.hpp
   util/ekat_upper_bound.hpp
 )
-install(FILES ${EKAT_UTIL_HEADERS} DESTINATION include/ekat/util)
 
-target_include_directories(ekat PUBLIC ${EKAT_INCLUDE_DIRS})
-target_include_directories(ekat SYSTEM PUBLIC ${EKAT_TPL_INCLUDE_DIRS})
+# Create the library, and set all its properties
+add_library(ekat ${EKAT_SOURCES})
+
+target_include_directories(ekat PUBLIC
+  $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
+  $<BUILD_INTERFACE:${EKAT_BINARY_DIR}/src>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat_f90_modules>)
 
 # TODO: The current version of kokkos we are using in e3sm has a nvcc_wrapper
 #       which breaks the cmake toolchain features detection mechanisms.
@@ -78,7 +82,28 @@ target_include_directories(ekat SYSTEM PUBLIC ${EKAT_TPL_INCLUDE_DIRS})
 target_compile_options(ekat PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
 
 target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
-set_target_properties(ekat PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules)
+set_target_properties(ekat PROPERTIES
+    Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules)
+
+install (TARGETS ekat
+         EXPORT EkatTargets
+         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# Unfortunately, adding PUBLIC_HEADER to the install above would flatten the directory
+# structure, which would cause include errors (in ekat we keep the directory
+# tree in the inlcude, like "ekat/mpi/ekat_comm.hpp")
+# Therefore, manually install the src tree (filter only header files), as well
+# as the config files in the bin dir
+install (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+         FILES_MATCHING PATTERN *.hpp)
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
+               ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f
+         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ekat)
+install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules
+         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 ###########################################
 ###       Testing micro-libraries       ###
@@ -88,8 +113,18 @@ set_target_properties(ekat PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_B
 # unit test don't have to all pointlessly rebuild the same file.
 add_library(ekat_test_main util/ekat_catch_main.cpp)
 target_link_libraries(ekat_test_main PUBLIC ekat)
-target_include_directories(ekat_test_main PUBLIC ${EKAT_SOURCE_DIR}/extern/catch2/include)
-install(TARGETS ekat_test_main DESTINATION lib)
+target_include_directories(ekat_test_main PUBLIC
+  $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/catch2/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+
+install (TARGETS ekat_test_main
+         EXPORT EkatTargets
+         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install (DIRECTORY ${EKAT_SOURCE_DIR}/extern/catch2/include/catch2
+         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # Pre-compile ekat_test_session.cpp into its own mini-library.
 # This mini-library has to be linked if you are ok relying on Ekat's test session
@@ -100,5 +135,9 @@ install(TARGETS ekat_test_main DESTINATION lib)
 # unit test don't have to all pointlessly rebuild the same file.
 add_library(ekat_test_session util/ekat_test_session.cpp)
 target_link_libraries(ekat_test_session PUBLIC ekat)
-target_include_directories(ekat_test_session PUBLIC ${EKAT_SOURCE_DIR}/extern/catch2/include)
-install(TARGETS ekat_test_session DESTINATION lib)
+
+install (TARGETS ekat_test_session
+         EXPORT EkatTargets
+         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
