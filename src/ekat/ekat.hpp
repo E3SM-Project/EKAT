@@ -1,7 +1,7 @@
 #ifndef EKAT_HPP
 #define EKAT_HPP
 
-#include "ekat_config.h"
+#include "ekat/ekat_config.h"
 
 /*
  * This header doesn't do much as of now. It includes ekat_config.h,

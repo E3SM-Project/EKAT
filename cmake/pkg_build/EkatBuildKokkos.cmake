@@ -1,5 +1,6 @@
 # Where ekat's tpls live
-set (EKAT_EXTERN_PATH ${CMAKE_CURRENT_LIST_DIR}/../extern CACHE INTERNAL "")
+set (EKAT_KOKKOS_SUBMODULE_PATH "" CACHE INTERNAL "")
+get_filename_component(EKAT_KOKKOS_SUBMODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../../extern/kokkos ABSOLUTE)
 
 # Define a global property to check if Kokkos has already been built
 define_property(GLOBAL
@@ -14,7 +15,7 @@ get_property(IS_EKAT_KOKKOS_BUILT GLOBAL PROPERTY EKAT_KOKKOS_BUILT SET)
 macro(EkatSetKokkosSourceDir)
   if (NOT Kokkos_SOURCE_DIR)
     message (STATUS "Kokkos_SOURCE_DIR not specified: using submodule version.")
-    set (Kokkos_SOURCE_DIR "${EKAT_EXTERN_PATH}/kokkos" CACHE STRING "Kokkos source directory")
+    set (Kokkos_SOURCE_DIR "${EKAT_KOKKOS_SUBMODULE_PATH}" CACHE STRING "Kokkos source directory")
     if(Kokkos_ENABLE_DEPRECATED_CODE)
       message(FATAL_ERROR "Kokkos submodule cannot be used with\n"
                           "Kokkos_ENABLE_DEPRECATED_CODE.")
@@ -22,9 +23,15 @@ macro(EkatSetKokkosSourceDir)
   elseif (NOT EXISTS ${Kokkos_SOURCE_DIR})
     message (FATAL_ERROR "Error! Please specify a valid source folder for kokkos.\n"
                          "       Provided path: ${Kokkos_SOURCE_DIR}")
-  else()
-    message (STATUS "Using Kokkos in ${Kokkos_SOURCE_DIR}.\n"
-                    "User-supplied Kokkos versions are not guaranteed to work.")
+  else ()
+    get_filename_component(ABS_KOKKOS_DIR ${Kokkos_SOURCE_DIR} ABSOLUTE)
+    if(ABS_KOKKOS_DIR STREQUAL EKAT_KOKKOS_SUBMODULE_PATH)
+      message (STATUS "Using Kokkos in ${Kokkos_SOURCE_DIR}\n"
+                   "    - User-supplied Kokkos path matches submodule path.")
+    else ()
+      message (STATUS "Using Kokkos in ${Kokkos_SOURCE_DIR}\n"
+                      "User-supplied Kokkos versions are not guaranteed to work.")
+    endif()
   endif()
 
   # IF the variable existed, but not in the cache, set it in the cache
@@ -32,7 +39,7 @@ macro(EkatSetKokkosSourceDir)
 endmacro()
 
 # Process the kokkos source directory
-macro(EkatBuildKokkos)
+macro(BuildKokkos)
   if (NOT IS_EKAT_KOKKOS_BUILT)
 
     # Make sure Kokkos_SOURCE_DIR is set

@@ -1,5 +1,5 @@
-# Where ekat's tpls live
-set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "")
+# Where ekat's cmake scripts live
+set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_LIST_DIR}/../ CACHE INTERNAL "")
 
 # This cmake utility allows you to build ekat just by adding
 #
