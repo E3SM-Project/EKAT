@@ -63,20 +63,19 @@ int main (int argc, char **argv) {
     args.push_back(const_cast<char*>(new_arg.c_str()));
   }
 
-  // Initialize ekat
-  ekat::initialize_ekat_session(args.size(),args.data());
-
-  // Possibly calling user-defined initialization routines
+  // Initialize test session (initializes kokkos and print config settings).
+  // Ekat provides a defalt impl, but the user can choose
+  // Ekat provides a defalt one, but the user can choose
+  // to not use it, and provide one instead.
   ekat_initialize_test_session(args.size(),args.data());
 
   // Run tests
   int num_failed = catch_session.run(argc, argv);
 
-  // Possibly calling user-defined finalization routines
+  // Finalizes test session (finalizes kokkos).
+  // Ekat provides a defalt impl, but the user can choose
+  // to not use it, and provide one instead.
   ekat_finalize_test_session ();
-
-  // Finalize ekat
-  ekat::finalize_ekat_session();
 
   // Finalize MPI
   MPI_Finalize();
