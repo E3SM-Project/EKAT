@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.3)
 
-# Add out own cmake goodies to cmake module search path
+set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
+
+# Add our own cmake goodies to cmake module search path
 list(APPEND CMAKE_MODULE_PATH
-     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+     ${EKAT_CMAKE_PATH}
+     ${EKAT_CMAKE_PATH}/mpi
+     ${EKAT_CMAKE_PATH}/pkg_build
 )
 
 # We should avoid cxx bindings in mpi; they are already deprecated,
@@ -11,14 +15,28 @@ list(APPEND CMAKE_MODULE_PATH
 include(EkatMpiUtils)
 DisableMpiCxxBindings()
 
+# Scripts containing macros needed to handle TPLs
+include(EkatBuildKokkos)
+include(EkatBuildYamlCpp)
+
 # If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
-if (KOKKOS_ENABLE_CUDA)
+if (Kokkos_ENABLE_CUDA)
+  # Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
+  EkatSetKokkosSourceDir()
+
   include (EkatSetNvccWrapper)
   EkatSetNvccWrapper()
 endif()
 
 # EKAT has mostly C++, but some Fortran too
 project (EKAT CXX Fortran)
+
+set (EKAT_VERSION_MAJOR 1)
+set (EKAT_VERSION_MINOR 0)
+set (EKAT_VERSION_PATCH 0)
+
+# Report the installation prefix.
+message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 
 ###########################
 ###      EKAT TPLS      ###
@@ -28,44 +46,46 @@ option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when comp
 
 # WARNING: you CANNOT do list(APPEND var item1 ... item2) if var is a CACHE variable!
 # Therefore, use an internal var during tpl parsing, then set a cache var ONCE at the end
-set (EKAT_TPL_INCLUDE_DIRS_INTERNAL)
 set (EKAT_TPL_LIBRARIES_INTERNAL)
 
 # A good chunk of EKAT is a utility layer over kokkos
-include(Kokkos)
-list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${Kokkos_INCLUDE_DIRS})
+BuildKokkos()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 # EKAT also has some yaml parsing utility
-include(YamlCpp)
-list (APPEND EKAT_TPL_INCLUDE_DIRS_INTERNAL ${YAMLCPP_INCLUDE_DIRS})
+BuildYamlcpp()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
 
 set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
-set (EKAT_TPL_INCLUDE_DIRS ${EKAT_TPL_INCLUDE_DIRS_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs include directories")
 
 ############################
 ###  EKAT CONFIG OPTIONS ###
 ############################
 
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
+option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." OFF)
 
-############################
-###     EKAT LIBRARY     ###
-############################
+############################################
+###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
+############################################
 
-# This is the only way to expose ekat's include dirs to host projects (if any)
-set (EKAT_INCLUDE_DIRS_LIST
-  ${EKAT_SOURCE_DIR}/src
-  ${EKAT_BINARY_DIR}
-  ${EKAT_BINARY_DIR}/src/ekat/ekat_f90_modules
-  ${EKAT_TPL_INCLUDE_DIRS}
-)
-
-set (EKAT_INCLUDE_DIRS "${EKAT_INCLUDE_DIRS_LIST}" CACHE INTERNAL "EKAT library include dirs")
+include(CheckSymbolExists)
+# Most of the FPE stuff was defined in c++99, but gnu has some additional non-std
+# functions that are helpful (such as feeenableexcept) --- Apple stopped including these
+# in 2005, so we have to drop-in replacements for them.
+check_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  #  GCC has already impl'd some c++14 features even in a c++11 build.  Apple's Clang
+  # (perhaps clang generally) doesn't like this and requires -std=c++14 for these features.
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
 include(EkatSetCompilerFlags)
 SetCompilerFlags()
+
+############################
+###    EKAT LIBRARIES    ###
+############################
 
 add_subdirectory(src/ekat)
 
@@ -81,8 +101,44 @@ if (EKAT_ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
 
-# Generate configuration file
-include (EkatUtils)
-EkatConfigFile (${EKAT_SOURCE_DIR}/ekat_config.h.in
-                ${EKAT_BINARY_DIR}/ekat_config.h
-                F90_FILE ${EKAT_BINARY_DIR}/ekat_config.f)
+###########################################
+###   Package ekat as a CMake package   ###
+###########################################
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+CONFIGURE_PACKAGE_CONFIG_FILE(
+  cmake/EkatConfig.cmake.in
+  "${EKAT_BINARY_DIR}/EkatConfig.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake)
+
+WRITE_BASIC_PACKAGE_VERSION_FILE("${EKAT_BINARY_DIR}/EkatConfigVersion.cmake"
+    VERSION ${EKAT_VERSION_MAJOR}.${EKAT_VERSION_MINOR}.${EKAT_VERSION_PATCH}.
+    COMPATIBILITY SameMajorVersion)
+
+# Install the EkatConfig*.cmake files
+install(FILES
+  "${EKAT_BINARY_DIR}/EkatConfig.cmake"
+  "${EKAT_BINARY_DIR}/EkatConfigVersion.cmake"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat)
+
+# Install cmake targets
+install(EXPORT EkatTargets
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat)
+
+###########################################
+###   Install ekat cmake util scripts   ###
+###########################################
+
+install (FILES
+  ${EKAT_CMAKE_PATH}/EkatCreateUnitTest.cmake
+  ${EKAT_CMAKE_PATH}/EkatSetCompilerFlags.cmake
+  ${EKAT_CMAKE_PATH}/EkatUtils.cmake
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
+
+install (DIRECTORY ${EKAT_CMAKE_PATH}/mpi
+         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
+
+install (DIRECTORY ${EKAT_CMAKE_PATH}/pkg_build
+         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)

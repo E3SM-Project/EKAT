@@ -13,7 +13,6 @@
  */
 
 namespace ekat {
-namespace util {
 
 std::string active_avx_string () {
   std::string s;
@@ -44,8 +43,8 @@ std::string ekat_config_string () {
     "unknown"
 #endif
      << " default FPE mask " <<
-      ( ekat_default_fpes == 0 ? "0 (NONE) \n" :
-        std::to_string(ekat_default_fpes) + " (FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW)")
+      ( get_default_fpes() == 0 ? "0 (NONE) \n" :
+        std::to_string(get_default_fpes()) + " (FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW)")
      << " #host threads " <<
 #ifdef KOKKOS_ENABLE_OPENMP
          Kokkos::OpenMP::concurrency()
@@ -58,5 +57,4 @@ std::string ekat_config_string () {
   return ss.str();
 }
 
-} // namespace util
 } // namespace ekat

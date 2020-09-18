@@ -5,17 +5,17 @@
 
 /*
  * A template alias and utilities for potentially nested std::arrays
- * 
+ *
  * When using compile-time arrays, std::array should be preferred over
  * C-style arrays. However, syntax become heavy when we have nested
  * std::arrays. The template alias defined here allows one to write
- * 
+ *
  *    md_array<double,2,3,4> a;
- * 
+ *
  * instead of
- * 
+ *
  *    std::array<std::array<std::array<double,2>,3>,4> a;
- * 
+ *
  * Furthermore, we provide a free function 'data', that extract the
  * pointer to the actual data. Notice that, if a is defined as above
  * calling 'a.data()' would not return a pointer to double, but
@@ -26,8 +26,6 @@
  */
 
 namespace ekat {
-
-namespace util {
 
 // Helper for MD std::array
 template<typename T, std::size_t M, std::size_t...N>
@@ -103,8 +101,6 @@ std::size_t
 size (const std::array<T,N>&) {
   return md_array_utils<std::array<T,N>>::size();
 }
-
-} // namespace util
 
 } // namespace ekat
 

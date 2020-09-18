@@ -36,7 +36,7 @@ void compare (const VA& a, const VB& b) {
 #define make_get_index(rank, ...)                                         \
 template<typename View, typename IdxView, OnlyRank<View, rank, int> = 0 > \
 KOKKOS_INLINE_FUNCTION                                                    \
-ekat::pack::Pack<typename View::value_type, IdxView::value_type::n> get_index(const View& data, const IdxView& idx) { return index(data, __VA_ARGS__); }
+ekat::Pack<typename View::value_type, IdxView::value_type::n> get_index(const View& data, const IdxView& idx) { return index(data, __VA_ARGS__); }
 
 #define make_get_data(rank, ...)                                        \
 template<typename View, typename IdxView, OnlyRank<View, rank, int> = 0 > \
@@ -58,7 +58,7 @@ template<int Packn, typename View>
 void do_index_test(const View& data)
 {
   static constexpr int pack_size = Packn;
-  using IdxPack = ekat::pack::Pack<int, pack_size>;
+  using IdxPack = ekat::Pack<int, pack_size>;
   fill(data);
   Kokkos::View<IdxPack[View::Rank]> idx("idx");
   Kokkos::parallel_for(View::Rank, KOKKOS_LAMBDA(const int r) {
@@ -105,8 +105,8 @@ TEST_CASE("index", "ekat::pack") {
 }
 
 TEST_CASE("scalarize", "ekat::pack") {
-  using ekat::pack::Pack;
-  using ekat::pack::scalarize;
+  using ekat::Pack;
+  using ekat::scalarize;
 
   typedef Kokkos::View<Pack<double, 16>*> Array1;
   typedef Kokkos::View<Pack<double, 32>**> Array2;
@@ -117,7 +117,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array1 a1("a1", 10);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 160);
   }
 
@@ -125,7 +125,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array2 a1("a2", 10, 4);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 10);
     REQUIRE(a2.extent_int(1) == 128);
   }
@@ -134,7 +134,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array3 a1("a3", 3, 2, 4);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 3);
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 32);
@@ -144,7 +144,7 @@ TEST_CASE("scalarize", "ekat::pack") {
     const Array4 a1("a4", 3, 2, 4, 2);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
-    static_assert(VT::memory_traits::Unmanaged, "Um");
+    static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 3);
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 4);
@@ -154,7 +154,7 @@ TEST_CASE("scalarize", "ekat::pack") {
 
 template <int repack_size, typename Src, typename Dst>
 OnlyRank<Src, 1> repack_test (const Src& a_src, const Dst& a) {
-  static_assert(Dst::memory_traits::Unmanaged, "Um");
+  static_assert(Dst::memory_traits::is_unmanaged, "Um");
   static_assert(Dst::value_type::n == repack_size, "Pack::n");
   REQUIRE(a.extent_int(0) == (Src::value_type::n/repack_size)*a_src.extent_int(0));
   compare(scalarize(a_src), scalarize(a));
@@ -162,7 +162,7 @@ OnlyRank<Src, 1> repack_test (const Src& a_src, const Dst& a) {
 
 template <int repack_size, typename Src, typename Dst>
 OnlyRank<Src, 2> repack_test (const Src& a_src, const Dst& a) {
-  static_assert(Dst::memory_traits::Unmanaged, "Um");
+  static_assert(Dst::memory_traits::is_unmanaged, "Um");
   static_assert(Dst::value_type::n == repack_size, "Pack::n");
   REQUIRE(a.extent_int(0) == a_src.extent_int(0));
   REQUIRE(a.extent_int(1) == (Src::value_type::n/repack_size)*a_src.extent_int(1));
@@ -170,8 +170,8 @@ OnlyRank<Src, 2> repack_test (const Src& a_src, const Dst& a) {
 }
 
 TEST_CASE("repack", "ekat::pack") {
-  using ekat::pack::Pack;
-  using ekat::pack::repack;
+  using ekat::Pack;
+  using ekat::repack;
 
   typedef Kokkos::View<Pack<double, 16>*> Array1;
   typedef Kokkos::View<Pack<double, 32>**> Array2;
@@ -219,7 +219,6 @@ TEST_CASE("repack", "ekat::pack") {
 
 TEST_CASE("kokkos_packs", "ekat::pack") {
   using namespace ekat;
-  using namespace ekat::pack;
 
   using TestBigPack = Pack<Real, 16>;
 
@@ -231,7 +230,7 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
 
   typename KokkosTypes<DefaultDevice>::template view_1d<TestBigPack> test_k_array("test_k_array", num_bigs);
   Kokkos::parallel_reduce("unittest_pack",
-                          util::ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, 1),
+                          ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, 1),
                           KOKKOS_LAMBDA(const MemberType& team, int& total_errs) {
 
     int nerrs_local = 0;
@@ -287,10 +286,10 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
 
   using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  using Pack1T = ekat::pack::Pack<int, 1>;
-  using Pack2T = ekat::pack::Pack<int, 2>;
-  using Pack4T = ekat::pack::Pack<int, 4>;
-  using Pack8T = ekat::pack::Pack<int, 8>; // we will use this to test fixed-sized view sugar
+  using Pack1T = ekat::Pack<int, 1>;
+  using Pack2T = ekat::Pack<int, 2>;
+  using Pack4T = ekat::Pack<int, 4>;
+  using Pack8T = ekat::Pack<int, 8>; // we will use this to test fixed-sized view sugar
 
   using view_p1_t = typename KT::template view_1d<Pack1T>;
   using view_p2_t = typename KT::template view_1d<Pack2T>;
@@ -344,10 +343,10 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
     }
   }
 
-  ekat::pack::host_to_device( cptr_data[0], sizes, p1_d);
-  ekat::pack::host_to_device( cptr_data[1], sizes, p2_d);
-  ekat::pack::host_to_device( cptr_data[2], sizes, p4_d);
-  ekat::pack::host_to_device( cptr_data[3], fixed_view_size, p8_d); // fixed-size
+  ekat::host_to_device( cptr_data[0], sizes, p1_d);
+  ekat::host_to_device( cptr_data[1], sizes, p2_d);
+  ekat::host_to_device( cptr_data[2], sizes, p4_d);
+  ekat::host_to_device( cptr_data[3], fixed_view_size, p8_d); // fixed-size
 
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
@@ -382,10 +381,10 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
     }
   });
 
-  ekat::pack::device_to_host( ptr_data[0], sizes, p1_d);
-  ekat::pack::device_to_host( ptr_data[1], sizes, p2_d);
-  ekat::pack::device_to_host( ptr_data[2], sizes, p4_d);
-  ekat::pack::device_to_host( ptr_data[3], fixed_view_size, p8_d); // fixed-size
+  ekat::device_to_host( ptr_data[0], sizes, p1_d);
+  ekat::device_to_host( ptr_data[1], sizes, p2_d);
+  ekat::device_to_host( ptr_data[2], sizes, p4_d);
+  ekat::device_to_host( ptr_data[3], fixed_view_size, p8_d); // fixed-size
 
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
@@ -406,10 +405,10 @@ void host_device_packs_2d(bool transpose)
 
   using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  using Pack1T = ekat::pack::Pack<int, 1>;
-  using Pack2T = ekat::pack::Pack<int, 2>;
-  using Pack4T = ekat::pack::Pack<int, 4>;
-  using Pack8T = ekat::pack::Pack<int, 8>; // we will use this to test fixed-sized view sugar
+  using Pack1T = ekat::Pack<int, 1>;
+  using Pack2T = ekat::Pack<int, 2>;
+  using Pack4T = ekat::Pack<int, 4>;
+  using Pack8T = ekat::Pack<int, 8>; // we will use this to test fixed-sized view sugar
 
   using view_p1_t = typename KT::template view_2d<Pack1T>;
   using view_p2_t = typename KT::template view_2d<Pack2T>;
@@ -475,10 +474,10 @@ void host_device_packs_2d(bool transpose)
     }
   }
 
-  ekat::pack::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
-  ekat::pack::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
-  ekat::pack::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
-  ekat::pack::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
+  ekat::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
+  ekat::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
+  ekat::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
+  ekat::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
 
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
@@ -520,10 +519,10 @@ void host_device_packs_2d(bool transpose)
     }
   });
 
-  ekat::pack::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
-  ekat::pack::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
-  ekat::pack::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
-  ekat::pack::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
+  ekat::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
+  ekat::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
+  ekat::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
+  ekat::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
 
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
@@ -549,7 +548,7 @@ TEST_CASE("index_and_shift", "ekat::pack")
   static constexpr int pack_size = 8;
   static constexpr int num_ints = 100;
   static constexpr int shift = 2;
-  using IntPack = ekat::pack::Pack<int, pack_size>;
+  using IntPack = ekat::Pack<int, pack_size>;
 
   Kokkos::View<int*> data("data", num_ints);
 
@@ -560,10 +559,10 @@ TEST_CASE("index_and_shift", "ekat::pack")
   int nerr = 0;
   Kokkos::parallel_reduce(num_ints - shift - pack_size, KOKKOS_LAMBDA(const int i, int& errs) {
     IntPack expected1, expected2, vals1, vals2, idx;
-    expected1 = ekat::pack::range<IntPack>(i+1000);
-    expected2 = ekat::pack::range<IntPack>(i+1000+shift);
-    idx = ekat::pack::range<IntPack>(i);
-    ekat::pack::index_and_shift<shift>(data, idx, vals1, vals2);
+    expected1 = ekat::range<IntPack>(i+1000);
+    expected2 = ekat::range<IntPack>(i+1000+shift);
+    idx = ekat::range<IntPack>(i);
+    ekat::index_and_shift<shift>(data, idx, vals1, vals2);
     if ( (vals1 != expected1 || vals2 != expected2).any()) {
       ++errs;
     }

@@ -8,7 +8,6 @@
 #include "ekat/ekat_assert.hpp"
 
 namespace ekat {
-namespace util {
 
 struct FILECloser { void operator() (FILE* fh) { fclose(fh); } };
 using FILEPtr = std::unique_ptr<FILE, FILECloser>;
@@ -25,7 +24,6 @@ void read (T* v, size_t sz, const FILEPtr& fid) {
   EKAT_REQUIRE_MSG(nread == sz, "read: nread = " << nread << " sz = " << sz);
 }
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_FILE_UTILS_HPP

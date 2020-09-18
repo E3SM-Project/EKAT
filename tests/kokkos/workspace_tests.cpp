@@ -29,7 +29,6 @@ using view_3d = typename KokkosTypes<Device>::template view_3d<S>;
 static void unittest_workspace_overprovision()
 {
   using namespace ekat;
-  using namespace ekat::util;
 
   using WSM = WorkspaceManager<Real, Device>;
 
@@ -92,7 +91,7 @@ static void unittest_workspace()
   const int ni = 128;
   const int nk = 128;
 
-  TeamPolicy policy(util::ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk));
+  TeamPolicy policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk));
 
   {
     WorkspaceManager<double, Device> wsmd(17, num_ws, policy);
@@ -122,7 +121,7 @@ static void unittest_workspace()
   // Test host-explicit WorkspaceMgr
   {
     using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
-    typename KokkosTypes<HostDevice>::TeamPolicy policy_host(util::ExeSpaceUtils<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk));
+    typename KokkosTypes<HostDevice>::TeamPolicy policy_host(ExeSpaceUtils<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk));
     WorkspaceManager<short, HostDevice> wsmh(16, num_ws, policy_host);
     wsmh.m_data(0, 0) = 0; // check on cuda machine
   }
@@ -152,7 +151,7 @@ static void unittest_workspace()
     }
     team.team_barrier();
 
-    Kokkos::Array<util::Unmanaged<view_1d<int> >, num_ws> wssub;
+    Kokkos::Array<Unmanaged<view_1d<int> >, num_ws> wssub;
 
     // Main test. Test different means of taking and release spaces.
     for (int r = 0; r < 8; ++r) {
@@ -164,8 +163,8 @@ static void unittest_workspace()
         }
       }
       else {
-        util::Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
-        Kokkos::Array<util::Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
+        Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
+        Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
         Kokkos::Array<const char*, num_ws> names = { {"ws0", "ws1", "ws2", "ws3"} };
         if (r % 4 == 1) {
           ws.take_many(names, ptrs);
@@ -199,7 +198,7 @@ static void unittest_workspace()
 #ifndef NDEBUG
           char buf[8] = "ws";
           buf[2] = 48 + w; // 48 is offset to integers in ascii
-          if (util::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+          if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
           if (ws.get_num_used() != 4) ++nerrs_local;
 #endif
           for (int i = 0; i < ints_per_ws; ++i) {
@@ -214,7 +213,7 @@ static void unittest_workspace()
         ws.reset();
       }
       else if (r % 4 == 1) {
-        Kokkos::Array<util::Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
+        Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
         ws.release_many_contiguous(ptrs);
       }
       else if (r % 4 == 2) {
@@ -263,7 +262,7 @@ static void unittest_workspace()
 #ifndef NDEBUG
                 char buf[8] = "ws";
                 buf[2] = 48 + w; // 48 is offset to integers in ascii
-                if (util::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+                if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
                 if (ws.get_num_used() != 4) ++nerrs_local;
 #endif
                 for (int i = 0; i < ints_per_ws; ++i) {
@@ -332,7 +331,7 @@ static void unittest_workspace()
 #ifndef NDEBUG
                   char buf[8] = "ws";
                   buf[2] = 48 + w; // 48 is offset to integers in ascii
-                  if (util::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+                  if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
                   ++exp_num_active;
                   if (!ws.template is_active<int>(wssub[w])) ++nerrs_local;
 #endif

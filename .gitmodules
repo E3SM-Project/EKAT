@@ -1,0 +1,6 @@
+[submodule "extern/kokkos"]
+	path = extern/kokkos
+	url = git@github.com:kokkos/kokkos
+[submodule "extern/yaml-cpp"]
+	path = extern/yaml-cpp
+	url = git@github.com:SNLComputation/yaml-cpp.git

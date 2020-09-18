@@ -17,7 +17,6 @@
 #include "ekat/ekat_type_traits.hpp"
 
 namespace ekat {
-namespace util{
 
 // ================ std::any ================= //
 
@@ -176,8 +175,6 @@ inline std::ostream& operator<< (std::ostream& out, const any& any) {
 
   return out;
 }
-
-} // namespace util
 
 } // namespace ekat
 

@@ -8,7 +8,6 @@
 #include <set>
 
 namespace ekat {
-namespace util {
 
 // This function returns an iterator which is of the same type of c.begin()
 template<typename ContainerType, typename T>
@@ -38,23 +37,6 @@ int count (const ContainerType& c, const T& value) {
   return std::count(c.begin(), c.end(), value);
 }
 
-template<typename T>
-std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-  const int n = v.size();
-  if (n==0) {
-    return out;
-  }
-
-  for (int i=0; i<n-1; ++i) {
-    out << v[i] << std::string(" ");
-  }
-  out << v.back();
-
-  return out;
-}
-
-} // namespace util
-
 // A set of weak_ptr would not compile, due to the lack of operator<.
 // To overcome this, one could add a Compare type to the set template
 // arguments.
@@ -70,5 +52,29 @@ template<typename T>
 using WeakPtrSet = std::set<std::weak_ptr<T>,WeakPtrLess<T>>;
 
 } // namespace ekat
+
+// Note: this *must* be in the std namespace if you want ADL lookup to work
+//       when doing something like
+//          os << my_vec
+//       with os of type std::ostream, and my_vec a std::vector<T>.
+
+namespace std {
+
+template<typename T>
+ostream& operator<< (ostream& out, const vector<T>& v) {
+  const int n = v.size();
+  if (n==0) {
+    return out;
+  }
+
+  for (int i=0; i<n-1; ++i) {
+    out << v[i] << std::string(" ");
+  }
+  out << v.back();
+
+  return out;
+}
+
+} // namespace std
 
 #endif // EKAT_STD_UTILS_HPP

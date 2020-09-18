@@ -4,6 +4,7 @@
 
 #include "ekat_assert.hpp"
 #include "ekat_session.hpp"
+#include "util/ekat_feutils.hpp"
 
 namespace ekat {
 namespace error {
@@ -31,6 +32,16 @@ void runtime_abort(const std::string& message, int code) {
 }
 
 } // namespace ekat
+
+int get_default_fpes () {
+#ifdef EKAT_FPE
+  return (FE_DIVBYZERO |
+          FE_INVALID   |
+          FE_OVERFLOW);
+#else
+  return 0;
+#endif
+}
 
 void enable_fpes (const int mask) {
   // Make sure we don't throw because one of those exceptions

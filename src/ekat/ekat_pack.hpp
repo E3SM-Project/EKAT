@@ -12,7 +12,6 @@
 #include <Kokkos_Core.hpp>
 
 namespace ekat {
-namespace pack {
 
 /* API for using "packed" data in ekat. Packs are just bundles of N
    scalars within a single object. Using packed data makes it much easier
@@ -39,7 +38,7 @@ struct Mask {
   enum { n = PackSize };
 
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Mask () {}
+  Mask () {}
 
   // Init all slots of the Mask to 'init'.
   KOKKOS_FORCEINLINE_FUNCTION explicit Mask (const bool& init) {
@@ -64,6 +63,11 @@ struct Mask {
     bool b = true;
     vector_simd for (int i = 0; i < n; ++i) if ( ! d[i]) b = false;
     return b;
+  }
+
+  // Are all slots false?
+  KOKKOS_FORCEINLINE_FUNCTION bool none () const {
+    return !any();
   }
 
 private:
@@ -152,7 +156,7 @@ struct Pack {
   typedef typename std::remove_const<ScalarType>::type scalar;
 
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack () {
+  Pack () {
     vector_simd for (int i = 0; i < n; ++i) {
       d[i] = ScalarTraits<scalar>::invalid();
     }
@@ -300,15 +304,49 @@ ekat_pack_gen_unary_stdfn(tanh)
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> min (const PackType& p) {
   typename PackType::scalar v(p[0]);
-  vector_disabled for (int i = 0; i < PackType::n; ++i) v = util::min(v, p[i]);
+  vector_disabled for (int i = 0; i < PackType::n; ++i) v = impl::min(v, p[i]);
   return v;
 }
 
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> max (const PackType& p) {
   typename PackType::scalar v(p[0]);
-  vector_simd for (int i = 0; i < PackType::n; ++i) v = util::max(v, p[i]);
+  vector_simd for (int i = 0; i < PackType::n; ++i) v = impl::max(v, p[i]);
   return v;
+}
+
+// sum = sum+p[0]+p[1]+...
+// NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
+//       The latter is better when bool needs a default, the former is
+//       better when bool must be specified, but we want T to be deduced.
+template <bool Serialize, typename PackType>
+KOKKOS_INLINE_FUNCTION
+void reduce_sum (const PackType& p, typename PackType::scalar& sum) {
+  if (Serialize) {
+    for (int i = 0; i < PackType::n; ++i) sum += p[i];
+  } else {
+    vector_simd for (int i = 0; i < PackType::n; ++i) sum += p[i];
+  }
+}
+
+template <typename PackType, bool Serialize = ekatBFB>
+KOKKOS_INLINE_FUNCTION
+void reduce_sum (const PackType& p, typename PackType::scalar& sum) {
+  reduce_sum<Serialize>(p,sum);
+}
+
+// return sum = p[0]+p[1]+...
+template <bool Serialize, typename PackType>
+KOKKOS_INLINE_FUNCTION
+OnlyPackReturn<PackType, typename PackType::scalar> reduce_sum (const PackType& p) {
+  typename PackType::scalar sum = typename PackType::scalar(0);
+  reduce_sum<Serialize>(p,sum);
+  return sum;
+}
+template <typename PackType, bool Serialize = ekatBFB>
+KOKKOS_INLINE_FUNCTION
+OnlyPackReturn<PackType, typename PackType::scalar> reduce_sum (const PackType& p) {
+  return reduce_sum<Serialize>(p);
 }
 
 // min(init, min(p(mask)))
@@ -316,7 +354,7 @@ template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar>
 min (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackType& p) {
   vector_disabled for (int i = 0; i < PackType::n; ++i)
-    if (mask[i]) init = util::min(init, p[i]);
+    if (mask[i]) init = impl::min(init, p[i]);
   return init;
 }
 
@@ -325,7 +363,7 @@ template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar>
 max (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackType& p) {
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    if (mask[i]) init = util::max(init, p[i]);
+    if (mask[i]) init = impl::max(init, p[i]);
   return init;
 }
 
@@ -361,8 +399,8 @@ max (const Mask<PackType::n>& mask, typename PackType::scalar init, const PackTy
   ekat_pack_gen_bin_fn_ps(fn, impl)           \
   ekat_pack_gen_bin_fn_sp(fn, impl)
 
-ekat_pack_gen_bin_fn_all(min, util::min)
-ekat_pack_gen_bin_fn_all(max, util::max)
+ekat_pack_gen_bin_fn_all(min, impl::min)
+ekat_pack_gen_bin_fn_all(max, impl::max)
 
 // On Intel 17 for KNL, I'm getting a ~1-ulp diff on const Scalar& b. I don't
 // understand its source. But, in any case, I'm writing a separate impl here to
@@ -373,7 +411,7 @@ KOKKOS_INLINE_FUNCTION
 OnlyPack<PackType> pow (const PackType& a, const ScalarType/*&*/ b) {
   PackType s;
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    s[i] = std::pow<typename PackType::scalar>(a[i], b);
+    s[i] = std::pow(a[i], b);
   return s;
 }
 
@@ -382,7 +420,7 @@ KOKKOS_INLINE_FUNCTION
 OnlyPack<PackType> pow (const ScalarType a, const PackType& b) {
   PackType s;
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    s[i] = std::pow<typename PackType::scalar>(a, b[i]);
+    s[i] = std::pow(a, b[i]);
   return s;
 }
 
@@ -391,7 +429,7 @@ KOKKOS_INLINE_FUNCTION
 OnlyPack<PackType> pow (const PackType& a, const PackType& b) {
   PackType s;
   vector_simd for (int i = 0; i < PackType::n; ++i)
-    s[i] = std::pow<typename PackType::scalar>(a[i], b[i]);
+    s[i] = std::pow(a[i], b[i]);
   return s;
 }
 
@@ -495,7 +533,7 @@ OnlyPackReturn<PackType, Mask<PackType::n>>
 isnan (const PackType& p) {
   Mask<PackType::n> m;
   vector_simd for (int i = 0; i < PackType::n; ++i) {
-    m.set(i, util::is_nan(p[i]));
+    m.set(i, impl::is_nan(p[i]));
   }
   return m;
 }
@@ -536,16 +574,14 @@ OnlyPack<PackType> range (const typename PackType::scalar& start) {
 #undef ekat_mask_gen_bin_op_mm
 #undef ekat_mask_gen_bin_op_mb
 
-} // namespace pack
-
 // Specialization of ScalarTraits struct for Pack types
 
 template<typename T, int N>
-struct ScalarTraits<pack::Pack<T,N>> {
+struct ScalarTraits<Pack<T,N>> {
 
   using inner_traits = ScalarTraits<T>;
 
-  using value_type  = pack::Pack<T,N>;
+  using value_type  = Pack<T,N>;
   using scalar_type = typename inner_traits::scalar_type;
 
   // TODO: should we allow a pack of packs? For now, I assume the answer is NO.

@@ -4,7 +4,6 @@
 #include <Kokkos_Core.hpp>
 
 namespace ekat {
-namespace util {
 
 // Kokkos-related types not specific to the app. Thus, do not include
 // app-specific array types here; rather, include only those things that one
@@ -15,11 +14,11 @@ namespace util {
 template <typename View>
 struct MemoryTraitsMask {
   enum : unsigned int {
-    value = ((View::traits::memory_traits::RandomAccess ? Kokkos::RandomAccess : 0) |
-             (View::traits::memory_traits::Atomic ? Kokkos::Atomic : 0) |
-             (View::traits::memory_traits::Restrict ? Kokkos::Restrict : 0) |
-             (View::traits::memory_traits::Aligned ? Kokkos::Aligned : 0) |
-             (View::traits::memory_traits::Unmanaged ? Kokkos::Unmanaged : 0))
+    value = ((View::traits::memory_traits::is_random_access ? Kokkos::RandomAccess : 0) |
+             (View::traits::memory_traits::is_atomic ? Kokkos::Atomic : 0) |
+             (View::traits::memory_traits::is_restrict ? Kokkos::Restrict : 0) |
+             (View::traits::memory_traits::is_aligned ? Kokkos::Aligned : 0) |
+             (View::traits::memory_traits::is_unmanaged ? Kokkos::Unmanaged : 0))
       };
 };
 
@@ -39,7 +38,6 @@ using Unmanaged =
                  // already there.
                  Kokkos::Unmanaged> >;
 
-} // namespace util
 } // namespace ekat
 
 #endif // EKAT_KOKKOS_META_HPP

@@ -16,8 +16,8 @@ double cube(double x) {
 
 template <int PACKN>
 struct TestMask {
-  using Mask = ekat::pack::Mask<PACKN>;
-  using Pack = ekat::pack::Pack<int, PACKN>;
+  using Mask = ekat::Mask<PACKN>;
+  using Pack = ekat::Pack<int, PACKN>;
 
   static int sum_true (const Mask& m) {
     int sum1 = 0, sum2 = 0, sum3 = 0;
@@ -33,10 +33,12 @@ struct TestMask {
     {
       Mask m(false);
       REQUIRE( ! m.any());
+      REQUIRE(   m.none());
     }
     {
       Mask m(true);
       REQUIRE(m.any());
+      REQUIRE(!m.none());
       REQUIRE( ! ( ! m).any());
       for (int i = 0; i < Mask::n; ++i) REQUIRE(m[i]);
       REQUIRE(sum_true(m) == Mask::n);
@@ -82,8 +84,8 @@ TEST_CASE("Mask", "ekat::pack") {
 
 template <typename Scalar, int PACKN>
 struct TestPack {
-  using Mask = ekat::pack::Mask<PACKN>;
-  using Pack = ekat::pack::Pack<Scalar, PACKN>;
+  using Mask = ekat::Mask<PACKN>;
+  using Pack = ekat::Pack<Scalar, PACKN>;
   using scalar = typename Pack::scalar;
 
   static const double tol;
@@ -100,7 +102,7 @@ struct TestPack {
 
   static void setup (Pack& a, Pack& b, scalar& c,
                      const bool limit = false, const bool pve = false) {
-    using ekat::util::min;
+    using ekat::impl::min;
     vector_novec for (int i = 0; i < Pack::n; ++i) {
       const auto sign = pve ? 1 : (2*(i % 2) - 1);
       a[i] = i + 1.2;
@@ -122,7 +124,7 @@ struct TestPack {
   }
 
   static void test_conversion () {
-    using IntPack = ekat::pack::Pack<ekat::Int, PACKN>;
+    using IntPack = ekat::Pack<ekat::Int, PACKN>;
     Pack a;
     IntPack a_int_true;
     vector_novec for (int i = 0; i < Pack::n; ++i) {
@@ -150,9 +152,28 @@ struct TestPack {
   }
 
   static void test_range () {
-    const auto p = ekat::pack::range<Pack>(42);
+    const auto p = ekat::range<Pack>(42);
     vector_novec for (int i = 0; i < Pack::n; ++i)
       REQUIRE(p[i] == static_cast<scalar>(42 + i));
+  }
+
+  template<bool Serialize>
+  static void test_reduce_sum () {
+    scalar a = 0.5;
+    scalar serial_result = scalar(a);
+    Pack p;
+    for (int i=0; i<Pack::n; ++i) {
+      p[i] = 1.0/(i+1);
+      serial_result += p[i];
+    }
+
+    ekat::reduce_sum<Serialize>(p, a);
+
+    if (Serialize) {
+      REQUIRE(a == serial_result);
+    } else {
+      REQUIRE(std::abs(a - serial_result) <= 10*std::numeric_limits<Scalar>::epsilon());
+    }
   }
 
 #define test_pack_gen_assign_op_all(op) do {        \
@@ -263,8 +284,8 @@ struct TestPack {
     test_pack_gen_bin_op_all(*);
     test_pack_gen_bin_op_all(/);
 
-    test_pack_gen_bin_fn_all(min, ekat::util::min, setup);
-    test_pack_gen_bin_fn_all(max, ekat::util::max, setup);
+    test_pack_gen_bin_fn_all(min, ekat::impl::min, setup);
+    test_pack_gen_bin_fn_all(max, ekat::impl::max, setup);
     test_pack_gen_bin_fn_all(pow, std::pow, setup_pow);
 
     test_pack_gen_unary_op(-);
@@ -290,6 +311,9 @@ struct TestPack {
     test_conversion();
     test_unary_min_max();
     test_range();
+
+    test_reduce_sum<true>();
+    test_reduce_sum<false>();
   }
 };
 
@@ -324,8 +348,8 @@ TEST_CASE("isnan", "ekat::pack") {
 #endif
 
   using namespace ekat;
-  using pt = pack::Pack<Real, EKAT_TEST_PACK_SIZE>;
-  using mt = pack::Mask<EKAT_TEST_PACK_SIZE>;
+  using pt = Pack<Real, EKAT_TEST_PACK_SIZE>;
+  using mt = Mask<EKAT_TEST_PACK_SIZE>;
 
   using pvt = typename KokkosTypes<DefaultDevice>::view_1d<pt>;
   using mvt = typename KokkosTypes<DefaultDevice>::view_1d<mt>;
@@ -340,8 +364,8 @@ TEST_CASE("isnan", "ekat::pack") {
     const pt& z = zero(0);
     const pt& n = nan(0);
 
-    mzero(0) = pack::isnan(z);
-    mnan(0)  = pack::isnan(n);
+    mzero(0) = isnan(z);
+    mnan(0)  = isnan(n);
   });
 
   auto mzero_h = Kokkos::create_mirror_view(mzero);

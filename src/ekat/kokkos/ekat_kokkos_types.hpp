@@ -1,7 +1,7 @@
 #ifndef EKAT_KOKKOS_TYPES_HPP
 #define EKAT_KOKKOS_TYPES_HPP
 
-#include "ekat_config.h"
+#include "ekat/ekat_config.h"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 
 /*
@@ -63,10 +63,10 @@ struct KokkosTypes
 
   // Our workspace implementation makes this a useful type
   template <typename Scalar, int N>
-  using view_1d_ptr_array = Kokkos::Array<util::Unmanaged<view_1d<Scalar> >*, N>;
+  using view_1d_ptr_array = Kokkos::Array<Unmanaged<view_1d<Scalar> >*, N>;
 
   template <typename Scalar, int N>
-  using view_1d_ptr_carray = Kokkos::Array<const util::Unmanaged<view_1d<Scalar> >*, N>;
+  using view_1d_ptr_carray = Kokkos::Array<const Unmanaged<view_1d<Scalar> >*, N>;
 };
 
 } // namespace ekat

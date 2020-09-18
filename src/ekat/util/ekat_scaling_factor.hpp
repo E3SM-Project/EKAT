@@ -9,9 +9,6 @@
 namespace ekat
 {
 
-namespace util
-{
-
 struct ScalingFactor {
   const RationalConstant base;
   const RationalConstant exp;
@@ -155,8 +152,6 @@ constexpr ScalingFactor kilo  = ScalingFactor(10, 3);
 constexpr ScalingFactor mega  = ScalingFactor(10, 6);
 constexpr ScalingFactor giga  = ScalingFactor(10, 9);
 } // namespace prefixes
-
-} // namespace util
 
 } // namespace ekat
 
