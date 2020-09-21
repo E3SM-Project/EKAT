@@ -1,12 +1,14 @@
 #include <catch2/catch.hpp>
 
 #include "ekat/ekat_physical_constants.hpp"
+#include "ekat/util/ekat_common_constants.hpp"
 
 #include <iostream>
 
 TEST_CASE("physical_constants", "") {
   using namespace ekat;
   using namespace ekat::units;
+  using namespace ekat::common_constants;
 
   SECTION("Universal constants") {
     std::cout << Pi() << " " << Pi.get_string() << '\n';
