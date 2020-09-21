@@ -61,15 +61,12 @@ TEST_CASE("units_framework", "") {
     Units mix_ratio = kg/kg;
     mix_ratio.set_string("kg/kg");
 
-    Units u1 = kg/m/pow(s,2);
-    Units u2 = 1/K;
-    Units u3 = Units::nondimensional();
-    u3 = u1*u2;
 
     // Verify operations
     REQUIRE (milliJ == kPa*pow(m,3)/mega);
     REQUIRE (m/s*day/km == Units(one*86400/1000));
     REQUIRE (pow(sqrt(m),2)==m);
+    REQUIRE (one/mol == pow(mol,-1));
 
     // Verify printing
     REQUIRE (to_string(nondim)=="1");
