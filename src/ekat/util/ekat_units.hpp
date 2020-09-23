@@ -207,13 +207,13 @@ inline Units operator/(const Units& lhs, const ScalingFactor& rhs) {
                lhs.m_scaling/rhs);
 }
 inline Units operator/(const ScalingFactor& lhs, const Units& rhs) {
-  return Units(1-rhs.m_units[0],
-               1-rhs.m_units[1],
-               1-rhs.m_units[2],
-               1-rhs.m_units[3],
-               1-rhs.m_units[4],
-               1-rhs.m_units[5],
-               1-rhs.m_units[6],
+  return Units(-rhs.m_units[0],
+               -rhs.m_units[1],
+               -rhs.m_units[2],
+               -rhs.m_units[3],
+               -rhs.m_units[4],
+               -rhs.m_units[5],
+               -rhs.m_units[6],
                lhs/rhs.m_scaling);
 }
 inline Units operator/(const RationalConstant& lhs, const Units& rhs) {

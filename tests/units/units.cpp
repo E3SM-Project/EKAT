@@ -75,4 +75,16 @@ TEST_CASE("units_framework", "") {
     REQUIRE (to_string(mix_ratio)=="1");
     REQUIRE (mix_ratio.get_string()=="kg/kg");
   }
+
+  SECTION ("issue-52") {
+    auto one_over_mol = ScalingFactor::one() / mol;
+    auto mol_inverse = pow(mol, -1);
+
+    REQUIRE (one_over_mol == mol_inverse);
+
+    auto mol_mol = mol * mol;
+    auto mol_2 = pow(mol,2);
+
+    REQUIRE (mol_mol == mol_2);
+  }
 }
