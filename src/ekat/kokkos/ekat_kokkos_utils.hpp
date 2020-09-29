@@ -123,7 +123,7 @@ void view_reduction (const TeamMember& team,
   if (has_garbage_begin) {
     const PackType temp_input = input(pack_loop_begin-1);
     const int first_indx = begin%vector_size;
-    Kokkos::single(Kokkos::PerTeam(team),[&] {
+    Kokkos::single(Kokkos::PerThread(team),[&] {
       for (int j=first_indx; j<vector_size; ++j) {
         result += temp_input[j];
       }
@@ -156,7 +156,7 @@ void view_reduction (const TeamMember& team,
   if (has_garbage_end) {
     const PackType temp_input = input(pack_loop_end);
     const int last_indx = end%vector_size;
-    Kokkos::single(Kokkos::PerTeam(team),[&] {
+    Kokkos::single(Kokkos::PerThread(team),[&] {
       for (int j=0; j<last_indx; ++j) {
         result += temp_input[j];
       }

@@ -288,9 +288,16 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   Kokkos::View<Scalar*> results ("results", 1);
   const auto results_h = Kokkos::create_mirror_view(results);
 
+  int team_size = ExeSpace::concurrency();
+#ifdef KOKKOS_ENABLE_CUDA
+  ExeSpace temp_space;
+  auto num_sm = temp_space.impl_internal_space_instance()->m_multiProcCount;
+  team_size /= (ekat::is_single_precision<Real>::value ? num_sm*64 : num_sm*32);
+#endif
+
   // parallel_for over 1 team, i.e. call view_reduction once
   const auto policy =
-    ekat::ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, view_length);
+    ekat::ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, team_size);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar(a);
 
@@ -331,7 +338,6 @@ TEST_CASE("view_reduction", "[kokkos_utils]")
   test_view_reduction<Real, true,false,8,1> (1.0/3.0,2,5);
   test_view_reduction<Real,false,false,8,1> (1.0/3.0,2,5);
 
-#ifndef KOKKOS_ENABLE_CUDA
   // VectorSize > 1
 
   // Full packs, sum all entries
@@ -357,7 +363,7 @@ TEST_CASE("view_reduction", "[kokkos_utils]")
   test_view_reduction<Real,false,true,16,3> (1.0/3.0,2,11);
   test_view_reduction<Real, true,false,16,3> (1.0/3.0,2,11);
   test_view_reduction<Real,false,false,16,3> (1.0/3.0,2,11);
-#endif
+
 }
 
 } // anonymous namespace
