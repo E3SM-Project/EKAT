@@ -290,7 +290,7 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
 
   // parallel_for over 1 team, i.e. call view_reduction once
   const auto policy =
-    ekat::ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, (UseThreads ? VectorSize : 1));
+    ekat::ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, (UseThreads ? omp_get_max_threads() : 1));
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar(a);
 
