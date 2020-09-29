@@ -288,11 +288,11 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   Kokkos::View<Scalar*> results ("results", 1);
   const auto results_h = Kokkos::create_mirror_view(results);
 
-  // Set team size
   int team_size = ExeSpace::concurrency();
-  if (ekat::OnGpu<ExeSpace>::value) {
-    team_size /= (ekat::is_single_precision<Real>::value ? 64 : 32);
-  }
+#ifdef KOKKOS_ENABLE_CUDA
+  auto num_sm = Kokkos::Cuda::impl_internal_space_instance()->m_multiProcCount;
+  team_size /= (ekat::is_single_precision<Real>::value ? num_sm*64 : num_sm*32);
+#endif
 
   // parallel_for over 1 team, i.e. call view_reduction once
   const auto policy =
