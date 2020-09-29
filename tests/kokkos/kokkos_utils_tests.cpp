@@ -250,7 +250,7 @@ TEST_CASE("parallel_reduce", "[kokkos_utils]")
 }
 
 
-template<typename Scalar, bool Serialize, bool UseLambda, int TotalSize, int VectorSize, bool UseThreads>
+template<typename Scalar, bool Serialize, bool UseLambda, int TotalSize, int VectorSize>
 void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize)
 {
   using Device = ekat::DefaultDevice;
@@ -288,14 +288,15 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   Kokkos::View<Scalar*> results ("results", 1);
   const auto results_h = Kokkos::create_mirror_view(results);
 
-#ifdef KOKKOS_ENABLE_OPENMP
-  const int n_threads = omp_get_max_threads();
-#else
-  const int n_threads = 1;
-#endif
+  // Set team size
+  int team_size = ExeSpace::concurrency();
+  if (ekat::OnGpu<ExeSpace>::value) {
+    team_size /= (ekat::is_single_precision<Real>::value ? 64 : 32);
+  }
+
   // parallel_for over 1 team, i.e. call view_reduction once
   const auto policy =
-    ekat::ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, (UseThreads ? n_threads : 1));
+    ekat::ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, team_size);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     Scalar team_result = Scalar(a);
 
@@ -322,54 +323,46 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
 
 TEST_CASE("view_reduction", "[kokkos_utils]")
 {
-  // Test using threads if OPENMP in used
-#ifdef KOKKOS_ENABLE_OPENMP
-  constexpr bool UseThreads = true;
-#else
-  constexpr bool UseThreads = false;
-#endif
-
   // VectorSize = 1
 
   // Sum all entries
-  test_view_reduction<Real, true,true,8,1,UseThreads> ();
-  test_view_reduction<Real,false,true,8,1,UseThreads> ();
-  test_view_reduction<Real, true,false,8,1,UseThreads> ();
-  test_view_reduction<Real,false,false,8,1,UseThreads> ();
+  test_view_reduction<Real, true,true,8,1> ();
+  test_view_reduction<Real,false,true,8,1> ();
+  test_view_reduction<Real, true,false,8,1> ();
+  test_view_reduction<Real,false,false,8,1> ();
 
   // Sum subset of entries, non-zero starting value, lambda data representation
-  test_view_reduction<Real, true,true,8,1,UseThreads> (1.0/3.0,2,5);
-  test_view_reduction<Real,false,true,8,1,UseThreads> (1.0/3.0,2,5);
-  test_view_reduction<Real, true,false,8,1,UseThreads> (1.0/3.0,2,5);
-  test_view_reduction<Real,false,false,8,1,UseThreads> (1.0/3.0,2,5);
+  test_view_reduction<Real, true,true,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real,false,true,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real, true,false,8,1> (1.0/3.0,2,5);
+  test_view_reduction<Real,false,false,8,1> (1.0/3.0,2,5);
 
-#ifndef KOKKOS_ENABLE_CUDA
   // VectorSize > 1
 
   // Full packs, sum all entries
-  test_view_reduction<Real, true,true,8,4,UseThreads> ();
-  test_view_reduction<Real,false,true,8,4,UseThreads> ();
-  test_view_reduction<Real, true,false,8,4,UseThreads> ();
-  test_view_reduction<Real,false,false,8,4,UseThreads> ();
+  test_view_reduction<Real, true,true,8,4> ();
+  test_view_reduction<Real,false,true,8,4> ();
+  test_view_reduction<Real, true,false,8,4> ();
+  test_view_reduction<Real,false,false,8,4> ();
 
   // Last pack not full, sum all entries
-  test_view_reduction<Real, true,true,7,4,UseThreads> ();
-  test_view_reduction<Real,false,true,7,4,UseThreads> ();
-  test_view_reduction<Real, true,false,7,4,UseThreads> ();
-  test_view_reduction<Real,false,false,7,4,UseThreads> ();
+  test_view_reduction<Real, true,true,7,4> ();
+  test_view_reduction<Real,false,true,7,4> ();
+  test_view_reduction<Real, true,false,7,4> ();
+  test_view_reduction<Real,false,false,7,4> ();
 
   // Only pack not full, sum all entries
-  test_view_reduction<Real, true,true,3,4,UseThreads> ();
-  test_view_reduction<Real,false,true,3,4,UseThreads> ();
-  test_view_reduction<Real, true,false,3,4,UseThreads> ();
-  test_view_reduction<Real,false,false,3,4,UseThreads> ();
+  test_view_reduction<Real, true,true,3,4> ();
+  test_view_reduction<Real,false,true,3,4> ();
+  test_view_reduction<Real, true,false,3,4> ();
+  test_view_reduction<Real,false,false,3,4> ();
 
   // Sum subset of entries, non-zero starting value
-  test_view_reduction<Real, true,true,16,3,UseThreads> (1.0/3.0,2,11);
-  test_view_reduction<Real,false,true,16,3,UseThreads> (1.0/3.0,2,11);
-  test_view_reduction<Real, true,false,16,3,UseThreads> (1.0/3.0,2,11);
-  test_view_reduction<Real,false,false,16,3,UseThreads> (1.0/3.0,2,11);
-#endif
+  test_view_reduction<Real, true,true,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,true,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real, true,false,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,false,16,3> (1.0/3.0,2,11);
+
 }
 
 } // anonymous namespace
