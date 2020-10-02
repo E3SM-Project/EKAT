@@ -3,6 +3,7 @@
 #include "ekat/ekat_pack.hpp"
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat_test_config.h"
+#include <sstream>
 
 namespace {
 
@@ -155,6 +156,16 @@ struct TestPack {
     const auto p = ekat::range<Pack>(42);
     vector_novec for (int i = 0; i < Pack::n; ++i)
       REQUIRE(p[i] == static_cast<scalar>(42 + i));
+  }
+
+  static void test_ostream() {
+    const auto p = ekat::range<Pack>(42);
+    std::ostringstream ssp;
+    ssp << p;
+    std::ostringstream sst;
+    for (int i = 0; i < Pack::n; ++i)
+      sst << 42 + i << ' ';
+    REQUIRE(ssp.str() == sst.str());
   }
 
   template<bool Serialize>
@@ -311,6 +322,7 @@ struct TestPack {
     test_conversion();
     test_unary_min_max();
     test_range();
+    test_ostream();
 
     test_reduce_sum<true>();
     test_reduce_sum<false>();
