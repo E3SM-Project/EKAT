@@ -10,6 +10,7 @@
 #include "ekat/ekat_type_traits.hpp"
 
 #include <Kokkos_Core.hpp>
+#include <iostream>
 
 namespace ekat {
 
@@ -609,6 +610,16 @@ struct ScalarTraits<Pack<T,N>> {
     return value_type(inner_traits::invalid());
   }
 };
+
+template <typename PackType>
+inline typename std::enable_if<PackType::packtag, std::ostream&>::type
+operator << (std::ostream& os, const PackType& p) {
+  for (int i=0; i<PackType::n; ++i) {
+    os << p[i] << ' ';
+  }
+  return os;
+}
+
 
 } // namespace ekat
 
