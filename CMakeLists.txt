@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 3.3)
 set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
 
 # Do not ignore <PackageName_ROOT> env vars in find_package() calls
-cmake_policy (SET CMP0074 NEW)
+IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+    cmake_policy (SET CMP0074 NEW)
+ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 
 # Add our own cmake goodies to cmake module search path
 list(APPEND CMAKE_MODULE_PATH
