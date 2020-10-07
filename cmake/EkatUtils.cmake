@@ -1,3 +1,12 @@
+macro (IsDebugBuild OUT_VAR_NAME)
+  string(TOLOWER "${CMAKE_BUILD_TYPE}" INTERNAL_BUILD_TYPE_CI)
+  if ("${INTERNAL_BUILD_TYPE_CI}" STREQUAL "debug")
+    set (${OUT_VAR_NAME} TRUE CACHE INTERNAL "")
+  else ()
+    set (${OUT_VAR_NAME} FALSE CACHE INTERNAL "")
+  endif()
+endmacro()
+
 macro (CheckMacroArgs macroName parsePrefix validOptions validOneValueArgs validMultiValueArgs)
   if (${parsePrefix}_UNPARSED_ARGUMENTS)
     message (AUTHOR_WARNING
