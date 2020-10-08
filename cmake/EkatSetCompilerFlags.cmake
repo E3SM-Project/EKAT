@@ -237,46 +237,6 @@ macro (SetCompilerFlags)
   endif()
 
   ##############################################################################
-  # Compiler FLAGS for AVX1, AVX2, and AVX512 (CXX compiler only)
-  ##############################################################################
-
-  # NOTE: This won't work on batch machines where the architecture of the
-  # interactive node is different than the compute nodes.
-  # Also, disable this on KNL, since FindAVX will find 512, but -xCORE-AVX512
-  # only works on skx.
-  if (NOT DEFINED AVX_VERSION AND NOT Kokkos_ARCH_KNL)
-    include(FindAVX)
-    FindAVX()
-    if (AVX512_FOUND)
-      set(AVX_VERSION "512")
-    elseif (AVX2_FOUND)
-      set(AVX_VERSION "2")
-    elseif (AVX_FOUND)
-      set(AVX_VERSION "1")
-    else ()
-      set(AVX_VERSION "0")
-    endif ()
-  endif ()
-
-  if (AVX_VERSION STREQUAL "512")
-    if (CMAKE_CXX_COMPILER_ID STREQUAL Intel)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xCORE-AVX512")
-    endif()
-  elseif (AVX_VERSION STREQUAL "2")
-    if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL Intel)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xCORE-AVX2")
-    endif()
-  elseif (AVX_VERSION STREQUAL "1")
-    if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL Intel)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xAVX")
-    endif()
-  endif ()
-
-  ##############################################################################
   # Allow the option to add compiler flags to those provided
   ##############################################################################
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ADD_Fortran_FLAGS}")
