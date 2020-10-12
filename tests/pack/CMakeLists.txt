@@ -9,15 +9,15 @@ set (PACK_TESTS_SRCS
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(packs${DP_POSTFIX} "${PACK_TESTS_SRCS}"
     LIBS ekat
+    COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
   )
-  target_compile_definitions(packs${DP_POSTFIX} PRIVATE EKAT_TEST_DOUBLE_PRECISION)
 endif ()
 
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(packs${SP_POSTFIX} "${PACK_TESTS_SRCS}"
     LIBS ekat
+    COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
   )
-  target_compile_definitions(packs${SP_POSTFIX} PRIVATE EKAT_TEST_SINGLE_PRECISION)
 endif ()
 
 # Test pack index arithmetics utils

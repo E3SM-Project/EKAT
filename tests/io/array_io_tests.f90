@@ -7,10 +7,10 @@ contains
     use iso_c_binding
     use ekat_array_io_mod, only: array_io_file_exists
 
-#ifdef EKAT_DOUBLE_PRECISION
+#ifdef EKAT_TEST_DOUBLE_PRECISION
     use iso_c_binding, only: c_real=>c_double
     use ekat_array_io_mod, only: array_io_write=>array_io_write_double, array_io_read=>array_io_read_double
-#elif defined(EKAT_SINGLE_PRECISION)
+#elif defined(EKAT_TEST_SINGLE_PRECISION)
     use iso_c_binding, only: c_real=>c_float
     use ekat_array_io_mod, only: array_io_write=>array_io_write_float, array_io_read=>array_io_read_float
 #endif
@@ -21,7 +21,7 @@ contains
     logical :: ok
 
     character(kind=c_char, len=128), parameter :: &
-#ifdef EKAT_DOUBLE_PRECISION
+#ifdef EKAT_TEST_DOUBLE_PRECISION
          filename = c_char_"unit_test_f90_array_io_dp.dat"//C_NULL_CHAR
 #else
          filename = c_char_"unit_test_f90_array_io_sp.dat"//C_NULL_CHAR

@@ -8,14 +8,14 @@ set (ARRAY_IO_SRCS
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(array_io${DP_POSTFIX} "${ARRAY_IO_SRCS}"
     LIBS ekat
+    COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
   )
-  target_compile_definitions(array_io${DP_POSTFIX} PRIVATE EKAT_DOUBLE_PRECISION)
 endif ()
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(array_io${SP_POSTFIX} "${ARRAY_IO_SRCS}"
     LIBS ekat
+    COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
   )
-  target_compile_definitions(array_io${SP_POSTFIX} PRIVATE EKAT_SINGLE_PRECISION)
 endif ()
 
 # YAML parser

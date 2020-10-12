@@ -28,12 +28,21 @@ include(EkatUtils) # To check macro args
 set (CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/catch2/include)
 
 function(EkatCreateUnitTest target_name target_srcs)
+
+  #---------------------------#
+  #   Parse function inputs   #
+  #---------------------------#
+
   set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
   set(oneValueArgs DEP MPI_EXEC_NAME MPI_NP_FLAG)
   set(multiValueArgs
     MPI_RANKS THREADS
     MPI_EXTRA_ARGS EXE_ARGS 
-    COMPILER_DEFS INCLUDE_DIRS COMPILER_FLAGS
+    INCLUDE_DIRS
+    COMPILER_DEFS
+    COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
+    COMPILER_FLAGS
+    COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
     LIBS LIBS_DIRS LINKER_FLAGS
     LABELS)
 
@@ -45,16 +54,50 @@ function(EkatCreateUnitTest target_name target_srcs)
   # (e.g., in target_link_libraries) or compiler errors (e.g. if COMPILER_DEFS=" ")
   string(STRIP "${ecut_LIBS}" ecut_LIBS)
   string(STRIP "${ecut_COMPILER_DEFS}" ecut_COMPILER_DEFS)
+  string(STRIP "${ecut_COMPILER_C_DEFS}" ecut_COMPILER_C_DEFS)
+  string(STRIP "${ecut_COMPILER_CXX_DEFS}" ecut_COMPILER_CxX_DEFS)
+  string(STRIP "${ecut_COMPILER_F_DEFS}" ecut_COMPILER_F_DEFS)
+  string(STRIP "${ecut_COMPILER_FLAGS}" ecut_COMPILER_FLAGS)
+  string(STRIP "${ecut_COMPILER_C_FLAGS}" ecut_COMPILER_C_FLAGS)
+  string(STRIP "${ecut_COMPILER_CXX_FLAGS}" ecut_COMPILER_CxX_FLAGS)
+  string(STRIP "${ecut_COMPILER_F_FLAGS}" ecut_COMPILER_F_FLAGS)
   string(STRIP "${ecut_LIBS_DIRS}" ecut_LIBS_DIRS)
   string(STRIP "${ecut_INCLUDE_DIRS}" ecut_INCLUDE_DIRS)
 
+  #---------------------------#
+  #   Create the executable   #
+  #---------------------------#
+
   # Set link directories (must be done BEFORE add_executable is called)
+  # NOTE: CMake 3.15 adds 'target_link_directories', which is superior (does not pollute other targets).
+  #       We should switch to that as soon as we can assume CMAKE_VERSION >= 3.15.
   if (ecut_LIBS_DIRS)
     link_directories("${ecut_LIBS_DIRS}")
   endif()
-
-  # Create the executable
   add_executable (${target_name} ${target_srcs})
+
+  #---------------------------#
+  # Set all target properties #
+  #---------------------------#
+
+  # Include dirs
+  target_include_directories(${target_name} PUBLIC
+      ${CATCH_INCLUDE_DIR}
+       ${CMAKE_CURRENT_SOURCE_DIR}
+       ${CMAKE_CURRENT_BINARY_DIR}
+       ${ecut_INCLUDE_DIRS}
+  )
+
+  # F90 output dir
+  set_target_properties(${target_name} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_modules)
+
+  # Link flags/libs
+  if (ecut_LIBS)
+    target_link_libraries(${target_name} PUBLIC "${ecut_LIBS}")
+  endif()
+  if (ecut_LINKER_FLAGS)
+    set_target_properties(${target_name} PROPERTIES LINK_FLAGS "${ecut_LINKER_FLAGS}")
+  endif()
   if (NOT ecut_EXCLUDE_MAIN_CPP)
     target_link_libraries(${target_name} PUBLIC ekat_test_main)
   endif ()
@@ -63,26 +106,37 @@ function(EkatCreateUnitTest target_name target_srcs)
     target_link_libraries(${target_name} PUBLIC ekat_test_session)
   endif ()
 
-  set (TEST_INCLUDE_DIRS
-       ${CATCH_INCLUDE_DIR}
-       ${CMAKE_CURRENT_SOURCE_DIR}
-       ${CMAKE_CURRENT_BINARY_DIR}
-       ${ecut_INCLUDE_DIRS}
-  )
-
-  # Set all target properties
-  target_include_directories(${target_name} PUBLIC "${TEST_INCLUDE_DIRS}")
-
-  if (ecut_LIBS)
-    target_link_libraries(${target_name} PUBLIC "${ecut_LIBS}")
-  endif()
-  if (ecut_LINKER_FLAGS)
-    set_target_properties(${target_name} PROPERTIES LINK_FLAGS "${ecut_LINKER_FLAGS}")
-  endif()
-  set_target_properties(${target_name} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_modules)
+  # Compiler definitions
   if (ecut_COMPILER_DEFS)
-    set_target_properties(${target_name} PROPERTIES COMPILE_DEFINITIONS "${ecut_COMPILER_DEFS}")
+    target_compile_definitions(${target_name} PUBLIC "${ecut_COMPILER_DEFS}")
   endif()
+  if (ecut_COMPILER_C_DEFS)
+    target_compile_definitions(${target_name} PUBLIC $<$<COMPILE_LANGUAGE:C>:${ecut_COMPILER_C_DEFS}>)
+  endif()
+  if (ecut_COMPILER_CXX_DEFS)
+    target_compile_definitions(${target_name} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${ecut_COMPILER_CXX_DEFS}>)
+  endif()
+  if (ecut_COMPILER_F_DEFS)
+    target_compile_definitions(${target_name} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:${ecut_COMPILER_F_DEFS}>)
+  endif()
+
+  # Compiler options
+  if (ecut_COMPILER_FLAGS)
+    target_compile_options(${target_name} PUBLIC "${ecut_COMPILER_FLAGS}")
+  endif()
+  if (ecut_COMPILER_C_FLAGS)
+    target_compile_options(${target_name} PUBLIC $<$<COMPILE_LANGUAGE:C>:${ecut_COMPILER_C_FLAGS}>)
+  endif()
+  if (ecut_COMPILER_CXX_FLAGS)
+    target_compile_options(${target_name} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${ecut_COMPILER_CXX_FLAGS}>)
+  endif()
+  if (ecut_COMPILER_F_FLAGS)
+    target_compile_options(${target_name} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:${ecut_COMPILER_F_FLAGS}>)
+  endif()
+
+  #--------------------------#
+  # Setup MPI/OpenMP configs #
+  #--------------------------#
 
   list(LENGTH ecut_MPI_RANKS NUM_MPI_RANK_ARGS)
   list(LENGTH ecut_THREADS   NUM_THREAD_ARGS)
@@ -175,8 +229,9 @@ function(EkatCreateUnitTest target_name target_srcs)
     endif()
   endif()
 
-  set(CURR_RANKS ${MPI_START_RANK})
-  set(CURR_THREADS ${THREAD_START})
+  #------------------------------------------------#
+  # Loop over MPI/OpenMP configs, and create tests #
+  #------------------------------------------------#
 
   if (ecut_EXE_ARGS)
     set(invokeExec "./${target_name} ${ecut_EXE_ARGS}")
@@ -184,19 +239,19 @@ function(EkatCreateUnitTest target_name target_srcs)
     set(invokeExec "./${target_name}")
   endif()
 
-  while (NOT CURR_RANKS GREATER ${MPI_END_RANK})
-    while (NOT CURR_THREADS GREATER ${THREAD_END})
+  foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
+    foreach (NTHREADS RANGE ${THREAD_START} ${THREAD_END} ${THREAD_INCREMENT})
       # Create the test
-      set(FULL_TEST_NAME ${target_name}_ut_np${CURR_RANKS}_omp${CURR_THREADS})
-      if (${CURR_RANKS} GREATER 1)
+      set(FULL_TEST_NAME ${target_name}_ut_np${NRANKS}_omp${NTHREADS})
+      if (${NRANKS} GREATER 1)
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${CURR_RANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExec}")
+                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExec}")
       else()
         add_test(NAME ${FULL_TEST_NAME}
                  COMMAND sh -c "${invokeExec}")
       endif()
-      math(EXPR CURR_CORES "${CURR_RANKS}*${CURR_THREADS}")
-      set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${CURR_THREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True)
+      math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
+      set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${NTHREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True)
       if (ecut_DEP AND NOT ecut_DEP STREQUAL "${FULL_TEST_NAME}")
         set_tests_properties(${FULL_TEST_NAME} PROPERTIES DEPENDS ${ecut_DEP})
       endif()
@@ -206,17 +261,13 @@ function(EkatCreateUnitTest target_name target_srcs)
       endif()
 
       set (RES_GROUPS "devices:1")
-      if (${CURR_RANKS} GREATER 1)
-        foreach (rank RANGE 2 ${CURR_RANKS})
+      if (${NRANKS} GREATER 1)
+        foreach (rank RANGE 2 ${NRANKS})
           set (RES_GROUPS "${RES_GROUPS},devices:1")
         endforeach()
       endif()
       set_property(TEST ${FULL_TEST_NAME} PROPERTY RESOURCE_GROUPS "${RES_GROUPS}")
-
-      math(EXPR CURR_THREADS "${CURR_THREADS}+${THREAD_INCREMENT}")
-    endwhile()
-    set(CURR_THREADS ${THREAD_START})
-    math(EXPR CURR_RANKS "${CURR_RANKS}+${MPI_INCREMENT}")
-  endwhile()
+    endforeach()
+  endforeach()
 
 endfunction(EkatCreateUnitTest)
