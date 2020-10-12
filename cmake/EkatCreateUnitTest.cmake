@@ -229,9 +229,6 @@ function(EkatCreateUnitTest target_name target_srcs)
     endif()
   endif()
 
-  set(CURR_RANKS ${MPI_START_RANK})
-  set(CURR_THREADS ${THREAD_START})
-
   #------------------------------------------------#
   # Loop over MPI/OpenMP configs, and create tests #
   #------------------------------------------------#
@@ -242,19 +239,19 @@ function(EkatCreateUnitTest target_name target_srcs)
     set(invokeExec "./${target_name}")
   endif()
 
-  while (NOT CURR_RANKS GREATER ${MPI_END_RANK})
-    while (NOT CURR_THREADS GREATER ${THREAD_END})
+  foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
+    foreach (NTHREADS RANGE ${THREAD_START} ${THREAD_END} ${THREAD_INCREMENT})
       # Create the test
-      set(FULL_TEST_NAME ${target_name}_ut_np${CURR_RANKS}_omp${CURR_THREADS})
-      if (${CURR_RANKS} GREATER 1)
+      set(FULL_TEST_NAME ${target_name}_ut_np${NRANKS}_omp${NTHREADS})
+      if (${NRANKS} GREATER 1)
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${CURR_RANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExec}")
+                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExec}")
       else()
         add_test(NAME ${FULL_TEST_NAME}
                  COMMAND sh -c "${invokeExec}")
       endif()
-      math(EXPR CURR_CORES "${CURR_RANKS}*${CURR_THREADS}")
-      set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${CURR_THREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True)
+      math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
+      set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${NTHREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True)
       if (ecut_DEP AND NOT ecut_DEP STREQUAL "${FULL_TEST_NAME}")
         set_tests_properties(${FULL_TEST_NAME} PROPERTIES DEPENDS ${ecut_DEP})
       endif()
@@ -264,17 +261,13 @@ function(EkatCreateUnitTest target_name target_srcs)
       endif()
 
       set (RES_GROUPS "devices:1")
-      if (${CURR_RANKS} GREATER 1)
-        foreach (rank RANGE 2 ${CURR_RANKS})
+      if (${NRANKS} GREATER 1)
+        foreach (rank RANGE 2 ${NRANKS})
           set (RES_GROUPS "${RES_GROUPS},devices:1")
         endforeach()
       endif()
       set_property(TEST ${FULL_TEST_NAME} PROPERTY RESOURCE_GROUPS "${RES_GROUPS}")
-
-      math(EXPR CURR_THREADS "${CURR_THREADS}+${THREAD_INCREMENT}")
-    endwhile()
-    set(CURR_THREADS ${THREAD_START})
-    math(EXPR CURR_RANKS "${CURR_RANKS}+${MPI_INCREMENT}")
-  endwhile()
+    endforeach()
+  endforeach()
 
 endfunction(EkatCreateUnitTest)
