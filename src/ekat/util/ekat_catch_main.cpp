@@ -59,7 +59,7 @@ int main (int argc, char **argv) {
   // Create it outside the if, so its c_str pointer survives
   std::string new_arg;
   if (dev_id>=0) {
-    new_arg = "--kokkos-device=" + std::to_string(dev_id);
+    new_arg = "--kokkos-device-id=" + std::to_string(dev_id);
     args.push_back(const_cast<char*>(new_arg.c_str()));
   }
 
