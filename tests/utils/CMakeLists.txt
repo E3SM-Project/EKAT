@@ -11,3 +11,7 @@ EkatCreateUnitTest(util_cxx util_tests.cpp
 # Test upper_bound
 EkatCreateUnitTest(upper_bound upper_bound_test.cpp
   LIBS ekat)
+
+# Test math utils
+EkatCreateUnitTest(math_util math_util_tests.cpp
+  LIBS ekat)
