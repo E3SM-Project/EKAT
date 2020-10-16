@@ -89,12 +89,36 @@ struct TransposeDirection {
 // index. TransposeDirection::c2f makes i faster; f2c makes k faster.
 template <TransposeDirection::Enum direction, typename Scalar>
 void transpose(const Scalar* sv, Scalar* dv, Int ni, Int nk) {
-  for (Int k = 0; k < nk; ++k)
-    for (Int i = 0; i < ni; ++i)
-      if (direction == TransposeDirection::c2f)
-        dv[ni*k + i] = sv[nk*i + k];
-      else
-        dv[nk*i + k] = sv[ni*k + i];
+  for (Int k = 0; k < nk; ++k) {
+    for (Int i = 0; i < ni; ++i) {
+      const Int cidx = nk*i + k;
+      const Int fidx = ni*k + i;
+      if (direction == TransposeDirection::c2f) {
+        dv[fidx] = sv[cidx];
+      }
+      else {
+        dv[cidx] = sv[fidx];
+      }
+    }
+  }
+}
+
+template <TransposeDirection::Enum direction, typename Scalar>
+void transpose(const Scalar* sv, Scalar* dv, Int ni, Int nk, Int nj) {
+  for (Int j = 0; j < nj; ++j) {
+    for (Int k = 0; k < nk; ++k) {
+      for (Int i = 0; i < ni; ++i) {
+        const Int cidx = (nk*nj)*i + k*nj + j;
+        const Int fidx = (ni*nk)*j + k*ni + i;
+        if (direction == TransposeDirection::c2f) {
+          dv[fidx] = sv[cidx];
+        }
+        else {
+          dv[cidx] = sv[fidx];
+        }
+      }
+    }
+  }
 }
 
 } // namespace ekat
