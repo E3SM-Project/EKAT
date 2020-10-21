@@ -12,23 +12,28 @@
 
 namespace ekat {
 
+namespace impl {
+
+template<typename ScalarT, bool is_integral>
+struct MathFcnImpl;
+
 template<typename ScalarT>
-struct MathFcn {
+struct MathFcnImpl<ScalarT,true> {
   static_assert (
     std::is_integral<ScalarT>::value,
     "Error! This impl of MathFcn is meant for integral types only.\n");
 
 #ifdef __CUDA_ARCH__
-#define ekat_math_unary_fn_i(fn, cudafn)    \
-  KOKKOS_INLINE_FUNCTION                    \
-  static double fn (ScalarT x) {            \
-    return cudafn (double(x));              \
+#define ekat_math_unary_fn_i(fn, cudafn)  \
+  KOKKOS_FORCEINLINE_FUNCTION             \
+  static double fn (ScalarT x) {          \
+    return cudafn (double(x));            \
   }
 #else
-#define ekat_math_unary_fn_i(fn, cudafn) \
-  KOKKOS_INLINE_FUNCTION                 \
-  static ScalarT fn (ScalarT x) {        \
-    return std::fn (x);                  \
+#define ekat_math_unary_fn_i(fn, cudafn)  \
+  KOKKOS_FORCEINLINE_FUNCTION             \
+  static double fn (ScalarT x) {          \
+    return std::fn (x);                   \
   }
 #endif
 
@@ -44,62 +49,43 @@ struct MathFcn {
   ekat_math_unary_fn_i(erf,erf)
 };
 
-template<>
-struct MathFcn<double> {
-  using ScalarT = double;
-#ifdef __CUDA_ARCH__
-#define ekat_math_unary_fn_d(fn, cudafn)    \
-  KOKKOS_INLINE_FUNCTION                    \
-  static ScalarT fn (ScalarT x) {           \
-    return cudafn (x);                      \
-  }
-#else
-#define ekat_math_unary_fn_d(fn, cudafn) \
-  KOKKOS_INLINE_FUNCTION                 \
-  static ScalarT fn (ScalarT x) {        \
-    return std::fn (x);                  \
-  }
-#endif
-
-  ekat_math_unary_fn_d(abs,fabs)
-  ekat_math_unary_fn_d(exp,exp)
-  ekat_math_unary_fn_d(expm1,expm1)
-  ekat_math_unary_fn_d(log,log)
-  ekat_math_unary_fn_d(log10,log10)
-  ekat_math_unary_fn_d(tgamma,tgamma)
-  ekat_math_unary_fn_d(sqrt,sqrt)
-  ekat_math_unary_fn_d(cbrt,cbrt)
-  ekat_math_unary_fn_d(tanh,tanh)
-  ekat_math_unary_fn_i(erf,erf)
-};
-
-template<>
-struct MathFcn<float> {
-  using ScalarT = float;
+template<typename ScalarT>
+struct MathFcnImpl<ScalarT,false> {
+  static_assert (
+    !std::is_integral<ScalarT>::value,
+    "Error! This impl of MathFcn is meant for integral types only.\n");
 #ifdef __CUDA_ARCH__
 #define ekat_math_unary_fn_f(fn, cudafn)  \
-  KOKKOS_INLINE_FUNCTION                  \
+  KOKKOS_FORCEINLINE_FUNCTION             \
   static ScalarT fn (ScalarT x) {         \
     return cudafn (x);                    \
   }
 #else
 #define ekat_math_unary_fn_f(fn, cudafn)  \
-  KOKKOS_INLINE_FUNCTION                  \
+  KOKKOS_FORCEINLINE_FUNCTION             \
   static ScalarT fn (ScalarT x) {         \
     return std::fn (x);                   \
   }
 #endif
 
-  ekat_math_unary_fn_d(abs,fabsf)
-  ekat_math_unary_fn_d(exp,expf)
-  ekat_math_unary_fn_d(expm1,expm1f)
-  ekat_math_unary_fn_d(log,logf)
-  ekat_math_unary_fn_d(log10,log10f)
-  ekat_math_unary_fn_d(tgamma,tgammaf)
-  ekat_math_unary_fn_d(sqrt,sqrtf)
-  ekat_math_unary_fn_d(cbrt,cbrtf)
-  ekat_math_unary_fn_d(tanh,tanhf)
-  ekat_math_unary_fn_i(erf,erff)
+  ekat_math_unary_fn_f(abs,fabs)
+  ekat_math_unary_fn_f(exp,exp)
+  ekat_math_unary_fn_f(expm1,expm1)
+  ekat_math_unary_fn_f(log,log)
+  ekat_math_unary_fn_f(log10,log10)
+  ekat_math_unary_fn_f(tgamma,tgamma)
+  ekat_math_unary_fn_f(sqrt,sqrt)
+  ekat_math_unary_fn_f(cbrt,cbrt)
+  ekat_math_unary_fn_f(tanh,tanh)
+  ekat_math_unary_fn_f(erf,erf)
+};
+
+} // namespace impl
+
+template<typename ScalarT>
+struct MathFcn : public impl::MathFcnImpl<ScalarT,std::is_integral<ScalarT>::value> {
+  static_assert(std::is_arithmetic<ScalarT>::value,
+                "Error! Scalar type for MathFcn is not a numeric type.\n");
 };
 
 namespace impl {
@@ -107,13 +93,13 @@ namespace impl {
 #ifdef KOKKOS_ENABLE_CUDA
 // Replacements for namespace std functions that don't run on the GPU.
 template <typename T>
-KOKKOS_INLINE_FUNCTION
+KOKKOS_FORCEINLINE_FUNCTION
 const T& min (const T& a, const T& b) {
   return a < b ? a : b;
 }
 
 template <typename T>
-KOKKOS_INLINE_FUNCTION
+KOKKOS_FORCEINLINE_FUNCTION
 const T& max (const T& a, const T& b) {
   return a > b ? a : b;
 }
