@@ -308,6 +308,7 @@ struct TestPack {
     test_pack_gen_unary_stdfn(log10);
     test_pack_gen_unary_stdfn(tgamma);
     test_pack_gen_unary_stdfn(sqrt);
+    test_pack_gen_unary_stdfn(erf);
 
     test_pack_gen_unary_fn(square, square);
     test_pack_gen_unary_fn(cube, cube);
