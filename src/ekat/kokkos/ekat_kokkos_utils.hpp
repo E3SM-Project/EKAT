@@ -168,7 +168,7 @@ void view_reduction (const TeamMember& team,
 
 template<typename DataTypeOut, typename DataTypeIn, typename... Props>
 typename std::enable_if<GetRanks<DataTypeOut>::rank_dynamic==0,
-                        typename ekat::Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
+                        Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
 reshape (Kokkos::View<DataTypeIn,Props...> view_in) {
   typename ekat::Unmanaged<Kokkos::View<DataTypeOut,Props...>> view_out(view_in.data());
   assert (view_in.size()==view_out.size());
@@ -177,7 +177,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in) {
 
 template<typename DataTypeOut, typename DataTypeIn, typename... Props>
 typename std::enable_if<GetRanks<DataTypeOut>::rank_dynamic==1,
-                        typename ekat::Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
+                        Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
 reshape (Kokkos::View<DataTypeIn,Props...> view_in,
          const int dim0) {
   typename ekat::Unmanaged<Kokkos::View<DataTypeOut,Props...>> view_out(view_in.data(),dim0);
@@ -187,7 +187,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
 
 template<typename DataTypeOut, typename DataTypeIn, typename... Props>
 typename std::enable_if<GetRanks<DataTypeOut>::rank_dynamic==2,
-                        typename ekat::Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
+                        Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
 reshape (Kokkos::View<DataTypeIn,Props...> view_in,
          const int dim0, const int dim1) {
   typename ekat::Unmanaged<Kokkos::View<DataTypeOut,Props...>> view_out(view_in.data(),dim0,dim1);
@@ -519,7 +519,7 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
 
 // Get a 1d subview of the i-th dimension of a 2d view
 template <typename T, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-ekat::Unmanaged<Kokkos::View<T*, Parms...> >
+Unmanaged<Kokkos::View<T*, Parms...> >
 subview (const Kokkos::View<T**, Parms...>& v_in, const int i) {
   EKAT_KERNEL_ASSERT(v_in.data() != nullptr);
   EKAT_KERNEL_ASSERT(i < v_in.extent_int(0));
