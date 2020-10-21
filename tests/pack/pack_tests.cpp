@@ -93,7 +93,7 @@ struct TestPack {
 
   // Use macros so that catch2 reports useful line numbers.
 #define compare_packs(a, b) do {                  \
-    REQUIRE(max(abs(a - b)) <= tol*max(abs(a)));  \
+    REQUIRE(max(abs(a - b)) <= TestPack<Scalar,PACKN>::tol*max(abs(a)));  \
   } while (0)
 
 #define compare_masks(a, b) do {                    \
@@ -251,19 +251,6 @@ struct TestPack {
     compare_packs(ac, a);                           \
   } while (0)
 
-#define test_pack_gen_unary_fn(op, impl) do {     \
-  Pack a, b, ac;                                  \
-  scalar c;                                       \
-  setup(a, b, c, true);                           \
-  a = op(abs(b));                                 \
-  vector_novec for (int i = 0; i < Pack::n; ++i)  \
-    ac[i] = impl(std::abs(b[i]));                 \
-  compare_packs(ac, a);                           \
-} while (0)
-
-#define test_pack_gen_unary_stdfn(op)           \
-  test_pack_gen_unary_fn(op, std::op)
-
 #define test_mask_gen_bin_op_all(op) do {           \
     Pack a, b;                                      \
     scalar c;                                       \
@@ -301,18 +288,6 @@ struct TestPack {
 
     test_pack_gen_unary_op(-);
 
-    test_pack_gen_unary_stdfn(abs);
-    test_pack_gen_unary_stdfn(exp);
-    test_pack_gen_unary_stdfn(expm1);
-    test_pack_gen_unary_stdfn(log);
-    test_pack_gen_unary_stdfn(log10);
-    test_pack_gen_unary_stdfn(tgamma);
-    test_pack_gen_unary_stdfn(sqrt);
-    test_pack_gen_unary_stdfn(erf);
-
-    test_pack_gen_unary_fn(square, square);
-    test_pack_gen_unary_fn(cube, cube);
-
     test_mask_gen_bin_op_all(==);
     test_mask_gen_bin_op_all(!=);
     test_mask_gen_bin_op_all(>=);
@@ -331,6 +306,42 @@ struct TestPack {
 };
 
 template <typename Scalar, int PACKN>
+struct TestPackMathFcn : public TestPack<Scalar,PACKN> {
+  static_assert (std::is_floating_point<Scalar>::value,
+                 "Error! Overload of math fcns only provided for floating point scalars.\n");
+  using base = TestPack<Scalar,PACKN>;
+  using Pack = typename base::Pack;
+  using scalar = typename base::scalar;
+
+#define test_pack_gen_unary_fn(op, impl) do {     \
+  Pack a, b, ac;                                  \
+  scalar c;                                       \
+  base::setup(a, b, c, true);                     \
+  a = op(abs(b));                                 \
+  vector_novec for (int i = 0; i < Pack::n; ++i)  \
+    ac[i] = impl(std::abs(b[i]));                 \
+  compare_packs(ac, a);                           \
+} while (0)
+
+#define test_pack_gen_unary_stdfn(op)           \
+  test_pack_gen_unary_fn(op, std::op)
+
+  static void run () {
+    test_pack_gen_unary_stdfn(abs);
+    test_pack_gen_unary_stdfn(exp);
+    test_pack_gen_unary_stdfn(expm1);
+    test_pack_gen_unary_stdfn(log);
+    test_pack_gen_unary_stdfn(log10);
+    test_pack_gen_unary_stdfn(tgamma);
+    test_pack_gen_unary_stdfn(sqrt);
+    test_pack_gen_unary_stdfn(erf);
+
+    test_pack_gen_unary_fn(square, square);
+    test_pack_gen_unary_fn(cube, cube);
+  }
+};
+
+template <typename Scalar, int PACKN>
 const double TestPack<Scalar,PACKN>::tol =
   2*std::numeric_limits<Scalar>::epsilon();
 
@@ -339,6 +350,8 @@ TEST_CASE("Pack", "ekat::pack") {
   TestPack<long,EKAT_TEST_PACK_SIZE>::run();
   TestPack<float,EKAT_TEST_PACK_SIZE>::run();
   TestPack<double,EKAT_TEST_PACK_SIZE>::run();
+  TestPackMathFcn<float,EKAT_TEST_PACK_SIZE>::run();
+  TestPackMathFcn<double,EKAT_TEST_PACK_SIZE>::run();
 
   if (EKAT_TEST_PACK_SIZE != 1) {
 #ifndef __INTEL_COMPILER
@@ -349,6 +362,8 @@ TEST_CASE("Pack", "ekat::pack") {
     TestPack<long,1>::run();
     TestPack<float,1>::run();
     TestPack<double,1>::run();
+    TestPackMathFcn<float,1>::run();
+    TestPackMathFcn<double,1>::run();
 #endif
   }
 }

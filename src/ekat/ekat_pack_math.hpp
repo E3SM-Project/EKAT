@@ -5,6 +5,7 @@
 
 namespace ekat {
 
+#ifdef __CUDA_ARCH__
 #define ekat_pack_gen_unary_stdfn(fn)               \
   template <typename ScalarT, int N>                \
   KOKKOS_INLINE_FUNCTION                            \
@@ -12,10 +13,23 @@ namespace ekat {
     Pack<ScalarT,N> s;                              \
     vector_simd                                     \
     for (int i = 0; i < N; ++i) {                   \
-      s[i] = MathFcn<ScalarT>::fn(p[i]);            \
+      s[i] = ::fn(p[i]);                            \
     }                                               \
     return s;                                       \
   }
+#else
+#define ekat_pack_gen_unary_stdfn(fn)               \
+  template <typename ScalarT, int N>                \
+  KOKKOS_INLINE_FUNCTION                            \
+  Pack<ScalarT,N> fn (const Pack<ScalarT,N>& p) {   \
+    Pack<ScalarT,N> s;                              \
+    vector_simd                                     \
+    for (int i = 0; i < N; ++i) {                   \
+      s[i] = std::fn(p[i]);                         \
+    }                                               \
+    return s;                                       \
+  }
+#endif
 
 ekat_pack_gen_unary_stdfn(abs)
 ekat_pack_gen_unary_stdfn(exp)
@@ -144,5 +158,9 @@ OnlyPack<PackType> cube (const PackType& a) {
 }
 
 } // namespace ekat
+
+// Cleanup the macros we used simply to generate code
+#undef ekat_pack_gen_unary_fn
+#undef ekat_pack_gen_unary_stdfn
 
 #endif // EKAT_PACK_MATH_HPP

@@ -467,6 +467,7 @@ operator << (std::ostream& os, const PackType& p) {
 
 #include "ekat_pack_math.hpp"
 
+// Cleanup the macros we used simply to generate code
 #undef ekat_pack_gen_assign_op_p
 #undef ekat_pack_gen_assign_op_s
 #undef ekat_pack_gen_assign_op_all
@@ -475,8 +476,6 @@ operator << (std::ostream& os, const PackType& p) {
 #undef ekat_pack_gen_bin_op_sp
 #undef ekat_pack_gen_bin_op_all
 #undef ekat_pack_gen_unary_op
-#undef ekat_pack_gen_unary_fn
-#undef ekat_pack_gen_unary_stdfn
 #undef ekat_pack_gen_bin_fn_pp
 #undef ekat_pack_gen_bin_fn_ps
 #undef ekat_pack_gen_bin_fn_sp
@@ -487,6 +486,5 @@ operator << (std::ostream& os, const PackType& p) {
 #undef ekat_mask_gen_bin_op_all
 #undef ekat_mask_gen_bin_op_mm
 #undef ekat_mask_gen_bin_op_mb
-
 
 #endif // INCLUDE_EKAT_PACK
