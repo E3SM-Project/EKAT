@@ -17,13 +17,13 @@ namespace impl {
 #ifdef KOKKOS_ENABLE_CUDA
 // Replacements for namespace std functions that don't run on the GPU.
 template <typename T>
-KOKKOS_INLINE_FUNCTION
+KOKKOS_FORCEINLINE_FUNCTION
 const T& min (const T& a, const T& b) {
   return a < b ? a : b;
 }
 
 template <typename T>
-KOKKOS_INLINE_FUNCTION
+KOKKOS_FORCEINLINE_FUNCTION
 const T& max (const T& a, const T& b) {
   return a > b ? a : b;
 }
