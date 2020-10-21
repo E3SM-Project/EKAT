@@ -301,6 +301,7 @@ ekat_pack_gen_unary_stdfn(tgamma)
 ekat_pack_gen_unary_stdfn(sqrt)
 ekat_pack_gen_unary_stdfn(cbrt)
 ekat_pack_gen_unary_stdfn(tanh)
+ekat_pack_gen_unary_stdfn(erf)
 
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> min (const PackType& p) {
