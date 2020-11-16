@@ -312,6 +312,52 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
   }
 }
 
+// 3d - set do_transpose to true if host data is coming from fortran
+template <typename SizeT, size_t N, typename ViewT>
+void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
+                    const Kokkos::Array<SizeT, N>& dim1_sizes,
+                    const Kokkos::Array<SizeT, N>& dim2_sizes,
+                    const Kokkos::Array<SizeT, N>& dim3_sizes,
+                    Kokkos::Array<ViewT, N>& views,
+                    bool do_transpose=false)
+{
+  using PackT = typename ViewT::value_type;
+  using ScalarT = typename PackT::scalar;
+
+  std::vector<ScalarT> tdata;
+  for (size_t n = 0; n < N; ++n) {
+    const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
+    const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
+    const size_t dim3_size = static_cast<size_t>(dim3_sizes[n]);
+    const size_t npack = (dim3_size + PackT::n - 1) / PackT::n;
+    views[n] = ViewT("", dim1_size, dim2_size, npack);
+    auto host_view = Kokkos::create_mirror_view(views[n]);
+
+    ScalarT* the_data = nullptr;
+    if (do_transpose) {
+      tdata.reserve(dim1_size * dim2_size * dim3_size);
+      the_data = tdata.data();
+      transpose<TransposeDirection::f2c>(data[n], the_data, dim1_size, dim2_size, dim3_size);
+    }
+    else {
+      the_data = const_cast<ScalarT*>(data[n]);
+    }
+
+    for (size_t i = 0; i < dim1_size; ++i) {
+      for (size_t k = 0; k < dim2_size; ++k) {
+        for (size_t p = 0; p < npack; ++p) {
+          const size_t num_scalars_this_col = p*PackT::n;
+          const size_t scalar_offset = i*(dim2_size*dim3_size) + k*dim3_size + num_scalars_this_col;
+          for (size_t s = 0; s < PackT::n && num_scalars_this_col+s < dim3_size; ++s) {
+            host_view(i, k, p)[s] = the_data[scalar_offset + s];
+          }
+        }
+      }
+    }
+    Kokkos::deep_copy(views[n], host_view);
+  }
+}
+
 // Sugar for when size is uniform (1d)
 template <typename SizeT, size_t N, typename ViewT>
 void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
@@ -338,6 +384,22 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
     dim2_sizes[i] = dim2_size;
   }
   host_to_device(data, dim1_sizes, dim2_sizes, views, do_transpose);
+}
+
+// Sugar for when size is uniform (3d)
+template <typename SizeT, size_t N, typename ViewT>
+void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
+                    const SizeT dim1_size, const SizeT dim2_size, const SizeT dim3_size,
+                    Kokkos::Array<ViewT, N>& views,
+                    bool do_transpose=false)
+{
+  Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes, dim3_sizes;
+  for (size_t i = 0; i < N; ++i) {
+    dim1_sizes[i] = dim1_size;
+    dim2_sizes[i] = dim2_size;
+    dim3_sizes[i] = dim3_size;
+  }
+  host_to_device(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 
 //
@@ -409,6 +471,54 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
   }
 }
 
+// 3d - set do_transpose to true if host data is going to fortran
+template <typename SizeT, size_t N, typename ViewT>
+void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
+                    const Kokkos::Array<SizeT, N>& dim1_sizes,
+                    const Kokkos::Array<SizeT, N>& dim2_sizes,
+                    const Kokkos::Array<SizeT, N>& dim3_sizes,
+                    Kokkos::Array<ViewT, N>& views,
+                    bool do_transpose=false)
+{
+  using PackT = typename ViewT::value_type;
+  using ScalarT = typename PackT::scalar;
+
+  std::vector<ScalarT> tdata;
+  for (size_t n = 0; n < N; ++n) {
+    const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
+    const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
+    const size_t dim3_size = static_cast<size_t>(dim3_sizes[n]);
+    const size_t npack = views[n].extent(2);
+    const auto host_view = Kokkos::create_mirror_view(views[n]);
+    Kokkos::deep_copy(host_view, views[n]);
+
+    ScalarT* the_data = nullptr;
+    if (do_transpose) {
+      tdata.reserve(dim1_size * dim2_size * dim3_size);
+      the_data = tdata.data();
+    }
+    else {
+      the_data = data[n];
+    }
+
+    for (size_t i = 0; i < dim1_size; ++i) {
+      for (size_t k = 0; k < dim2_size; ++k) {
+        for (size_t p = 0; p < npack; ++p) {
+          const size_t num_scalars_this_col = p*PackT::n;
+          const size_t scalar_offset = i*(dim2_size*dim3_size) + k*dim3_size + num_scalars_this_col;
+          for (size_t s = 0; s < PackT::n && num_scalars_this_col+s < dim3_size; ++s) {
+            the_data[scalar_offset + s] = host_view(i, k, p)[s];
+          }
+        }
+      }
+    }
+
+    if (do_transpose) {
+      transpose<TransposeDirection::c2f>(the_data, data[n], dim1_size, dim2_size, dim3_size);
+    }
+  }
+}
+
 // Sugar for when size is uniform (1d)
 template <typename SizeT, size_t N, typename ViewT>
 void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
@@ -435,6 +545,22 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
     dim2_sizes[i] = dim2_size;
   }
   device_to_host(data, dim1_sizes, dim2_sizes, views, do_transpose);
+}
+
+// Sugar for when size is uniform (3d)
+template <typename SizeT, size_t N, typename ViewT>
+void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
+                    const SizeT dim1_size, const SizeT dim2_size, const SizeT dim3_size,
+                    Kokkos::Array<ViewT, N>& views,
+                    bool do_transpose=false)
+{
+  Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes, dim3_sizes;
+  for (size_t i = 0; i < N; ++i) {
+    dim1_sizes[i] = dim1_size;
+    dim2_sizes[i] = dim2_size;
+    dim3_sizes[i] = dim3_size;
+  }
+  device_to_host(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 
 } // namespace ekat
