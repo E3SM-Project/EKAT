@@ -1,11 +1,16 @@
 include(CMakeParseArguments) # Needed for backwards compatibility
 include(EkatUtils) # To check macro args
 
+# This function creates an executable, and a bunch of tests,
+# all running said executable, for a variety of MPI/Threads
+# combinations.
+#
 # This function takes the following mandatory arguments:
 #    - target_name: the name of the executable
 #    - target_srcs: a list of src files for the executable
 #      Note: no need to include ekat_catch_main; this macro will add it
-# and the following optional arguments (to be passed as ARG_NAME "ARG_VAL")
+#
+# The following are optional arguments (to be passed as ARG_NAME "ARG_VAL")
 #    - MPI_RANKS: the number of mpi ranks for the test.
 #      Note: if 2 values, it's a range, if 3, it's a range plus increment. default is np=1
 #    - THREADS: the number of threads for the test
@@ -20,6 +25,7 @@ include(EkatUtils) # To check macro args
 #    - LIBS: a list of libraries needed by the executable
 #    - LIBS_DIRS: a list of directories to add to the linker search path
 #    - LINKER_FLAGS: a list of additional flags for the linker
+#    - DEPS: a set of tests that this set of tests depends on
 #    - LABELS: a set of labels to attach to the test
 
 # Note: we hace to set this variable here, so CMAKE_CURRENT_LIST_DIR gets the
@@ -34,7 +40,7 @@ function(EkatCreateUnitTest target_name target_srcs)
   #---------------------------#
 
   set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
-  set(oneValueArgs DEP MPI_EXEC_NAME MPI_NP_FLAG)
+  set(oneValueArgs MPI_EXEC_NAME MPI_NP_FLAG)
   set(multiValueArgs
     MPI_RANKS THREADS
     MPI_EXTRA_ARGS EXE_ARGS 
@@ -44,7 +50,7 @@ function(EkatCreateUnitTest target_name target_srcs)
     COMPILER_FLAGS
     COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
     LIBS LIBS_DIRS LINKER_FLAGS
-    LABELS)
+    DEPS LABELS)
 
   # ecut = Ekat Create Unit Test
   cmake_parse_arguments(ecut "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -52,6 +58,7 @@ function(EkatCreateUnitTest target_name target_srcs)
 
   # Strip leading/trailing whitespaces from some vars, to avoid either cmake errors
   # (e.g., in target_link_libraries) or compiler errors (e.g. if COMPILER_DEFS=" ")
+  string(STRIP "${ecut_DEPS}" ecut_DEPS)
   string(STRIP "${ecut_LIBS}" ecut_LIBS)
   string(STRIP "${ecut_COMPILER_DEFS}" ecut_COMPILER_DEFS)
   string(STRIP "${ecut_COMPILER_C_DEFS}" ecut_COMPILER_C_DEFS)
@@ -141,10 +148,10 @@ function(EkatCreateUnitTest target_name target_srcs)
   list(LENGTH ecut_THREADS   NUM_THREAD_ARGS)
 
   if (NUM_MPI_RANK_ARGS GREATER 3)
-    message(FATAL_ERROR "Too many mpi arguments for ${target_name}")
+    message(FATAL_ERROR "Too many mpi arguments for ${target_name}: ${ecut_MPI_RANKS}")
   endif()
   if (NUM_THREAD_ARGS GREATER 3)
-    message(FATAL_ERROR "Too many thread arguments for ${target_name}")
+    message(FATAL_ERROR "Too many thread arguments for ${target_name}: ${ecut_THREADS} ")
   endif()
 
   set(MPI_START_RANK 1)
@@ -250,21 +257,26 @@ function(EkatCreateUnitTest target_name target_srcs)
                  COMMAND sh -c "${invokeExec}")
       endif()
       math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
-      set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${NTHREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True)
-      if (ecut_DEP AND NOT ecut_DEP STREQUAL "${FULL_TEST_NAME}")
-        set_tests_properties(${FULL_TEST_NAME} PROPERTIES DEPENDS ${ecut_DEP})
+      set_tests_properties(${FULL_TEST_NAME} PROPERTIES
+          ENVIRONMENT "OMP_NUM_THREADS=${NTHREADS};OMP_PROC_BIND=spread;OMP_PLACES=threads"
+          PROCESSORS ${CURR_CORES}
+          PROCESSOR_AFFINITY True)
+ 
+      if (ecut_DEPS)
+        set_tests_properties(${FULL_TEST_NAME} PROPERTIES DEPENDS "${ecut_DEPS}")
       endif()
 
       if (ecut_LABELS)
         set_tests_properties(${FULL_TEST_NAME} PROPERTIES LABELS "${ecut_LABELS}")
       endif()
 
+      # Note: with cmake 3.15, you could use string(REPEAT ...) instead of foreach
       set (RES_GROUPS "devices:1")
-      if (${NRANKS} GREATER 1)
-        foreach (rank RANGE 2 ${NRANKS})
+      if (${CURR_CORES} GREATER 1)
+        foreach (core RANGE 2 ${CURR_CORES} 1)
           set (RES_GROUPS "${RES_GROUPS},devices:1")
         endforeach()
-      endif()
+      endif ()
       set_property(TEST ${FULL_TEST_NAME} PROPERTY RESOURCE_GROUPS "${RES_GROUPS}")
     endforeach()
   endforeach()
