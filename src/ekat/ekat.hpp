@@ -12,7 +12,7 @@ namespace ekat {
 
 using Int = int;
 
-#if EKAT_DEFAULT_BFB
+#ifdef EKAT_DEFAULT_BFB
 static constexpr bool ekatBFB = true;
 #else
 static constexpr bool ekatBFB = false;
