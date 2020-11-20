@@ -17,6 +17,6 @@
 #cmakedefine EKAT_HAVE_FEENABLEEXCEPT
 
 // Decide whether ekat defaults to BFB behavior when possible/appropriate
-#cmakedefine01 EKAT_DEFAULT_BFB
+#cmakedefine EKAT_DEFAULT_BFB
 
 #endif // EKAT_CONFIG_H
