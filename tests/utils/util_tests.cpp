@@ -113,17 +113,18 @@ TEST_CASE("string","string") {
   REQUIRE(items[1]=="item2");
   REQUIRE(items[2]=="item3");
 
-  // Jaro and Jaro-Winkler similarity tests
+  {
+    // Jaro and Jaro-Winkler similarity tests
 
-  // Benchmark list (including expected similarity values) from Winkler paper
-  //  https://www.census.gov/srd/papers/pdf/rrs2006-02.pdf
-  // Note: Winkler clamps all values below 0.7 to 0. I don't like that,
-  //       so I had to remove some entries.
+    // Benchmark list (including expected similarity values) from Winkler paper
+    //  https://www.census.gov/srd/papers/pdf/rrs2006-02.pdf
+    // Note: Winkler clamps all values below 0.7 to 0. I don't like that,
+    //       so I had to remove some entries.
 
-  //                          LHS         RHS       JARO   JARO-WINKLER
-  using entry_type = std::tuple<std::string,std::string,double, double>;
+    //                          LHS         RHS       JARO   JARO-WINKLER
+    using entry_type = std::tuple<std::string,std::string,double, double>;
 
-  std::vector<entry_type> benchmark =
+    std::vector<entry_type> benchmark =
     {
       entry_type{ "shackleford", "shackelford", 0.970, 0.982 },
       entry_type{ "dunningham" , "cunnigham"  , 0.896, 0.896 },
@@ -141,20 +142,41 @@ TEST_CASE("string","string") {
       entry_type{ "jon"        , "john"       , 0.917, 0.933 },
     };
 
-  const double tol = 0.005;
-  for (const auto& entry : benchmark) {
-    const auto& s1 = std::get<0>(entry);
-    const auto& s2 = std::get<1>(entry);
-    double sj  = jaro_similarity(s1,s2);
-    double sjw = jaro_winkler_similarity(s1,s2);
+    const double tol = 0.005;
+    for (const auto& entry : benchmark) {
+      const auto& s1 = std::get<0>(entry);
+      const auto& s2 = std::get<1>(entry);
+      double sj  = jaro_similarity(s1,s2);
+      double sjw = jaro_winkler_similarity(s1,s2);
 
-    const double sj_ex = std::get<2>(entry);
-    const double sjw_ex = std::get<3>(entry);
+      const double sj_ex = std::get<2>(entry);
+      const double sjw_ex = std::get<3>(entry);
 
-    REQUIRE (std::fabs(sj-sj_ex)<tol);
-    REQUIRE (std::fabs(sjw-sjw_ex)<tol);
+      REQUIRE (std::fabs(sj-sj_ex)<tol);
+      REQUIRE (std::fabs(sjw-sjw_ex)<tol);
+    }
   }
 
+  // Jaccard (token-based) similarity test.
+  {
+    using entry_type = std::tuple<std::string,std::string,double>;
+
+    std::vector<entry_type> benchmark =
+    {
+      entry_type{ "hello world", "world_hello", 1.000},
+      entry_type{ "hello_new_world", "hello world", 0.6666667},
+    };
+
+    const double tol = 0.001;
+    for (const auto& entry : benchmark) {
+      // We tokenize strings using spaces and underscores.
+      const auto& s1 = std::get<0>(entry);
+      const auto& s2 = std::get<1>(entry);
+      double sj = jaccard_similarity(s1,s2,{' ', '_'});
+      const double sj_ex = std::get<2>(entry);
+      REQUIRE (std::abs(sj-sj_ex)<tol);
+    }
+  }
 }
 
 } // empty namespace

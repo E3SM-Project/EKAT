@@ -2,6 +2,7 @@
 #include "ekat/ekat_assert.hpp"
 
 #include <algorithm>
+#include <set>
 #include <sstream>
 
 namespace ekat {
@@ -121,6 +122,57 @@ double jaro_winkler_similarity (const std::string& s1, const std::string& s2,
     sim_j += common_prefix_len*p*(1-sim_j);
   }
   return sim_j;
+}
+
+namespace {
+
+// This is a helper function for token-based similarity indexes. It gathers
+// tokens from the given string for the given list of delimiters.
+std::vector<std::string> gather_tokens(const std::string& s,
+                                       const std::vector<char>& delimiters) {
+  std::string delim_str;
+  for (char delim: delimiters) {
+    delim_str.append(1, delim);
+  }
+  std::size_t prev = 0, pos;
+  std::stringstream sstr(s);
+  std::vector<std::string> all_tokens;
+  while ((pos = s.find_first_of(delim_str, prev)) != std::string::npos)
+  {
+    if (pos > prev) {
+      all_tokens.push_back(s.substr(prev, pos-prev));
+    }
+    prev = pos+1;
+  }
+  if (prev < s.length()) {
+    all_tokens.push_back(s.substr(prev, std::string::npos));
+  }
+  return all_tokens;
+}
+
+} // anonymous namespace
+
+double jaccard_similarity (const std::string& s1, const std::string& s2,
+                           const std::vector<char>& delimiters) {
+  // Break the first and second strings up into tokens using all given
+  // delimiters.
+  auto s1_tokens = gather_tokens(s1, delimiters);
+  auto s1_set = std::set<std::string>(s1_tokens.begin(), s1_tokens.end());
+  auto s2_tokens = gather_tokens(s2, delimiters);
+  auto s2_set = std::set<std::string>(s2_tokens.begin(), s2_tokens.end());
+
+  // Compute the intersection of the two sets of tokens.
+  std::vector<std::string> s_intersection(std::max(s1_set.size(), s2_set.size()));
+  auto iter = std::set_intersection(s1_set.begin(), s1_set.end(),
+                                    s2_set.begin(), s2_set.end(),
+                                    s_intersection.begin());
+  s_intersection.resize(iter - s_intersection.begin());
+
+  // The Jaccard index is the ratio of the size of the intersection to that
+  // of the union.
+  double int_size = static_cast<double>(s_intersection.size());
+  double un_size = static_cast<double>(s1_tokens.size() + s2_tokens.size() - int_size);
+  return int_size / un_size;
 }
 
 // ===================== Case Insensitive String ================== //
