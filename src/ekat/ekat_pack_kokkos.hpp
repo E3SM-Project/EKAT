@@ -247,6 +247,14 @@ repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
 // Take an array of Host scalar pointers and turn them into device pack views
 //
 
+template <typename T>
+struct HTDVectorT
+{ using type = T; };
+
+template<>
+struct HTDVectorT<bool>
+{ using type = char; };
+
 // 1d
 template <typename SizeT, size_t N, typename ViewT>
 void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
@@ -280,8 +288,9 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
+  using VectorT = typename HTDVectorT<ScalarT>::type;
 
-  std::vector<ScalarT> tdata;
+  std::vector<VectorT> tdata;
   for (size_t n = 0; n < N; ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
@@ -292,7 +301,7 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
     ScalarT* the_data = nullptr;
     if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size);
-      the_data = tdata.data();
+      the_data = reinterpret_cast<ScalarT*>(tdata.data());
       transpose<TransposeDirection::f2c>(data[n], the_data, dim1_size, dim2_size);
     }
     else {
@@ -323,8 +332,9 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
+  using VectorT = typename HTDVectorT<ScalarT>::type;
 
-  std::vector<ScalarT> tdata;
+  std::vector<VectorT> tdata;
   for (size_t n = 0; n < N; ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
@@ -336,7 +346,7 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
     ScalarT* the_data = nullptr;
     if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size * dim3_size);
-      the_data = tdata.data();
+      the_data = reinterpret_cast<ScalarT*>(tdata.data());
       transpose<TransposeDirection::f2c>(data[n], the_data, dim1_size, dim2_size, dim3_size);
     }
     else {
@@ -437,8 +447,9 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
+  using VectorT = typename HTDVectorT<ScalarT>::type;
 
-  std::vector<ScalarT> tdata;
+  std::vector<VectorT> tdata;
   for (size_t n = 0; n < N; ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
@@ -449,7 +460,7 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
     ScalarT* the_data = nullptr;
     if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size);
-      the_data = tdata.data();
+      the_data = reinterpret_cast<ScalarT*>(tdata.data());
     }
     else {
       the_data = data[n];
@@ -482,8 +493,9 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
+  using VectorT = typename HTDVectorT<ScalarT>::type;
 
-  std::vector<ScalarT> tdata;
+  std::vector<VectorT> tdata;
   for (size_t n = 0; n < N; ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
@@ -495,7 +507,7 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
     ScalarT* the_data = nullptr;
     if (do_transpose) {
       tdata.reserve(dim1_size * dim2_size * dim3_size);
-      the_data = tdata.data();
+      the_data = reinterpret_cast<ScalarT*>(tdata.data());
     }
     else {
       the_data = data[n];
