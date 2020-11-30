@@ -255,7 +255,14 @@ struct HTDVectorT
 template<>
 struct HTDVectorT<bool>
 {
-  static_assert(sizeof(bool) == sizeof(char));
+  static_assert(
+    sizeof(bool) == sizeof(char),
+    "host_to_device/device_to_host use vectors as flexible memory buffers "
+    "and they make use of vector API calls that are not available in the "
+    "vector<bool> specialization, so if a user is sending bool data, we must "
+    "use vector<char> instead and reinterpret the data as bool*. This is only "
+    "valid if chars and bools are the same size");
+
   using type = char;
 };
 
