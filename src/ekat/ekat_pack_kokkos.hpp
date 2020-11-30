@@ -8,6 +8,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <vector>
+#include <type_traits>
 
 namespace ekat {
 
@@ -253,7 +254,10 @@ struct HTDVectorT
 
 template<>
 struct HTDVectorT<bool>
-{ using type = char; };
+{
+  static_assert(sizeof(bool) == sizeof(char));
+  using type = char;
+};
 
 // 1d
 template <typename SizeT, size_t N, typename ViewT>

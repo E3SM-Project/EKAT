@@ -283,9 +283,9 @@ struct VectorT
 {
   using type = T;
 
-  static T get_value(int arg) { return arg; }
+  static T get_value(int arg) { return static_cast<T>(arg); }
 
-  static void modify_value(T& value, int arg) { value += arg; }
+  static void modify_value(T& value, int arg) { value += static_cast<T>(arg); }
 };
 
 template<>
@@ -297,7 +297,7 @@ struct VectorT<bool>
 
   static void modify_value(bool& value, int arg) {
     bool arg_value = get_value(arg);
-    value = (value && arg_value) || (!value && !arg_value);
+    value = (value == arg_value);
   }
 };
 
