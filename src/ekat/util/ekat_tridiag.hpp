@@ -8,6 +8,7 @@
 #include <cassert>
 
 namespace ekat {
+namespace tridiag {
 
 /* Team-level solvers for diagonally dominant, scalar tridiagonal systems.
 
@@ -435,7 +436,7 @@ void cr (const TeamMember& team,
   const int nrhs = X.extent_int(1);
   const int tid = impl::get_thread_id_within_team(team);
   const int nthr = impl::get_team_nthr(team);
-  const int team_size = impl::min(nrhs, nthr);
+  const int team_size = ekat::impl::min(nrhs, nthr);
   const int nteam = nthr / team_size;
   const int team_id = tid / team_size;
   const int team_tid = tid % team_size;
@@ -525,7 +526,7 @@ void cr (const TeamMember& team,
   assert(X. extent_int(0) == nrow);
   const int tid = impl::get_thread_id_within_team(team);
   const int nthr = impl::get_team_nthr(team);
-  const int team_size = impl::min(nrhs, nthr);
+  const int team_size = ekat::impl::min(nrhs, nthr);
   const int nteam = nthr / team_size;
   const int team_id = tid / team_size;
   const int team_tid = tid % team_size;
@@ -641,6 +642,7 @@ void bfb (const TeamMember& team,
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nrhs), f);
 }
 
+} // namespace tridiag
 } // namespace ekat
 
 #endif // EKAT_TRIDIAG_HPP
