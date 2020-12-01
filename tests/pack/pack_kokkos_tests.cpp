@@ -278,18 +278,45 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
   REQUIRE(nerr == 0);
 }
 
-TEST_CASE("host_device_packs_1d", "ekat::pack")
+template <typename T>
+struct VectorT
 {
+  using type = T;
+
+  static T get_value(int arg) { return static_cast<T>(arg); }
+
+  static void modify_value(T& value, int arg) { value += static_cast<T>(arg); }
+};
+
+template<>
+struct VectorT<bool>
+{
+  using type = char;
+
+  static bool get_value(int arg) { return arg%2 == 0; }
+
+  static void modify_value(bool& value, int arg) {
+    bool arg_value = get_value(arg);
+    value = (value == arg_value);
+  }
+};
+
+template <typename T>
+void host_device_packs_1d()
+{
+  using VTS = VectorT<T>;
+  using VT = typename VTS::type;
+
   static constexpr int num_pksizes_to_test = 4;
   static constexpr int num_views_per_pksize = 3;
   static constexpr int fixed_view_size = 67;
 
   using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  using Pack1T = ekat::Pack<int, 1>;
-  using Pack2T = ekat::Pack<int, 2>;
-  using Pack4T = ekat::Pack<int, 4>;
-  using Pack8T = ekat::Pack<int, 8>; // we will use this to test fixed-sized view sugar
+  using Pack1T = ekat::Pack<T, 1>;
+  using Pack2T = ekat::Pack<T, 2>;
+  using Pack4T = ekat::Pack<T, 4>;
+  using Pack8T = ekat::Pack<T, 8>; // we will use this to test fixed-sized view sugar
 
   using view_p1_t = typename KT::template view_1d<Pack1T>;
   using view_p2_t = typename KT::template view_1d<Pack2T>;
@@ -297,7 +324,7 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
   using view_p8_t = typename KT::template view_1d<Pack8T>;
 
   Kokkos::Array<size_t, num_views_per_pksize> sizes = {13, 37, 59}; // num scalars per view
-  std::vector<std::vector<int> > raw_data(num_pksizes_to_test, std::vector<int>());
+  std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
   // of data spread across 3 (num_views_per_pksize) views
@@ -318,12 +345,12 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
   Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
   Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
 
-  Kokkos::Array<Kokkos::Array<int*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const int*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
+  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
-        ptr_data[i][j] = raw_data[i].data();
+        ptr_data[i][j] = reinterpret_cast<T*>(raw_data[i].data());
       }
       else {
         const int last_size = i == num_pksizes_to_test-1 ? fixed_view_size : sizes[j-1];
@@ -338,7 +365,7 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
     for (int j = 0; j < num_views_per_pksize; ++j) {
       const int klim = (i == num_pksizes_to_test - 1 ? fixed_view_size : sizes[j]);
       for (int k = 0; k < klim; ++k) {
-        ptr_data[i][j][k] = k*(i+j+1);
+        ptr_data[i][j][k] = VTS::get_value(k*(i+j+1));
       }
     }
   }
@@ -358,20 +385,20 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
           const int pk_idx = k % pk_sizes[i];
 
           if (i == 0) {
-            EKAT_KERNEL_REQUIRE(p1_d[j](view_idx)[pk_idx] == k*(i+j+1));
-            p1_d[j](view_idx)[pk_idx] += i+j;
+            EKAT_KERNEL_REQUIRE(p1_d[j](view_idx)[pk_idx] == VTS::get_value(k*(i+j+1)));
+            p1_d[j](view_idx)[pk_idx] = VTS::get_value(k*(i+j+1) + i + j);
           }
           else if (i == 1) {
-            EKAT_KERNEL_REQUIRE(p2_d[j](view_idx)[pk_idx] == k*(i+j+1));
-            p2_d[j](view_idx)[pk_idx] += i+j;
+            EKAT_KERNEL_REQUIRE(p2_d[j](view_idx)[pk_idx] == VTS::get_value(k*(i+j+1)));
+            p2_d[j](view_idx)[pk_idx] = VTS::get_value(k*(i+j+1) + i + j);
           }
           else if (i == 2) {
-            EKAT_KERNEL_REQUIRE(p4_d[j](view_idx)[pk_idx] == k*(i+j+1));
-            p4_d[j](view_idx)[pk_idx] += i+j;
+            EKAT_KERNEL_REQUIRE(p4_d[j](view_idx)[pk_idx] == VTS::get_value(k*(i+j+1)));
+            p4_d[j](view_idx)[pk_idx] = VTS::get_value(k*(i+j+1) + i + j);
           }
           else if (i == 3) {
-            EKAT_KERNEL_REQUIRE(p8_d[j](view_idx)[pk_idx] == k*(i+j+1));
-            p8_d[j](view_idx)[pk_idx] += i+j;
+            EKAT_KERNEL_REQUIRE(p8_d[j](view_idx)[pk_idx] == VTS::get_value(k*(i+j+1)));
+            p8_d[j](view_idx)[pk_idx] = VTS::get_value(k*(i+j+1) + i + j);
           }
           else {
             EKAT_KERNEL_REQUIRE_MSG(false, "Unhandled i");
@@ -390,14 +417,24 @@ TEST_CASE("host_device_packs_1d", "ekat::pack")
     for (int j = 0; j < num_views_per_pksize; ++j) {
       const int klim = (i == num_pksizes_to_test - 1 ? fixed_view_size : sizes[j]);
       for (int k = 0; k < klim; ++k) {
-        REQUIRE(ptr_data[i][j][k] == k*(i+j+1) + i + j);
+        REQUIRE(ptr_data[i][j][k] == VTS::get_value(k*(i+j+1) + i + j));
       }
     }
   }
 }
 
+TEST_CASE("host_device_packs_1d", "ekat::pack")
+{
+  host_device_packs_1d<int>();
+  host_device_packs_1d<bool>();
+}
+
+template <typename T>
 void host_device_packs_2d(bool transpose)
 {
+  using VTS = VectorT<T>;
+  using VT = typename VTS::type;
+
   static constexpr int num_pksizes_to_test = 4;
   static constexpr int num_views_per_pksize = 3;
   static constexpr int fixed_view_dim1 = 5;
@@ -405,10 +442,10 @@ void host_device_packs_2d(bool transpose)
 
   using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  using Pack1T = ekat::Pack<int, 1>;
-  using Pack2T = ekat::Pack<int, 2>;
-  using Pack4T = ekat::Pack<int, 4>;
-  using Pack8T = ekat::Pack<int, 8>; // we will use this to test fixed-sized view sugar
+  using Pack1T = ekat::Pack<T, 1>;
+  using Pack2T = ekat::Pack<T, 2>;
+  using Pack4T = ekat::Pack<T, 4>;
+  using Pack8T = ekat::Pack<T, 8>; // we will use this to test fixed-sized view sugar
 
   using view_p1_t = typename KT::template view_2d<Pack1T>;
   using view_p2_t = typename KT::template view_2d<Pack2T>;
@@ -424,7 +461,7 @@ void host_device_packs_2d(bool transpose)
   }
 
   // place to store raw data
-  std::vector<std::vector<int> > raw_data(num_pksizes_to_test, std::vector<int>());
+  std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
   // of data spread across 3 (num_views_per_pksize) views
@@ -446,12 +483,12 @@ void host_device_packs_2d(bool transpose)
   Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
   Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
 
-  Kokkos::Array<Kokkos::Array<int*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const int*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
+  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
-        ptr_data[i][j] = raw_data[i].data();
+        ptr_data[i][j] = reinterpret_cast<T*>(raw_data[i].data());
       }
       else {
         const int last_size = i == num_pksizes_to_test-1 ? fixed_scalars_per_view : total_sizes[j-1];
@@ -468,7 +505,7 @@ void host_device_packs_2d(bool transpose)
       const int kdim2 = (i == num_pksizes_to_test - 1 ? fixed_view_dim2 : dim2_sizes[j]);
       for (int k1 = 0; k1 < kdim1; ++k1) {
         for (int k2 = 0; k2 < kdim2; ++k2) {
-          ptr_data[i][j][k1*kdim2 + k2] = k1*(i+j+1) + k2*(i-j-1);
+          ptr_data[i][j][k1*kdim2 + k2] = VTS::get_value(k1*(i+j+1) + k2*(i-j-1));
         }
       }
     }
@@ -490,7 +527,7 @@ void host_device_packs_2d(bool transpose)
             const int view_idx = k2 / pk_sizes[i];
             const int pk_idx = k2 % pk_sizes[i];
 
-            int* curr_scalar = nullptr;
+            T* curr_scalar = nullptr;
             if (i == 0) {
               curr_scalar = &(p1_d[j](k1, view_idx)[pk_idx]);
             }
@@ -506,13 +543,10 @@ void host_device_packs_2d(bool transpose)
             else {
               EKAT_KERNEL_REQUIRE_MSG(false, "Unhandled i");
             }
-            if (transpose) {
-              //EKAT_KERNEL_REQUIRE(*curr_scalar == k2*(i+j+1) + k1*(i-j-1));
+            if (!transpose) {
+              EKAT_KERNEL_REQUIRE(*curr_scalar == VTS::get_value(k1*(i+j+1) + k2*(i-j-1)));
             }
-            else {
-              EKAT_KERNEL_REQUIRE(*curr_scalar == k1*(i+j+1) + k2*(i-j-1));
-            }
-            *curr_scalar += i+j;
+            VTS::modify_value(*curr_scalar, i + j);
           }
         }
       }
@@ -530,7 +564,7 @@ void host_device_packs_2d(bool transpose)
       const int kdim2 = (i == num_pksizes_to_test - 1 ? fixed_view_dim2 : dim2_sizes[j]);
       for (int k1 = 0; k1 < kdim1; ++k1) {
         for (int k2 = 0; k2 < kdim2; ++k2) {
-          REQUIRE(ptr_data[i][j][k1*kdim2 + k2] == k1*(i+j+1) + k2*(i-j-1) + i + j);
+          REQUIRE(ptr_data[i][j][k1*kdim2 + k2] == VTS::get_value(k1*(i+j+1) + k2*(i-j-1) + i + j));
         }
       }
     }
@@ -539,12 +573,18 @@ void host_device_packs_2d(bool transpose)
 
 TEST_CASE("host_device_packs_2d", "ekat::pack")
 {
-  host_device_packs_2d(false);
-  host_device_packs_2d(true);
+  host_device_packs_2d<bool>(false);
+  host_device_packs_2d<bool>(true);
+  host_device_packs_2d<int>(false);
+  host_device_packs_2d<int>(true);
 }
 
+template <typename T>
 void host_device_packs_3d(bool transpose)
 {
+  using VTS = VectorT<T>;
+  using VT = typename VTS::type;
+
   static constexpr int num_pksizes_to_test = 4;
   static constexpr int num_views_per_pksize = 3;
   static constexpr int fixed_view_dim1 = 3;
@@ -553,10 +593,10 @@ void host_device_packs_3d(bool transpose)
 
   using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  using Pack1T = ekat::Pack<int, 1>;
-  using Pack2T = ekat::Pack<int, 2>;
-  using Pack4T = ekat::Pack<int, 4>;
-  using Pack8T = ekat::Pack<int, 8>; // we will use this to test fixed-sized view sugar
+  using Pack1T = ekat::Pack<T, 1>;
+  using Pack2T = ekat::Pack<T, 2>;
+  using Pack4T = ekat::Pack<T, 4>;
+  using Pack8T = ekat::Pack<T, 8>; // we will use this to test fixed-sized view sugar
 
   using view_p1_t = typename KT::template view_3d<Pack1T>;
   using view_p2_t = typename KT::template view_3d<Pack2T>;
@@ -573,7 +613,7 @@ void host_device_packs_3d(bool transpose)
   }
 
   // place to store raw data
-  std::vector<std::vector<int> > raw_data(num_pksizes_to_test, std::vector<int>());
+  std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
   // of data spread across 3 (num_views_per_pksize) views
@@ -595,12 +635,12 @@ void host_device_packs_3d(bool transpose)
   Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
   Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
 
-  Kokkos::Array<Kokkos::Array<int*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const int*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
+  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
-        ptr_data[i][j] = raw_data[i].data();
+        ptr_data[i][j] = reinterpret_cast<T*>(raw_data[i].data());
       }
       else {
         const int last_size = i == num_pksizes_to_test-1 ? fixed_scalars_per_view : total_sizes[j-1];
@@ -619,7 +659,7 @@ void host_device_packs_3d(bool transpose)
       for (int k1 = 0; k1 < kdim1; ++k1) {
         for (int k2 = 0; k2 < kdim2; ++k2) {
           for (int k3 = 0; k3 < kdim3; ++k3) {
-            ptr_data[i][j][k1*(kdim2*kdim3) + k2*(kdim3) + k3] = k1*(i+j+1) + k2*(i-j-1) + k3*(i+j-1);
+            ptr_data[i][j][k1*(kdim2*kdim3) + k2*(kdim3) + k3] = VTS::get_value(k1*(i+j+1) + k2*(i-j-1) + k3*(i+j-1));
           }
         }
       }
@@ -644,7 +684,7 @@ void host_device_packs_3d(bool transpose)
               const int view_idx = k3 / pk_sizes[i];
               const int pk_idx = k3 % pk_sizes[i];
 
-              int* curr_scalar = nullptr;
+              T* curr_scalar = nullptr;
               if (i == 0) {
                 curr_scalar = &(p1_d[j](k1, k2, view_idx)[pk_idx]);
               }
@@ -661,9 +701,9 @@ void host_device_packs_3d(bool transpose)
                 EKAT_KERNEL_REQUIRE_MSG(false, "Unhandled i");
               }
               if (!transpose) {
-                EKAT_KERNEL_REQUIRE(*curr_scalar == k1*(i+j+1) + k2*(i-j-1) + k3*(i+j-1));
+                EKAT_KERNEL_REQUIRE(*curr_scalar == VTS::get_value(k1*(i+j+1) + k2*(i-j-1) + k3*(i+j-1)));
               }
-              *curr_scalar += i+j;
+              VTS::modify_value(*curr_scalar, i + j);
             }
           }
         }
@@ -684,7 +724,7 @@ void host_device_packs_3d(bool transpose)
       for (int k1 = 0; k1 < kdim1; ++k1) {
         for (int k2 = 0; k2 < kdim2; ++k2) {
           for (int k3 = 0; k3 < kdim3; ++k3) {
-            REQUIRE(ptr_data[i][j][k1*(kdim2*kdim3) + k2*(kdim3) + k3] == k1*(i+j+1) + k2*(i-j-1) + k3*(i+j-1) + i + j);
+            REQUIRE(ptr_data[i][j][k1*(kdim2*kdim3) + k2*(kdim3) + k3] == VTS::get_value(k1*(i+j+1) + k2*(i-j-1) + k3*(i+j-1) + i + j));
           }
         }
       }
@@ -694,8 +734,10 @@ void host_device_packs_3d(bool transpose)
 
 TEST_CASE("host_device_packs_3d", "ekat::pack")
 {
-  host_device_packs_3d(true);
-  host_device_packs_3d(false);
+  host_device_packs_3d<bool>(false);
+  host_device_packs_3d<bool>(true);
+  host_device_packs_3d<int>(false);
+  host_device_packs_3d<int>(true);
 }
 
 TEST_CASE("index_and_shift", "ekat::pack")
