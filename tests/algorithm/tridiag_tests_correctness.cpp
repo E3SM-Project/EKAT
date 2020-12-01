@@ -121,9 +121,9 @@ struct Solve<true, APack, DataPack> {
         const auto d  = get_diag(As, 1);
         const auto du = get_diag(As, 2);
         if (tc.solver == Solver::thomas_team_scalar)
-          ekat::thomas(team, dl, d, du, Xs);
+          ekat::tridiag::thomas(team, dl, d, du, Xs);
         else
-          ekat::thomas(team, dl, d, du, X);
+          ekat::tridiag::thomas(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
@@ -138,7 +138,7 @@ struct Solve<true, APack, DataPack> {
               const auto d  = get_diag(As, 1);
               const auto du = get_diag(As, 2);
               const auto x  = get_x(Xs);
-              ekat::thomas(dl, d, du, x);
+              ekat::tridiag::thomas(dl, d, du, x);
             };
             Kokkos::single(Kokkos::PerTeam(team), single);
           };
@@ -151,7 +151,7 @@ struct Solve<true, APack, DataPack> {
               const auto dl = get_diag(As, 0);
               const auto d  = get_diag(As, 1);
               const auto du = get_diag(As, 2);
-              ekat::thomas(dl, d, du, Xs);
+              ekat::tridiag::thomas(dl, d, du, Xs);
             };
             Kokkos::single(Kokkos::PerTeam(team), single);
           };
@@ -165,7 +165,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diags(As, 0);
             const auto d  = get_diags(As, 1);
             const auto du = get_diags(As, 2);
-            ekat::thomas(dl, d, du, Xs);
+            ekat::tridiag::thomas(dl, d, du, Xs);
           };
           Kokkos::single(Kokkos::PerTeam(team), single);
         };
@@ -180,7 +180,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diag(As, 0);
             const auto d  = get_diag(As, 1);
             const auto du = get_diag(As, 2);
-            ekat::thomas(dl, d, du, X);
+            ekat::tridiag::thomas(dl, d, du, X);
           };
           Kokkos::single(Kokkos::PerTeam(team), single);
         };
@@ -191,7 +191,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diags(A, 0);
             const auto d  = get_diags(A, 1);
             const auto du = get_diags(A, 2);
-            ekat::thomas(dl, d, du, X);
+            ekat::tridiag::thomas(dl, d, du, X);
           };
           Kokkos::single(Kokkos::PerTeam(team), single);
         };
@@ -208,7 +208,7 @@ struct Solve<true, APack, DataPack> {
             const auto d  = get_diag(As, 1);
             const auto du = get_diag(As, 2);
             const auto x  = get_x(Xs);
-            ekat::cr(team, dl, d, du, x);
+            ekat::tridiag::cr(team, dl, d, du, x);
           };
           Kokkos::parallel_for(policy, f);
         } else {
@@ -218,7 +218,7 @@ struct Solve<true, APack, DataPack> {
             const auto dl = get_diag(As, 0);
             const auto d  = get_diag(As, 1);
             const auto du = get_diag(As, 2);
-            ekat::cr(team, dl, d, du, Xs);
+            ekat::tridiag::cr(team, dl, d, du, Xs);
           };
          Kokkos::parallel_for(policy, f);
         }
@@ -229,7 +229,7 @@ struct Solve<true, APack, DataPack> {
           const auto dl = get_diags(As, 0);
           const auto d  = get_diags(As, 1);
           const auto du = get_diags(As, 2);
-          ekat::cr(team, dl, d, du, Xs);
+          ekat::tridiag::cr(team, dl, d, du, Xs);
         };
         Kokkos::parallel_for(policy, f);
       }
@@ -239,7 +239,7 @@ struct Solve<true, APack, DataPack> {
         const auto dl = get_diags(A, 0);
         const auto d  = get_diags(A, 1);
         const auto du = get_diags(A, 2);
-        ekat::bfb(team, dl, d, du, X);
+        ekat::tridiag::bfb(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
@@ -299,9 +299,9 @@ struct Solve<false, APack, DataPack> {
         const auto d  = get_diag(As, 1);
         const auto du = get_diag(As, 2);
         if (tc.solver == Solver::thomas_team_scalar)
-          ekat::thomas(team, dl, d, du, Xs);
+          ekat::tridiag::thomas(team, dl, d, du, Xs);
         else
-          ekat::thomas(team, dl, d, du, X);
+          ekat::tridiag::thomas(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
@@ -312,7 +312,7 @@ struct Solve<false, APack, DataPack> {
           const auto dl = get_diag(As, 0);
           const auto d  = get_diag(As, 1);
           const auto du = get_diag(As, 2);
-          ekat::thomas(dl, d, du, X);
+          ekat::tridiag::thomas(dl, d, du, X);
         };
         Kokkos::single(Kokkos::PerTeam(team), single);
       };
@@ -324,7 +324,7 @@ struct Solve<false, APack, DataPack> {
         const auto dl = get_diags(As, 0);
         const auto d  = get_diags(As, 1);
         const auto du = get_diags(As, 2);
-        ekat::bfb(team, dl, d, du, X);
+        ekat::tridiag::bfb(team, dl, d, du, X);
       };
       Kokkos::parallel_for(policy, f);
     } break;
