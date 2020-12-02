@@ -323,7 +323,7 @@ void host_device_packs_1d()
   using view_p4_t = typename KT::template view_1d<Pack4T>;
   using view_p8_t = typename KT::template view_1d<Pack8T>;
 
-  Kokkos::Array<size_t, num_views_per_pksize> sizes = {13, 37, 59}; // num scalars per view
+  const Kokkos::Array<size_t, num_views_per_pksize> sizes = {13, 37, 59}; // num scalars per view
   std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
@@ -339,7 +339,7 @@ void host_device_packs_1d()
     raw_data[i].resize(mysize);
   }
 
-  Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
+  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
   Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
   Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
   Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
@@ -378,7 +378,8 @@ void host_device_packs_1d()
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
       for (int j = 0; j < num_views_per_pksize; ++j) {
-        const int klim = (i == num_pksizes_to_test - 1 ? fixed_view_size : sizes[j]);
+        const int sj = sizes[j];
+        const int klim = (i == num_pksizes_to_test - 1 ? fixed_view_size : sj);
         for (int k = 0; k < klim; ++k) {
 
           const int view_idx = k / pk_sizes[i];
@@ -453,8 +454,8 @@ void host_device_packs_2d(bool transpose)
   using view_p8_t = typename KT::template view_2d<Pack8T>;
 
   // dimensions of flex views
-  Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
-  Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {13, 37, 59}; // num scalars per view
+  const Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
+  const Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {13, 37, 59}; // num scalars per view
   Kokkos::Array<size_t, num_views_per_pksize> total_sizes;
   for (int i = 0; i < num_views_per_pksize; ++i) {
     total_sizes[i] = dim1_sizes[i] * dim2_sizes[i];
@@ -477,7 +478,7 @@ void host_device_packs_2d(bool transpose)
     raw_data[i].resize(mysize);
   }
 
-  Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
+  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
   Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
   Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
   Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
@@ -604,9 +605,9 @@ void host_device_packs_3d(bool transpose)
   using view_p8_t = typename KT::template view_3d<Pack8T>;
 
   // dimensions of flex views
-  Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
-  Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {3, 4, 5};
-  Kokkos::Array<size_t, num_views_per_pksize> dim3_sizes = {13, 27, 41}; // num scalars per view
+  const Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
+  const Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {3, 4, 5};
+  const Kokkos::Array<size_t, num_views_per_pksize> dim3_sizes = {13, 27, 41}; // num scalars per view
   Kokkos::Array<size_t, num_views_per_pksize> total_sizes;
   for (int i = 0; i < num_views_per_pksize; ++i) {
     total_sizes[i] = dim1_sizes[i] * dim2_sizes[i] * dim3_sizes[i];
@@ -629,7 +630,7 @@ void host_device_packs_3d(bool transpose)
     raw_data[i].resize(mysize);
   }
 
-  Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
+  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
   Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
   Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
   Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;

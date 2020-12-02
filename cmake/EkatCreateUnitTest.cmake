@@ -21,6 +21,9 @@ include(EkatUtils) # To check macro args
 #    - LIBS_DIRS: a list of directories to add to the linker search path
 #    - LINKER_FLAGS: a list of additional flags for the linker
 #    - LABELS: a set of labels to attach to the test
+#    - PROPERTIES: a list of properties for ALL the tests in the threads/ranks combinations
+#    - SERIAL: if this options is present, the different tests (corresponding to different
+#      THREADS/RANKS combination will NOT be allowed to run concurrently (via setting of a RESOURCE_LOCK).
 
 # Note: we hace to set this variable here, so CMAKE_CURRENT_LIST_DIR gets the
 #       directory of this file. If we did it inside the function, it would get
@@ -33,7 +36,7 @@ function(EkatCreateUnitTest target_name target_srcs)
   #   Parse function inputs   #
   #---------------------------#
 
-  set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
+  set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION SERIAL THREADS_SERIAL RANKS_SERIAL)
   set(oneValueArgs DEP MPI_EXEC_NAME MPI_NP_FLAG)
   set(multiValueArgs
     MPI_RANKS THREADS
@@ -44,7 +47,7 @@ function(EkatCreateUnitTest target_name target_srcs)
     COMPILER_FLAGS
     COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
     LIBS LIBS_DIRS LINKER_FLAGS
-    LABELS)
+    LABELS PROPERTIES)
 
   # ecut = Ekat Create Unit Test
   cmake_parse_arguments(ecut "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -259,6 +262,10 @@ function(EkatCreateUnitTest target_name target_srcs)
         set_tests_properties(${FULL_TEST_NAME} PROPERTIES LABELS "${ecut_LABELS}")
       endif()
 
+      if (ecut_PROPERTIES)
+        set_tests_properties(${FULL_TEST_NAME} PROPERTIES ${ecut_PROPERTIES})
+      endif()
+
       set (RES_GROUPS "devices:1")
       if (${NRANKS} GREATER 1)
         foreach (rank RANGE 2 ${NRANKS})
@@ -268,5 +275,18 @@ function(EkatCreateUnitTest target_name target_srcs)
       set_property(TEST ${FULL_TEST_NAME} PROPERTY RESOURCE_GROUPS "${RES_GROUPS}")
     endforeach()
   endforeach()
+
+  if (ecut_SERIAL)
+    # All tests run serially
+    set (tests_names)
+    foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
+      foreach (NTHREADS RANGE ${THREAD_START} ${THREAD_END} ${THREAD_INCREMENT})
+        # Create the test
+        set(FULL_TEST_NAME ${target_name}_ut_np${NRANKS}_omp${NTHREADS})
+        list(APPEND tests_names ${FULL_TEST_NAME}) 
+      endforeach ()
+    endforeach()
+    set_tests_properties (${tests_names} PROPERTIES RESOURCE_LOCK ${target_name}_serial)
+  endif ()
 
 endfunction(EkatCreateUnitTest)
