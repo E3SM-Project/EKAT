@@ -6,6 +6,8 @@
 
 #include "ekat_test_config.h"
 
+#include <vector>
+
 namespace {
 
 template <typename View, int rank, typename T = void>
@@ -301,7 +303,7 @@ struct VectorT<bool>
   }
 };
 
-template <typename T>
+template <typename T, typename SizeT=int>
 void host_device_packs_1d()
 {
   using VTS = VectorT<T>;
@@ -323,7 +325,7 @@ void host_device_packs_1d()
   using view_p4_t = typename KT::template view_1d<Pack4T>;
   using view_p8_t = typename KT::template view_1d<Pack8T>;
 
-  const Kokkos::Array<size_t, num_views_per_pksize> sizes = {13, 37, 59}; // num scalars per view
+  const std::vector<SizeT> sizes = {13, 37, 59}; // num scalars per view
   std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
@@ -339,14 +341,14 @@ void host_device_packs_1d()
     raw_data[i].resize(mysize);
   }
 
-  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
-  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
-  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
-  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
-  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
+  const std::vector<int> pk_sizes = {1, 2, 4, 8};
+  std::vector<view_p1_t> p1_d(num_views_per_pksize);
+  std::vector<view_p2_t> p2_d(num_views_per_pksize);
+  std::vector<view_p4_t> p4_d(num_views_per_pksize);
+  std::vector<view_p8_t> p8_d(num_views_per_pksize); // fixed-size
 
-  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  std::vector<std::vector<T*> > ptr_data(num_pksizes_to_test, std::vector<T*>(num_views_per_pksize));
+  std::vector<std::vector<const T*> > cptr_data(num_pksizes_to_test, std::vector<const T*>(num_views_per_pksize));
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
@@ -426,11 +428,12 @@ void host_device_packs_1d()
 
 TEST_CASE("host_device_packs_1d", "ekat::pack")
 {
-  host_device_packs_1d<int>();
+  host_device_packs_1d<int, size_t>();
+  host_device_packs_1d<int, int>();
   host_device_packs_1d<bool>();
 }
 
-template <typename T>
+template <typename T, typename SizeT=int>
 void host_device_packs_2d(bool transpose)
 {
   using VTS = VectorT<T>;
@@ -454,9 +457,9 @@ void host_device_packs_2d(bool transpose)
   using view_p8_t = typename KT::template view_2d<Pack8T>;
 
   // dimensions of flex views
-  const Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
-  const Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {13, 37, 59}; // num scalars per view
-  Kokkos::Array<size_t, num_views_per_pksize> total_sizes;
+  const std::vector<SizeT> dim1_sizes = {3, 4, 5};
+  const std::vector<SizeT> dim2_sizes = {13, 37, 59}; // num scalars per view
+  std::vector<SizeT> total_sizes(num_views_per_pksize);
   for (int i = 0; i < num_views_per_pksize; ++i) {
     total_sizes[i] = dim1_sizes[i] * dim2_sizes[i];
   }
@@ -478,14 +481,14 @@ void host_device_packs_2d(bool transpose)
     raw_data[i].resize(mysize);
   }
 
-  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
-  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
-  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
-  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
-  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
+  const std::vector<int> pk_sizes = {1, 2, 4, 8};
+  std::vector<view_p1_t> p1_d(num_views_per_pksize);
+  std::vector<view_p2_t> p2_d(num_views_per_pksize);
+  std::vector<view_p4_t> p4_d(num_views_per_pksize);
+  std::vector<view_p8_t> p8_d(num_views_per_pksize); // fixed-size
 
-  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  std::vector<std::vector<T*> > ptr_data(num_pksizes_to_test, std::vector<T*>(num_views_per_pksize));
+  std::vector<std::vector<const T*> > cptr_data(num_pksizes_to_test, std::vector<const T*>(num_views_per_pksize));
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
@@ -576,11 +579,13 @@ TEST_CASE("host_device_packs_2d", "ekat::pack")
 {
   host_device_packs_2d<bool>(false);
   host_device_packs_2d<bool>(true);
-  host_device_packs_2d<int>(false);
-  host_device_packs_2d<int>(true);
+  host_device_packs_2d<int, size_t>(false);
+  host_device_packs_2d<int, size_t>(true);
+  host_device_packs_2d<int, int>(false);
+  host_device_packs_2d<int, int>(true);
 }
 
-template <typename T>
+template <typename T, typename SizeT=int>
 void host_device_packs_3d(bool transpose)
 {
   using VTS = VectorT<T>;
@@ -605,10 +610,10 @@ void host_device_packs_3d(bool transpose)
   using view_p8_t = typename KT::template view_3d<Pack8T>;
 
   // dimensions of flex views
-  const Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
-  const Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {3, 4, 5};
-  const Kokkos::Array<size_t, num_views_per_pksize> dim3_sizes = {13, 27, 41}; // num scalars per view
-  Kokkos::Array<size_t, num_views_per_pksize> total_sizes;
+  const std::vector<SizeT> dim1_sizes = {3, 4, 5};
+  const std::vector<SizeT> dim2_sizes = {3, 4, 5};
+  const std::vector<SizeT> dim3_sizes = {13, 27, 41}; // num scalars per view
+  std::vector<SizeT> total_sizes(num_views_per_pksize);
   for (int i = 0; i < num_views_per_pksize; ++i) {
     total_sizes[i] = dim1_sizes[i] * dim2_sizes[i] * dim3_sizes[i];
   }
@@ -630,14 +635,14 @@ void host_device_packs_3d(bool transpose)
     raw_data[i].resize(mysize);
   }
 
-  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
-  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
-  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
-  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
-  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
+  const std::vector<int> pk_sizes = {1, 2, 4, 8};
+  std::vector<view_p1_t> p1_d(num_views_per_pksize);
+  std::vector<view_p2_t> p2_d(num_views_per_pksize);
+  std::vector<view_p4_t> p4_d(num_views_per_pksize);
+  std::vector<view_p8_t> p8_d(num_views_per_pksize); // fixed-size
 
-  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  std::vector<std::vector<T*> > ptr_data(num_pksizes_to_test, std::vector<T*>(num_views_per_pksize));
+  std::vector<std::vector<const T*> > cptr_data(num_pksizes_to_test, std::vector<const T*>(num_views_per_pksize));
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
@@ -737,8 +742,10 @@ TEST_CASE("host_device_packs_3d", "ekat::pack")
 {
   host_device_packs_3d<bool>(false);
   host_device_packs_3d<bool>(true);
-  host_device_packs_3d<int>(false);
-  host_device_packs_3d<int>(true);
+  host_device_packs_3d<int, size_t>(false);
+  host_device_packs_3d<int, size_t>(true);
+  host_device_packs_3d<int, int>(false);
+  host_device_packs_3d<int, int>(true);
 }
 
 TEST_CASE("index_and_shift", "ekat::pack")
