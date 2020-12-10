@@ -41,8 +41,8 @@ macro (SetCompilerFlags)
 
   # enable all warning but disable vectorization remarks like "remark: simd loop has only one iteration"
   # since we would get hit with 1000's of those anytime we set packsize to 1.
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
   if (CMAKE_Fortran_COMPILER_ID STREQUAL Intel)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -diag-disable=remark")
     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -warn all -diag-disable=remark -fpscomp logicals")
