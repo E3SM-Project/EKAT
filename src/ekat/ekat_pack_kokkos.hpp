@@ -267,14 +267,17 @@ struct HTDVectorT<bool>
 };
 
 // 1d
-template <typename SizeT, size_t N, typename ViewT>
-void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
-                    const Kokkos::Array<SizeT, N>& sizes,
-                    Kokkos::Array<ViewT, N>& views)
+template <typename SizeT, typename ViewT>
+void host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+                    const std::vector<SizeT>& sizes,
+                    std::vector<ViewT>& views)
 {
   using PackT = typename ViewT::value_type;
 
-  for (size_t i = 0; i < N; ++i) {
+  EKAT_ASSERT(data.size() == sizes.size());
+  EKAT_ASSERT(data.size() == sizes.size());
+
+  for (size_t i = 0; i < data.size(); ++i) {
     const size_t size = static_cast<size_t>(sizes[i]);
     const size_t npack = (size + PackT::n - 1) / PackT::n;
     views[i] = ViewT("", npack);
@@ -290,19 +293,23 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
 }
 
 // 2d - set do_transpose to true if host data is coming from fortran
-template <typename SizeT, size_t N, typename ViewT>
-void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
-                    const Kokkos::Array<SizeT, N>& dim1_sizes,
-                    const Kokkos::Array<SizeT, N>& dim2_sizes,
-                    Kokkos::Array<ViewT, N>& views,
+template <typename SizeT, typename ViewT>
+void host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+                    const std::vector<SizeT>& dim1_sizes,
+                    const std::vector<SizeT>& dim2_sizes,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
   using VectorT = typename HTDVectorT<ScalarT>::type;
 
+  EKAT_ASSERT(data.size() == dim1_sizes.size());
+  EKAT_ASSERT(data.size() == dim2_sizes.size());
+  EKAT_ASSERT(data.size() == views.size());
+
   std::vector<VectorT> tdata;
-  for (size_t n = 0; n < N; ++n) {
+  for (size_t n = 0; n < data.size(); ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
     const size_t npack = (dim2_size + PackT::n - 1) / PackT::n;
@@ -333,20 +340,25 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
 }
 
 // 3d - set do_transpose to true if host data is coming from fortran
-template <typename SizeT, size_t N, typename ViewT>
-void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
-                    const Kokkos::Array<SizeT, N>& dim1_sizes,
-                    const Kokkos::Array<SizeT, N>& dim2_sizes,
-                    const Kokkos::Array<SizeT, N>& dim3_sizes,
-                    Kokkos::Array<ViewT, N>& views,
+template <typename SizeT, typename ViewT>
+void host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+                    const std::vector<SizeT>& dim1_sizes,
+                    const std::vector<SizeT>& dim2_sizes,
+                    const std::vector<SizeT>& dim3_sizes,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
   using VectorT = typename HTDVectorT<ScalarT>::type;
 
+  EKAT_ASSERT(data.size() == dim1_sizes.size());
+  EKAT_ASSERT(data.size() == dim2_sizes.size());
+  EKAT_ASSERT(data.size() == dim3_sizes.size());
+  EKAT_ASSERT(data.size() == views.size());
+
   std::vector<VectorT> tdata;
-  for (size_t n = 0; n < N; ++n) {
+  for (size_t n = 0; n < data.size(); ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
     const size_t dim3_size = static_cast<size_t>(dim3_sizes[n]);
@@ -380,46 +392,34 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
 }
 
 // Sugar for when size is uniform (1d)
-template <typename SizeT, size_t N, typename ViewT>
-void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
+template <typename SizeT, typename ViewT>
+void host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
                     const SizeT size,
-                    Kokkos::Array<ViewT, N>& views)
+                    std::vector<ViewT>& views)
 {
-  Kokkos::Array<SizeT, N> sizes;
-  for (size_t i = 0; i < N; ++i) {
-    sizes[i] = size;
-  }
+  std::vector<SizeT> sizes(data.size(), size);
   host_to_device(data, sizes, views);
 }
 
 // Sugar for when size is uniform (2d)
-template <typename SizeT, size_t N, typename ViewT>
-void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
+template <typename SizeT, typename ViewT>
+void host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
                     const SizeT dim1_size, const SizeT dim2_size,
-                    Kokkos::Array<ViewT, N>& views,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
-  Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes;
-  for (size_t i = 0; i < N; ++i) {
-    dim1_sizes[i] = dim1_size;
-    dim2_sizes[i] = dim2_size;
-  }
+  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
   host_to_device(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
 // Sugar for when size is uniform (3d)
-template <typename SizeT, size_t N, typename ViewT>
-void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const*, N>& data,
+template <typename SizeT, typename ViewT>
+void host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
                     const SizeT dim1_size, const SizeT dim2_size, const SizeT dim3_size,
-                    Kokkos::Array<ViewT, N>& views,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
-  Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes, dim3_sizes;
-  for (size_t i = 0; i < N; ++i) {
-    dim1_sizes[i] = dim1_size;
-    dim2_sizes[i] = dim2_size;
-    dim3_sizes[i] = dim3_size;
-  }
+  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
   host_to_device(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 
@@ -428,14 +428,17 @@ void host_to_device(const Kokkos::Array<typename ViewT::value_type::scalar const
 //
 
 // 1d
-template <typename SizeT, size_t N, typename ViewT>
-void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
-                    const Kokkos::Array<SizeT, N>& sizes,
-                    Kokkos::Array<ViewT, N>& views)
+template <typename SizeT, typename ViewT>
+void device_to_host(const std::vector<typename ViewT::value_type::scalar*>& data,
+                    const std::vector<SizeT>& sizes,
+                    std::vector<ViewT>& views)
 {
   using PackT = typename ViewT::value_type;
 
-  for (size_t i = 0; i < N; ++i) {
+  EKAT_ASSERT(data.size() == sizes.size());
+  EKAT_ASSERT(data.size() == sizes.size());
+
+  for (size_t i = 0; i < data.size(); ++i) {
     const size_t size = static_cast<size_t>(sizes[i]);
     const auto host_view = Kokkos::create_mirror_view(views[i]);
     Kokkos::deep_copy(host_view, views[i]);
@@ -449,19 +452,23 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
 }
 
 // 2d - set do_transpose to true if host data is going to fortran
-template <typename SizeT, size_t N, typename ViewT>
-void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
-                    const Kokkos::Array<SizeT, N>& dim1_sizes,
-                    const Kokkos::Array<SizeT, N>& dim2_sizes,
-                    Kokkos::Array<ViewT, N>& views,
+template <typename SizeT, typename ViewT>
+void device_to_host(const std::vector<typename ViewT::value_type::scalar*>& data,
+                    const std::vector<SizeT>& dim1_sizes,
+                    const std::vector<SizeT>& dim2_sizes,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
   using VectorT = typename HTDVectorT<ScalarT>::type;
 
+  EKAT_ASSERT(data.size() == dim1_sizes.size());
+  EKAT_ASSERT(data.size() == dim2_sizes.size());
+  EKAT_ASSERT(data.size() == views.size());
+
   std::vector<VectorT> tdata;
-  for (size_t n = 0; n < N; ++n) {
+  for (size_t n = 0; n < data.size(); ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
     const size_t npack = views[n].extent(1);
@@ -494,20 +501,25 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
 }
 
 // 3d - set do_transpose to true if host data is going to fortran
-template <typename SizeT, size_t N, typename ViewT>
-void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
-                    const Kokkos::Array<SizeT, N>& dim1_sizes,
-                    const Kokkos::Array<SizeT, N>& dim2_sizes,
-                    const Kokkos::Array<SizeT, N>& dim3_sizes,
-                    Kokkos::Array<ViewT, N>& views,
+template <typename SizeT, typename ViewT>
+void device_to_host(const std::vector<typename ViewT::value_type::scalar*>& data,
+                    const std::vector<SizeT>& dim1_sizes,
+                    const std::vector<SizeT>& dim2_sizes,
+                    const std::vector<SizeT>& dim3_sizes,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
   using VectorT = typename HTDVectorT<ScalarT>::type;
 
+  EKAT_ASSERT(data.size() == dim1_sizes.size());
+  EKAT_ASSERT(data.size() == dim2_sizes.size());
+  EKAT_ASSERT(data.size() == dim3_sizes.size());
+  EKAT_ASSERT(data.size() == views.size());
+
   std::vector<VectorT> tdata;
-  for (size_t n = 0; n < N; ++n) {
+  for (size_t n = 0; n < data.size(); ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
     const size_t dim3_size = static_cast<size_t>(dim3_sizes[n]);
@@ -543,46 +555,34 @@ void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>&
 }
 
 // Sugar for when size is uniform (1d)
-template <typename SizeT, size_t N, typename ViewT>
-void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
+template <typename SizeT, typename ViewT>
+void device_to_host(const std::vector<typename ViewT::value_type::scalar*>& data,
                     const SizeT size,
-                    Kokkos::Array<ViewT, N>& views)
+                    std::vector<ViewT>& views)
 {
-  Kokkos::Array<SizeT, N> sizes;
-  for (size_t i = 0; i < N; ++i) {
-    sizes[i] = size;
-  }
+  std::vector<SizeT> sizes(data.size(), size);
   device_to_host(data, sizes, views);
 }
 
 // Sugar for when size is uniform (2d)
-template <typename SizeT, size_t N, typename ViewT>
-void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
+template <typename SizeT, typename ViewT>
+void device_to_host(const std::vector<typename ViewT::value_type::scalar*>& data,
                     const SizeT dim1_size, const SizeT dim2_size,
-                    Kokkos::Array<ViewT, N>& views,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
-  Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes;
-  for (size_t i = 0; i < N; ++i) {
-    dim1_sizes[i] = dim1_size;
-    dim2_sizes[i] = dim2_size;
-  }
+  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
   device_to_host(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
 // Sugar for when size is uniform (3d)
-template <typename SizeT, size_t N, typename ViewT>
-void device_to_host(const Kokkos::Array<typename ViewT::value_type::scalar*, N>& data,
+template <typename SizeT, typename ViewT>
+void device_to_host(const std::vector<typename ViewT::value_type::scalar*>& data,
                     const SizeT dim1_size, const SizeT dim2_size, const SizeT dim3_size,
-                    Kokkos::Array<ViewT, N>& views,
+                    std::vector<ViewT>& views,
                     bool do_transpose=false)
 {
-  Kokkos::Array<SizeT, N> dim1_sizes, dim2_sizes, dim3_sizes;
-  for (size_t i = 0; i < N; ++i) {
-    dim1_sizes[i] = dim1_size;
-    dim2_sizes[i] = dim2_size;
-    dim3_sizes[i] = dim3_size;
-  }
+  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
   device_to_host(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 

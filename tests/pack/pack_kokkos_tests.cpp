@@ -6,6 +6,8 @@
 
 #include "ekat_test_config.h"
 
+#include <vector>
+
 namespace {
 
 template <typename View, int rank, typename T = void>
@@ -301,7 +303,7 @@ struct VectorT<bool>
   }
 };
 
-template <typename T>
+template <typename T, typename SizeT=int>
 void host_device_packs_1d()
 {
   using VTS = VectorT<T>;
@@ -323,7 +325,8 @@ void host_device_packs_1d()
   using view_p4_t = typename KT::template view_1d<Pack4T>;
   using view_p8_t = typename KT::template view_1d<Pack8T>;
 
-  const Kokkos::Array<size_t, num_views_per_pksize> sizes = {13, 37, 59}; // num scalars per view
+  const std::vector<SizeT> sizes        = {13, 37, 59}; // num scalars per view
+  const Kokkos::Array<SizeT, 3> sizes_d = {13, 37, 59}; // num scalars per view
   std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
@@ -339,14 +342,14 @@ void host_device_packs_1d()
     raw_data[i].resize(mysize);
   }
 
-  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
-  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
-  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
-  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
-  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
+  const Kokkos::Array<int, 4> pk_sizes = {1, 2, 4, 8};
+  std::vector<view_p1_t> p1_h(num_views_per_pksize);
+  std::vector<view_p2_t> p2_h(num_views_per_pksize);
+  std::vector<view_p4_t> p4_h(num_views_per_pksize);
+  std::vector<view_p8_t> p8_h(num_views_per_pksize); // fixed-size
 
-  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  std::vector<std::vector<T*> > ptr_data(num_pksizes_to_test, std::vector<T*>(num_views_per_pksize));
+  std::vector<std::vector<const T*> > cptr_data(num_pksizes_to_test, std::vector<const T*>(num_views_per_pksize));
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
@@ -370,15 +373,27 @@ void host_device_packs_1d()
     }
   }
 
-  ekat::host_to_device( cptr_data[0], sizes, p1_d);
-  ekat::host_to_device( cptr_data[1], sizes, p2_d);
-  ekat::host_to_device( cptr_data[2], sizes, p4_d);
-  ekat::host_to_device( cptr_data[3], fixed_view_size, p8_d); // fixed-size
+  ekat::host_to_device( cptr_data[0], sizes, p1_h);
+  ekat::host_to_device( cptr_data[1], sizes, p2_h);
+  ekat::host_to_device( cptr_data[2], sizes, p4_h);
+  ekat::host_to_device( cptr_data[3], fixed_view_size, p8_h); // fixed-size
+
+  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
+  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
+  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
+  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d;
+
+  for (int i = 0; i < num_views_per_pksize; ++i) {
+    p1_d[i] = p1_h[i];
+    p2_d[i] = p2_h[i];
+    p4_d[i] = p4_h[i];
+    p8_d[i] = p8_h[i];
+  }
 
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
       for (int j = 0; j < num_views_per_pksize; ++j) {
-        const int sj = sizes[j];
+        const int sj = sizes_d[j];
         const int klim = (i == num_pksizes_to_test - 1 ? fixed_view_size : sj);
         for (int k = 0; k < klim; ++k) {
 
@@ -409,10 +424,10 @@ void host_device_packs_1d()
     }
   });
 
-  ekat::device_to_host( ptr_data[0], sizes, p1_d);
-  ekat::device_to_host( ptr_data[1], sizes, p2_d);
-  ekat::device_to_host( ptr_data[2], sizes, p4_d);
-  ekat::device_to_host( ptr_data[3], fixed_view_size, p8_d); // fixed-size
+  ekat::device_to_host( ptr_data[0], sizes, p1_h);
+  ekat::device_to_host( ptr_data[1], sizes, p2_h);
+  ekat::device_to_host( ptr_data[2], sizes, p4_h);
+  ekat::device_to_host( ptr_data[3], fixed_view_size, p8_h); // fixed-size
 
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
@@ -426,11 +441,12 @@ void host_device_packs_1d()
 
 TEST_CASE("host_device_packs_1d", "ekat::pack")
 {
-  host_device_packs_1d<int>();
+  host_device_packs_1d<int, size_t>();
+  host_device_packs_1d<int, int>();
   host_device_packs_1d<bool>();
 }
 
-template <typename T>
+template <typename T, typename SizeT=int>
 void host_device_packs_2d(bool transpose)
 {
   using VTS = VectorT<T>;
@@ -454,9 +470,12 @@ void host_device_packs_2d(bool transpose)
   using view_p8_t = typename KT::template view_2d<Pack8T>;
 
   // dimensions of flex views
-  const Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
-  const Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {13, 37, 59}; // num scalars per view
-  Kokkos::Array<size_t, num_views_per_pksize> total_sizes;
+  const std::vector<SizeT> dim1_sizes = {3, 4, 5};
+  const std::vector<SizeT> dim2_sizes = {13, 37, 59}; // num scalars per view
+  const Kokkos::Array<SizeT, 3> dim1_sizes_d = {3, 4, 5};
+  const Kokkos::Array<SizeT, 3> dim2_sizes_d = {13, 37, 59}; // num scalars per view
+
+  std::vector<SizeT> total_sizes(num_views_per_pksize);
   for (int i = 0; i < num_views_per_pksize; ++i) {
     total_sizes[i] = dim1_sizes[i] * dim2_sizes[i];
   }
@@ -478,14 +497,14 @@ void host_device_packs_2d(bool transpose)
     raw_data[i].resize(mysize);
   }
 
-  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
-  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
-  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
-  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
-  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
+  const Kokkos::Array<int, 4> pk_sizes = {1, 2, 4, 8};
+  std::vector<view_p1_t> p1_h(num_views_per_pksize);
+  std::vector<view_p2_t> p2_h(num_views_per_pksize);
+  std::vector<view_p4_t> p4_h(num_views_per_pksize);
+  std::vector<view_p8_t> p8_h(num_views_per_pksize); // fixed-size
 
-  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  std::vector<std::vector<T*> > ptr_data(num_pksizes_to_test, std::vector<T*>(num_views_per_pksize));
+  std::vector<std::vector<const T*> > cptr_data(num_pksizes_to_test, std::vector<const T*>(num_views_per_pksize));
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
@@ -512,16 +531,28 @@ void host_device_packs_2d(bool transpose)
     }
   }
 
-  ekat::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
-  ekat::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
-  ekat::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
-  ekat::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
+  ekat::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, p1_h, transpose);
+  ekat::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, p2_h, transpose);
+  ekat::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, p4_h, transpose);
+  ekat::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_h, transpose); // fixed-size
+
+  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
+  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
+  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
+  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d;
+
+  for (int i = 0; i < num_views_per_pksize; ++i) {
+    p1_d[i] = p1_h[i];
+    p2_d[i] = p2_h[i];
+    p4_d[i] = p4_h[i];
+    p8_d[i] = p8_h[i];
+  }
 
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
       for (int j = 0; j < num_views_per_pksize; ++j) {
-        const int kdim1 = (i == num_pksizes_to_test - 1 ? fixed_view_dim1 : dim1_sizes[j]);
-        const int kdim2 = (i == num_pksizes_to_test - 1 ? fixed_view_dim2 : dim2_sizes[j]);
+        const int kdim1 = (i == num_pksizes_to_test - 1 ? fixed_view_dim1 : dim1_sizes_d[j]);
+        const int kdim2 = (i == num_pksizes_to_test - 1 ? fixed_view_dim2 : dim2_sizes_d[j]);
         for (int k1 = 0; k1 < kdim1; ++k1) {
           for (int k2 = 0; k2 < kdim2; ++k2) {
 
@@ -554,10 +585,10 @@ void host_device_packs_2d(bool transpose)
     }
   });
 
-  ekat::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, p1_d, transpose);
-  ekat::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, p2_d, transpose);
-  ekat::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, p4_d, transpose);
-  ekat::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_d, transpose); // fixed-size
+  ekat::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, p1_h, transpose);
+  ekat::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, p2_h, transpose);
+  ekat::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, p4_h, transpose);
+  ekat::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, p8_h, transpose); // fixed-size
 
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
@@ -576,11 +607,13 @@ TEST_CASE("host_device_packs_2d", "ekat::pack")
 {
   host_device_packs_2d<bool>(false);
   host_device_packs_2d<bool>(true);
-  host_device_packs_2d<int>(false);
-  host_device_packs_2d<int>(true);
+  host_device_packs_2d<int, size_t>(false);
+  host_device_packs_2d<int, size_t>(true);
+  host_device_packs_2d<int, int>(false);
+  host_device_packs_2d<int, int>(true);
 }
 
-template <typename T>
+template <typename T, typename SizeT=int>
 void host_device_packs_3d(bool transpose)
 {
   using VTS = VectorT<T>;
@@ -605,10 +638,13 @@ void host_device_packs_3d(bool transpose)
   using view_p8_t = typename KT::template view_3d<Pack8T>;
 
   // dimensions of flex views
-  const Kokkos::Array<size_t, num_views_per_pksize> dim1_sizes = {3, 4, 5};
-  const Kokkos::Array<size_t, num_views_per_pksize> dim2_sizes = {3, 4, 5};
-  const Kokkos::Array<size_t, num_views_per_pksize> dim3_sizes = {13, 27, 41}; // num scalars per view
-  Kokkos::Array<size_t, num_views_per_pksize> total_sizes;
+  const std::vector<SizeT> dim1_sizes = {3, 4, 5};
+  const std::vector<SizeT> dim2_sizes = {3, 4, 5};
+  const std::vector<SizeT> dim3_sizes = {13, 27, 41}; // num scalars per view
+  const Kokkos::Array<SizeT, 3> dim1_sizes_d = {3, 4, 5};
+  const Kokkos::Array<SizeT, 3> dim2_sizes_d = {3, 4, 5};
+  const Kokkos::Array<SizeT, 3> dim3_sizes_d = {13, 27, 41}; // num scalars per view
+  std::vector<SizeT> total_sizes(num_views_per_pksize);
   for (int i = 0; i < num_views_per_pksize; ++i) {
     total_sizes[i] = dim1_sizes[i] * dim2_sizes[i] * dim3_sizes[i];
   }
@@ -630,14 +666,14 @@ void host_device_packs_3d(bool transpose)
     raw_data[i].resize(mysize);
   }
 
-  const Kokkos::Array<int, num_pksizes_to_test> pk_sizes = {1, 2, 4, 8};
-  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
-  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
-  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
-  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d; // fixed-size
+  const Kokkos::Array<int, 4> pk_sizes = {1, 2, 4, 8};
+  std::vector<view_p1_t> p1_h(num_views_per_pksize);
+  std::vector<view_p2_t> p2_h(num_views_per_pksize);
+  std::vector<view_p4_t> p4_h(num_views_per_pksize);
+  std::vector<view_p8_t> p8_h(num_views_per_pksize); // fixed-size
 
-  Kokkos::Array<Kokkos::Array<T*,       num_views_per_pksize>, num_pksizes_to_test> ptr_data;
-  Kokkos::Array<Kokkos::Array<const T*, num_views_per_pksize>, num_pksizes_to_test> cptr_data;
+  std::vector<std::vector<T*> > ptr_data(num_pksizes_to_test, std::vector<T*>(num_views_per_pksize));
+  std::vector<std::vector<const T*> > cptr_data(num_pksizes_to_test, std::vector<const T*>(num_views_per_pksize));
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
       if (j == 0) {
@@ -667,17 +703,29 @@ void host_device_packs_3d(bool transpose)
     }
   }
 
-  ekat::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, dim3_sizes, p1_d, transpose);
-  ekat::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, dim3_sizes, p2_d, transpose);
-  ekat::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, dim3_sizes, p4_d, transpose);
-  ekat::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, fixed_view_dim3, p8_d, transpose); // fixed-size
+  ekat::host_to_device( cptr_data[0], dim1_sizes, dim2_sizes, dim3_sizes, p1_h, transpose);
+  ekat::host_to_device( cptr_data[1], dim1_sizes, dim2_sizes, dim3_sizes, p2_h, transpose);
+  ekat::host_to_device( cptr_data[2], dim1_sizes, dim2_sizes, dim3_sizes, p4_h, transpose);
+  ekat::host_to_device( cptr_data[3], fixed_view_dim1, fixed_view_dim2, fixed_view_dim3, p8_h, transpose); // fixed-size
+
+  Kokkos::Array<view_p1_t, num_views_per_pksize> p1_d;
+  Kokkos::Array<view_p2_t, num_views_per_pksize> p2_d;
+  Kokkos::Array<view_p4_t, num_views_per_pksize> p4_d;
+  Kokkos::Array<view_p8_t, num_views_per_pksize> p8_d;
+
+  for (int i = 0; i < num_views_per_pksize; ++i) {
+    p1_d[i] = p1_h[i];
+    p2_d[i] = p2_h[i];
+    p4_d[i] = p4_h[i];
+    p8_d[i] = p8_h[i];
+  }
 
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int&) {
     for (int i = 0; i < num_pksizes_to_test; ++i) {
       for (int j = 0; j < num_views_per_pksize; ++j) {
-        const int kdim1 = (i == num_pksizes_to_test - 1 ? fixed_view_dim1 : dim1_sizes[j]);
-        const int kdim2 = (i == num_pksizes_to_test - 1 ? fixed_view_dim2 : dim2_sizes[j]);
-        const int kdim3 = (i == num_pksizes_to_test - 1 ? fixed_view_dim3 : dim3_sizes[j]);
+        const int kdim1 = (i == num_pksizes_to_test - 1 ? fixed_view_dim1 : dim1_sizes_d[j]);
+        const int kdim2 = (i == num_pksizes_to_test - 1 ? fixed_view_dim2 : dim2_sizes_d[j]);
+        const int kdim3 = (i == num_pksizes_to_test - 1 ? fixed_view_dim3 : dim3_sizes_d[j]);
         for (int k1 = 0; k1 < kdim1; ++k1) {
           for (int k2 = 0; k2 < kdim2; ++k2) {
             for (int k3 = 0; k3 < kdim3; ++k3) {
@@ -712,10 +760,10 @@ void host_device_packs_3d(bool transpose)
     }
   });
 
-  ekat::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, dim3_sizes, p1_d, transpose);
-  ekat::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, dim3_sizes, p2_d, transpose);
-  ekat::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, dim3_sizes, p4_d, transpose);
-  ekat::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, fixed_view_dim3, p8_d, transpose); // fixed-size
+  ekat::device_to_host( ptr_data[0], dim1_sizes, dim2_sizes, dim3_sizes, p1_h, transpose);
+  ekat::device_to_host( ptr_data[1], dim1_sizes, dim2_sizes, dim3_sizes, p2_h, transpose);
+  ekat::device_to_host( ptr_data[2], dim1_sizes, dim2_sizes, dim3_sizes, p4_h, transpose);
+  ekat::device_to_host( ptr_data[3], fixed_view_dim1, fixed_view_dim2, fixed_view_dim3, p8_h, transpose); // fixed-size
 
   for (int i = 0; i < num_pksizes_to_test; ++i) {
     for (int j = 0; j < num_views_per_pksize; ++j) {
@@ -737,8 +785,10 @@ TEST_CASE("host_device_packs_3d", "ekat::pack")
 {
   host_device_packs_3d<bool>(false);
   host_device_packs_3d<bool>(true);
-  host_device_packs_3d<int>(false);
-  host_device_packs_3d<int>(true);
+  host_device_packs_3d<int, size_t>(false);
+  host_device_packs_3d<int, size_t>(true);
+  host_device_packs_3d<int, int>(false);
+  host_device_packs_3d<int, int>(true);
 }
 
 TEST_CASE("index_and_shift", "ekat::pack")
