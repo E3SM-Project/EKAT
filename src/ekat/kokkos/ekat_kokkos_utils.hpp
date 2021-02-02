@@ -517,17 +517,6 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
 };
 #endif
 
-// Get a 1d subview of the i-th dimension of a 2d view
-template <typename T, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<T*, Parms...> >
-subview (const Kokkos::View<T**, Parms...>& v_in, const int i) {
-  EKAT_KERNEL_ASSERT(v_in.data() != nullptr);
-  EKAT_KERNEL_ASSERT(i < v_in.extent_int(0));
-  EKAT_KERNEL_ASSERT(i >= 0);
-  return ekat::Unmanaged<Kokkos::View<T*, Parms...> >(
-    &v_in.impl_map().reference(i, 0), v_in.extent(1));
-}
-
 namespace impl {
 
 #ifdef KOKKOS_ENABLE_CUDA

@@ -3,6 +3,7 @@
 
 #include "ekat/ekat_config.h"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
+#include "ekat/std_meta/ekat_std_type_traits.hpp"
 
 /*
  * Header contains globally useful kokkos-related types for ekat.
@@ -22,6 +23,9 @@ using DefaultDevice = Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::Defa
 
 // A device type to force host execution
 using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::DefaultHostExecutionSpace::memory_space>;
+
+template<typename DT, typename... Props>
+using ViewLR = Kokkos::View<DT,Kokkos::LayoutRight,Props...>;
 
 // Struct for getting useful Kokkos types based on the device
 template <typename DeviceType>
@@ -46,6 +50,11 @@ struct KokkosTypes
   template <typename DataType>
   using lview = Kokkos::View<DataType, Kokkos::LayoutLeft, Device>;
 
+  // A N-dim view given scalar type and N
+  template<typename Scalar, int N>
+  using view_ND = view<typename DataND<Scalar,N>::type>;
+
+  // More verbose cases for N=1,2,3
   template <typename Scalar>
   using view_1d = view<Scalar*>;
 

@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 
+#include "ekat/kokkos/ekat_subview_utils.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat/util/ekat_arch.hpp"
@@ -364,6 +365,102 @@ TEST_CASE("view_reduction", "[kokkos_utils]")
   test_view_reduction<Real, true,false,16,3> (1.0/3.0,2,11);
   test_view_reduction<Real,false,false,16,3> (1.0/3.0,2,11);
 
+}
+
+template<typename ViewT>
+typename ViewT::HostMirror cmvc(const ViewT& v) {
+  auto vh = Kokkos::create_mirror_view(v);
+  Kokkos::deep_copy(vh,v);
+  return vh;
+}
+
+TEST_CASE("subviews") {
+  using kt = ekat::KokkosTypes<ekat::DefaultDevice>;
+
+  const int i0 = 4;
+  const int i1 = 3;
+  const int i2 = 2;
+  const int i3 = 1;
+
+  // Create input view
+  kt::view_ND<Real,6> v6("",7,6,5,4,3,2);
+  const int s = v6.size();
+  Kokkos::parallel_for (kt::RangePolicy(0,s),
+                        KOKKOS_LAMBDA(int i) {
+    *(v6.data()+i) = i;
+  });
+  auto v6h = cmvc(v6);
+
+  // Subview first index
+  auto sv0 = ekat::subview(v6,i0);
+  auto sv0h = cmvc(sv0);
+  for (int i=0; i<6; ++i)
+    for (int j=0; j<5; ++j)
+      for (int k=0; k<4; ++k)
+        for (int l=0; l<3; ++l)
+          for (int m=0; m<2; ++m) {
+            REQUIRE (sv0(i,j,k,l,m)==v6h(i0,i,j,k,l,m));
+          }
+
+  // Subview first two indices at once
+  auto sv01 = ekat::subview(v6,i0,i1);
+  auto sv01h = cmvc(sv01);
+  for (int j=0; j<5; ++j)
+    for (int k=0; k<4; ++k)
+      for (int l=0; l<3; ++l)
+        for (int m=0; m<2; ++m) {
+          REQUIRE (sv01h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
+        }
+
+  // Subview first and then second indices
+  auto sv0_0 = ekat::subview(sv0,i1);
+  auto sv0_0h = cmvc(sv0_0);
+  for (int j=0; j<5; ++j)
+    for (int k=0; k<4; ++k)
+      for (int l=0; l<3; ++l)
+        for (int m=0; m<2; ++m) {
+          REQUIRE (sv01h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
+        }
+
+  // Subview second index
+  auto sv1 = ekat::subview_1(v6,i1);
+  auto sv1h = cmvc(sv1);
+  for (int h=0; h<7; ++h)
+    for (int j=0; j<5; ++j)
+      for (int k=0; k<4; ++k)
+        for (int l=0; l<3; ++l)
+          for (int m=0; m<2; ++m) {
+            REQUIRE (sv1h(h,j,k,l,m)==v6h(h,i1,j,k,l,m));
+          }
+
+  // Subview second and then first index
+  auto sv1_0 = ekat::subview(sv1,i0);
+  auto sv1_0h = cmvc(sv0_0);
+  for (int j=0; j<5; ++j)
+    for (int k=0; k<4; ++k)
+      for (int l=0; l<3; ++l)
+        for (int m=0; m<2; ++m) {
+          REQUIRE (sv1_0h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
+        }
+
+  // Subview second and then third index
+  auto sv1_2 = ekat::subview_1(sv1,i2);
+  auto sv1_2h = cmvc(sv1_2);
+  for (int h=0; h<7; ++h)
+    for (int k=0; k<4; ++k)
+      for (int l=0; l<3; ++l)
+        for (int m=0; m<2; ++m) {
+          REQUIRE (sv1_2h(h,k,l,m)==v6h(h,i1,i2,k,l,m));
+        }
+
+  // Subview second, then third, and then fourth index
+  auto sv1_2_3 = ekat::subview_1(sv1_2,i3);
+  auto sv1_2_3h = cmvc(sv1_2_3);
+  for (int h=0; h<7; ++h)
+    for (int l=0; l<3; ++l)
+      for (int m=0; m<2; ++m) {
+        REQUIRE (sv1_2_3h(h,l,m)==v6h(h,i1,i2,i3,l,m));
+      }
 }
 
 } // anonymous namespace

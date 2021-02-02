@@ -2,6 +2,7 @@
 
 #include "ekat/util/ekat_lin_interp.hpp"
 #include "ekat/util/ekat_test_utils.hpp"
+#include "ekat/kokkos/ekat_subview_utils.hpp"
 
 #include "ekat_test_config.h"
 #include <random>
