@@ -40,6 +40,16 @@ struct remove_all_consts<T*> {
   using type = typename remove_all_consts<T>::type*;
 };
 
+// The datatype of an N-dim dynamic array, given the value type and N
+template<typename T, int N>
+struct DataND {
+  using type = typename DataND<T,N-1>::type*;
+};
+template<typename T>
+struct DataND<T,1> {
+  using type = T*;
+};
+
 } // namespace ekat
 
 #endif // EKAT_STD_TYPE_TRAITS_HPP

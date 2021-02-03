@@ -39,6 +39,7 @@ set(EKAT_HEADERS
   kokkos/ekat_kokkos_meta.hpp
   kokkos/ekat_kokkos_types.hpp
   kokkos/ekat_kokkos_utils.hpp
+  kokkos/ekat_subview_utils.hpp
   mpi/ekat_comm.hpp
   std_meta/ekat_std_any.hpp
   std_meta/ekat_std_enable_shared_from_this.hpp
