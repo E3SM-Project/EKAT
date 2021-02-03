@@ -384,7 +384,7 @@ TEST_CASE("subviews") {
   const int i4 = 1;
 
   // Create input view
-  kt::view_ND<Real,6> v6("",7,6,5,4,3,2);
+  kt::view_ND<Real,6> v6("v6",7,6,5,4,3,2);
   const int s = v6.size();
   Kokkos::parallel_for (kt::RangePolicy(0,s),
                         KOKKOS_LAMBDA(int i) {
@@ -396,12 +396,6 @@ TEST_CASE("subviews") {
   auto v3 = ekat::subview(v6,i0,i1,i2);
   auto v2 = ekat::subview(v6,i0,i1,i2,i3);
   auto v1 = ekat::subview(v6,i0,i1,i2,i3,i4);
-  auto v6h = cmvc(v6);
-  auto v5h = cmvc(v5);
-  auto v4h = cmvc(v4);
-  auto v3h = cmvc(v3);
-  auto v2h = cmvc(v2);
-  auto v1h = cmvc(v1);
 
   SECTION ("subview_major") {
 
@@ -410,115 +404,130 @@ TEST_CASE("subviews") {
     auto v5_3 = ekat::subview(v5,i1,i2);
     auto v5_2 = ekat::subview(v5,i1,i2,i3);
     auto v5_1 = ekat::subview(v5,i1,i2,i3,i4);
-    auto v5_4h = cmvc(v5_4);
-    auto v5_3h = cmvc(v5_3);
-    auto v5_2h = cmvc(v5_2);
-    auto v5_1h = cmvc(v5_1);
 
     // Subviews of v4
     auto v4_3 = ekat::subview(v4,i2);
     auto v4_2 = ekat::subview(v4,i2,i3);
     auto v4_1 = ekat::subview(v4,i2,i3,i4);
-    auto v4_3h = cmvc(v4_3);
-    auto v4_2h = cmvc(v4_2);
-    auto v4_1h = cmvc(v4_1);
 
     // Subviews of v3
     auto v3_2 = ekat::subview(v3,i3);
     auto v3_1 = ekat::subview(v3,i3,i4);
-    auto v3_2h = cmvc(v3_2);
-    auto v3_1h = cmvc(v3_1);
 
     // Subviews of v2
     auto v2_1 = ekat::subview(v2,i4);
-    auto v2_1h = cmvc(v2_1);
 
-    // Check vN and vN_k against v6
-    for (int m=0; m<2; ++m) {
-      for (int l=0; l<3; ++l) {
-        for (int k=0; k<4; ++k) {
-          for (int j=0; j<5; ++j) {
-            for (int i=0; i<6; ++i) {
-              REQUIRE (v5h(i,j,k,l,m)==v6h(i0,i,j,k,l,m));
+    // Compare with original view
+    Kokkos::View<int> diffs("");
+    Kokkos::deep_copy(diffs,0);
+    Kokkos::parallel_for(kt::RangePolicy(0,1),
+                         KOKKOS_LAMBDA(int) {
+
+      int& ndiffs = diffs();
+      // Check vN and vN_k against v6
+      for (int m=0; m<2; ++m) {
+        for (int l=0; l<3; ++l) {
+          for (int k=0; k<4; ++k) {
+            for (int j=0; j<5; ++j) {
+              for (int i=0; i<6; ++i) {
+                if (v5(i,j,k,l,m)!=v6(i0,i,j,k,l,m)) ++ndiffs;
+              }
+              if (v4(j,k,l,m)!=v6(i0,i1,j,k,l,m)) ++ndiffs;
+              if (v5_4(j,k,l,m)!=v6(i0,i1,j,k,l,m)) ++ndiffs;
             }
-            REQUIRE (v4h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
-            REQUIRE (v5_4h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
+            if (v3(k,l,m)!=v6(i0,i1,i2,k,l,m)) ++ndiffs;
+            if (v5_3(k,l,m)!=v6(i0,i1,i2,k,l,m)) ++ndiffs;
+            if (v4_3(k,l,m)!=v6(i0,i1,i2,k,l,m)) ++ndiffs;
           }
-          REQUIRE (v3h(k,l,m)==v6h(i0,i1,i2,k,l,m));
-          REQUIRE (v5_3h(k,l,m)==v6h(i0,i1,i2,k,l,m));
-          REQUIRE (v4_3h(k,l,m)==v6h(i0,i1,i2,k,l,m));
+          if (v2(l,m)!=v6(i0,i1,i2,i3,l,m)) ++ndiffs;
+          if (v5_2(l,m)!=v6(i0,i1,i2,i3,l,m)) ++ndiffs;
+          if (v4_2(l,m)!=v6(i0,i1,i2,i3,l,m)) ++ndiffs;
+          if (v3_2(l,m)!=v6(i0,i1,i2,i3,l,m)) ++ndiffs;
         }
-        REQUIRE (v2h(l,m)==v6h(i0,i1,i2,i3,l,m));
-        REQUIRE (v5_2h(l,m)==v6h(i0,i1,i2,i3,l,m));
-        REQUIRE (v4_2h(l,m)==v6h(i0,i1,i2,i3,l,m));
-        REQUIRE (v3_2h(l,m)==v6h(i0,i1,i2,i3,l,m));
+        if (v1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
+        if (v5_1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
+        if (v4_1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
+        if (v3_1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
+        if (v2_1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
       }
-      REQUIRE (v1h(m)==v6h(i0,i1,i2,i3,i4,m));
-      REQUIRE (v5_1h(m)==v6h(i0,i1,i2,i3,i4,m));
-      REQUIRE (v4_1h(m)==v6h(i0,i1,i2,i3,i4,m));
-      REQUIRE (v3_1h(m)==v6h(i0,i1,i2,i3,i4,m));
-      REQUIRE (v2_1h(m)==v6h(i0,i1,i2,i3,i4,m));
-    }
+
+      // Make sure that our diffs counting strategy works
+      // by checking that two entries that should be different
+      // are indeed different.
+      if (v2_1(0) != v6(i0,i1,i2,i3,i4,1)) ++ndiffs;
+    });
+    auto diffs_h = Kokkos::create_mirror_view(diffs);
+    Kokkos::deep_copy(diffs_h,diffs);
+    REQUIRE (diffs_h()==1);
   }
 
   SECTION ("second_slowest") {
+    // Subview the second slowest
     auto sv6 = ekat::subview_1(v6,i1);
     auto sv5 = ekat::subview_1(v5,i2);
     auto sv4 = ekat::subview_1(v4,i3);
     auto sv3 = ekat::subview_1(v3,i4);
-
-    auto sv6h = cmvc(sv6);
-    auto sv5h = cmvc(sv5);
-    auto sv4h = cmvc(sv4);
-    auto sv3h = cmvc(sv3);
-
-    for (int h=0; h<7; ++h)
-      for (int j=0; j<5; ++j)
-        for (int k=0; k<4; ++k)
-          for (int l=0; l<3; ++l)
-            for (int m=0; m<2; ++m) {
-              REQUIRE (sv6h(h,j,k,l,m)==v6h(h,i1,j,k,l,m));
-            }
-    for (int i=0; i<5; ++i)
-      for (int k=0; k<4; ++k)
-        for (int l=0; l<3; ++l)
-          for (int m=0; m<2; ++m) {
-            REQUIRE (sv5h(i,k,l,m)==v6h(i0,i,i2,k,l,m));
-          }
-    for (int j=0; j<5; ++j)
-      for (int l=0; l<3; ++l)
-        for (int m=0; m<2; ++m) {
-          REQUIRE (sv4h(j,l,m)==v6h(i0,i1,j,i3,l,m));
-        }
-    for (int k=0; k<4; ++k)
-      for (int m=0; m<2; ++m) {
-        REQUIRE (sv3h(k,m)==v6h(i0,i1,i2,k,i4,m));
-      }
 
     // Subview again the second slowest
     auto sv6_2 = ekat::subview_1(sv6,i2);
     auto sv5_2 = ekat::subview_1(sv5,i3);
     auto sv4_2 = ekat::subview_1(sv4,i4);
 
-    auto sv6_2h = cmvc(sv6_2);
-    auto sv5_2h = cmvc(sv5_2);
-    auto sv4_2h = cmvc(sv4_2);
+    // Compare with original view
+    Kokkos::View<int> diffs("");
+    Kokkos::deep_copy(diffs,0);
+    Kokkos::parallel_for(kt::RangePolicy(0,1),
+                         KOKKOS_LAMBDA(int) {
 
-    for (int h=0; h<7; ++h)
-      for (int k=0; k<4; ++k)
+      int& ndiffs = diffs();
+      for (int h=0; h<7; ++h)
+        for (int j=0; j<5; ++j)
+          for (int k=0; k<4; ++k)
+            for (int l=0; l<3; ++l)
+              for (int m=0; m<2; ++m) {
+                if (sv6(h,j,k,l,m)!=v6(h,i1,j,k,l,m)) ++ndiffs;
+              }
+      for (int i=0; i<5; ++i)
+        for (int k=0; k<4; ++k)
+          for (int l=0; l<3; ++l)
+            for (int m=0; m<2; ++m) {
+              if (sv5(i,k,l,m)!=v6(i0,i,i2,k,l,m)) ++ndiffs;
+            }
+      for (int j=0; j<5; ++j)
         for (int l=0; l<3; ++l)
           for (int m=0; m<2; ++m) {
-            REQUIRE (sv6_2h(h,k,l,m)==v6h(h,i1,i2,k,l,m));
+            if (sv4(j,l,m)!=v6(i0,i1,j,i3,l,m)) ++ndiffs;
           }
-    for (int i=0; i<4; ++i)
-      for (int l=0; l<3; ++l)
+      for (int k=0; k<4; ++k)
         for (int m=0; m<2; ++m) {
-          REQUIRE (sv5_2h(i,l,m)==v6h(i0,i,i2,i3,l,m));
+          if (sv3(k,m)!=v6(i0,i1,i2,k,i4,m)) ++ndiffs;
         }
-    for (int j=0; j<5; ++j)
-      for (int m=0; m<2; ++m) {
-        REQUIRE (sv4_2h(j,m)==v6h(i0,i1,j,i3,i4,m));
-      }
+
+
+      for (int h=0; h<7; ++h)
+        for (int k=0; k<4; ++k)
+          for (int l=0; l<3; ++l)
+            for (int m=0; m<2; ++m) {
+              if (sv6_2(h,k,l,m)!=v6(h,i1,i2,k,l,m)) ++ndiffs;
+            }
+      for (int i=0; i<4; ++i)
+        for (int l=0; l<3; ++l)
+          for (int m=0; m<2; ++m) {
+            if (sv5_2(i,l,m)!=v6(i0,i,i2,i3,l,m)) ++ndiffs;
+          }
+      for (int j=0; j<5; ++j)
+        for (int m=0; m<2; ++m) {
+          if (sv4_2(j,m)!=v6(i0,i1,j,i3,i4,m)) ++ndiffs;
+        }
+
+      // Make sure that our diffs counting strategy works
+      // by checking that two entries that should be different
+      // are indeed different.
+      if (sv4_2(0,0)!=v6(i0,i1,0,i3,i4,1)) ++ndiffs;
+    });
+    auto diffs_h = Kokkos::create_mirror_view(diffs);
+    Kokkos::deep_copy(diffs_h,diffs);
+    REQUIRE (diffs_h()==1);
   }
 }
 
