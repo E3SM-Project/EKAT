@@ -198,19 +198,11 @@ subview(const ViewLR<ST******,Props...>& v,
 //       so for higher ranks, we manually build the output view
 //       instead of relying on Kokkos::subview.
 //       See https://github.com/kokkos/kokkos/issues/3757
-
-// --- Rank2 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview_1(const ViewLR<ST**,Props...>& v,
-          const int i1) {
-  assert(v.data() != nullptr);
-  assert(i1>=0 && i1 < v.extent_int(1));
-
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      Kokkos::subview(v,Kokkos::ALL(),i1));
-}
+// Note: we *cannot* offer this method for Rank2 views, since
+//       kokkos does not offer LayoutRight with a stride for dim0
+//       for rank 1 layouts, and forces to use LayoutStride instead.
+//       That means that v(m,n) subviewed as v(:,n0) will *always*
+//       have LayoutStride, which we try to avoid.
 
 // --- Rank3 --- //
 template <typename ST, typename... Props>
@@ -220,8 +212,19 @@ subview_1(const ViewLR<ST***,Props...>& v,
           const int i1) {
   assert(v.data() != nullptr);
   assert(i1>=0 && i1 < v.extent_int(1));
+
+  using vt = Unmanaged<ViewLR<ST**,Props...>>;
+  // Figure out where the data starts, and create a tmp view with correct extents
+  auto offset = v.impl_map().m_impl_offset(0,i1,0);
+  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2));
+
+  // The view tmp has still the wrong stride_0 (the prod of the following dims).
+  // Since we are keeping the first dimension, the stride is unchanged.
+  auto vm = tmp.impl_map();
+  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
+  auto test =  Unmanaged<ViewLR<ST**,Props...>>(v.impl_track(),vm);
   return Unmanaged<ViewLR<ST**,Props...>>(
-      Kokkos::subview(v,Kokkos::ALL(),i1,Kokkos::ALL()));
+      v.impl_track(),vm);
 }
 
 // --- Rank4 --- //
@@ -242,6 +245,7 @@ subview_1(const ViewLR<ST****,Props...>& v,
   // Since we are keeping the first dimension, the stride is unchanged.
   auto vm = tmp.impl_map();
   vm.m_impl_offset.m_stride = v.impl_map().stride_0();
+  auto test =  Unmanaged<ViewLR<ST***,Props...>>(v.impl_track(),vm);
   return Unmanaged<ViewLR<ST***,Props...>>(
       v.impl_track(),vm);
 }

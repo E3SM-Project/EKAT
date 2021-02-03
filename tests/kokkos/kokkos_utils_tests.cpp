@@ -377,10 +377,11 @@ typename ViewT::HostMirror cmvc(const ViewT& v) {
 TEST_CASE("subviews") {
   using kt = ekat::KokkosTypes<ekat::DefaultDevice>;
 
-  const int i0 = 4;
-  const int i1 = 3;
-  const int i2 = 2;
-  const int i3 = 1;
+  const int i0 = 5;
+  const int i1 = 4;
+  const int i2 = 3;
+  const int i3 = 2;
+  const int i4 = 1;
 
   // Create input view
   kt::view_ND<Real,6> v6("",7,6,5,4,3,2);
@@ -389,78 +390,136 @@ TEST_CASE("subviews") {
                         KOKKOS_LAMBDA(int i) {
     *(v6.data()+i) = i;
   });
+
+  auto v5 = ekat::subview(v6,i0);
+  auto v4 = ekat::subview(v6,i0,i1);
+  auto v3 = ekat::subview(v6,i0,i1,i2);
+  auto v2 = ekat::subview(v6,i0,i1,i2,i3);
+  auto v1 = ekat::subview(v6,i0,i1,i2,i3,i4);
   auto v6h = cmvc(v6);
+  auto v5h = cmvc(v5);
+  auto v4h = cmvc(v4);
+  auto v3h = cmvc(v3);
+  auto v2h = cmvc(v2);
+  auto v1h = cmvc(v1);
 
-  // Subview first index
-  auto sv0 = ekat::subview(v6,i0);
-  auto sv0h = cmvc(sv0);
-  for (int i=0; i<6; ++i)
-    for (int j=0; j<5; ++j)
-      for (int k=0; k<4; ++k)
-        for (int l=0; l<3; ++l)
-          for (int m=0; m<2; ++m) {
-            REQUIRE (sv0(i,j,k,l,m)==v6h(i0,i,j,k,l,m));
+  SECTION ("subview_major") {
+
+    // Subviews of v5
+    auto v5_4 = ekat::subview(v5,i1);
+    auto v5_3 = ekat::subview(v5,i1,i2);
+    auto v5_2 = ekat::subview(v5,i1,i2,i3);
+    auto v5_1 = ekat::subview(v5,i1,i2,i3,i4);
+    auto v5_4h = cmvc(v5_4);
+    auto v5_3h = cmvc(v5_3);
+    auto v5_2h = cmvc(v5_2);
+    auto v5_1h = cmvc(v5_1);
+
+    // Subviews of v4
+    auto v4_3 = ekat::subview(v4,i2);
+    auto v4_2 = ekat::subview(v4,i2,i3);
+    auto v4_1 = ekat::subview(v4,i2,i3,i4);
+    auto v4_3h = cmvc(v4_3);
+    auto v4_2h = cmvc(v4_2);
+    auto v4_1h = cmvc(v4_1);
+
+    // Subviews of v3
+    auto v3_2 = ekat::subview(v3,i3);
+    auto v3_1 = ekat::subview(v3,i3,i4);
+    auto v3_2h = cmvc(v3_2);
+    auto v3_1h = cmvc(v3_1);
+
+    // Subviews of v2
+    auto v2_1 = ekat::subview(v2,i4);
+    auto v2_1h = cmvc(v2_1);
+
+    // Check vN and vN_k against v6
+    for (int m=0; m<2; ++m) {
+      for (int l=0; l<3; ++l) {
+        for (int k=0; k<4; ++k) {
+          for (int j=0; j<5; ++j) {
+            for (int i=0; i<6; ++i) {
+              REQUIRE (v5h(i,j,k,l,m)==v6h(i0,i,j,k,l,m));
+            }
+            REQUIRE (v4h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
+            REQUIRE (v5_4h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
           }
-
-  // Subview first two indices at once
-  auto sv01 = ekat::subview(v6,i0,i1);
-  auto sv01h = cmvc(sv01);
-  for (int j=0; j<5; ++j)
-    for (int k=0; k<4; ++k)
-      for (int l=0; l<3; ++l)
-        for (int m=0; m<2; ++m) {
-          REQUIRE (sv01h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
+          REQUIRE (v3h(k,l,m)==v6h(i0,i1,i2,k,l,m));
+          REQUIRE (v5_3h(k,l,m)==v6h(i0,i1,i2,k,l,m));
+          REQUIRE (v4_3h(k,l,m)==v6h(i0,i1,i2,k,l,m));
         }
-
-  // Subview first and then second indices
-  auto sv0_0 = ekat::subview(sv0,i1);
-  auto sv0_0h = cmvc(sv0_0);
-  for (int j=0; j<5; ++j)
-    for (int k=0; k<4; ++k)
-      for (int l=0; l<3; ++l)
-        for (int m=0; m<2; ++m) {
-          REQUIRE (sv01h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
-        }
-
-  // Subview second index
-  auto sv1 = ekat::subview_1(v6,i1);
-  auto sv1h = cmvc(sv1);
-  for (int h=0; h<7; ++h)
-    for (int j=0; j<5; ++j)
-      for (int k=0; k<4; ++k)
-        for (int l=0; l<3; ++l)
-          for (int m=0; m<2; ++m) {
-            REQUIRE (sv1h(h,j,k,l,m)==v6h(h,i1,j,k,l,m));
-          }
-
-  // Subview second and then first index
-  auto sv1_0 = ekat::subview(sv1,i0);
-  auto sv1_0h = cmvc(sv0_0);
-  for (int j=0; j<5; ++j)
-    for (int k=0; k<4; ++k)
-      for (int l=0; l<3; ++l)
-        for (int m=0; m<2; ++m) {
-          REQUIRE (sv1_0h(j,k,l,m)==v6h(i0,i1,j,k,l,m));
-        }
-
-  // Subview second and then third index
-  auto sv1_2 = ekat::subview_1(sv1,i2);
-  auto sv1_2h = cmvc(sv1_2);
-  for (int h=0; h<7; ++h)
-    for (int k=0; k<4; ++k)
-      for (int l=0; l<3; ++l)
-        for (int m=0; m<2; ++m) {
-          REQUIRE (sv1_2h(h,k,l,m)==v6h(h,i1,i2,k,l,m));
-        }
-
-  // Subview second, then third, and then fourth index
-  auto sv1_2_3 = ekat::subview_1(sv1_2,i3);
-  auto sv1_2_3h = cmvc(sv1_2_3);
-  for (int h=0; h<7; ++h)
-    for (int l=0; l<3; ++l)
-      for (int m=0; m<2; ++m) {
-        REQUIRE (sv1_2_3h(h,l,m)==v6h(h,i1,i2,i3,l,m));
+        REQUIRE (v2h(l,m)==v6h(i0,i1,i2,i3,l,m));
+        REQUIRE (v5_2h(l,m)==v6h(i0,i1,i2,i3,l,m));
+        REQUIRE (v4_2h(l,m)==v6h(i0,i1,i2,i3,l,m));
+        REQUIRE (v3_2h(l,m)==v6h(i0,i1,i2,i3,l,m));
       }
+      REQUIRE (v1h(m)==v6h(i0,i1,i2,i3,i4,m));
+      REQUIRE (v5_1h(m)==v6h(i0,i1,i2,i3,i4,m));
+      REQUIRE (v4_1h(m)==v6h(i0,i1,i2,i3,i4,m));
+      REQUIRE (v3_1h(m)==v6h(i0,i1,i2,i3,i4,m));
+      REQUIRE (v2_1h(m)==v6h(i0,i1,i2,i3,i4,m));
+    }
+  }
+
+  SECTION ("second_slowest") {
+    auto sv6 = ekat::subview_1(v6,i1);
+    auto sv5 = ekat::subview_1(v5,i2);
+    auto sv4 = ekat::subview_1(v4,i3);
+    auto sv3 = ekat::subview_1(v3,i4);
+
+    auto sv6h = cmvc(sv6);
+    auto sv5h = cmvc(sv5);
+    auto sv4h = cmvc(sv4);
+    auto sv3h = cmvc(sv3);
+
+    for (int h=0; h<7; ++h)
+      for (int j=0; j<5; ++j)
+        for (int k=0; k<4; ++k)
+          for (int l=0; l<3; ++l)
+            for (int m=0; m<2; ++m) {
+              REQUIRE (sv6h(h,j,k,l,m)==v6h(h,i1,j,k,l,m));
+            }
+    for (int i=0; i<5; ++i)
+      for (int k=0; k<4; ++k)
+        for (int l=0; l<3; ++l)
+          for (int m=0; m<2; ++m) {
+            REQUIRE (sv5h(i,k,l,m)==v6h(i0,i,i2,k,l,m));
+          }
+    for (int j=0; j<5; ++j)
+      for (int l=0; l<3; ++l)
+        for (int m=0; m<2; ++m) {
+          REQUIRE (sv4h(j,l,m)==v6h(i0,i1,j,i3,l,m));
+        }
+    for (int k=0; k<4; ++k)
+      for (int m=0; m<2; ++m) {
+        REQUIRE (sv3h(k,m)==v6h(i0,i1,i2,k,i4,m));
+      }
+
+    // Subview again the second slowest
+    auto sv6_2 = ekat::subview_1(sv6,i2);
+    auto sv5_2 = ekat::subview_1(sv5,i3);
+    auto sv4_2 = ekat::subview_1(sv4,i4);
+
+    auto sv6_2h = cmvc(sv6_2);
+    auto sv5_2h = cmvc(sv5_2);
+    auto sv4_2h = cmvc(sv4_2);
+
+    for (int h=0; h<7; ++h)
+      for (int k=0; k<4; ++k)
+        for (int l=0; l<3; ++l)
+          for (int m=0; m<2; ++m) {
+            REQUIRE (sv6_2h(h,k,l,m)==v6h(h,i1,i2,k,l,m));
+          }
+    for (int i=0; i<4; ++i)
+      for (int l=0; l<3; ++l)
+        for (int m=0; m<2; ++m) {
+          REQUIRE (sv5_2h(i,l,m)==v6h(i0,i,i2,i3,l,m));
+        }
+    for (int j=0; j<5; ++j)
+      for (int m=0; m<2; ++m) {
+        REQUIRE (sv4_2h(j,m)==v6h(i0,i1,j,i3,i4,m));
+      }
+  }
 }
 
 } // anonymous namespace
