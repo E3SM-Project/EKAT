@@ -102,9 +102,14 @@ macro (EkatDisableAllWarning targetName)
   target_compile_options (${targetName} PRIVATE
     $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-w> $<$<C_COMPILER_ID:Intel>: -w>>)
   target_compile_options (${targetName} PRIVATE
-    $<$<COMPILE_LANGUAGE:Fortran>:$<$<Fortran_COMPILER_ID:GNU>:-w> $<$<Fortran_COMPILER_ID:Intel>: -w>>)
-  target_compile_options (${targetName} PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Intel>: -w>>)
+  if (${CMAKE_VERSION} VERSION_LESS "3.14.0")
+    target_compile_options (${targetName} PRIVATE
+      $<$<COMPILE_LANGUAGE:Fortran>:$<$<STREQUAL:"${CMAKE_Fortran_COMPILER_ID}","GNU">:-w> $<$<STREQUAL:"${CMAKE_Fortran_COMPILER_ID}","Intel">: -w>>)
+  else ()
+    target_compile_options (${targetName} PRIVATE
+      $<$<COMPILE_LANGUAGE:Fortran>:$<$<Fortran_COMPILER_ID:GNU>:-w> $<$<Fortran_COMPILER_ID:Intel>: -w>>)
+  endif()
 
 endmacro (EkatDisableAllWarning)
 
