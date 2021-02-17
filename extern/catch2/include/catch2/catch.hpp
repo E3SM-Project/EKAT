@@ -15774,7 +15774,7 @@ void ConsoleReporter::lazyPrintWithoutClosingBenchmarkTable() {
     }
 }
 void ConsoleReporter::lazyPrintRunInfo() {
-    stream << '\n' << getLineOfChars<'~'>() << '\n';
+    stream << '\n' << getLineOfChars<'='>() << '\n';
     Colour colour(Colour::SecondaryText);
     stream << currentTestRunInfo->name
         << " is a Catch v" << libraryVersion() << " host application.\n"
