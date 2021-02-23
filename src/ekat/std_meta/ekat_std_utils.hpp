@@ -11,7 +11,7 @@ namespace ekat {
 
 // This function returns an iterator which is of the same type of c.begin()
 template<typename ContainerType, typename T>
-auto find (const ContainerType& c, T&& value) -> decltype(c.begin()) {
+auto find (ContainerType& c, T&& value) -> decltype(c.begin()) {
   return std::find(c.begin(),c.end(),value);
 }
 
