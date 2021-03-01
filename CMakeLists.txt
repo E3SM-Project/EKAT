@@ -19,6 +19,7 @@ list(APPEND CMAKE_MODULE_PATH
 # (for openpmi; -lmpicxx for mpich) flag.
 include(EkatMpiUtils)
 DisableMpiCxxBindings()
+
 # Scripts containing macros needed to handle TPLs
 include(EkatBuildKokkos)
 include(EkatBuildYamlCpp)
