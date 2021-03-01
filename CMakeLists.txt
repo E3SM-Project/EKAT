@@ -19,7 +19,6 @@ list(APPEND CMAKE_MODULE_PATH
 # (for openpmi; -lmpicxx for mpich) flag.
 include(EkatMpiUtils)
 DisableMpiCxxBindings()
-
 # Scripts containing macros needed to handle TPLs
 include(EkatBuildKokkos)
 include(EkatBuildYamlCpp)
@@ -72,6 +71,7 @@ set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of E
 
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
+option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
@@ -90,6 +90,14 @@ endif()
 
 include(EkatSetCompilerFlags)
 SetCompilerFlags()
+
+############################
+##     EKAT VALGRIND SUPPORT ###
+############################
+
+if (EKAT_ENABLE_VALGRIND)
+  add_subdirectory(valgrind_support)
+endif()
 
 ############################
 ###    EKAT LIBRARIES    ###
