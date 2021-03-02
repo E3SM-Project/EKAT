@@ -19,6 +19,7 @@ TEST_CASE("upper_bound", "soak") {
     for (int i = 0; i < size; ++i) {
       v[i] = value_dist(generator);
     }
+    v[0] = 1.0; // ensures upper_bound search never goes off the end of the vector
     std::sort(v.begin(), v.end());
     double search_val = value_dist(generator);
     double v1 = *ekat::upper_bound_impl(v.data(), v.data() + size, search_val);

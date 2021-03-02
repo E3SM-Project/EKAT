@@ -40,7 +40,7 @@ function(EkatCreateUnitTest target_name target_srcs)
   set(oneValueArgs DEP MPI_EXEC_NAME MPI_NP_FLAG)
   set(multiValueArgs
     MPI_RANKS THREADS
-    MPI_EXTRA_ARGS EXE_ARGS 
+    MPI_EXTRA_ARGS EXE_ARGS
     INCLUDE_DIRS
     COMPILER_DEFS
     COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
@@ -243,15 +243,36 @@ function(EkatCreateUnitTest target_name target_srcs)
 
   foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
     foreach (NTHREADS RANGE ${THREAD_START} ${THREAD_END} ${THREAD_INCREMENT})
-      # Create the test
+      # Create the test name
       set(FULL_TEST_NAME ${target_name}_ut_np${NRANKS}_omp${NTHREADS})
+
+      set(USE_MPI FALSE)
       if (${NRANKS} GREATER 1)
+        set(USE_MPI TRUE)
+      endif()
+
+      # Setup valgrind commmand modifications
+      if (EKAT_ENABLE_VALGRIND)
+        if (USE_MPI)
+          set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/mpi.supp")
+        else()
+          set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/serial.supp")
+        endif()
+        set(invokeExecCurr "valgrind --error-exitcode=1 --suppressions=${VALGRIND_SUP_FILE} ${invokeExec}")
+      else()
+        set(invokeExecCurr "${invokeExec}")
+      endif()
+
+      # Create the test
+      if (USE_MPI)
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExec}")
+                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
       else()
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${invokeExec}")
+                 COMMAND sh -c "${invokeExecCurr}")
       endif()
+
+      # Set test properties
       math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
       set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${NTHREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True)
       if (ecut_DEP AND NOT ecut_DEP STREQUAL "${FULL_TEST_NAME}")
@@ -267,7 +288,7 @@ function(EkatCreateUnitTest target_name target_srcs)
       endif()
 
       set (RES_GROUPS "devices:1")
-      if (${NRANKS} GREATER 1)
+      if (USE_MPI)
         foreach (rank RANGE 2 ${NRANKS})
           set (RES_GROUPS "${RES_GROUPS},devices:1")
         endforeach()
