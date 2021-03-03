@@ -17,6 +17,20 @@ namespace ekat {
     }                                               \
     return s;                                       \
   }
+#define ekat_pack_gen_masked_unary_stdfn(fn)        \
+  template <typename ScalarT, int N>                \
+  KOKKOS_INLINE_FUNCTION                            \
+  Pack<ScalarT,N> fn (const Pack<ScalarT,N>& p,     \
+                      const Mask<N>& m) {           \
+    Pack<ScalarT,N> s;                              \
+    vector_simd                                     \
+    for (int i = 0; i < N; ++i) {                   \
+      if (m[i]) {                                   \
+        s[i] = ::fn(p[i]);                          \
+      }                                             \
+    }                                               \
+    return s;                                       \
+  }
 #else
 #define ekat_pack_gen_unary_stdfn(fn)               \
   template <typename ScalarT, int N>                \
@@ -29,7 +43,22 @@ namespace ekat {
     }                                               \
     return s;                                       \
   }
+#define ekat_pack_gen_masked_unary_stdfn(fn)        \
+  template <typename ScalarT, int N>                \
+  KOKKOS_INLINE_FUNCTION                            \
+  Pack<ScalarT,N> fn (const Pack<ScalarT,N>& p,     \
+                      const Mask<N>& m) {           \
+    Pack<ScalarT,N> s;                              \
+    vector_simd                                     \
+    for (int i = 0; i < N; ++i) {                   \
+      if (m[i]) {                                   \
+        s[i] = std::fn(p[i]);                       \
+      }                                             \
+    }                                               \
+    return s;                                       \
+  }
 #endif
+
 
 ekat_pack_gen_unary_stdfn(abs)
 ekat_pack_gen_unary_stdfn(exp)
@@ -41,6 +70,10 @@ ekat_pack_gen_unary_stdfn(sqrt)
 ekat_pack_gen_unary_stdfn(cbrt)
 ekat_pack_gen_unary_stdfn(tanh)
 ekat_pack_gen_unary_stdfn(erf)
+ekat_pack_gen_masked_unary_stdfn(log)
+ekat_pack_gen_masked_unary_stdfn(log10)
+ekat_pack_gen_masked_unary_stdfn(tgamma)
+ekat_pack_gen_masked_unary_stdfn(sqrt)
 
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> min (const PackType& p) {
