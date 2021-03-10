@@ -172,9 +172,15 @@ TEST_CASE("string","string") {
       // We tokenize strings using spaces and underscores.
       const auto& s1 = std::get<0>(entry);
       const auto& s2 = std::get<1>(entry);
-      double sj = jaccard_similarity(s1,s2,{' ', '_'});
-      const double sj_ex = std::get<2>(entry);
-      REQUIRE (std::abs(sj-sj_ex)<tol);
+      double s12 = jaccard_similarity(s1,s2,{' ', '_'});
+      double s21 = jaccard_similarity(s1,s2,{' ', '_'});
+      const double s_ex = std::get<2>(entry);
+
+      // Check against expected value
+      REQUIRE (std::abs(s12-s_ex)<tol);
+      // Check simmetry
+      REQUIRE (std::abs(s12-s21)<tol);
+    }
   }
 
   {
