@@ -253,8 +253,7 @@ class WorkspaceManager
   KOKKOS_INLINE_FUNCTION
   void init_metadata(const int ws_idx, const int slot) const;
 
-  static void init(const WorkspaceManager& wm, const view_2d<T>& data,
-                   const int max_ws_idx, const int max_used, const int total);
+  static void init(const WorkspaceManager& wm, const int max_ws_idx, const int max_used);
 
   //
   // data
