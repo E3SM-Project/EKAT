@@ -139,11 +139,17 @@ KOKKOS_FORCEINLINE_FUNCTION
 Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
 WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) const
 {
-  return Unmanaged<view_1d<S> >(
+  Unmanaged<view_1d<S> > space(
     reinterpret_cast<S*>(&m_data(team_idx, slot*m_total) + m_reserve),
     sizeof(T) == sizeof(S) ?
     m_size :
     (m_size*sizeof(T))/sizeof(S));
+#ifndef NDEBUG
+  for (size_t k=0; k<space.size(); ++k) {
+    space(k) = ekat::ScalarTraits<S>::quiet_NaN();
+  }
+#endif
+  return space;
 }
 
 template <typename T, typename D>
