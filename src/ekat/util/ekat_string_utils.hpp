@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 /*
  * A set of utilities for string manipulation
@@ -35,6 +36,13 @@ std::string strint (const std::string& s, const int i);
 
 // Conver the string to all upper case
 std::string upper_case (const std::string& s);
+
+// Split a string into tokens, according to any of the provided delimiters.
+// If atomic!="", substrings matching atomic will not be split with
+// any of the delimiters.
+std::list<std::string> gather_tokens(const std::string& s,
+                                     const std::vector<char>& delimiters,
+                                     const std::string& atomic = "");
 
 // Computing similarity index between s1 and s2 using Jaro algorithm
 // For a quick description of the Jaro similarity index, see, e.g.,

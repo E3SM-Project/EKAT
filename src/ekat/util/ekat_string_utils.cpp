@@ -125,13 +125,11 @@ double jaro_winkler_similarity (const std::string& s1, const std::string& s2,
   return sim_j;
 }
 
-namespace {
-
 // This is a helper function for token-based similarity indexes. It gathers
 // tokens from the given string for the given list of delimiters.
 std::list<std::string> gather_tokens(const std::string& s,
                                      const std::vector<char>& delimiters,
-                                     const std::string& atomic = "") {
+                                     const std::string& atomic) {
   std::list<std::string> all_tokens;
 
   if (atomic!="") {
@@ -140,11 +138,15 @@ std::list<std::string> gather_tokens(const std::string& s,
       // The atomic string wasn't found.
       return gather_tokens(s,delimiters,"");
     }
+    // The atomic string was found. Add it as a token, then remove if from
+    // the input string, and run again on what's left.
+    all_tokens.push_back(atomic);
 
     std::string s_mod(s);
     s_mod.erase(pos,atomic.size());
-    all_tokens.push_back(atomic);
-    all_tokens.splice(all_tokens.end(),gather_tokens(s_mod,delimiters));
+
+    // Note: splice is better than manual push back, since it only moves a couple of ptrs.
+    all_tokens.splice(all_tokens.end(),gather_tokens(s_mod,delimiters,atomic));
     return all_tokens;
   }
 
@@ -164,10 +166,9 @@ std::list<std::string> gather_tokens(const std::string& s,
   if (prev < s.length()) {
     all_tokens.push_back(s.substr(prev, std::string::npos));
   }
+
   return all_tokens;
 }
-
-} // anonymous namespace
 
 double jaccard_similarity (const std::string& s1, const std::string& s2,
                            const std::vector<char>& delimiters,
