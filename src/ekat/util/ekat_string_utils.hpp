@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 /*
  * A set of utilities for string manipulation
@@ -36,6 +37,13 @@ std::string strint (const std::string& s, const int i);
 // Conver the string to all upper case
 std::string upper_case (const std::string& s);
 
+// Split a string into tokens, according to any of the provided delimiters.
+// If atomic!="", substrings matching atomic will not be split with
+// any of the delimiters.
+std::list<std::string> gather_tokens(const std::string& s,
+                                     const std::vector<char>& delimiters,
+                                     const std::string& atomic = "");
+
 // Computing similarity index between s1 and s2 using Jaro algorithm
 // For a quick description of the Jaro similarity index, see, e.g.,
 //   https://en.wikipedia.org/wiki/Jaro-Winkler_distance#Jaro_Similarity
@@ -61,9 +69,14 @@ double jaro_winkler_similarity (const std::string& s1, const std::string& s2,
 // Jaro-Winkler indices, the Jaccard index is token-based, and useful for
 // identifying similarity between phrases in which the same words appear in
 // different orders. The string s1 and s2 are broken up into tokens using
-// the given deliminator characters.
+// the given deliminator characters. The optional arguments split_s1 and
+// split_s2 are to allow searching for an exact string. E.g., if one
+// wants to find only strings containing s1="air_pressure", but allow
+// s2 to be split with '_' characters, he/she can pass split_s1=false.
 double jaccard_similarity (const std::string& s1, const std::string& s2,
-                           const std::vector<char>& delimiters);
+                           const std::vector<char>& delimiters,
+                           const bool tokenize_s1 = true,
+                           const bool tokenize_s2 = true);
 
 // ==================== Case Insensitive string =================== //
 

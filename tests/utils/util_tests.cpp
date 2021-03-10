@@ -172,9 +172,41 @@ TEST_CASE("string","string") {
       // We tokenize strings using spaces and underscores.
       const auto& s1 = std::get<0>(entry);
       const auto& s2 = std::get<1>(entry);
-      double sj = jaccard_similarity(s1,s2,{' ', '_'});
-      const double sj_ex = std::get<2>(entry);
-      REQUIRE (std::abs(sj-sj_ex)<tol);
+      double s12 = jaccard_similarity(s1,s2,{' ', '_'});
+      double s21 = jaccard_similarity(s1,s2,{' ', '_'});
+      const double s_ex = std::get<2>(entry);
+
+      // Check against expected value
+      REQUIRE (std::abs(s12-s_ex)<tol);
+      // Check simmetry
+      REQUIRE (std::abs(s12-s21)<tol);
+    }
+  }
+
+  {
+    // Check similarity when not tokenizing one of the arguments
+    using entry_type = std::tuple<std::string,std::string,double,double>;
+
+    std::vector<entry_type> benchmark =
+    {
+      entry_type{ "air pressure at sea level altitude", "air pressure", 0.333, 0.2},
+      entry_type{ "pressure of water in air", "air pressure", 0.4, 0.0},
+    };
+
+    const double tol = 0.001;
+    for (const auto& entry : benchmark) {
+      // We tokenize strings using spaces and underscores.
+      const auto& s1 = std::get<0>(entry);
+      const auto& s2 = std::get<1>(entry);
+
+      double s12_tokenize = jaccard_similarity(s1,s2,{' ', '_'});
+      const double s12_tokenize_ex = std::get<2>(entry);
+
+      double s12_no_tokenize = jaccard_similarity(s1,s2,{' ', '_'},true,false);
+      const double s12_no_tokenize_ex = std::get<3>(entry);
+
+      REQUIRE (std::abs(s12_tokenize-s12_tokenize_ex)<tol);
+      REQUIRE (std::abs(s12_no_tokenize-s12_no_tokenize_ex)<tol);
     }
   }
 }

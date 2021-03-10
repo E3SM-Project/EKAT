@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <set>
 #include <sstream>
+#include <list>
 
 namespace ekat {
 
@@ -124,19 +125,37 @@ double jaro_winkler_similarity (const std::string& s1, const std::string& s2,
   return sim_j;
 }
 
-namespace {
-
 // This is a helper function for token-based similarity indexes. It gathers
 // tokens from the given string for the given list of delimiters.
-std::vector<std::string> gather_tokens(const std::string& s,
-                                       const std::vector<char>& delimiters) {
+std::list<std::string> gather_tokens(const std::string& s,
+                                     const std::vector<char>& delimiters,
+                                     const std::string& atomic) {
+  std::list<std::string> all_tokens;
+
+  if (atomic!="") {
+    auto pos = s.find(atomic);
+    if (pos==std::string::npos) {
+      // The atomic string wasn't found.
+      return gather_tokens(s,delimiters,"");
+    }
+    // The atomic string was found. Add it as a token, then remove if from
+    // the input string, and run again on what's left.
+    all_tokens.push_back(atomic);
+
+    std::string s_mod(s);
+    s_mod.erase(pos,atomic.size());
+
+    // Note: splice is better than manual push back, since it only moves a couple of ptrs.
+    all_tokens.splice(all_tokens.end(),gather_tokens(s_mod,delimiters,atomic));
+    return all_tokens;
+  }
+
   std::string delim_str;
   for (char delim: delimiters) {
     delim_str.append(1, delim);
   }
   std::size_t prev = 0, pos;
   std::stringstream sstr(s);
-  std::vector<std::string> all_tokens;
   while ((pos = s.find_first_of(delim_str, prev)) != std::string::npos)
   {
     if (pos > prev) {
@@ -147,19 +166,43 @@ std::vector<std::string> gather_tokens(const std::string& s,
   if (prev < s.length()) {
     all_tokens.push_back(s.substr(prev, std::string::npos));
   }
+
   return all_tokens;
 }
 
-} // anonymous namespace
-
 double jaccard_similarity (const std::string& s1, const std::string& s2,
-                           const std::vector<char>& delimiters) {
+                           const std::vector<char>& delimiters,
+                           const bool tokenize_s1,
+                           const bool tokenize_s2)
+{
+  // Nobody should call this case, but just in case: not tokenizing either one,
+  // is equivalent to returning s1==s2
+  if (!tokenize_s1 && !tokenize_s2) {
+    return static_cast<double>(s1==s2);
+  }
   // Break the first and second strings up into tokens using all given
   // delimiters.
-  auto s1_tokens = gather_tokens(s1, delimiters);
-  auto s1_set = std::set<std::string>(s1_tokens.begin(), s1_tokens.end());
-  auto s2_tokens = gather_tokens(s2, delimiters);
-  auto s2_set = std::set<std::string>(s2_tokens.begin(), s2_tokens.end());
+  std::list<std::string> s1_tokens, s2_tokens;
+  std::set<std::string> s1_set, s2_set;
+
+  if (tokenize_s1) {
+    if (tokenize_s2) {
+      s2_tokens = gather_tokens(s2, delimiters);
+      s1_tokens = gather_tokens(s1, delimiters);
+    } else {
+      // S2 is a single token
+      s2_tokens.push_back(s2);
+      s1_tokens = gather_tokens(s1, delimiters, s2);
+    }
+  } else {
+    // We already took care of the case were we don't tokenize either one,
+    // so we can be sure tokenize_s2 is true.
+    // S2 is a single token
+    s1_tokens.push_back(s1);
+    s2_tokens = gather_tokens(s2, delimiters, s1);
+  }
+  s1_set = std::set<std::string>(s1_tokens.begin(), s1_tokens.end());
+  s2_set = std::set<std::string>(s2_tokens.begin(), s2_tokens.end());
 
   // Compute the intersection of the two sets of tokens.
   std::vector<std::string> s_intersection(std::max(s1_set.size(), s2_set.size()));
