@@ -61,9 +61,14 @@ double jaro_winkler_similarity (const std::string& s1, const std::string& s2,
 // Jaro-Winkler indices, the Jaccard index is token-based, and useful for
 // identifying similarity between phrases in which the same words appear in
 // different orders. The string s1 and s2 are broken up into tokens using
-// the given deliminator characters.
+// the given deliminator characters. The optional arguments split_s1 and
+// split_s2 are to allow searching for an exact string. E.g., if one
+// wants to find only strings containing s1="air_pressure", but allow
+// s2 to be split with '_' characters, he/she can pass split_s1=false.
 double jaccard_similarity (const std::string& s1, const std::string& s2,
-                           const std::vector<char>& delimiters);
+                           const std::vector<char>& delimiters,
+                           const bool tokenize_s1 = true,
+                           const bool tokenize_s2 = true);
 
 // ==================== Case Insensitive string =================== //
 
