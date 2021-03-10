@@ -146,7 +146,7 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
     (m_size*sizeof(T))/sizeof(S));
 #ifndef NDEBUG
   for (size_t k=0; k<space.size(); ++k) {
-    space(k) = ekat::ScalarTraits<S>::quiet_NaN();
+    space(k) = ekat::ScalarTraits<S>::invalid();
   }
 #endif
   return space;
