@@ -8,16 +8,39 @@
 
 namespace ekat {
 
+/*
+ * A class to store list of arbitrary parameters (possibly recursively)
+ *
+ * A parameter list store two things: parameters, and sublists.
+ * Each of these is stored in a map, which uses a string as key.
+ *
+ * Parameters are stored using ekat::any, which allows to store pretty
+ * much anything you want in the list. However, this means that when
+ * you try to retrieve a parameter, you must already know what the
+ * type is, or else the any_cast will throw. You can specify the type
+ * via a template argument to the 'get' method. Otherwise, when dealing
+ * with a non-const ParameterList, you can simply pass a default value
+ * to the 'get' method, which will be used to add the parameter to the
+ * list if the given name is not found. If the name is found, the type
+ * of the default value will be used to perform the any_cast. Again,
+ * if the type does not match the type of what is already stored,
+ * an exception will be thrown.
+ */
+
 class ParameterList {
 public:
 
+  // Constructor(s) & Destructor
   ParameterList () = default;
   explicit ParameterList (const std::string& name) : m_name(name) {}
+  ~ParameterList () = default;
 
   ParameterList& operator= (const ParameterList&) = default;
 
+  // The name of the list
   const std::string& name () const { return m_name; }
 
+  // Parameters getters and setters
   template<typename T>
   T& get (const std::string& name);
 
@@ -30,14 +53,23 @@ public:
   template<typename T>
   void set (const std::string& name, const T& value);
 
+  // Sublist getters
   ParameterList& sublist (const std::string& name);
 
   const ParameterList& sublist (const std::string& name) const { return m_sublists.at(name); }
 
+  // Check methods, to verify a parameter/sublist is present
   bool isParameter (const std::string& name) const { return m_params.find(name)!=m_params.end(); }
   bool isSublist   (const std::string& name) const { return m_sublists.find(name)!=m_sublists.end(); }
 
+  // Display the sublist.
+  // NOTE: this *requires* op<< to be overloaded for all the stored parameters.
+  //       The code won't crash otherwise, but instead of the parameter, you
+  //       will get a message informing you of the lack of op<< overload.
   void print (std::ostream& out = std::cout, const int indent = 0) const;
+
+  // Add content of src into *this. Existing items will be overwritten.
+  void import (const ParameterList& src);
 private:
 
   std::string                           m_name;
