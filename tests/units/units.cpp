@@ -52,6 +52,8 @@ TEST_CASE("units_framework", "") {
   }
 
   SECTION ("units") {
+    using namespace prefixes;
+
     constexpr RationalConstant one = RationalConstant::one();
     const auto km = kilo*m;
     const auto kPa = kilo*Pa;
@@ -68,7 +70,7 @@ TEST_CASE("units_framework", "") {
 
     // Verify printing
     REQUIRE (to_string(nondim)=="1");
-    REQUIRE (to_string(milliJ.set_exp_format(Format::Rat))=="0.001 m^2 s^-2 kg");
+    REQUIRE (to_string(milliJ)=="0.001 m^2 s^-2 kg");
 
     // Verify changing the string works and does not affect the to_string function
     REQUIRE (mix_ratio==nondim);

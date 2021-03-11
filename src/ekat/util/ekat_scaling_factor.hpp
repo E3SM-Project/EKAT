@@ -35,6 +35,7 @@ struct ScalingFactor {
 private:
 
   using base_and_exp = std::array<RationalConstant,2>;
+
   static constexpr base_and_exp
   check_and_adjust (const RationalConstant b,
                     const RationalConstant e)
@@ -42,7 +43,7 @@ private:
     // Check that we are not doing 0^0 or taking even roots of negative numbers.
     // If all good, adjust base and exp for x^0 case (b=1,e=1), and return what was requested.
     return CONSTEXPR_ASSERT( !(b==RationalConstant::zero() && e==RationalConstant::zero()) ),
-           CONSTEXPR_ASSERT( !(b.num()<0 && e.den()%2==0) ),
+           CONSTEXPR_ASSERT( !(b.num<0 && e.den%2==0) ),
            (e==RationalConstant::zero()
               ? base_and_exp{{RationalConstant::one(), RationalConstant::one()}}
               : base_and_exp{{b,e}} );
@@ -54,7 +55,7 @@ constexpr bool operator== (const ScalingFactor& lhs, const ScalingFactor& rhs) {
   //    (a/b)^(c/d)==(x/y)^(w/z)
   // is equivalent to
   //    (a/b)^(cz) == (x/w)^(wd)
-  return pow(lhs.base,lhs.exp.num()*rhs.exp.den())==pow(rhs.base,rhs.exp.num()*lhs.exp.den());
+  return pow(lhs.base,lhs.exp.num*rhs.exp.den)==pow(rhs.base,rhs.exp.num*lhs.exp.den);
 }
 
 constexpr bool operator== (const ScalingFactor& lhs, const RationalConstant& rhs) {
@@ -75,12 +76,14 @@ constexpr ScalingFactor operator* (const ScalingFactor& lhs, const ScalingFactor
   //    (a/b)^(c/d) * (x/y)^(w/z)
   // is equivalent to
   //    ((a/b)^(cz) * (x/w)^(wd)) ^ (1/dz)
+  using iType = RationalConstant::iType;
+
   return lhs.base==rhs.base 
             ? ScalingFactor(lhs.base,lhs.exp+rhs.exp)
             : (lhs.exp==rhs.exp
                 ? ScalingFactor(lhs.base*rhs.base,lhs.exp)
-                : ScalingFactor( pow(lhs.base,lhs.exp.num()*rhs.exp.den()) * pow(rhs.base,rhs.exp.num()*lhs.exp.den()),
-                                 RationalConstant(1,lhs.exp.den()*rhs.exp.den())));
+                : ScalingFactor( pow(lhs.base,lhs.exp.num*rhs.exp.den) * pow(rhs.base,rhs.exp.num*lhs.exp.den),
+                                 RationalConstant(iType(1),lhs.exp.den*rhs.exp.den)));
 }
 
 constexpr ScalingFactor operator* (const RationalConstant& lhs, const ScalingFactor& rhs) {
@@ -97,12 +100,14 @@ constexpr ScalingFactor operator/ (const ScalingFactor& lhs, const ScalingFactor
   //    (a/b)^(c/d) / (x/y)^(w/z)
   // is equivalent to
   //    ((a/b)^(cz) / (x/w)^(wd)) ^ (1/dz)
+  using iType = RationalConstant::iType;
+
   return lhs.base==rhs.base 
             ? ScalingFactor(lhs.base,lhs.exp-rhs.exp)
             : (lhs.exp==rhs.exp
                 ? ScalingFactor(lhs.base/rhs.base,lhs.exp)
-                : ScalingFactor( pow(lhs.base,lhs.exp.num()*rhs.exp.den()) / pow(rhs.base,rhs.exp.num()*lhs.exp.den()),
-                                 RationalConstant(1,lhs.exp.den()*rhs.exp.den())));
+                : ScalingFactor( pow(lhs.base,lhs.exp.num*rhs.exp.den) / pow(rhs.base,rhs.exp.num*lhs.exp.den),
+                                 RationalConstant(iType(1),lhs.exp.den*rhs.exp.den)));
 }
 
 constexpr ScalingFactor operator/ (const ScalingFactor& lhs, const RationalConstant& rhs) {
@@ -126,7 +131,7 @@ constexpr ScalingFactor sqrt (const ScalingFactor& x) {
 }
 
 inline std::string to_string(const ScalingFactor& x, const Format exp_fmt = Format::Rat) {
-  std::string s = to_string(x.base);
+  std::string s = to_string(x.base,Format::Float);
   if (x.exp!=RationalConstant::one()) {
     s +=  "^" + to_string(x.exp,exp_fmt);
   }
