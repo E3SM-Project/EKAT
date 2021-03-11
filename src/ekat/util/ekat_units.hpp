@@ -11,9 +11,6 @@ namespace ekat
 namespace units
 {
 
-// In the units namespace, it's ok to use some stuff from the util namespace
-using namespace prefixes;
-
 constexpr int NUM_BASIC_UNITS = 7;
 constexpr const char* BASIC_UNITS_SYMBOLS[7] = {"m", "s", "kg", "K", "A", "mol", "cd"};
 
@@ -38,6 +35,11 @@ constexpr const char* BASIC_UNITS_SYMBOLS[7] = {"m", "s", "kg", "K", "A", "mol",
  *        it would be very bug prone, since ^ has lower precedence than + - * /.
  *        Sure, using parentheses makes it safe, but then you may as well write
  *            auto my_units = pow(m,2) / pow(s,2);
+ *
+ *  Note: there should be no need to store a string, since we can build a string
+ *        on the fly when printing the units. However, some apps might prefer to
+ *        use common strings for certain units. E.g., for 'auto N = kg*m/(s*s)'
+ *        it might be preferable to print "N" rather than "kg*m/(s*s)".
  */
 
 class Units {
@@ -48,13 +50,9 @@ public:
 
   // Construct a non-dimensional quantity
   Units (const ScalingFactor& scaling)
-   : m_scaling {scaling}
-   , m_units{RationalConstant(0), RationalConstant(0), RationalConstant(0),
-             RationalConstant(0), RationalConstant(0), RationalConstant(0),
-             RationalConstant(0)}
-   , m_exp_format (Format::Rat)
+   : Units(0,0,0,0,0,0,0,scaling)
   {
-    m_string = to_string(*this);
+    // Nothing to do here
   }
 
   // Construct a general quantity
@@ -66,11 +64,11 @@ public:
          const RationalConstant& amountExp,
          const RationalConstant& luminousIntensityExp,
          const ScalingFactor& scalingFactor = RationalConstant::one())
-   : m_scaling {scalingFactor.base,scalingFactor.exp}
+   : m_scaling {scalingFactor}
    , m_units {lengthExp,timeExp,massExp,temperatureExp,currentExp,amountExp,luminousIntensityExp}
-   , m_exp_format (Format::Rat)
+   , m_string {""}
   {
-    m_string = to_string(*this);
+    // Nothing to do here
   }
 
   Units (const Units&) = default;
@@ -79,36 +77,25 @@ public:
     return Units(RationalConstant::one());
   }
 
-  const Units& set_exp_format (const Format fmt) {
-    // Note: this will NOT change the stored string.
-    //       It is only used by the to_string function.
-    m_exp_format = fmt;
-
-    return *this;
-  }
-
   void set_string (const std::string& str) {
     m_string = str;
   }
-  const std::string& get_string () const {
-    return m_string;
+
+  std::string get_string () const {
+    return m_string=="" ? to_string(*this) : m_string;
   }
 
   bool is_dimensionless () const {
-    return m_units[0]==0 &&
-           m_units[1]==0 &&
-           m_units[2]==0 &&
-           m_units[3]==0 &&
-           m_units[4]==0 &&
-           m_units[5]==0 &&
-           m_units[6]==0;
+    return m_units[0].num==0 &&
+           m_units[1].num==0 &&
+           m_units[2].num==0 &&
+           m_units[3].num==0 &&
+           m_units[4].num==0 &&
+           m_units[5].num==0 &&
+           m_units[6].num==0;
   }
 
 private:
-
-  void reset_string (const std::string& str) {
-    m_string = str;
-  }
 
   friend bool operator==(const Units&,const Units&);
 
@@ -126,14 +113,12 @@ private:
   const ScalingFactor     m_scaling;
   const RationalConstant  m_units[7];
 
-  Format                  m_exp_format;
-
   std::string             m_string;
 };
 
 // === Operators/functions overload === //
 //
-// Recall: the first RationalConstant is a factor, while the remaining seven
+// Recall: the scaling is a factor, while the 7 rational constants
 //         are only exponents. So in u1*u2, multiply the factor, and
 //         add the exponents
 
@@ -251,20 +236,20 @@ inline std::string to_string(const Units& x) {
   std::string s;
   int num_non_trivial = 0;
   for (int i=0; i<NUM_BASIC_UNITS; ++i) {
-    if (x.m_units[i].num()==0) {
+    if (x.m_units[i].num==0) {
       continue;
     }
     ++num_non_trivial;
     s += BASIC_UNITS_SYMBOLS[i];
     if (x.m_units[i]!=RationalConstant::one()) {
-      s += "^" + to_string(x.m_units[i],x.m_exp_format);
+      s += "^" + to_string(x.m_units[i],Format::Rat);
     }
     s += " ";
   }
 
   // Prepend the scaling only if it's not one, or if this is a dimensionless unit
   if (x.m_scaling!=ScalingFactor::one() || num_non_trivial==0) {
-    s = to_string(x.m_scaling,x.m_exp_format) + " " + s;
+    s = to_string(x.m_scaling) + " " + s;
   }
 
   // Remove leading/trailing whitespaces
@@ -298,7 +283,7 @@ const Units cd  = Units(0,0,0,0,0,0,1);
 // Thermomechanics
 const Units day  = 86400*s;      // day          (time)
 const Units year = 365*day;      // year         (time)
-const Units g    = milli*kg;     // gram         (mass)
+const Units g    = kg/1000;      // gram         (mass)
 const Units N    = kg*m/(s*s);   // newton       (force)
 const Units dyn  = N/(10000);    // dyne         (force)
 const Units Pa   = N/(m*m);      // pascal       (pressure)
