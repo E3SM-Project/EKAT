@@ -34,7 +34,7 @@ WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy poli
   m_data(Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
          m_max_ws_idx, m_total * m_max_used)
 {
-  init(*this, m_data, m_max_ws_idx, m_max_used, m_total);
+  init(*this, m_max_ws_idx, m_max_used);
 }
 
 template <typename T, typename D>
@@ -109,8 +109,8 @@ void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Wor
 { m_tu.release_workspace_idx(team, ws.m_ws_idx); }
 
 template <typename T, typename D>
-void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm, const view_2d<T>& data,
-                                  const int max_ws_idx, const int max_used, const int total)
+void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm,
+                                  const int max_ws_idx, const int max_used)
 {
   Kokkos::parallel_for(
     "WorkspaceManager ctor",
@@ -139,11 +139,17 @@ KOKKOS_FORCEINLINE_FUNCTION
 Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
 WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) const
 {
-  return Unmanaged<view_1d<S> >(
+  Unmanaged<view_1d<S> > space(
     reinterpret_cast<S*>(&m_data(team_idx, slot*m_total) + m_reserve),
     sizeof(T) == sizeof(S) ?
     m_size :
     (m_size*sizeof(T))/sizeof(S));
+#ifndef NDEBUG
+  for (size_t k=0; k<space.size(); ++k) {
+    space(k) = ekat::ScalarTraits<S>::invalid();
+  }
+#endif
+  return space;
 }
 
 template <typename T, typename D>
