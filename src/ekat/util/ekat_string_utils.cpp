@@ -131,6 +131,10 @@ std::list<std::string> gather_tokens(const std::string& s,
                                      const std::vector<char>& delimiters,
                                      const std::string& atomic) {
   std::list<std::string> all_tokens;
+  std::string delim_str;
+  for (char delim: delimiters) {
+    delim_str.append(1, delim);
+  }
 
   if (atomic!="") {
     auto pos = s.find(atomic);
@@ -140,20 +144,52 @@ std::list<std::string> gather_tokens(const std::string& s,
     }
     // The atomic string was found. Add it as a token, then remove if from
     // the input string, and run again on what's left.
+    // But first, we need to check that the string is delimited left and right
+    // by a delimiter (or string boundaries), otherwise it doesn't count.
+    auto slen = s.size();
+    auto alen = atomic.size();
+
+    // These lambda implement exactly what you think they do,
+    // but are more verbose than the corresponding checks when used.
+    auto at_s_start = [&] () -> bool {
+      return pos==0;
+    };
+    auto at_s_end = [&] () -> bool {
+      return (pos+alen)==slen;
+    };
+    auto delim_before = [&] () -> bool {
+      return s.find_first_of(delim_str,pos-1)==(pos-1);
+    };
+    auto delim_after = [&] () -> bool {
+      return s.find_first_of(delim_str,pos+alen)==(pos+alen);
+    };
+
+    if ( !at_s_start() && !delim_before() ) {
+      // The atomic string is not at the start of s, but it is
+      // not preceeded by a delimiter.
+      // So fall back to the case where we don't search for atomic
+      return gather_tokens(s,delimiters,"");
+    } else if ( !at_s_end() && !delim_after() ) {
+      // The atomic string is not at the end of s, but it is
+      // not followed by a delimiter.
+      // So fall back to the case where we don't search for atomic
+      return gather_tokens(s,delimiters,"");
+    }
+
+    // If we didn't hit any of the previous return statements, then the atomic
+    // substring was found, and it is a sub-token.
     all_tokens.push_back(atomic);
 
     std::string s_mod(s);
-    s_mod.erase(pos,atomic.size());
+    auto erase_begin = at_s_start() ? 0 : pos-1;
+    auto erase_len   = delim_after() ? alen+1 : alen;
+    s_mod.erase(erase_begin,erase_len);
 
     // Note: splice is better than manual push back, since it only moves a couple of ptrs.
     all_tokens.splice(all_tokens.end(),gather_tokens(s_mod,delimiters,atomic));
     return all_tokens;
   }
 
-  std::string delim_str;
-  for (char delim: delimiters) {
-    delim_str.append(1, delim);
-  }
   std::size_t prev = 0, pos;
   std::stringstream sstr(s);
   while ((pos = s.find_first_of(delim_str, prev)) != std::string::npos)
@@ -198,6 +234,9 @@ double jaccard_similarity (const std::string& s1, const std::string& s2,
     // We already took care of the case were we don't tokenize either one,
     // so we can be sure tokenize_s2 is true.
     // S2 is a single token
+      if (s2=="zenith_angle") {
+        printf("zenith_angle\n");
+      }
     s1_tokens.push_back(s1);
     s2_tokens = gather_tokens(s2, delimiters, s1);
   }

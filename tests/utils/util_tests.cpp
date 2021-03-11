@@ -91,29 +91,33 @@ TEST_CASE("Unmanaged", "ekat::ko") {
 TEST_CASE("string","string") {
   using namespace ekat;
 
-  CaseInsensitiveString cis1 = "field_1";
-  CaseInsensitiveString cis2 = "fIeLd_1";
-  CaseInsensitiveString cis3 = "field_2";
-  CaseInsensitiveString cis4 = "feld_1";
+  SECTION ("case_insensitive_string") {
+    CaseInsensitiveString cis1 = "field_1";
+    CaseInsensitiveString cis2 = "fIeLd_1";
+    CaseInsensitiveString cis3 = "field_2";
+    CaseInsensitiveString cis4 = "feld_1";
 
-  REQUIRE (cis1==cis2);
-  REQUIRE (cis1!=cis3);
-  REQUIRE (cis4<=cis1);
-  REQUIRE (cis4<cis1);
+    REQUIRE (cis1==cis2);
+    REQUIRE (cis1!=cis3);
+    REQUIRE (cis4<=cis1);
+    REQUIRE (cis4<cis1);
+  }
 
-  std::string my_str  = "item 1  ; item2;  item3 ";
-  std::string my_list = "item1;item2;item3";
+  SECTION ("utility_functions") {
+    std::string my_str  = "item 1  ; item2;  item3 ";
+    std::string my_list = "item1;item2;item3";
 
-  strip(my_str,' ');
-  REQUIRE(my_str==my_list);
+    strip(my_str,' ');
+    REQUIRE(my_str==my_list);
 
-  auto items = split(my_list,';');
-  REQUIRE(items.size()==3);
-  REQUIRE(items[0]=="item1");
-  REQUIRE(items[1]=="item2");
-  REQUIRE(items[2]=="item3");
+    auto items = split(my_list,';');
+    REQUIRE(items.size()==3);
+    REQUIRE(items[0]=="item1");
+    REQUIRE(items[1]=="item2");
+    REQUIRE(items[2]=="item3");
+  }
 
-  {
+  SECTION ("jaro_similarity") {
     // Jaro and Jaro-Winkler similarity tests
 
     // Benchmark list (including expected similarity values) from Winkler paper
@@ -157,8 +161,21 @@ TEST_CASE("string","string") {
     }
   }
 
+  SECTION ("gather_tokens") {
+    std::string s = "my_birthday_is coming soon";
+    std::vector<char> delims = {'_',' '};
+
+    auto no_atomic = gather_tokens(s,delims);
+    auto atomic_1  = gather_tokens(s,delims,"my_birth");
+    auto atomic_2  = gather_tokens(s,delims,"my_birthday");
+
+    REQUIRE (no_atomic.size()==5);
+    REQUIRE (atomic_1.size()==5);
+    REQUIRE (atomic_2.size()==4);
+  }
+
   // Jaccard (token-based) similarity test.
-  {
+  SECTION ("jaccard_similarity") {
     using entry_type = std::tuple<std::string,std::string,double>;
 
     std::vector<entry_type> benchmark =
@@ -181,20 +198,17 @@ TEST_CASE("string","string") {
       // Check simmetry
       REQUIRE (std::abs(s12-s21)<tol);
     }
-  }
 
-  {
     // Check similarity when not tokenizing one of the arguments
-    using entry_type = std::tuple<std::string,std::string,double,double>;
+    using entry2_type = std::tuple<std::string,std::string,double,double>;
 
-    std::vector<entry_type> benchmark =
+    std::vector<entry2_type> benchmark2 =
     {
-      entry_type{ "air pressure at sea level altitude", "air pressure", 0.333, 0.2},
-      entry_type{ "pressure of water in air", "air pressure", 0.4, 0.0},
+      entry2_type{ "air pressure at sea level altitude", "air pressure", 0.333, 0.2},
+      entry2_type{ "pressure of water in air", "air pressure", 0.4, 0.0},
     };
 
-    const double tol = 0.001;
-    for (const auto& entry : benchmark) {
+    for (const auto& entry : benchmark2) {
       // We tokenize strings using spaces and underscores.
       const auto& s1 = std::get<0>(entry);
       const auto& s2 = std::get<1>(entry);
