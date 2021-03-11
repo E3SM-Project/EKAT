@@ -28,8 +28,8 @@ void strip (std::string& str, const char c);
 // Split a string at every occurrence of given delimiter char
 std::vector<std::string> split(const std::string& str, const char del);
 
-// Trim leading/trailing whitespaces.
-std::string trim (const std::string& s);
+// Trim leading/trailing characters matching given one (default: whitespace).
+std::string trim (const std::string& s, const char c = ' ');
 
 // Small utility that cats a space and an integer to an input string.
 std::string strint (const std::string& s, const int i);

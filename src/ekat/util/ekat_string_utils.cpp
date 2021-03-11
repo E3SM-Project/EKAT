@@ -29,17 +29,17 @@ std::vector<std::string> split(const std::string& str, const char del) {
   return blocks;
 }
 
-std::string trim (const std::string& s) {
+std::string trim (const std::string& s, const char c) {
   if (s=="") {
     return s;
   }
   int nl = 0;
-  while (s[nl] == ' ') {
+  while (s[nl] == c) {
     ++nl;
   }
   int size = s.size();
   int nt = 0;
-  while (nt<size && s[size-nt-1] == ' ') {
+  while (nt<size && s[size-nt-1] == c) {
     ++nt;
   }
 
