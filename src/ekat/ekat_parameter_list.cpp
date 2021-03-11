@@ -26,4 +26,13 @@ void ParameterList::print(std::ostream& out, const int indent) const {
   }
 }
 
+void ParameterList::import (const ParameterList& src) {
+  for (const auto& it : src.m_sublists) {
+    m_sublists[it.first] = it.second;
+  }
+  for (const auto& it : src.m_params) {
+    m_params[it.first] = it.second;
+  }
+}
+
 } // namespace ekat

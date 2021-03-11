@@ -2,6 +2,7 @@
 
 #include "ekat/ekat_pack.hpp"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
+#include "ekat/ekat_parameter_list.hpp"
 #include "ekat/ekat_type_traits.hpp"
 
 #include "ekat_test_config.h"
@@ -85,6 +86,29 @@ TEST_CASE("Unmanaged", "ekat::ko") {
                   "VUm </- CVUm");
     CVUm cv_um(v);
   }
+}
+
+TEST_CASE("parameter_list", "") {
+  using namespace ekat;
+
+  ParameterList src("src");
+  src.set<int>("i",8);
+  src.set<int>("j",10);
+  src.sublist("sl").set<double>("d",1.0);
+
+  ParameterList dst("dst");
+  dst.set<int>("i",10);
+
+  dst.import(src);
+
+  REQUIRE (dst.get<int>("i")==8);
+
+  REQUIRE (dst.isParameter("j"));
+  REQUIRE (dst.get<int>("j")==10);
+
+  REQUIRE (dst.isSublist("sl"));
+  REQUIRE (dst.sublist("sl").isParameter("d"));
+  REQUIRE (dst.sublist("sl").get<double>("d")==1.0);
 }
 
 } // empty namespace
