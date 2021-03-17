@@ -170,12 +170,11 @@ struct Pack {
   }
 
   // Init this Pack from another one.
-  template <typename PackIn, typename = typename std::enable_if<PackIn::packtag>::type>
+  template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION explicit
-  Pack (const PackIn& v) {
-    static_assert(static_cast<int>(PackIn::n) == static_cast<int>(n),
-                  "Pack::n must be the same.");
+  Pack (const Pack<T,n>& v) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
+  }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
@@ -185,11 +184,9 @@ struct Pack {
 
   // Init this Pack from another one, but only where Mask is true; otherwise
   // init to default value.
-  template <typename PackIn>
+  template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack (const Mask<PackSize>& m, const PackIn& p) {
-    static_assert(static_cast<int>(PackIn::n) == PackSize,
-                  "Pack::n must be the same.");
+  explicit Pack (const Mask<n>& m, const Pack<T,n>& p) {
     vector_simd for (int i = 0; i < n; ++i) {
       d[i] = m[i] ? p[i] : ScalarTraits<scalar>::invalid();
     }
