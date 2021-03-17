@@ -75,14 +75,6 @@ private:
   type d[n];
 };
 
-// Use enable_if and masktag so that we can template on 'Mask' and yet not have
-// our operator overloads, in particular, be used for something other than the
-// Mask type.
-template <typename MaskType>
-using OnlyMask = typename std::enable_if<MaskType::masktag,MaskType>::type;
-template <typename MaskType, typename ReturnType>
-using OnlyMaskReturn = typename std::enable_if<MaskType::masktag,ReturnType>::type;
-
 // Codify how a user can construct their own loops conditioned on mask slot
 // values.
 #define ekat_masked_loop(mask, s)                         \
@@ -96,20 +88,20 @@ using OnlyMaskReturn = typename std::enable_if<MaskType::masktag,ReturnType>::ty
 
 // Implementation detail for generating binary ops for mask op mask.
 #define ekat_mask_gen_bin_op_mm(op, impl)                   \
-  template <typename Mask> KOKKOS_INLINE_FUNCTION             \
-  OnlyMask<Mask> operator op (const Mask& a, const Mask& b) { \
-    Mask m;                                                   \
-    vector_simd for (int i = 0; i < Mask::n; ++i)             \
+  template <int n> KOKKOS_INLINE_FUNCTION                     \
+  Mask<n> operator op (const Mask<n>& a, const Mask<n>& b) {  \
+    Mask<n> m;                                                \
+    vector_simd for (int i = 0; i < n; ++i)                   \
       m.set(i, a[i] impl b[i]);                               \
     return m;                                                 \
   }
 
 // Implementation detail for generating binary ops for mask op bool.
 #define ekat_mask_gen_bin_op_mb(op, impl)                   \
-  template <typename Mask> KOKKOS_INLINE_FUNCTION             \
-  OnlyMask<Mask> operator op (const Mask& a, const bool b) {  \
-    Mask m;                                                   \
-    vector_simd for (int i = 0; i < Mask::n; ++i)             \
+  template <int n> KOKKOS_INLINE_FUNCTION                     \
+  Mask<n> operator op (const Mask<n>& a, const bool b) {      \
+    Mask<n> m;                                                \
+    vector_simd for (int i = 0; i < n; ++i)                   \
       m.set(i, a[i] impl b);                                  \
     return m;                                                 \
   }
@@ -120,10 +112,10 @@ ekat_mask_gen_bin_op_mb(&&, &&)
 ekat_mask_gen_bin_op_mb(||, ||)
 
 // Negate the mask.
-template <typename MaskType> KOKKOS_INLINE_FUNCTION
-OnlyMask<MaskType> operator ! (const MaskType& m) {
-  MaskType not_m;
-  vector_simd for (int i = 0; i < MaskType::n; ++i) not_m.set(i, ! m[i]);
+template <int n> KOKKOS_INLINE_FUNCTION
+Mask<n> operator ! (const Mask<n>& m) {
+  Mask<n> not_m;
+  vector_simd for (int i = 0; i < n; ++i) not_m.set(i, ! m[i]);
   return not_m;
 }
 
