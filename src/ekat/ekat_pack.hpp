@@ -75,14 +75,6 @@ private:
   type d[n];
 };
 
-// Use enable_if and masktag so that we can template on 'Mask' and yet not have
-// our operator overloads, in particular, be used for something other than the
-// Mask type.
-template <typename MaskType>
-using OnlyMask = typename std::enable_if<MaskType::masktag,MaskType>::type;
-template <typename MaskType, typename ReturnType>
-using OnlyMaskReturn = typename std::enable_if<MaskType::masktag,ReturnType>::type;
-
 // Codify how a user can construct their own loops conditioned on mask slot
 // values.
 #define ekat_masked_loop(mask, s)                         \
@@ -96,20 +88,20 @@ using OnlyMaskReturn = typename std::enable_if<MaskType::masktag,ReturnType>::ty
 
 // Implementation detail for generating binary ops for mask op mask.
 #define ekat_mask_gen_bin_op_mm(op, impl)                   \
-  template <typename Mask> KOKKOS_INLINE_FUNCTION             \
-  OnlyMask<Mask> operator op (const Mask& a, const Mask& b) { \
-    Mask m;                                                   \
-    vector_simd for (int i = 0; i < Mask::n; ++i)             \
+  template <int n> KOKKOS_INLINE_FUNCTION                     \
+  Mask<n> operator op (const Mask<n>& a, const Mask<n>& b) {  \
+    Mask<n> m;                                                \
+    vector_simd for (int i = 0; i < n; ++i)                   \
       m.set(i, a[i] impl b[i]);                               \
     return m;                                                 \
   }
 
 // Implementation detail for generating binary ops for mask op bool.
 #define ekat_mask_gen_bin_op_mb(op, impl)                   \
-  template <typename Mask> KOKKOS_INLINE_FUNCTION             \
-  OnlyMask<Mask> operator op (const Mask& a, const bool b) {  \
-    Mask m;                                                   \
-    vector_simd for (int i = 0; i < Mask::n; ++i)             \
+  template <int n> KOKKOS_INLINE_FUNCTION                     \
+  Mask<n> operator op (const Mask<n>& a, const bool b) {      \
+    Mask<n> m;                                                \
+    vector_simd for (int i = 0; i < n; ++i)                   \
       m.set(i, a[i] impl b);                                  \
     return m;                                                 \
   }
@@ -120,10 +112,10 @@ ekat_mask_gen_bin_op_mb(&&, &&)
 ekat_mask_gen_bin_op_mb(||, ||)
 
 // Negate the mask.
-template <typename MaskType> KOKKOS_INLINE_FUNCTION
-OnlyMask<MaskType> operator ! (const MaskType& m) {
-  MaskType not_m;
-  vector_simd for (int i = 0; i < MaskType::n; ++i) not_m.set(i, ! m[i]);
+template <int n> KOKKOS_INLINE_FUNCTION
+Mask<n> operator ! (const Mask<n>& m) {
+  Mask<n> not_m;
+  vector_simd for (int i = 0; i < n; ++i) not_m.set(i, ! m[i]);
   return not_m;
 }
 
@@ -170,21 +162,23 @@ struct Pack {
   }
 
   // Init this Pack from another one.
-  template <typename PackIn, typename = typename std::enable_if<PackIn::packtag>::type>
+  template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION explicit
-  Pack (const PackIn& v) {
-    static_assert(static_cast<int>(PackIn::n) == static_cast<int>(n),
-                  "Pack::n must be the same.");
+  Pack (const Pack<T,n>& v) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
+  }
+
+  // Init this Pack from another one.
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack (const Pack& src) {
+    vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
   }
 
   // Init this Pack from another one, but only where Mask is true; otherwise
   // init to default value.
-  template <typename PackIn>
+  template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack (const Mask<PackSize>& m, const PackIn& p) {
-    static_assert(static_cast<int>(PackIn::n) == PackSize,
-                  "Pack::n must be the same.");
+  explicit Pack (const Mask<n>& m, const Pack<T,n>& p) {
     vector_simd for (int i = 0; i < n; ++i) {
       d[i] = m[i] ? p[i] : ScalarTraits<scalar>::invalid();
     }
@@ -229,33 +223,33 @@ using OnlyPackReturn = typename std::enable_if<PackType::packtag,ReturnType>::ty
 // promote a pack's scalar type in mixed-type arithmetic.
 
 #define ekat_pack_gen_bin_op_pp(op)                                   \
-  template <typename PackType>                                          \
+  template <typename T, int n>                                          \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  OnlyPack<PackType>                                                    \
-  operator op (const PackType& a, const PackType& b) {                  \
-    PackType c;                                                         \
+  Pack<T,n>                                                             \
+  operator op (const Pack<T,n>& a, const Pack<T,n>& b) {                \
+    Pack<T,n> c;                                                        \
     vector_simd                                                         \
-    for (int i = 0; i < PackType::n; ++i) c[i] = a[i] op b[i];          \
+    for (int i = 0; i < n; ++i) c[i] = a[i] op b[i];                    \
     return c;                                                           \
   }
 #define ekat_pack_gen_bin_op_ps(op)                                   \
-  template <typename PackType, typename ScalarType>                     \
+  template <typename T, int n, typename ScalarType>                     \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  OnlyPack<PackType>                                                    \
-  operator op (const PackType& a, const ScalarType& b) {                \
-    PackType c;                                                         \
+  Pack<T,n>                                                             \
+  operator op (const Pack<T,n>& a, const ScalarType& b) {               \
+    Pack<T,n> c;                                                        \
     vector_simd                                                         \
-    for (int i = 0; i < PackType::n; ++i) c[i] = a[i] op b;             \
+    for (int i = 0; i < n; ++i) c[i] = a[i] op b;                       \
     return c;                                                           \
   }
 #define ekat_pack_gen_bin_op_sp(op)                                   \
-  template <typename PackType, typename ScalarType>                     \
+  template <typename T, int n, typename ScalarType>                     \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  OnlyPack<PackType>                                                    \
-  operator op (const ScalarType& a, const PackType& b) {                \
-    PackType c;                                                         \
+  Pack<T,n>                                                             \
+  operator op (const ScalarType& a, const Pack<T,n>& b) {               \
+    Pack<T,n> c;                                                        \
     vector_simd                                                         \
-    for (int i = 0; i < PackType::n; ++i) c[i] = a op b[i];             \
+    for (int i = 0; i < n; ++i) c[i] = a op b[i];                       \
     return c;                                                           \
   }
 #define ekat_pack_gen_bin_op_all(op)          \
@@ -268,45 +262,45 @@ ekat_pack_gen_bin_op_all(-)
 ekat_pack_gen_bin_op_all(*)
 ekat_pack_gen_bin_op_all(/)
 
-#define ekat_pack_gen_unary_op(op)                           \
-  template <typename PackType>                                 \
-  KOKKOS_FORCEINLINE_FUNCTION                                  \
-  OnlyPack<PackType>                                           \
-  operator op (const PackType& a) {                            \
-    PackType b;                                                \
-    vector_simd                                                \
-    for (int i = 0; i < PackType::n; ++i) b[i] = op a[i];      \
-    return b;                                                  \
+#define ekat_pack_gen_unary_op(op)                \
+  template <typename T, int n>                    \
+  KOKKOS_FORCEINLINE_FUNCTION                     \
+  Pack<T,n>                                       \
+  operator op (const Pack<T,n>& a) {              \
+    Pack<T,n> b;                                  \
+    vector_simd                                   \
+    for (int i = 0; i < n; ++i) b[i] = op a[i];   \
+    return b;                                     \
   }
 
 ekat_pack_gen_unary_op(-)
 
-#define ekat_pack_gen_bin_fn_pp(fn, impl)                       \
-  template <typename PackType> KOKKOS_INLINE_FUNCTION             \
-  OnlyPack<PackType> fn (const PackType& a, const PackType& b) {  \
-    PackType s;                                                   \
-    vector_simd for (int i = 0; i < PackType::n; ++i)             \
-      s[i] = impl(a[i], b[i]);                                    \
-    return s;                                                     \
+#define ekat_pack_gen_bin_fn_pp(fn, impl)                   \
+  template <typename T, int n> KOKKOS_INLINE_FUNCTION       \
+  Pack<T,n> fn (const Pack<T,n>& a, const Pack<T,n>& b) {   \
+    Pack<T,n> s;                                            \
+    vector_simd for (int i = 0; i < n; ++i)                 \
+      s[i] = impl(a[i], b[i]);                              \
+    return s;                                               \
   }
-#define ekat_pack_gen_bin_fn_ps(fn, impl)                         \
-  template <typename PackType, typename ScalarType>                 \
-  KOKKOS_INLINE_FUNCTION                                            \
-  OnlyPack<PackType>                                                \
-  fn (const PackType& a, const ScalarType& b) {                     \
-    PackType s;                                                     \
-    vector_simd for (int i = 0; i < PackType::n; ++i)               \
-      s[i] = impl<typename PackType::scalar>(a[i], b);              \
-    return s;                                                       \
+#define ekat_pack_gen_bin_fn_ps(fn, impl)                 \
+  template <typename T, int n, typename ScalarType>       \
+  KOKKOS_INLINE_FUNCTION                                  \
+  Pack<T,n>                                               \
+  fn (const Pack<T,n>& a, const ScalarType& b) {          \
+    Pack<T,n> s;                                          \
+    vector_simd for (int i = 0; i < n; ++i)               \
+      s[i] = impl<typename Pack<T,n>::scalar>(a[i], b);   \
+    return s;                                             \
   }
-#define ekat_pack_gen_bin_fn_sp(fn, impl)                         \
-  template <typename PackType, typename ScalarType>                 \
-  KOKKOS_INLINE_FUNCTION                                            \
-  OnlyPack<PackType> fn (const ScalarType& a, const PackType& b) {  \
-    PackType s;                                                     \
-    vector_simd for (int i = 0; i < PackType::n; ++i)               \
-      s[i] = impl<typename PackType::scalar>(a, b[i]);              \
-    return s;                                                       \
+#define ekat_pack_gen_bin_fn_sp(fn, impl)                   \
+  template <typename T, int n, typename ScalarType>         \
+  KOKKOS_INLINE_FUNCTION                                    \
+  Pack<T,n> fn (const ScalarType& a, const Pack<T,n>& b) {  \
+    Pack<T,n> s;                                            \
+    vector_simd for (int i = 0; i < n; ++i)                 \
+      s[i] = impl<typename Pack<T,n>::scalar>(a, b[i]);     \
+    return s;                                               \
   }
 #define ekat_pack_gen_bin_fn_all(fn, impl)    \
   ekat_pack_gen_bin_fn_pp(fn, impl)           \
@@ -316,70 +310,71 @@ ekat_pack_gen_unary_op(-)
 ekat_pack_gen_bin_fn_all(min, impl::min)
 ekat_pack_gen_bin_fn_all(max, impl::max)
 
-template <typename PackType>
+template <typename T, int n>
 KOKKOS_INLINE_FUNCTION
-OnlyPack<PackType> shift_right (const PackType& pm1, const PackType& p) {
-  PackType s;
-  s[0] = pm1[PackType::n-1];
-  vector_simd for (int i = 1; i < PackType::n; ++i) s[i] = p[i-1];
+Pack<T,n> shift_right (const Pack<T,n>& pm1, const Pack<T,n>& p) {
+  Pack<T,n> s;
+  s[0] = pm1[n-1];
+  vector_simd for (int i = 1; i < n; ++i) s[i] = p[i-1];
   return s;
 }
 
-template <typename PackType>
+template <typename T, int n, typename ScalarType>
 KOKKOS_INLINE_FUNCTION
-OnlyPack<PackType> shift_right (const typename PackType::scalar& pm1, const PackType& p) {
-  PackType s;
+Pack<T,n> shift_right (const ScalarType& pm1, const Pack<T,n>& p) {
+  Pack<T,n> s;
   s[0] = pm1;
-  vector_simd for (int i = 1; i < PackType::n; ++i) s[i] = p[i-1];
+  vector_simd for (int i = 1; i < n; ++i) s[i] = p[i-1];
   return s;
 }
 
-template <typename PackType>
+template <typename T, int n>
 KOKKOS_INLINE_FUNCTION
-OnlyPack<PackType> shift_left (const PackType& pp1, const PackType& p) {
-  PackType s;
-  s[PackType::n-1] = pp1[0];
-  vector_simd for (int i = 0; i < PackType::n-1; ++i) s[i] = p[i+1];
+Pack<T,n> shift_left (const Pack<T,n>& pp1, const Pack<T,n>& p) {
+  Pack<T,n> s;
+  s[n-1] = pp1[0];
+  vector_simd for (int i = 0; i < n-1; ++i) s[i] = p[i+1];
   return s;
 }
 
-template <typename PackType> KOKKOS_INLINE_FUNCTION
-OnlyPack<PackType> shift_left (const typename PackType::scalar& pp1, const PackType& p) {
-  PackType s;
-  s[PackType::n-1] = pp1;
-  vector_simd for (int i = 0; i < PackType::n-1; ++i) s[i] = p[i+1];
+template <typename T, int n, typename ScalarType>
+KOKKOS_INLINE_FUNCTION
+Pack<T,n> shift_left (const ScalarType& pp1, const Pack<T,n>& p) {
+  Pack<T,n> s;
+  s[n-1] = pp1;
+  vector_simd for (int i = 0; i < n-1; ++i) s[i] = p[i+1];
   return s;
 }
 
-#define ekat_mask_gen_bin_op_pp(op)                     \
-  template <typename PackType>                            \
+#define ekat_mask_gen_bin_op_pp(op)                       \
+  template <typename T, int n>                            \
   KOKKOS_INLINE_FUNCTION                                  \
-  OnlyPackReturn<PackType, Mask<PackType::n> >            \
-  operator op (const PackType& a, const PackType& b) {    \
-    Mask<PackType::n> m;                           \
-    vector_simd for (int i = 0; i < PackType::n; ++i)     \
+  Mask<n>                                                 \
+  operator op (const Pack<T,n>& a, const Pack<T,n>& b) {  \
+    Mask<n> m;                                            \
+    vector_simd for (int i = 0; i < n; ++i)               \
       m.set(i, a[i] op b[i]);                             \
     return m;                                             \
   }
-#define ekat_mask_gen_bin_op_ps(op)                               \
-  template <typename PackType, typename ScalarType>                 \
-  KOKKOS_INLINE_FUNCTION                                            \
-  OnlyPackReturn<PackType, Mask<PackType::n> >                      \
-  operator op (const PackType& a, const ScalarType& b) {            \
-    Mask<PackType::n> m;                                     \
-    vector_simd for (int i = 0; i < PackType::n; ++i)               \
-      m.set(i, a[i] op b);                                          \
-    return m;                                                       \
+#define ekat_mask_gen_bin_op_ps(op)                         \
+  template <typename T, int n, typename ScalarType>         \
+  KOKKOS_INLINE_FUNCTION                                    \
+  Mask<n>                                                   \
+  operator op (const Pack<T,n>& a, const ScalarType& b) {   \
+    Mask<n> m;                                              \
+    vector_simd for (int i = 0; i < n; ++i)                 \
+      m.set(i, a[i] op b);                                  \
+    return m;                                               \
   }
-#define ekat_mask_gen_bin_op_sp(op)                               \
-  template <typename PackType, typename ScalarType>                 \
-  KOKKOS_INLINE_FUNCTION                                            \
-  OnlyPackReturn<PackType, Mask<PackType::n> >                      \
-  operator op (const ScalarType& a, const PackType& b) {            \
-    Mask<PackType::n> m;                                     \
-    vector_simd for (int i = 0; i < PackType::n; ++i)               \
-      m.set(i, a op b[i]);                                          \
-    return m;                                                       \
+#define ekat_mask_gen_bin_op_sp(op)                         \
+  template <typename T, int n, typename ScalarType>         \
+  KOKKOS_INLINE_FUNCTION                                    \
+  Mask<n>                                                   \
+  operator op (const ScalarType& a, const Pack<T,n>& b) {   \
+    Mask<n> m;                                              \
+    vector_simd for (int i = 0; i < n; ++i)                 \
+      m.set(i, a op b[i]);                                  \
+    return m;                                               \
   }
 #define ekat_mask_gen_bin_op_all(op)          \
   ekat_mask_gen_bin_op_pp(op)                 \
@@ -393,11 +388,12 @@ ekat_mask_gen_bin_op_all(<=)
 ekat_mask_gen_bin_op_all(>)
 ekat_mask_gen_bin_op_all(<)
 
-template <typename PackType> KOKKOS_INLINE_FUNCTION
-OnlyPackReturn<PackType, Mask<PackType::n>>
-isnan (const PackType& p) {
-  Mask<PackType::n> m;
-  vector_simd for (int i = 0; i < PackType::n; ++i) {
+template <typename T, int n>
+KOKKOS_INLINE_FUNCTION
+Mask<n>
+isnan (const Pack<T,n>& p) {
+  Mask<n> m;
+  vector_simd for (int i = 0; i < n; ++i) {
     m.set(i, impl::is_nan(p[i]));
   }
   return m;
