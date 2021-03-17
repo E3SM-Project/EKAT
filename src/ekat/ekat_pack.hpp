@@ -176,6 +176,11 @@ struct Pack {
     static_assert(static_cast<int>(PackIn::n) == static_cast<int>(n),
                   "Pack::n must be the same.");
     vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
+
+  // Init this Pack from another one.
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack (const Pack& src) {
+    vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
   }
 
   // Init this Pack from another one, but only where Mask is true; otherwise
