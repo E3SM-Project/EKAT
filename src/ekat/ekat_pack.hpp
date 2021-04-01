@@ -11,6 +11,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <iostream>
+#include <type_traits>
 
 namespace ekat {
 
@@ -157,7 +158,7 @@ struct Pack {
 
   // Init all slots to scalar v.
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack (const scalar& v) {
+  Pack (const scalar& v) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = v;
   }
 
