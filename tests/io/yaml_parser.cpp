@@ -49,6 +49,7 @@ TEST_CASE ("yaml_parser","") {
   REQUIRE (!options.isType<bool>("My Real"));
   REQUIRE (!options.isType<int>("My Real"));
   REQUIRE (!options.isType<std::string>("My Real"));
+  REQUIRE_THROWS(options.isType<double>("I am not in the list"));
 
 }
 
