@@ -64,7 +64,7 @@ public:
 
   // Check methods, to determine the type of a node
   template<typename T>
-  const bool isType (const std::string& name);
+  bool isType (const std::string& name) const;
 
   // Display the sublist.
   // NOTE: this *requires* op<< to be overloaded for all the stored parameters.
@@ -118,7 +118,7 @@ inline void ParameterList::set (const std::string& name, const T& value) {
 }
 
 template<typename T>
-inline const bool ParameterList::isType (const std::string& name) {
+inline bool ParameterList::isType (const std::string& name) const {
   // Check entry exists
   EKAT_REQUIRE_MSG ( isParameter(name),
                         "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
