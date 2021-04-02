@@ -122,11 +122,20 @@ Mask<n> operator ! (const Mask<n>& m) {
 
 // Implementation detail for generating Pack assignment operators. _p means the
 // input is a Pack; _s means the input is a scalar.
+// NOTE: for volatile overload, you should return void. If not, if/when Kokkos
+//       atomic ops are compiled for Pack, you will see a compiler warning like
+//   warning: implicit dereference will not access object of type ‘volatile ekat::Pack<...>' in statement 
+//       *dest = return_val + val;
+//       ^
 #define ekat_pack_gen_assign_op_p(op)                   \
   KOKKOS_FORCEINLINE_FUNCTION                             \
   Pack& operator op (const Pack& a) {                     \
     vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
     return *this;                                         \
+  }                                                       \
+  KOKKOS_FORCEINLINE_FUNCTION                             \
+  void operator op (const Pack& a) volatile {   \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
   }
 #define ekat_pack_gen_assign_op_s(op)                 \
   KOKKOS_FORCEINLINE_FUNCTION                           \
@@ -173,6 +182,12 @@ struct Pack {
   KOKKOS_FORCEINLINE_FUNCTION
   Pack (const Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
+  }
+
+  // Init this Pack from another one.
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack (const volatile Pack& src) {
+    vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
   }
 
   // Init this Pack from another one, but only where Mask is true; otherwise
