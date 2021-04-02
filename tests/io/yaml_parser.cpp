@@ -41,6 +41,16 @@ TEST_CASE ("yaml_parser","") {
   REQUIRE (constants.isSublist("Nested Sublist"));
   auto& sl = constants.sublist("Nested Sublist");
   REQUIRE (sl.get<int>("The Answer") == 42);
+
+  REQUIRE (options.isType<bool>("My Bool"));
+  REQUIRE (options.isType<int>("My Int"));
+  REQUIRE (options.isType<std::string>("My String"));
+  REQUIRE (options.isType<double>("My Real"));
+  REQUIRE (!options.isType<bool>("My Real"));
+  REQUIRE (!options.isType<int>("My Real"));
+  REQUIRE (!options.isType<std::string>("My Real"));
+  REQUIRE_THROWS(options.isType<double>("I am not in the list"));
+
 }
 
 } // anonymous namespace
