@@ -62,6 +62,10 @@ public:
   bool isParameter (const std::string& name) const { return m_params.find(name)!=m_params.end(); }
   bool isSublist   (const std::string& name) const { return m_sublists.find(name)!=m_sublists.end(); }
 
+  // Check methods, to determine the type of a node
+  template<typename T>
+  bool isType (const std::string& name);
+
   // Display the sublist.
   // NOTE: this *requires* op<< to be overloaded for all the stored parameters.
   //       The code won't crash otherwise, but instead of the parameter, you
@@ -111,6 +115,19 @@ inline void ParameterList::set (const std::string& name, const T& value) {
   } else {
     get<T>(name) = value;
   }
+}
+
+template<typename T>
+inline bool ParameterList::isType (const std::string& name) {
+  // Try to get variable with type T, return true if successful, false if an error is thrown
+  try {
+    auto& dummy = any_cast<T>(m_params.at(name));
+    return true;
+  }
+  catch (std::exception& e) {
+    // Do nothing with catch
+  }
+  return false;
 }
 
 } // namespace ekat
