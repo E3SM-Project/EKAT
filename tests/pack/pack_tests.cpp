@@ -108,17 +108,17 @@ struct TestPack {
     vector_novec for (int i = 0; i < Pack::n; ++i) {
       const auto sign = pve ? 1 : (2*(i % 2) - 1);
       a[i] = i + 1.2;
-      if (limit) a[i] = min<scalar>(3.2, a[i]);
+      if (limit) a[i] = min<scalar>(scalar(3.2), a[i]);
       a[i] *= sign;
     }
     vector_novec for (int i = 0; i < Pack::n; ++i) {
       const auto sign = pve ? 1 : (2*(i % 2) - 1);
       b[i] = i - 11.4;
-      if (limit) b[i] = min<scalar>(3.2, b[i]);
+      if (limit) b[i] = min<scalar>(scalar(3.2), b[i]);
       if (b[i] == 0) b[i] = 2;
       b[i] *= sign;
     }
-    c = limit ? 3.2 : 41.5;
+    c = scalar(limit ? 3.2 : 41.5);
   }
 
   static void setup_pow (Pack& a, Pack& b, scalar& c) {
@@ -257,7 +257,7 @@ struct TestPack {
 
   template<bool Serialize>
   static void test_reduce_sum () {
-    scalar a = 0.5;
+    scalar a = scalar(0.5);
     scalar serial_result = scalar(a);
     Pack p;
     for (int i=0; i<Pack::n; ++i) {
@@ -468,8 +468,8 @@ TEST_CASE("isnan", "ekat::pack") {
   using pt = Pack<Real, EKAT_TEST_PACK_SIZE>;
   using mt = Mask<EKAT_TEST_PACK_SIZE>;
 
-  using pvt = typename KokkosTypes<DefaultDevice>::view_1d<pt>;
-  using mvt = typename KokkosTypes<DefaultDevice>::view_1d<mt>;
+  using pvt = typename KokkosTypes<ekat::DefaultDevice>::template view_1d<pt>;
+  using mvt = typename KokkosTypes<ekat::DefaultDevice>::template view_1d<mt>;
 
   pvt zero("",1), nan("",1);
   mvt mzero("",1), mnan("",1);
