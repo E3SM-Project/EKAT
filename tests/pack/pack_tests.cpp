@@ -228,6 +228,10 @@ struct TestPack {
     Pack p5(m,3,1);
     Pack p6(m,three,one);
 
+    // Test that chaining ops to set works
+    Pack p7;
+    p7.set(m,three).set(!m,one);
+
     // Check all packs are [3 1 3 1 ...]
     vector_novec for (int i = 0; i < PACKN; ++i) {
       REQUIRE(p1[i] == p_ref[i]);
@@ -236,6 +240,7 @@ struct TestPack {
       REQUIRE(p4[i] == p_ref[i]);
       REQUIRE(p5[i] == p_ref[i]);
       REQUIRE(p6[i] == p_ref[i]);
+      REQUIRE(p7[i] == p_ref[i]);
     }
   }
 

@@ -251,21 +251,25 @@ struct Pack {
   ekat_pack_gen_assign_op_all(/=)
 
   KOKKOS_FORCEINLINE_FUNCTION
-  void set (const Mask<n>& mask, const scalar& v) {
+  Pack& set (const Mask<n>& mask, const scalar& v) {
     vector_simd for (int i = 0; i < n; ++i) if (mask[i]) d[i] = v;
+
+    return *this;
   }
 
   template <typename PackIn>
   KOKKOS_FORCEINLINE_FUNCTION
-  void set (const Mask<n>& mask, const PackIn& p,
+  Pack& set (const Mask<n>& mask, const PackIn& p,
             typename std::enable_if<PackIn::packtag>::type* = nullptr) {
     static_assert(static_cast<int>(PackIn::n) == PackSize,
                   "Pack::n must be the same.");
     vector_simd for (int i = 0; i < n; ++i) if (mask[i]) d[i] = p[i];
+
+    return *this;
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
-  void set (const Mask<n>& mask, const scalar& v_true, const scalar& v_false) {
+  Pack& set (const Mask<n>& mask, const scalar& v_true, const scalar& v_false) {
     vector_simd
     for (int i = 0; i < n; ++i) {
       if (mask[i])
@@ -273,11 +277,13 @@ struct Pack {
       else
         d[i] = v_false;
     }
+
+    return *this;
   }
 
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
-  void set (const Mask<n>& mask, const Pack<T,n>& p_true, const Pack<S,n>& p_false) {
+  Pack& set (const Mask<n>& mask, const Pack<T,n>& p_true, const Pack<S,n>& p_false) {
     vector_simd
     for (int i = 0; i < n; ++i) {
       if (mask[i])
@@ -285,6 +291,8 @@ struct Pack {
       else
         d[i] = p_false[i];
     }
+
+    return *this;
   }
 
 private:
