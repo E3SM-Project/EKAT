@@ -1,6 +1,7 @@
 #ifndef EKAT_MATH_UTILS_HPP
 #define EKAT_MATH_UTILS_HPP
 
+#include "ekat/ekat_scalar_traits.hpp"
 #include "ekat/ekat.hpp"
 
 #include <Kokkos_Core.hpp>
@@ -80,6 +81,19 @@ Real rel_diff (const Real& a, const Real& b) {
 }
 
 } // namespace impl
+
+template<typename ScalarT>
+KOKKOS_INLINE_FUNCTION
+bool is_invalid (const ScalarT& a) {
+  // Note: we can't do 'a==ScalarTraits<RealT>::invalid()',
+  //       since for floating point, invalid=nan, and nan
+  //       does not evaluate equal to anything, including itself.
+  if (std::is_floating_point<ScalarT>::value) {
+    return impl::is_nan(a);
+  } else {
+    return a==ScalarTraits<ScalarT>::invalid();
+  }
+}
 
 struct TransposeDirection {
   enum Enum { c2f, f2c };
