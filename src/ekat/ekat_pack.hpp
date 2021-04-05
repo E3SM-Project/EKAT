@@ -76,6 +76,15 @@ private:
   type d[n];
 };
 
+template <int n>
+inline std::ostream&
+operator << (std::ostream& os, const Mask<n>& m) {
+  for (int i=0; i<n; ++i) {
+    os << m[i] << ' ';
+  }
+  return os;
+}
+
 // Codify how a user can construct their own loops conditioned on mask slot
 // values.
 #define ekat_masked_loop(mask, s)                         \
