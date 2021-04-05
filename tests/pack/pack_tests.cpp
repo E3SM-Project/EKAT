@@ -1,6 +1,7 @@
 #include "catch2/catch.hpp"
 
 #include "ekat/ekat_pack.hpp"
+#include "ekat/util//ekat_math_utils.hpp"
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat_test_config.h"
 #include <sstream>
@@ -152,6 +153,92 @@ struct TestPack {
     }
   }
 
+  static void test_masked_ctor () {
+    Pack p_ref;
+
+    // Make p_ref = [1 3 1 3 ... ]
+    vector_novec 
+    for (int i = 0; i < PACKN; ++i) {
+      p_ref[i] = 3-2*(i%2);
+    }
+
+    // Create mask and service pack
+    Mask m = p_ref>2;
+    Pack one = 1;
+    Pack three = 3;
+
+    // Masked ctor to create a pack with [3 1 3 1 ...]
+    // We can do this with scalars or packs
+    Pack p1(m,3,1);
+    Pack p2(m,three,one);
+
+    // Check
+    vector_novec for (int i = 0; i < PACKN; ++i) {
+      REQUIRE(p1[i] == p_ref[i]);
+      REQUIRE(p2[i] == p_ref[i]);
+    }
+
+    // Masked ctor to create a pack with [3 invalid 3 invalid ...]
+    // We can do this with scalars or packs
+    Pack p3(m,3);
+    Pack p4(m,three);
+
+    // Check
+    vector_novec for (int i = 0; i < PACKN; ++i) {
+      if (i%2==0) {
+        REQUIRE(p3[i] == p_ref[i]);
+        REQUIRE(p4[i] == p_ref[i]);
+      } else {
+        REQUIRE(ekat::is_invalid(p3[i]));
+        REQUIRE(ekat::is_invalid(p4[i]));
+      }
+    }
+  }
+
+  static void test_masked_set () {
+    Pack p_ref;
+
+    // Make p_ref = [1 3 1 3 ... ]
+    vector_novec 
+    for (int i = 0; i < PACKN; ++i) {
+      p_ref[i] = 3-2*(i%2);
+    }
+
+    // Create mask and service pack
+    Mask m = p_ref>2;
+    Pack one = 1;
+    Pack three = 3;
+
+    // Masked set to create a pack with [3 1 3 1 ...]
+    // We can do this in many ways
+
+    // Construct with one value, and set the other when needed
+    Pack p1 = 1;
+    p1.set(m,3);
+    Pack p2 = one;
+    p2.set(m,three);
+
+    // Construct default, and call set with both values
+    Pack p3;
+    p3.set(m,3,1);
+    Pack p4;
+    p4.set(m,three,one);
+
+    // Construct directly with two values
+    Pack p5(m,3,1);
+    Pack p6(m,three,one);
+
+    // Check all packs are [3 1 3 1 ...]
+    vector_novec for (int i = 0; i < PACKN; ++i) {
+      REQUIRE(p1[i] == p_ref[i]);
+      REQUIRE(p2[i] == p_ref[i]);
+      REQUIRE(p3[i] == p_ref[i]);
+      REQUIRE(p4[i] == p_ref[i]);
+      REQUIRE(p5[i] == p_ref[i]);
+      REQUIRE(p6[i] == p_ref[i]);
+    }
+  }
+
   static void test_range () {
     const auto p = ekat::range<Pack>(42);
     vector_novec for (int i = 0; i < Pack::n; ++i)
@@ -299,6 +386,8 @@ struct TestPack {
     test_unary_min_max();
     test_range();
     test_ostream();
+    test_masked_ctor();
+    test_masked_set();
 
     test_reduce_sum<true>();
     test_reduce_sum<false>();
