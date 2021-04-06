@@ -84,15 +84,18 @@ Real rel_diff (const Real& a, const Real& b) {
 
 template<typename ScalarT>
 KOKKOS_INLINE_FUNCTION
-bool is_invalid (const ScalarT& a) {
+typename std::enable_if<std::is_floating_point<ScalarT>::value,bool>::type
+is_invalid (const ScalarT& a) {
   // Note: we can't do 'a==ScalarTraits<RealT>::invalid()',
   //       since for floating point, invalid=nan, and nan
   //       does not evaluate equal to anything, including itself.
-  if (std::is_floating_point<ScalarT>::value) {
-    return impl::is_nan(a);
-  } else {
-    return a==ScalarTraits<ScalarT>::invalid();
-  }
+  return impl::is_nan(a);
+}
+template<typename ScalarT>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if<!std::is_floating_point<ScalarT>::value,bool>::type
+is_invalid (const ScalarT& a) {
+  return a==ScalarTraits<ScalarT>::invalid();
 }
 
 struct TransposeDirection {
