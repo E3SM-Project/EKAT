@@ -149,7 +149,9 @@ void run (const Input& in) {
   };
 
   const bool on_gpu = ekat::OnGpu<Kokkos::DefaultExecutionSpace>::value;
-  const int nA = in.oneA ? 1 : in.nrhs;
+  // The following is morally a const var, but there are issues with
+  // gnu and std=c++14. The macro ConstExceptGnu is defined in ekat_kokkos_types.hpp.
+  ConstExceptGnu int nA = in.oneA ? 1 : in.nrhs;
 
   EKAT_REQUIRE_MSG( ! in.pack || in.method != Solver::cr, "CR has no pack version.");
 
@@ -239,7 +241,9 @@ void run (const Input& in) {
             Kokkos::single(Kokkos::PerTeam(team), s);
           };
           Kokkos::parallel_for(policy, Adc);
-          const int nrhs = npack<DataPack>(in.nrhs);
+          // The following is morally a const var, but there are issues with
+          // gnu and std=c++14. The macro ConstExceptGnu is defined in ekat_kokkos_types.hpp.
+          ConstExceptGnu int nrhs = npack<DataPack>(in.nrhs);
           const auto Xdc = KOKKOS_LAMBDA (const MT& team) {
             const auto s = [&] () {
               const int i = team.league_rank();

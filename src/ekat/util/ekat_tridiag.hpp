@@ -2,6 +2,7 @@
 #define EKAT_TRIDIAG_HPP
 
 #include "ekat/util/ekat_math_utils.hpp"
+#include "ekat/kokkos/ekat_kokkos_types.hpp"
 
 #include <Kokkos_Core.hpp>
 
@@ -145,7 +146,9 @@ template <typename TeamMember, typename TridiagDiag>
 KOKKOS_INLINE_FUNCTION
 void thomas_factorize (const TeamMember& team,
                        TridiagDiag dl, TridiagDiag d, TridiagDiag du) {
-  const int nrow = d.extent_int(0);
+  // The following is morally a const var, but there are issues with
+  // gnu and std=c++14. The macro ConstExceptGnu is defined in ekat_kokkos_types.hpp.
+  ConstExceptGnu int nrow = d.extent_int(0);
   assert(dl.extent_int(0) == nrow);
   assert(du.extent_int(0) == nrow);
   const auto f = [&] () {

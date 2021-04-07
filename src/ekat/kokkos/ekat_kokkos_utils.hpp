@@ -155,7 +155,9 @@ void view_reduction (const TeamMember& team,
   // so manually add the last pack (only the non-garbage part)
   if (has_garbage_end) {
     const PackType temp_input = input(pack_loop_end);
-    const int last_indx = end%vector_size;
+    // The following is morally a const var, but there are issues with
+    // gnu and std=c++14. The macro ConstExceptGnu is defined in ekat_kokkos_types.hpp.
+    ConstExceptGnu int last_indx = end%vector_size;
     Kokkos::single(Kokkos::PerThread(team),[&] {
       for (int j=0; j<last_indx; ++j) {
         result += temp_input[j];
