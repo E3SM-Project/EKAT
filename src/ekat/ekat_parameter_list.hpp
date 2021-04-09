@@ -86,16 +86,16 @@ private:
 template<typename T>
 inline T& ParameterList::get (const std::string& name) {
   // Check entry exists
-  error::runtime_check ( isParameter(name),
-                        "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
+  EKAT_REQUIRE_MSG ( isParameter(name),
+      "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
   return any_cast<T>(m_params[name]);
 }
 
 template<typename T>
 inline const T& ParameterList::get (const std::string& name) const {
-  error::runtime_check ( isParameter(name),
-                        "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
+  EKAT_REQUIRE_MSG ( isParameter(name),
+      "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
   return any_cast<T>(m_params.at(name));
 }
@@ -121,16 +121,9 @@ template<typename T>
 inline bool ParameterList::isType (const std::string& name) const {
   // Check entry exists
   EKAT_REQUIRE_MSG ( isParameter(name),
-                        "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
-  // Try to get variable with type T, return true if successful, false if an error is thrown
-  try {
-    auto& dummy = any_cast<T>(m_params.at(name));
-    return true;
-  }
-  catch (const std::exception&) {
-    // Do nothing with catch
-  }
-  return false;
+      "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
+
+  return m_params.at(name).isType<T>();
 }
 
 } // namespace ekat

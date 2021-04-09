@@ -10,11 +10,13 @@
  *  we can only rely on c++11 features. So we try to emulate std::any here.
  */
 
-#include <memory>
-#include <iostream>
 #include "ekat/ekat_assert.hpp"
 #include "ekat/std_meta/ekat_std_utils.hpp"
 #include "ekat/ekat_type_traits.hpp"
+
+#include <memory>
+#include <iostream>
+#include <typeindex>
 
 namespace ekat {
 
@@ -97,12 +99,17 @@ public:
   }
 
   holder_base& content () const { 
-    error::runtime_check(static_cast<bool>(m_content), "Error! Object not yet initialized.\n", -1);
+    EKAT_REQUIRE_MSG (static_cast<bool>(m_content), "Error! Object not yet initialized.\n");
     return *m_content;
   }
 
   holder_base* content_ptr () const { 
     return m_content.get();
+  }
+
+  template<typename ConcreteType>
+  bool isType () const {
+    return std::type_index(content().type())==std::type_index(typeid(ConcreteType));
   }
 
   template<typename ConcreteType>
@@ -120,51 +127,50 @@ private:
 };
 
 template<typename ConcreteType>
-bool any_is_type (const any& src) {
-  const auto& src_type = src.content().type();
-  const auto& req_type = typeid(ConcreteType);
-
-  return src_type==req_type;
-}
-
-template<typename ConcreteType>
 ConcreteType& any_cast (any& src) {
-  const auto& src_type = src.content().type();
-  const auto& req_type = typeid(ConcreteType);
 
-  EKAT_REQUIRE_MSG(src_type==req_type, std::string("Error! Invalid cast requested, from '") + src_type.name() + "' to '" + req_type.name() + "'.\n");
+  EKAT_REQUIRE_MSG(src.isType<ConcreteType>(),
+      "Error! Invalid cast requested.\n"
+      "   - actual type:    " + std::string(src.content().type().name()) + "\n"
+      "   - requested type: " + std::string(typeid(ConcreteType).name()) + "'.\n");
 
   any::holder<ConcreteType>* ptr = dynamic_cast<any::holder<ConcreteType>*>(src.content_ptr());
 
-  EKAT_REQUIRE_MSG(ptr!=nullptr, "Error! Failed dynamic_cast during any_cast. This is an internal problem, please, contact developers.\n");
+  EKAT_REQUIRE_MSG(ptr!=nullptr,
+      "Error! Failed dynamic_cast during any_cast.\n"
+      "       This is an internal problem, please, contact developers.\n");
 
   return ptr->value();
 }
 
 template<typename ConcreteType>
 const ConcreteType& any_cast (const any& src) {
-  const auto& src_type = src.content().type();
-  const auto& req_type = typeid(ConcreteType);
-
-  EKAT_REQUIRE_MSG(src_type==req_type, std::string("Error! Invalid cast requested, from '") + src_type.name() + "' to '" + req_type.name() + "'.\n");
+  EKAT_REQUIRE_MSG(src.isType<ConcreteType>(),
+      "Error! Invalid cast requested.\n"
+      "   - actual type:    " + std::string(src.content().type().name()) + "\n"
+      "   - requested type: " + std::string(typeid(ConcreteType).name()) + "'.\n");
 
   any::holder<ConcreteType>* ptr = dynamic_cast<any::holder<ConcreteType>*>(src.content_ptr());
 
-  EKAT_REQUIRE_MSG(ptr!=nullptr, "Error! Failed dynamic_cast during any_cast. This is an internal problem, please, contact developers.\n");
+  EKAT_REQUIRE_MSG(ptr!=nullptr,
+      "Error! Failed dynamic_cast during any_cast.\n"
+      "       This is an internal problem, please, contact developers.\n");
 
   return ptr->value();
 }
 
 template<typename ConcreteType>
 std::shared_ptr<ConcreteType> any_ptr_cast (any& src) {
-  const auto& src_type = src.content().type();
-  const auto& req_type = typeid(ConcreteType);
-
-  error::runtime_check(src_type==req_type, std::string("Error! Invalid cast requested, from '") + src_type.name() + "' to '" + req_type.name() + "'.\n", -1);
+  EKAT_REQUIRE_MSG(src.isType<ConcreteType>(),
+      "Error! Invalid cast requested.\n"
+      "   - actual type:    " + std::string(src.content().type().name()) + "\n"
+      "   - requested type: " + std::string(typeid(ConcreteType).name()) + "'.\n");
 
   any::holder<ConcreteType>* ptr = dynamic_cast<any::holder<ConcreteType>*>(src.content_ptr());
 
-  error::runtime_check(ptr!=nullptr, "Error! Failed dynamic_cast during any_cast. This is an internal problem, please, contact developers.\n", -1);
+  EKAT_REQUIRE_MSG(ptr!=nullptr,
+      "Error! Failed dynamic_cast during any_cast.\n"
+      "       This is an internal problem, please, contact developers.\n");
 
   return ptr->ptr();
 }
