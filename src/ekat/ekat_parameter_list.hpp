@@ -125,6 +125,7 @@ inline bool ParameterList::isType (const std::string& name) const {
   // Try to get variable with type T, return true if successful, false if an error is thrown
   try {
     auto& dummy = any_cast<T>(m_params.at(name));
+    (void)dummy;
     return true;
   }
   catch (const std::exception&) {
