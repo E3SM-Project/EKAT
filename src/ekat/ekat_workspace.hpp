@@ -131,6 +131,23 @@ class WorkspaceManager
     void take_many_contiguous_unsafe(const Kokkos::Array<const char*, N>& names,
                                      const view_1d_ptr_array<S, N>& ptrs) const;
 
+    // Take an individual sub-block and reserve enough contiguous memory for
+    // the next n-1 sub-blocks. This is useful when the number of sub-blocks
+    // needed is a runtime variable.
+    //
+    // Example: A 2d view of size (n, wsm_size) where n is a runtime variable
+    //          and wsm_size is the size used to construct the WorkspaceManager
+    // Code:
+    //   const auto local_slot = workspace.reserve_n_contiguous_sub_blocks("local_slot",n);
+    //   const auto local_var  = Unmanaged2dViewT<ScalarT>(reinterpret_cast<ScalarT*>(local_slot.data()),
+    //                                                     n, wsm_size);
+    //
+    // Since the memory is contiguous, we can just resize the returned sub-block and
+    // be guarenteed not to write out-of-bounds.
+    template <typename S=T>
+    KOKKOS_INLINE_FUNCTION
+    Unmanaged<view_1d<S> > reserve_n_contiguous_sub_blocks(const char* name, const int n) const;
+
     // Combines reset and take_many_contiguous_unsafe. This is the most-performant
     // option for a kernel to use N sub-blocks that are needed for the duration of the
     // kernel.
@@ -149,6 +166,11 @@ class WorkspaceManager
     template <size_t N, typename S=T>
     KOKKOS_INLINE_FUNCTION
     void release_many_contiguous(const view_1d_ptr_array<S, N>& ptrs) const;
+
+    // Release input sub-block as well as the next n-1 sub-blocks.
+    template <typename S=T>
+    KOKKOS_INLINE_FUNCTION
+    void release_n_contiguous_sub_blocks(const Unmanaged<view_1d<S> >& space, const int num_slots) const;
 
 #ifndef NDEBUG
     // Get the name of a sub-block
