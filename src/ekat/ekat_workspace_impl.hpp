@@ -265,19 +265,24 @@ template <typename S>
 KOKKOS_INLINE_FUNCTION
 Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
 WorkspaceManager<T, D>::Workspace::take_n_size_block(
-  const char* name, const int n) const
+  const char* name, const int n_sub_blocks) const
 {
 #ifndef NDEBUG
-  change_num_used(n);
+  change_num_used(n_sub_blocks);
+  // Verify contiguous
+  for (int n = 0; n < n_sub_blocks; ++n) {
+    const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
+    EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
+  }
 #endif
 
-  const auto space = m_parent.get_n_spaces_in_slot<S>(m_ws_idx, m_next_slot, n);
+  const auto space = m_parent.get_n_spaces_in_slot<S>(m_ws_idx, m_next_slot, n_sub_blocks);
 
   // We need a barrier here so get_space_in_slot above returns consistent results
   // w/in the team.
   m_team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
-    m_next_slot += n;
+    m_next_slot += n_sub_blocks;
 #ifndef NDEBUG
    change_indv_meta<S>(space, name);
 #endif

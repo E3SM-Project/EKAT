@@ -142,7 +142,7 @@ class WorkspaceManager
     //                                                     n, m_sizes);
     template <typename S=T>
     KOKKOS_INLINE_FUNCTION
-    Unmanaged<view_1d<S> > take_n_size_block(const char* name, const int n) const;
+    Unmanaged<view_1d<S> > take_n_size_block(const char* name, const int n_sub_blocks) const;
 
     // Combines reset and take_many_contiguous_unsafe. This is the most-performant
     // option for a kernel to use N sub-blocks that are needed for the duration of the
