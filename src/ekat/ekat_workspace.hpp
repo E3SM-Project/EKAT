@@ -131,22 +131,18 @@ class WorkspaceManager
     void take_many_contiguous_unsafe(const Kokkos::Array<const char*, N>& names,
                                      const view_1d_ptr_array<S, N>& ptrs) const;
 
-    // Take an individual sub-block and reserve enough contiguous memory for
-    // the next n-1 sub-blocks. This is useful when the number of sub-blocks
-    // needed is a runtime variable.
+    // Take a block of size n*m_size, where m_size is the size used to construct
+    // the WorkspaceManager. This is useful for creating local 2d views through
+    // the WorkspaceManager.
     //
-    // Example: A 2d view of size (n, wsm_size) where n is a runtime variable
-    //          and wsm_size is the size used to construct the WorkspaceManager
+    // Example: Local 2d view of size (n, m_size).
     // Code:
-    //   const auto local_slot = workspace.reserve_n_contiguous_sub_blocks("local_slot",n);
+    //   const auto local_slot = workspace.take_n_size_block("local_slot",n);
     //   const auto local_var  = Unmanaged2dViewT<ScalarT>(reinterpret_cast<ScalarT*>(local_slot.data()),
-    //                                                     n, wsm_size);
-    //
-    // Since the memory is contiguous, we can just resize the returned sub-block and
-    // be guarenteed not to write out-of-bounds.
+    //                                                     n, m_sizes);
     template <typename S=T>
     KOKKOS_INLINE_FUNCTION
-    Unmanaged<view_1d<S> > reserve_n_contiguous_sub_blocks(const char* name, const int n) const;
+    Unmanaged<view_1d<S> > take_n_size_block(const char* name, const int n) const;
 
     // Combines reset and take_many_contiguous_unsafe. This is the most-performant
     // option for a kernel to use N sub-blocks that are needed for the duration of the
@@ -167,10 +163,10 @@ class WorkspaceManager
     KOKKOS_INLINE_FUNCTION
     void release_many_contiguous(const view_1d_ptr_array<S, N>& ptrs) const;
 
-    // Release input sub-block as well as the next n-1 sub-blocks.
+    // Release block of size n*m_size.
     template <typename S=T>
     KOKKOS_INLINE_FUNCTION
-    void release_n_contiguous_sub_blocks(const Unmanaged<view_1d<S> >& space, const int num_slots) const;
+    void release_n_size_block(const Unmanaged<view_1d<S> >& space, const int n) const;
 
 #ifndef NDEBUG
     // Get the name of a sub-block
@@ -271,6 +267,10 @@ class WorkspaceManager
   template <typename S=T>
   KOKKOS_FORCEINLINE_FUNCTION
   Unmanaged<view_1d<S> > get_space_in_slot(const int team_idx, const int slot) const;
+
+  template <typename S=T>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Unmanaged<view_1d<S> > get_n_spaces_in_slot(const int team_idx, const int slot, const int n) const;
 
   KOKKOS_INLINE_FUNCTION
   void init_metadata(const int ws_idx, const int slot) const;

@@ -153,6 +153,25 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
 }
 
 template <typename T, typename D>
+template <typename S>
+KOKKOS_FORCEINLINE_FUNCTION
+Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
+WorkspaceManager<T, D>::get_n_spaces_in_slot(const int team_idx, const int slot, const int n) const
+{
+  Unmanaged<view_1d<S> > space(
+    reinterpret_cast<S*>(&m_data(team_idx, slot*m_total) + m_reserve),
+    n*(sizeof(T) == sizeof(S) ?
+    m_size :
+    (m_size*sizeof(T))/sizeof(S)));
+#ifndef NDEBUG
+  for (size_t k=0; k<space.size(); ++k) {
+    space(k) = ekat::ScalarTraits<S>::invalid();
+  }
+#endif
+  return space;
+}
+
+template <typename T, typename D>
 KOKKOS_INLINE_FUNCTION
 void WorkspaceManager<T, D>::init_metadata(const int ws_idx, const int slot) const
 {
@@ -245,28 +264,30 @@ template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
 Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
-WorkspaceManager<T, D>::Workspace::reserve_n_contiguous_sub_blocks(
-  const char* name, const int num_slots) const
+WorkspaceManager<T, D>::Workspace::take_n_size_block(
+  const char* name, const int n) const
 {
-  (void)name;
-  const auto return_space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot);
-
 #ifndef NDEBUG
-  change_num_used(num_slots);
+  change_num_used(n);
 #endif
+
+  const auto space = m_parent.get_n_spaces_in_slot<S>(m_ws_idx, m_next_slot, n);
 
   // We need a barrier here so get_space_in_slot above returns consistent results
   // w/in the team.
   m_team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
-    m_next_slot += num_slots;
+    m_next_slot += n;
+#ifndef NDEBUG
+   change_indv_meta<S>(space, name);
+#endif
   });
 
   // We need a barrier here so that a subsequent call to take or release
   // starts with the metadata in the correct state.
   m_team.team_barrier();
 
-  return return_space;
+  return space;
 }
 
 template <typename T, typename D>
@@ -517,15 +538,20 @@ void WorkspaceManager<T, D>::Workspace::release_many_contiguous(
 template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::release_n_contiguous_sub_blocks(
-  const Unmanaged<view_1d<S> >& space, const int num_slots) const
+void WorkspaceManager<T, D>::Workspace::release_n_size_block(
+  const Unmanaged<view_1d<S> >& space, const int n) const
 {
 #ifndef NDEBUG
-  change_num_used(-num_slots);
+  change_num_used(-n);
 #endif
 
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
     m_next_slot = m_parent.get_index<S>(space);
+
+#ifndef NDEBUG
+    change_indv_meta<S>(space, "", true);
+#endif
+
   });
   // We need a barrier here so that a subsequent call to take or release
   // starts with the metadata in the correct state.
