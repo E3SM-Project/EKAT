@@ -544,10 +544,10 @@ template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
 void WorkspaceManager<T, D>::Workspace::release_n_size_block(
-  const Unmanaged<view_1d<S> >& space, const int n) const
+  const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const
 {
 #ifndef NDEBUG
-  change_num_used(-n);
+  change_num_used(-n_sub_blocks);
 #endif
 
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
@@ -556,8 +556,14 @@ void WorkspaceManager<T, D>::Workspace::release_n_size_block(
 #ifndef NDEBUG
     change_indv_meta<S>(space, "", true);
 #endif
-
   });
+
+  // Reset metadata
+  Kokkos::parallel_for(
+    Kokkos::TeamThreadRange(m_team, n_sub_blocks), [&] (int i) {
+      m_parent.init_metadata(m_ws_idx, i+m_next_slot);
+  });
+
   // We need a barrier here so that a subsequent call to take or release
   // starts with the metadata in the correct state.
   m_team.team_barrier();

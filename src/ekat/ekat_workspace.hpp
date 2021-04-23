@@ -166,7 +166,7 @@ class WorkspaceManager
     // Release block of size n*m_size.
     template <typename S=T>
     KOKKOS_INLINE_FUNCTION
-    void release_n_size_block(const Unmanaged<view_1d<S> >& space, const int n) const;
+    void release_n_size_block(const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const;
 
 #ifndef NDEBUG
     // Get the name of a sub-block
