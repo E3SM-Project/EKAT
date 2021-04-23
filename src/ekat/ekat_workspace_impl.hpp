@@ -152,6 +152,7 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
   return space;
 }
 
+// Like get_space_in_slot, but returns n contiguous spaces
 template <typename T, typename D>
 template <typename S>
 KOKKOS_FORCEINLINE_FUNCTION
@@ -264,7 +265,7 @@ template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
 Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
-WorkspaceManager<T, D>::Workspace::take_n_size_block(
+WorkspaceManager<T, D>::Workspace::take_macro_block(
   const char* name, const int n_sub_blocks) const
 {
 #ifndef NDEBUG
