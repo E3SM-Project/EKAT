@@ -273,6 +273,7 @@ WorkspaceManager<T, D>::Workspace::take_n_size_block(
   for (int n = 0; n < n_sub_blocks; ++n) {
     const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
     EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
+    m_team.team_barrier();
   }
 #endif
 
@@ -559,6 +560,7 @@ void WorkspaceManager<T, D>::Workspace::release_n_size_block(
   });
 
   // Reset metadata
+  m_team.team_barrier();
   Kokkos::parallel_for(
     Kokkos::TeamThreadRange(m_team, n_sub_blocks), [&] (int i) {
       m_parent.init_metadata(m_ws_idx, i+m_next_slot);
