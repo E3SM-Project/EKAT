@@ -131,9 +131,10 @@ class WorkspaceManager
     void take_many_contiguous_unsafe(const Kokkos::Array<const char*, N>& names,
                                      const view_1d_ptr_array<S, N>& ptrs) const;
 
-    // Take a block of size n*m_size, where m_size is the size used to construct
-    // the WorkspaceManager. This is useful for creating local 2d views through
-    // the WorkspaceManager.
+    // Take an individual sub-block while telling the WorkSpaceManager to skip over the
+    // next n_sub_blocks-1 sub-blocks. This allows the user to safely access the memory
+    // of these sub-block, which is useful for creating local 2d views through the
+    // WorkspaceManager.
     //
     // Example: Local 2d view of size (n, m_size).
     // Code:
@@ -166,7 +167,7 @@ class WorkspaceManager
     // Release block of size n*m_size.
     template <typename S=T>
     KOKKOS_INLINE_FUNCTION
-    void release_n_size_block(const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const;
+    void release_macro_block(const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const;
 
 #ifndef NDEBUG
     // Get the name of a sub-block
@@ -267,10 +268,6 @@ class WorkspaceManager
   template <typename S=T>
   KOKKOS_FORCEINLINE_FUNCTION
   Unmanaged<view_1d<S> > get_space_in_slot(const int team_idx, const int slot) const;
-
-  template <typename S=T>
-  KOKKOS_FORCEINLINE_FUNCTION
-  Unmanaged<view_1d<S> > get_n_spaces_in_slot(const int team_idx, const int slot, const int n) const;
 
   KOKKOS_INLINE_FUNCTION
   void init_metadata(const int ws_idx, const int slot) const;

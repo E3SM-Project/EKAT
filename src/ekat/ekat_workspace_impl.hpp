@@ -152,26 +152,6 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
   return space;
 }
 
-// Like get_space_in_slot, but returns n contiguous spaces
-template <typename T, typename D>
-template <typename S>
-KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
-WorkspaceManager<T, D>::get_n_spaces_in_slot(const int team_idx, const int slot, const int n) const
-{
-  Unmanaged<view_1d<S> > space(
-    reinterpret_cast<S*>(&m_data(team_idx, slot*m_total) + m_reserve),
-    n*(sizeof(T) == sizeof(S) ?
-    m_size :
-    (m_size*sizeof(T))/sizeof(S)));
-#ifndef NDEBUG
-  for (size_t k=0; k<space.size(); ++k) {
-    space(k) = ekat::ScalarTraits<S>::invalid();
-  }
-#endif
-  return space;
-}
-
 template <typename T, typename D>
 KOKKOS_INLINE_FUNCTION
 void WorkspaceManager<T, D>::init_metadata(const int ws_idx, const int slot) const
@@ -274,15 +254,15 @@ WorkspaceManager<T, D>::Workspace::take_macro_block(
   for (int n = 0; n < n_sub_blocks; ++n) {
     const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
     EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
-    m_team.team_barrier();
   }
 #endif
 
-  const auto space = m_parent.get_n_spaces_in_slot<S>(m_ws_idx, m_next_slot, n_sub_blocks);
+  const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot);
 
   // We need a barrier here so get_space_in_slot above returns consistent results
   // w/in the team.
   m_team.team_barrier();
+
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
     m_next_slot += n_sub_blocks;
 #ifndef NDEBUG
@@ -545,7 +525,7 @@ void WorkspaceManager<T, D>::Workspace::release_many_contiguous(
 template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::release_n_size_block(
+void WorkspaceManager<T, D>::Workspace::release_macro_block(
   const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const
 {
 #ifndef NDEBUG
