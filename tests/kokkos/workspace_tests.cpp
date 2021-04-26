@@ -152,8 +152,9 @@ static void unittest_workspace()
     team.team_barrier();
 
     Kokkos::Array<Unmanaged<view_1d<int> >, num_ws> wssub;
-    Unmanaged<view_2d<int> wsmacro;
-    const auto space = ws.take_macro_block("space", num_ws);
+
+    Unmanaged<view_1d<int>> wsmacro1d;
+    Unmanaged<view_2d<int>> wsmacro2d;
 
     // Main test. Test different means of taking and release spaces.
     for (int r = 0; r < 10; ++r) {
@@ -165,8 +166,9 @@ static void unittest_workspace()
         }
       }
       else if (r % 5 == 1) {
-        wsmacro = Unmanaged<view_2d<int> (reinterpret_cast<int*>(space.data()),
-                                          num_ws,ints_per_ws);
+        wsmacro1d = ws.take_macro_block("wsmacro1d", num_ws);
+        wsmacro2d = Unmanaged<view_2d<int>> (reinterpret_cast<int*>(wsmacro1d.data()),
+                                             num_ws,ints_per_ws);
       }
       else {
         Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
@@ -190,7 +192,7 @@ static void unittest_workspace()
       for (int w = 0; w < num_ws; ++w) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
           if (r % 5 == 1) {
-            wsmacro(w,i) = i * w;
+            wsmacro2d(w,i) = i * w;
           } else {
             wssub[w](i) = i * w;
           }
@@ -227,7 +229,7 @@ static void unittest_workspace()
         ws.reset();
       }
       else if (r % 5 == 1) {
-        ws.release_macro_block(space,num_ws);
+        ws.release_macro_block(wsmacro1d,num_ws);
       }
       else if (r % 5 == 2) {
         Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
