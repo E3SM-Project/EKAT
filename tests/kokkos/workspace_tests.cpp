@@ -152,27 +152,33 @@ static void unittest_workspace()
     team.team_barrier();
 
     Kokkos::Array<Unmanaged<view_1d<int> >, num_ws> wssub;
+    Unmanaged<view_2d<int> wsmacro;
+    const auto space = ws.take_macro_block("space", num_ws);
 
     // Main test. Test different means of taking and release spaces.
-    for (int r = 0; r < 8; ++r) {
-      if (r % 4 == 0) {
+    for (int r = 0; r < 10; ++r) {
+      if (r % 5 == 0) {
         for (int w = 0; w < num_ws; ++w) {
           char buf[8] = "ws";
           buf[2] = 48 + w; // 48 is offset to integers in ascii
           wssub[w] = ws.take(buf);
         }
       }
+      else if (r % 5 == 1) {
+        wsmacro = Unmanaged<view_2d<int> (reinterpret_cast<int*>(space.data()),
+                                          num_ws,ints_per_ws);
+      }
       else {
         Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
         Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
         Kokkos::Array<const char*, num_ws> names = { {"ws0", "ws1", "ws2", "ws3"} };
-        if (r % 4 == 1) {
+        if (r % 5 == 2) {
           ws.take_many(names, ptrs);
         }
-        else if (r % 4 == 2) {
+        else if (r % 5 == 3) {
           ws.take_many_contiguous_unsafe(names, ptrs);
         }
-        else { // % 4 == 3
+        else { // % 5 == 4
           ws.take_many_and_reset(names, ptrs);
         }
 
@@ -183,43 +189,54 @@ static void unittest_workspace()
 
       for (int w = 0; w < num_ws; ++w) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
-          wssub[w](i) = i * w;
-        });
-      }
-
-      team.team_barrier();
-
-      for (int w = 0; w < num_ws; ++w) {
-        // These spaces aren't free, but their metadata should be the same as it
-        // was when they were initialized
-        Kokkos::single(Kokkos::PerTeam(team), [&] () {
-          if (wsm.get_index(wssub[w]) != w) ++nerrs_local;
-          if (wsm.get_next(wssub[w]) != w+1) ++nerrs_local;
-#ifndef NDEBUG
-          char buf[8] = "ws";
-          buf[2] = 48 + w; // 48 is offset to integers in ascii
-          if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
-          if (ws.get_num_used() != 4) ++nerrs_local;
-#endif
-          for (int i = 0; i < ints_per_ws; ++i) {
-            if (wssub[w](i) != i*w) ++nerrs_local;
+          if (r % 5 == 1) {
+            wsmacro(w,i) = i * w;
+          } else {
+            wssub[w](i) = i * w;
           }
         });
       }
 
       team.team_barrier();
 
-      if (r % 4 == 0) {
+      // metadata is not preserved when recasting take_macro_block data
+      // so only check for other types
+      if (r % 5 != 1) {
+        for (int w = 0; w < num_ws; ++w) {
+          // These spaces aren't free, but their metadata should be the same as it
+          // was when they were initialized
+          Kokkos::single(Kokkos::PerTeam(team), [&] () {
+            if (wsm.get_index(wssub[w]) != w) ++nerrs_local;
+            if (wsm.get_next(wssub[w]) != w+1) ++nerrs_local;
+  #ifndef NDEBUG
+            char buf[8] = "ws";
+            buf[2] = 48 + w; // 48 is offset to integers in ascii
+            if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+            if (ws.get_num_used() != 4) ++nerrs_local;
+  #endif
+            for (int i = 0; i < ints_per_ws; ++i) {
+              if (wssub[w](i) != i*w) ++nerrs_local;
+            }
+          });
+        }
+      }
+
+      team.team_barrier();
+
+      if (r % 5 == 0) {
         ws.reset();
       }
-      else if (r % 4 == 1) {
+      else if (r % 5 == 1) {
+        ws.release_macro_block(space,num_ws);
+      }
+      else if (r % 5 == 2) {
         Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
         ws.release_many_contiguous(ptrs);
       }
-      else if (r % 4 == 2) {
+      else if (r % 5 == 3) {
         // let take_and_reset next loop do the reset
       }
-      else { // % 4 == 3
+      else { // % 5 == 4
         for (int w = num_ws - 1; w >= 0; --w) {
           ws.release(wssub[w]); // release individually
         }
