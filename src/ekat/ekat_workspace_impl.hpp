@@ -214,7 +214,7 @@ void WorkspaceManager<T, D>::Workspace::take_many_contiguous_unsafe(
 #ifndef NDEBUG
   change_num_used(N);
   // Verify contiguous
-  for (int n = 0; n < static_cast<int>(N); ++n) {
+  for (int n = 0; n < static_cast<int>(N) - 1; ++n) {
     const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
     EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
   }
@@ -239,6 +239,42 @@ void WorkspaceManager<T, D>::Workspace::take_many_contiguous_unsafe(
   // We need a barrier here so that a subsequent call to take or release
   // starts with the metadata in the correct state.
   m_team.team_barrier();
+}
+
+template <typename T, typename D>
+template <typename S>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
+WorkspaceManager<T, D>::Workspace::take_macro_block(
+  const char* name, const int n_sub_blocks) const
+{
+#ifndef NDEBUG
+  change_num_used(n_sub_blocks);
+  // Verify contiguous
+  for (int n = 0; n < n_sub_blocks - 1; ++n) {
+    const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
+    EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
+  }
+#endif
+
+  const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot);
+
+  // We need a barrier here so get_space_in_slot above returns consistent results
+  // w/in the team.
+  m_team.team_barrier();
+
+  Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
+    m_next_slot += n_sub_blocks;
+#ifndef NDEBUG
+   change_indv_meta<S>(space, name);
+#endif
+  });
+
+  // We need a barrier here so that a subsequent call to take or release
+  // starts with the metadata in the correct state.
+  m_team.team_barrier();
+
+  return space;
 }
 
 template <typename T, typename D>
@@ -481,6 +517,36 @@ void WorkspaceManager<T, D>::Workspace::release_many_contiguous(
     }
 #endif
   });
+  // We need a barrier here so that a subsequent call to take or release
+  // starts with the metadata in the correct state.
+  m_team.team_barrier();
+}
+
+template <typename T, typename D>
+template <typename S>
+KOKKOS_INLINE_FUNCTION
+void WorkspaceManager<T, D>::Workspace::release_macro_block(
+  const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const
+{
+#ifndef NDEBUG
+  change_num_used(-n_sub_blocks);
+#endif
+
+  Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
+    m_next_slot = m_parent.get_index<S>(space);
+
+#ifndef NDEBUG
+    change_indv_meta<S>(space, "", true);
+#endif
+  });
+
+  // Reset metadata
+  m_team.team_barrier();
+  Kokkos::parallel_for(
+    Kokkos::TeamThreadRange(m_team, n_sub_blocks), [&] (int i) {
+      m_parent.init_metadata(m_ws_idx, i+m_next_slot);
+  });
+
   // We need a barrier here so that a subsequent call to take or release
   // starts with the metadata in the correct state.
   m_team.team_barrier();

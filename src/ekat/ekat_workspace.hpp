@@ -131,6 +131,20 @@ class WorkspaceManager
     void take_many_contiguous_unsafe(const Kokkos::Array<const char*, N>& names,
                                      const view_1d_ptr_array<S, N>& ptrs) const;
 
+    // Take an individual sub-block while telling the WorkSpaceManager to skip over the
+    // next n_sub_blocks-1 sub-blocks. This allows the user to safely access the memory
+    // of these sub-block, which is useful for creating local 2d views through the
+    // WorkspaceManager.
+    //
+    // Example: Local 2d view of size (n, m_size).
+    // Code:
+    //   const auto local_slot = workspace.take_n_size_block("local_slot",n);
+    //   const auto local_var  = Unmanaged2dViewT<ScalarT>(reinterpret_cast<ScalarT*>(local_slot.data()),
+    //                                                     n, m_sizes);
+    template <typename S=T>
+    KOKKOS_INLINE_FUNCTION
+    Unmanaged<view_1d<S> > take_macro_block(const char* name, const int n_sub_blocks) const;
+
     // Combines reset and take_many_contiguous_unsafe. This is the most-performant
     // option for a kernel to use N sub-blocks that are needed for the duration of the
     // kernel.
@@ -149,6 +163,11 @@ class WorkspaceManager
     template <size_t N, typename S=T>
     KOKKOS_INLINE_FUNCTION
     void release_many_contiguous(const view_1d_ptr_array<S, N>& ptrs) const;
+
+    // Release block of size n*m_size.
+    template <typename S=T>
+    KOKKOS_INLINE_FUNCTION
+    void release_macro_block(const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const;
 
 #ifndef NDEBUG
     // Get the name of a sub-block
