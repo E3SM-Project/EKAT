@@ -214,7 +214,7 @@ void WorkspaceManager<T, D>::Workspace::take_many_contiguous_unsafe(
 #ifndef NDEBUG
   change_num_used(N);
   // Verify contiguous
-  for (int n = 0; n < static_cast<int>(N); ++n) {
+  for (int n = 0; n < static_cast<int>(N) - 1; ++n) {
     const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
     EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
   }
@@ -251,7 +251,7 @@ WorkspaceManager<T, D>::Workspace::take_macro_block(
 #ifndef NDEBUG
   change_num_used(n_sub_blocks);
   // Verify contiguous
-  for (int n = 0; n < n_sub_blocks; ++n) {
+  for (int n = 0; n < n_sub_blocks - 1; ++n) {
     const auto space = m_parent.get_space_in_slot<S>(m_ws_idx, m_next_slot + n);
     EKAT_KERNEL_ASSERT(m_parent.get_next<S>(space) == m_next_slot + n + 1);
   }
