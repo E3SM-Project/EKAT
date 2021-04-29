@@ -136,21 +136,26 @@ Mask<n> operator ! (const Mask<n>& m) {
 //   warning: implicit dereference will not access object of type ‘volatile ekat::Pack<...>' in statement 
 //       *dest = return_val + val;
 //       ^
-#define ekat_pack_gen_assign_op_p(op)                   \
-  KOKKOS_FORCEINLINE_FUNCTION                             \
-  Pack& operator op (const Pack& a) {                     \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
-    return *this;                                         \
-  }                                                       \
-  KOKKOS_FORCEINLINE_FUNCTION                             \
-  void operator op (const Pack& a) volatile {   \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
+#define ekat_pack_gen_assign_op_p(op)                       \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  Pack& operator op (const volatile Pack& a) {              \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    return *this;                                           \
+  }                                                         \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  Pack& operator op (const Pack& a) {                       \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i];   \
+    return *this;                                           \
+  }                                                         \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  void operator op (const Pack& a) volatile {               \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i];   \
   }
-#define ekat_pack_gen_assign_op_s(op)                 \
-  KOKKOS_FORCEINLINE_FUNCTION                           \
-  Pack& operator op (const scalar& a) {                 \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a;  \
-    return *this;                                       \
+#define ekat_pack_gen_assign_op_s(op)                       \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  Pack& operator op (const scalar& a) {                     \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a;      \
+    return *this;                                           \
   }
 #define ekat_pack_gen_assign_op_all(op)       \
   ekat_pack_gen_assign_op_p(op)               \
