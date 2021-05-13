@@ -36,6 +36,9 @@ public:
   int  size () const { return m_size; }
   MPI_Comm mpi_comm () const { return m_mpi_comm; }
 
+  template<typename T>
+  void scan_sum (const T* my_vals, T* my_sums, const int count) const;
+
 private:
   // Checks (with an assert) that MPI is already init-ed.
   void check_mpi_inited () const;
