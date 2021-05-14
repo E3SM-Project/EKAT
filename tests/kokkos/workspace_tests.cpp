@@ -99,6 +99,39 @@ static void unittest_workspace()
     REQUIRE(wsmd.m_size == 17);
   }
   {
+    // Test constructing the WSM using view data
+    const int size = 17;
+    const int reserve = 1;
+    TeamUtils<double,ExeSpace> tu(policy,WorkspaceManager<double,Device>::GPU_DEFAULT_OVERPROVISION_FACTOR);
+    view_1d<double> tmp_view("", ((size+reserve)*num_ws)*tu.get_num_ws_slots());
+
+    // Calculate next available location
+    double* data_end = tmp_view.data();
+    data_end += tmp_view.size();
+
+    WorkspaceManager<double, Device> wsm(tmp_view.data(), 17, num_ws, policy);
+
+    // Test get_total_slots_to_be_used() returns size of wsm.m_size
+    size_t n_slots = WorkspaceManager<double, Device>::get_total_slots_to_be_used(17, num_ws, policy);
+    REQUIRE(n_slots == wsm.m_data.size());
+
+    Kokkos::parallel_for("", policy, KOKKOS_LAMBDA(const MemberType& team) {
+      auto ws = wsm.get_workspace(team);
+
+      Unmanaged<view_1d<double> > ws1, ws2, ws3, ws4;
+      ws.template take_many_and_reset<4>(
+        {"ws0", "ws1", "ws2", "ws3"},
+        {&ws1, &ws2, &ws3, &ws4});
+
+      // Assert the memory access has not exceeded the allocation
+      const int dist = data_end - (ws4.data()+ws4.size());
+      EKAT_KERNEL_ASSERT_MSG(dist >= 0, "Error! Local view extended past allocation");
+
+      ws.template release_many_contiguous<4>(
+        {&ws1, &ws2, &ws3, &ws4});
+    });
+  }
+  {
     WorkspaceManager<char, Device> wsmc(16, num_ws, policy);
     REQUIRE(wsmc.m_reserve == 8);
     REQUIRE(wsmc.m_size == 16);
