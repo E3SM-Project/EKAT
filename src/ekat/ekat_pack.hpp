@@ -149,7 +149,11 @@ Mask<n> operator ! (const Mask<n>& m) {
   }                                                         \
   KOKKOS_FORCEINLINE_FUNCTION                               \
   void operator op (const Pack& a) volatile {               \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i];   \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+  }                                                         \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  void operator op (const volatile Pack& a) volatile {      \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
   }
 #define ekat_pack_gen_assign_op_s(op)                       \
   KOKKOS_FORCEINLINE_FUNCTION                               \
