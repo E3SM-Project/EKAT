@@ -157,7 +157,7 @@ struct TestPack {
     Pack p_ref;
 
     // Make p_ref = [1 3 1 3 ... ]
-    vector_novec 
+    vector_novec
     for (int i = 0; i < PACKN; ++i) {
       p_ref[i] = 3-2*(i%2);
     }
@@ -195,11 +195,24 @@ struct TestPack {
     }
   }
 
+  static void test_mixed_prec () {
+    const ekat::Pack<float, PACKN> ones(1.0);
+    const ekat::Pack<double, PACKN> twos(2.0);
+
+    const ekat::Pack<double, PACKN> dones(ones);
+    const ekat::Pack<float, PACKN> ftwos(twos);
+
+    vector_novec for (int i=0; i<PACKN; ++i) {
+      REQUIRE( std::abs(dones[i] - 1.0) < 1e-7 );
+      REQUIRE( std::abs(ftwos[i] - 2.0) < 1e-7 );
+    }
+  }
+
   static void test_masked_set () {
     Pack p_ref;
 
     // Make p_ref = [1 3 1 3 ... ]
-    vector_novec 
+    vector_novec
     for (int i = 0; i < PACKN; ++i) {
       p_ref[i] = 3-2*(i%2);
     }
@@ -393,6 +406,7 @@ struct TestPack {
     test_ostream();
     test_masked_ctor();
     test_masked_set();
+    test_mixed_prec();
 
     test_reduce_sum<true>();
     test_reduce_sum<false>();
@@ -503,5 +517,7 @@ TEST_CASE("isnan", "ekat::pack") {
     REQUIRE (mn[i]);  // the view 'nan'  should contain nans
   }
 }
+
+
 
 } // namespace

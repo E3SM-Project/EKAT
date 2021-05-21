@@ -133,7 +133,7 @@ Mask<n> operator ! (const Mask<n>& m) {
 // input is a Pack; _s means the input is a scalar.
 // NOTE: for volatile overload, you should return void. If not, if/when Kokkos
 //       atomic ops are compiled for Pack, you will see a compiler warning like
-//   warning: implicit dereference will not access object of type ‘volatile ekat::Pack<...>' in statement 
+//   warning: implicit dereference will not access object of type ‘volatile ekat::Pack<...>' in statement
 //       *dest = return_val + val;
 //       ^
 #define ekat_pack_gen_assign_op_p(op)                       \
@@ -190,13 +190,6 @@ struct Pack {
   }
 
   // Init this Pack from another one.
-  template <typename T>
-  KOKKOS_FORCEINLINE_FUNCTION explicit
-  Pack (const Pack<T,n>& v) {
-    vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
-  }
-
-  // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
   Pack (const Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
@@ -206,6 +199,13 @@ struct Pack {
   KOKKOS_FORCEINLINE_FUNCTION
   Pack (const volatile Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
+  }
+
+  // Init this Pack from another one with possibly different scalar_type (for mixed precision)
+  template <typename S2>
+  KOKKOS_FORCEINLINE_FUNCTION explicit
+  Pack (const Pack<S2,n>& v) {
+    vector_simd for (int i=0; i<n; ++i) d[i] = ScalarType(v[i]);
   }
 
   // Init this Pack from a scalar, but only where Mask is true; otherwise
@@ -218,7 +218,7 @@ struct Pack {
     }
   }
 
-  // Init this Pack from two scalars, according to a given mask:
+  // Init this Pack form two scalars, according to a given mask:
   // if mask is true, set first value, otherwise the other.
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
