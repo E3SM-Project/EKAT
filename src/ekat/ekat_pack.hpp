@@ -218,7 +218,7 @@ struct Pack {
     }
   }
 
-  // Init this Pack form two scalars, according to a given mask:
+  // Init this Pack from two scalars, according to a given mask:
   // if mask is true, set first value, otherwise the other.
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION

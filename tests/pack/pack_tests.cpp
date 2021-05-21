@@ -204,7 +204,7 @@ struct TestPack {
 
     vector_novec for (int i=0; i<PACKN; ++i) {
       REQUIRE( std::abs(dones[i] - 1.0) < 1e-7 );
-      REQUIRE( std::abs(ftwos[i] - 2.0) < 1e-7 );
+      REQUIRE( std::abs(ftwos[i] - 2.0) < 1e-13 );
     }
   }
 
