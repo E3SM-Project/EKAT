@@ -4,6 +4,7 @@
 #include "ekat/ekat_config.h"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 #include "ekat/std_meta/ekat_std_type_traits.hpp"
+#include <Kokkos_MemoryTraits.hpp>
 
 /*
  * Header contains globally useful kokkos-related types for ekat.
@@ -43,39 +44,39 @@ struct KokkosTypes
   template<typename TagType>
   using TeamTagPolicy = Kokkos::TeamPolicy<ExeSpace,TagType>;
 
-  template <typename DataType>
-  using view = Kokkos::View<DataType, Layout, Device>;
+  template <typename DataType, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view = Kokkos::View<DataType, Layout, Device, MemoryTraits>;
 
   // left-layout views, may be useful for interacting with fortran
-  template <typename DataType>
-  using lview = Kokkos::View<DataType, Kokkos::LayoutLeft, Device>;
+  template <typename DataType, typename MemoryTraits = Kokkos::MemoryManaged>
+  using lview = Kokkos::View<DataType, Kokkos::LayoutLeft, Device, MemoryTraits>;
 
   // A N-dim view given scalar type and N
-  template<typename Scalar, int N>
-  using view_ND = view<typename DataND<Scalar,N>::type>;
+  template<typename Scalar, int N, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_ND = view<typename DataND<Scalar,N>::type,MemoryTraits>;
 
   // More verbose cases for N=1,2,3
-  template <typename Scalar>
-  using view_1d = view<Scalar*>;
+  template <typename Scalar, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_1d = view<Scalar*,MemoryTraits>;
 
-  template <typename Scalar>
-  using view_2d = view<Scalar**>;
+  template <typename Scalar, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_2d = view<Scalar**,MemoryTraits>;
 
-  template <typename Scalar>
-  using view_3d = view<Scalar***>;
+  template <typename Scalar, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_3d = view<Scalar***,MemoryTraits>;
 
-  template <typename Scalar, int X>
-  using view_1d_table = view<const Scalar[X]>;
+  template <typename Scalar, int X, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_1d_table = view<const Scalar[X],MemoryTraits>;
 
-  template <typename Scalar, int X, int Y>
-  using view_2d_table = view<const Scalar[X][Y]>;
+  template <typename Scalar, int X, int Y, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_2d_table = view<const Scalar[X][Y],MemoryTraits>;
 
   // Our workspace implementation makes this a useful type
-  template <typename Scalar, int N>
-  using view_1d_ptr_array = Kokkos::Array<Unmanaged<view_1d<Scalar> >*, N>;
+  template <typename Scalar, int N, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_1d_ptr_array = Kokkos::Array<Unmanaged<view_1d<Scalar,MemoryTraits> >*, N>;
 
-  template <typename Scalar, int N>
-  using view_1d_ptr_carray = Kokkos::Array<const Unmanaged<view_1d<Scalar> >*, N>;
+  template <typename Scalar, int N, typename MemoryTraits = Kokkos::MemoryManaged>
+  using view_1d_ptr_carray = Kokkos::Array<const Unmanaged<view_1d<Scalar,MemoryTraits> >*, N>;
 };
 
 } // namespace ekat
