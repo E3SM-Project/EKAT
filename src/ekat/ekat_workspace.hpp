@@ -101,8 +101,8 @@ class WorkspaceManager
   // set of constructor inputs. Note, this does not actually create an instance of the WSM,
   // but is useful for when memory needs to be reserved in a different scope than the
   // WSM is created.
-  static size_t get_total_slots_to_be_used(int size, int max_used, TeamPolicy policy,
-                                           const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+  static int get_total_bytes_needed(int size, int max_used, TeamPolicy policy,
+                                    const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   // call from host.
   //

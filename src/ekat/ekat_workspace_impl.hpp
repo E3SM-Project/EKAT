@@ -63,13 +63,13 @@ WorkspaceManager<T, D>::WorkspaceManager(T* data, int size, int max_used,
 }
 
 template <typename T, typename D>
-size_t WorkspaceManager<T, D>::get_total_slots_to_be_used(int size, int max_used, TeamPolicy policy,
-                                                          const double& overprov_factor)
+int WorkspaceManager<T, D>::get_total_bytes_needed(int size, int max_used, TeamPolicy policy,
+                                                   const double& overprov_factor)
 {
   TeamUtils<T,ExeSpace> tu(policy, overprov_factor);
-  const int reserve = (sizeof(T) > 2*sizeof(int)) ? 1 : (2*sizeof(int) + sizeof(T) - 1)/sizeof(T);
-  const int total = size + reserve;
-  return tu.get_num_ws_slots()*total*max_used;
+  const int reserve_slots = (sizeof(T) > 2*sizeof(int)) ? 1 : (2*sizeof(int) + sizeof(T) - 1)/sizeof(T);
+  const int total_slots = size + reserve_slots;
+  return tu.get_num_ws_slots()*total_slots*max_used*sizeof(T);
 }
 
 template <typename T, typename D>

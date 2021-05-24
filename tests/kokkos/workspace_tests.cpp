@@ -100,10 +100,9 @@ static void unittest_workspace()
   }
   {
     // Test constructing the WSM using view data
-    const int size = 17;
-    const int reserve = 1;
-    TeamUtils<double,ExeSpace> tu(policy,WorkspaceManager<double,Device>::GPU_DEFAULT_OVERPROVISION_FACTOR);
-    view_1d<double> tmp_view("", ((size+reserve)*num_ws)*tu.get_num_ws_slots());
+    size_t n_bytes = WorkspaceManager<double, Device>::get_total_bytes_needed(17, num_ws, policy);
+    size_t n_slots = n_bytes/sizeof(double);
+    view_1d<double> tmp_view("", n_slots);
 
     // Calculate next available location
     double* data_end = tmp_view.data();
@@ -111,15 +110,14 @@ static void unittest_workspace()
 
     WorkspaceManager<double, Device> wsm(tmp_view.data(), 17, num_ws, policy);
 
-    // Test get_total_slots_to_be_used() returns size of wsm.m_size
-    size_t n_slots = WorkspaceManager<double, Device>::get_total_slots_to_be_used(17, num_ws, policy);
+    // Test that get_total_bytes_needed()/sizeof(double) returns correct n_slots
     REQUIRE(n_slots == wsm.m_data.size());
 
     Kokkos::parallel_for("", policy, KOKKOS_LAMBDA(const MemberType& team) {
       auto ws = wsm.get_workspace(team);
 
       Unmanaged<view_1d<double> > ws1, ws2, ws3, ws4;
-      ws.template take_many_and_reset<4>(
+      ws.template take_many_contiguous_unsafe<4>(
         {"ws0", "ws1", "ws2", "ws3"},
         {&ws1, &ws2, &ws3, &ws4});
 
