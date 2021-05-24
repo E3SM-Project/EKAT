@@ -97,7 +97,7 @@ class WorkspaceManager
   WorkspaceManager(T* data, int size, int max_used, TeamPolicy policy,
                    const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
 
-  // Helper functions which return the number of slots that will be reserved for a given
+  // Helper functions which return the number of bytes that will be reserved for a given
   // set of constructor inputs. Note, this does not actually create an instance of the WSM,
   // but is useful for when memory needs to be reserved in a different scope than the
   // WSM is created.
@@ -265,6 +265,9 @@ class WorkspaceManager
 #ifndef KOKKOS_ENABLE_CUDA
  private:
 #endif
+
+  // Initialize int and view-type class variables.
+  void initialize_variables(const int size, const int max_used);
 
   friend struct unit_test::UnitWrap;
 

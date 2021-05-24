@@ -14,52 +14,43 @@ namespace ekat {
 
 template <typename T, typename D>
 WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy, const double& overprov_factor) :
-  m_tu(policy, overprov_factor),
-  m_max_ws_idx(m_tu.get_num_ws_slots()),
-  m_reserve( (sizeof(T) > 2*sizeof(int)) ? 1 :
-             (2*sizeof(int) + sizeof(T) - 1)/sizeof(T) ),
-  m_size(size),
-  m_total(m_size + m_reserve),
-  m_max_used(max_used),
-#ifndef NDEBUG
-  m_num_used("Workspace.m_num_used", m_max_ws_idx),
-  m_high_water("Workspace.m_high_water", m_max_ws_idx),
-  m_active("Workspace.m_active", m_max_ws_idx, m_max_used),
-  m_curr_names("Workspace.m_curr_names", m_max_ws_idx, m_max_used, m_max_name_len),
-  m_all_names("Workspace.m_all_names", m_max_ws_idx, m_max_names, m_max_name_len),
-  // A name's index in m_all_names is used to index into m_counts
-  m_counts("Workspace.m_counts", m_max_ws_idx, m_max_names, 2),
-#endif
-  m_next_slot("Workspace.m_next_slot", m_pad_factor*m_max_ws_idx),
-  m_data(Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
-         m_max_ws_idx, m_total * m_max_used)
+  m_tu(policy, overprov_factor)
 {
+  initialize_variables(size, max_used);
+  m_data = decltype(m_data) (Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
+                             m_max_ws_idx, m_total*m_max_used);
   init(*this, m_max_ws_idx, m_max_used);
 }
 
 template <typename T, typename D>
 WorkspaceManager<T, D>::WorkspaceManager(T* data, int size, int max_used,
                                          TeamPolicy policy, const double& overprov_factor) :
-  m_tu(policy, overprov_factor),
-  m_max_ws_idx(m_tu.get_num_ws_slots()),
-  m_reserve( (sizeof(T) > 2*sizeof(int)) ? 1 :
-             (2*sizeof(int) + sizeof(T) - 1)/sizeof(T) ),
-  m_size(size),
-  m_total(m_size + m_reserve),
-  m_max_used(max_used),
-#ifndef NDEBUG
-  m_num_used("Workspace.m_num_used", m_max_ws_idx),
-  m_high_water("Workspace.m_high_water", m_max_ws_idx),
-  m_active("Workspace.m_active", m_max_ws_idx, m_max_used),
-  m_curr_names("Workspace.m_curr_names", m_max_ws_idx, m_max_used, m_max_name_len),
-  m_all_names("Workspace.m_all_names", m_max_ws_idx, m_max_names, m_max_name_len),
-  // A name's index in m_all_names is used to index into m_counts
-  m_counts("Workspace.m_counts", m_max_ws_idx, m_max_names, 2),
-#endif
-  m_next_slot("Workspace.m_next_slot", m_pad_factor*m_max_ws_idx),
-  m_data(data, m_max_ws_idx, m_total * m_max_used)
+  m_tu(policy, overprov_factor)
 {
+  initialize_variables(size, max_used);
+  m_data = decltype(m_data) (data, m_max_ws_idx, m_total*m_max_used);
   init(*this, m_max_ws_idx, m_max_used);
+}
+
+template <typename T, typename D>
+void WorkspaceManager<T, D>::initialize_variables(const int size, const int max_used)
+{
+  m_max_ws_idx = m_tu.get_num_ws_slots();
+  m_reserve    = (sizeof(T) > 2*sizeof(int)) ?
+                  1 : (2*sizeof(int) + sizeof(T) - 1)/sizeof(T);
+  m_size       = size;
+  m_total      = m_size + m_reserve;
+  m_max_used   = max_used;
+#ifndef NDEBUG
+  m_num_used   = decltype(m_num_used)   ("Workspace.m_num_used",   m_max_ws_idx);
+  m_high_water = decltype(m_high_water) ("Workspace.m_high_water", m_max_ws_idx);
+  m_active     = decltype(m_active)     ("Workspace.m_active",     m_max_ws_idx, m_max_used);
+  m_curr_names = decltype(m_curr_names) ("Workspace.m_curr_names", m_max_ws_idx, m_max_used, m_max_name_len);
+  m_all_names  = decltype(m_all_names)  ("Workspace.m_all_names",  m_max_ws_idx, m_max_names, m_max_name_len);
+  // A name's index in m_all_names is used to index into m_counts
+  m_counts     = decltype(m_counts)     ("Workspace.m_counts",     m_max_ws_idx, m_max_names, 2);
+#endif
+  m_next_slot  = decltype(m_next_slot)  ("Workspace.m_next_slot",  m_max_ws_idx*m_pad_factor);
 }
 
 template <typename T, typename D>
@@ -67,7 +58,8 @@ int WorkspaceManager<T, D>::get_total_bytes_needed(int size, int max_used, TeamP
                                                    const double& overprov_factor)
 {
   TeamUtils<T,ExeSpace> tu(policy, overprov_factor);
-  const int reserve_slots = (sizeof(T) > 2*sizeof(int)) ? 1 : (2*sizeof(int) + sizeof(T) - 1)/sizeof(T);
+  const int reserve_slots = (sizeof(T) > 2*sizeof(int)) ?
+                             1 : (2*sizeof(int) + sizeof(T) - 1)/sizeof(T);
   const int total_slots = size + reserve_slots;
   return tu.get_num_ws_slots()*total_slots*max_used*sizeof(T);
 }
