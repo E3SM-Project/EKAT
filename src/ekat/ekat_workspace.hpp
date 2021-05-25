@@ -287,9 +287,9 @@ class WorkspaceManager
   Unmanaged<view_1d<S> > get_space_in_slot(const int team_idx, const int slot) const;
 
   KOKKOS_INLINE_FUNCTION
-  void init_metadata(const int ws_idx, const int slot) const;
+  void init_slot_metadata(const int ws_idx, const int slot) const;
 
-  void init(const int max_ws_idx, const int max_used);
+  void init_all_metadata(const int max_ws_idx, const int max_used);
 
   void compute_internals(const int size, const int max_used);
 

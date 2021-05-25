@@ -19,7 +19,7 @@ WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy poli
   compute_internals(size, max_used);
   m_data = decltype(m_data) (Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
                              m_max_ws_idx, m_total*m_max_used);
-  init(m_max_ws_idx, m_max_used);
+  init_all_metadata(m_max_ws_idx, m_max_used);
 }
 
 template <typename T, typename D>
@@ -29,7 +29,7 @@ WorkspaceManager<T, D>::WorkspaceManager(T* data, int size, int max_used,
 {
   compute_internals(size, max_used);
   m_data = decltype(m_data) (data, m_max_ws_idx, m_total*m_max_used);
-  init(m_max_ws_idx, m_max_used);
+  init_all_metadata(m_max_ws_idx, m_max_used);
 }
 
 template <typename T, typename D>
@@ -136,7 +136,7 @@ void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Wor
 { m_tu.release_workspace_idx(team, ws.m_ws_idx); }
 
 template <typename T, typename D>
-void WorkspaceManager<T, D>::init(const int max_ws_idx, const int max_used)
+void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int max_used)
 {
   Kokkos::parallel_for(
     "WorkspaceManager ctor",
@@ -144,7 +144,7 @@ void WorkspaceManager<T, D>::init(const int max_ws_idx, const int max_used)
     KOKKOS_LAMBDA(const MemberType& team) {
       Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, max_used), [&] (int i) {
-          init_metadata(team.league_rank(), i);
+          init_slot_metadata(team.league_rank(), i);
         });
     });
 }
@@ -180,7 +180,7 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
 
 template <typename T, typename D>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::init_metadata(const int ws_idx, const int slot) const
+void WorkspaceManager<T, D>::init_slot_metadata(const int ws_idx, const int slot) const
 {
   int* const metadata = reinterpret_cast<int*>(&m_data(ws_idx, slot*m_total));
   metadata[0] = slot;     // idx
@@ -356,7 +356,7 @@ void WorkspaceManager<T, D>::Workspace::take_many_and_reset(
   // We only need to reset the metadata for spaces that are being left free
   Kokkos::parallel_for(
     Kokkos::TeamThreadRange(m_team, m_parent.m_max_used - N), [&] (int i) {
-      m_parent.init_metadata(m_ws_idx, i+N);
+      m_parent.init_slot_metadata(m_ws_idx, i+N);
     });
 
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
@@ -391,7 +391,7 @@ void WorkspaceManager<T, D>::Workspace::reset() const
   m_next_slot = 0;
   Kokkos::parallel_for(
     Kokkos::TeamThreadRange(m_team, m_parent.m_max_used), [&] (int i) {
-      m_parent.init_metadata(m_ws_idx, i);
+      m_parent.init_slot_metadata(m_ws_idx, i);
     });
 
 #ifndef NDEBUG
@@ -570,7 +570,7 @@ void WorkspaceManager<T, D>::Workspace::release_macro_block(
   m_team.team_barrier();
   Kokkos::parallel_for(
     Kokkos::TeamThreadRange(m_team, n_sub_blocks), [&] (int i) {
-      m_parent.init_metadata(m_ws_idx, i+m_next_slot);
+      m_parent.init_slot_metadata(m_ws_idx, i+m_next_slot);
   });
 
   // We need a barrier here so that a subsequent call to take or release
