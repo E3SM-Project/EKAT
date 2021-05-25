@@ -14,27 +14,54 @@ namespace ekat {
 
 template <typename T, typename D>
 WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy, const double& overprov_factor) :
-  m_tu(policy, overprov_factor),
-  m_max_ws_idx(m_tu.get_num_ws_slots()),
-  m_reserve( (sizeof(T) > 2*sizeof(int)) ? 1 :
-             (2*sizeof(int) + sizeof(T) - 1)/sizeof(T) ),
-  m_size(size),
-  m_total(m_size + m_reserve),
-  m_max_used(max_used),
-#ifndef NDEBUG
-  m_num_used("Workspace.m_num_used", m_max_ws_idx),
-  m_high_water("Workspace.m_high_water", m_max_ws_idx),
-  m_active("Workspace.m_active", m_max_ws_idx, m_max_used),
-  m_curr_names("Workspace.m_curr_names", m_max_ws_idx, m_max_used, m_max_name_len),
-  m_all_names("Workspace.m_all_names", m_max_ws_idx, m_max_names, m_max_name_len),
-  // A name's index in m_all_names is used to index into m_counts
-  m_counts("Workspace.m_counts", m_max_ws_idx, m_max_names, 2),
-#endif
-  m_next_slot("Workspace.m_next_slot", m_pad_factor*m_max_ws_idx),
-  m_data(Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
-         m_max_ws_idx, m_total * m_max_used)
+  m_tu(policy, overprov_factor)
 {
-  init(*this, m_max_ws_idx, m_max_used);
+  compute_internals(size, max_used);
+  m_data = decltype(m_data) (Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
+                             m_max_ws_idx, m_total*m_max_used);
+  init_all_metadata(m_max_ws_idx, m_max_used);
+}
+
+template <typename T, typename D>
+WorkspaceManager<T, D>::WorkspaceManager(T* data, int size, int max_used,
+                                         TeamPolicy policy, const double& overprov_factor) :
+  m_tu(policy, overprov_factor)
+{
+  compute_internals(size, max_used);
+  m_data = decltype(m_data) (data, m_max_ws_idx, m_total*m_max_used);
+  init_all_metadata(m_max_ws_idx, m_max_used);
+}
+
+template <typename T, typename D>
+void WorkspaceManager<T, D>::compute_internals(const int size, const int max_used)
+{
+  m_max_ws_idx = m_tu.get_num_ws_slots();
+  m_reserve    = (sizeof(T) > 2*sizeof(int)) ?
+                  1 : (2*sizeof(int) + sizeof(T) - 1)/sizeof(T);
+  m_size       = size;
+  m_total      = m_size + m_reserve;
+  m_max_used   = max_used;
+#ifndef NDEBUG
+  m_num_used   = decltype(m_num_used)   ("Workspace.m_num_used",   m_max_ws_idx);
+  m_high_water = decltype(m_high_water) ("Workspace.m_high_water", m_max_ws_idx);
+  m_active     = decltype(m_active)     ("Workspace.m_active",     m_max_ws_idx, m_max_used);
+  m_curr_names = decltype(m_curr_names) ("Workspace.m_curr_names", m_max_ws_idx, m_max_used, m_max_name_len);
+  m_all_names  = decltype(m_all_names)  ("Workspace.m_all_names",  m_max_ws_idx, m_max_names, m_max_name_len);
+  // A name's index in m_all_names is used to index into m_counts
+  m_counts     = decltype(m_counts)     ("Workspace.m_counts",     m_max_ws_idx, m_max_names, 2);
+#endif
+  m_next_slot  = decltype(m_next_slot)  ("Workspace.m_next_slot",  m_max_ws_idx*m_pad_factor);
+}
+
+template <typename T, typename D>
+int WorkspaceManager<T, D>::get_total_bytes_needed(int size, int max_used, TeamPolicy policy,
+                                                   const double& overprov_factor)
+{
+  TeamUtils<T,ExeSpace> tu(policy, overprov_factor);
+  const int reserve_slots = (sizeof(T) > 2*sizeof(int)) ?
+                             1 : (2*sizeof(int) + sizeof(T) - 1)/sizeof(T);
+  const int total_slots = size + reserve_slots;
+  return tu.get_num_ws_slots()*total_slots*max_used*sizeof(T);
 }
 
 template <typename T, typename D>
@@ -109,8 +136,7 @@ void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Wor
 { m_tu.release_workspace_idx(team, ws.m_ws_idx); }
 
 template <typename T, typename D>
-void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm,
-                                  const int max_ws_idx, const int max_used)
+void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int max_used)
 {
   Kokkos::parallel_for(
     "WorkspaceManager ctor",
@@ -118,7 +144,7 @@ void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm,
     KOKKOS_LAMBDA(const MemberType& team) {
       Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, max_used), [&] (int i) {
-          wm.init_metadata(team.league_rank(), i);
+          init_slot_metadata(team.league_rank(), i);
         });
     });
 }
@@ -154,7 +180,7 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
 
 template <typename T, typename D>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::init_metadata(const int ws_idx, const int slot) const
+void WorkspaceManager<T, D>::init_slot_metadata(const int ws_idx, const int slot) const
 {
   int* const metadata = reinterpret_cast<int*>(&m_data(ws_idx, slot*m_total));
   metadata[0] = slot;     // idx
@@ -330,7 +356,7 @@ void WorkspaceManager<T, D>::Workspace::take_many_and_reset(
   // We only need to reset the metadata for spaces that are being left free
   Kokkos::parallel_for(
     Kokkos::TeamThreadRange(m_team, m_parent.m_max_used - N), [&] (int i) {
-      m_parent.init_metadata(m_ws_idx, i+N);
+      m_parent.init_slot_metadata(m_ws_idx, i+N);
     });
 
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
@@ -365,7 +391,7 @@ void WorkspaceManager<T, D>::Workspace::reset() const
   m_next_slot = 0;
   Kokkos::parallel_for(
     Kokkos::TeamThreadRange(m_team, m_parent.m_max_used), [&] (int i) {
-      m_parent.init_metadata(m_ws_idx, i);
+      m_parent.init_slot_metadata(m_ws_idx, i);
     });
 
 #ifndef NDEBUG
@@ -544,7 +570,7 @@ void WorkspaceManager<T, D>::Workspace::release_macro_block(
   m_team.team_barrier();
   Kokkos::parallel_for(
     Kokkos::TeamThreadRange(m_team, n_sub_blocks), [&] (int i) {
-      m_parent.init_metadata(m_ws_idx, i+m_next_slot);
+      m_parent.init_slot_metadata(m_ws_idx, i+m_next_slot);
   });
 
   // We need a barrier here so that a subsequent call to take or release

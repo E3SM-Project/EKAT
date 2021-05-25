@@ -87,6 +87,23 @@ class WorkspaceManager
   WorkspaceManager(int size, int max_used, TeamPolicy policy,
                    const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
 
+  // Constructor, call from host
+  //   Same as above, but here the user initializes the data.
+  //   This is useful when the user wants to pre-reserve the data
+  //   for the WorkspaceManager. The user is responsible for
+  //   ensuring that m_max_ws_idx*m_total*m_max_used contiguous
+  //   data is available, for which the get_total_slots_to_be_used()
+  //   function can be helpful.
+  WorkspaceManager(T* data, int size, int max_used, TeamPolicy policy,
+                   const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+
+  // Helper functions which return the number of bytes that will be reserved for a given
+  // set of constructor inputs. Note, this does not actually create an instance of the WSM,
+  // but is useful for when memory needs to be reserved in a different scope than the
+  // WSM is created.
+  static int get_total_bytes_needed(int size, int max_used, TeamPolicy policy,
+                                    const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+
   // call from host.
   //
   // Will report usage statistics for your workspaces. These statistics will
@@ -270,9 +287,11 @@ class WorkspaceManager
   Unmanaged<view_1d<S> > get_space_in_slot(const int team_idx, const int slot) const;
 
   KOKKOS_INLINE_FUNCTION
-  void init_metadata(const int ws_idx, const int slot) const;
+  void init_slot_metadata(const int ws_idx, const int slot) const;
 
-  static void init(const WorkspaceManager& wm, const int max_ws_idx, const int max_used);
+  void init_all_metadata(const int max_ws_idx, const int max_used);
+
+  void compute_internals(const int size, const int max_used);
 
   //
   // data

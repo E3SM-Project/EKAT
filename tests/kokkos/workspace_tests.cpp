@@ -85,23 +85,55 @@ static void unittest_workspace()
 
   unittest_workspace_overprovision();
 
-  int nerr = 0;
-  const int ints_per_ws = 37;
-  static constexpr const int num_ws = 4;
+  static constexpr const int n_slots_per_team = 4;
   const int ni = 128;
   const int nk = 128;
 
   TeamPolicy policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk));
 
   {
-    WorkspaceManager<double, Device> wsmd(17, num_ws, policy);
+    const int slot_length = 17;
+    WorkspaceManager<double, Device> wsmd(slot_length, n_slots_per_team, policy);
     REQUIRE(wsmd.m_reserve == 1);
-    REQUIRE(wsmd.m_size == 17);
+    REQUIRE(wsmd.m_size == slot_length);
   }
   {
-    WorkspaceManager<char, Device> wsmc(16, num_ws, policy);
+    // Test constructing the WSM using view data
+    const int slot_length = 17;
+    size_t total_bytes = WorkspaceManager<double, Device>::get_total_bytes_needed(slot_length, n_slots_per_team, policy);
+    size_t total_data_size = total_bytes/sizeof(double);
+    view_1d<double> reserved_data("reserved_data", total_data_size);
+
+    // Calculate next available location
+    double* data_end = reserved_data.data();
+    data_end += reserved_data.size();
+
+    WorkspaceManager<double, Device> wsm(reserved_data.data(), slot_length, n_slots_per_team, policy);
+
+    // Test that get_total_bytes_needed()/sizeof(double) returns correct n_slots
+    REQUIRE(total_data_size == wsm.m_data.size());
+
+    Kokkos::parallel_for("", policy, KOKKOS_LAMBDA(const MemberType& team) {
+      auto ws = wsm.get_workspace(team);
+
+      Unmanaged<view_1d<double> > ws1, ws2, ws3, ws4;
+      ws.template take_many_contiguous_unsafe<4>(
+        {"ws0", "ws1", "ws2", "ws3"},
+        {&ws1, &ws2, &ws3, &ws4});
+
+      // Assert the memory access has not exceeded the allocation
+      const int dist = data_end - (ws4.data()+ws4.size());
+      EKAT_KERNEL_ASSERT_MSG(dist >= 0, "Error! Local view extended past allocation");
+
+      ws.template release_many_contiguous<4>(
+        {&ws1, &ws2, &ws3, &ws4});
+    });
+  }
+  {
+    const int slot_length = 16;
+    WorkspaceManager<char, Device> wsmc(slot_length, n_slots_per_team, policy);
     REQUIRE(wsmc.m_reserve == 8);
-    REQUIRE(wsmc.m_size == 16);
+    REQUIRE(wsmc.m_size == slot_length);
     Kokkos::parallel_for(
       "unittest_workspace char", policy,
       KOKKOS_LAMBDA(const MemberType& team) {
@@ -113,275 +145,282 @@ static void unittest_workspace()
       });
   }
   {
-    WorkspaceManager<short, Device> wsms(16, num_ws, policy);
+    const int slot_length = 16;
+    WorkspaceManager<short, Device> wsms(slot_length, n_slots_per_team, policy);
     REQUIRE(wsms.m_reserve == 4);
-    REQUIRE(wsms.m_size == 16);
+    REQUIRE(wsms.m_size == slot_length);
   }
 
   // Test host-explicit WorkspaceMgr
   {
     using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
     typename KokkosTypes<HostDevice>::TeamPolicy policy_host(ExeSpaceUtils<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk));
-    WorkspaceManager<short, HostDevice> wsmh(16, num_ws, policy_host);
+    WorkspaceManager<short, HostDevice> wsmh(16, n_slots_per_team, policy_host);
     wsmh.m_data(0, 0) = 0; // check on cuda machine
   }
 
-  WorkspaceManager<int, Device> wsm(ints_per_ws, num_ws, policy);
+  // Test for various take and release functions
+  {
+    int nerr = 0;
 
-  REQUIRE(wsm.m_reserve == 2);
-  REQUIRE(wsm.m_size == ints_per_ws);
+    const int slot_length = 37;
+    WorkspaceManager<int, Device> wsm(slot_length, n_slots_per_team, policy);
 
-  Kokkos::parallel_reduce("unittest_workspace", policy, KOKKOS_LAMBDA(const MemberType& team, int& total_errs) {
+    REQUIRE(wsm.m_reserve == 2);
+    REQUIRE(wsm.m_size == slot_length);
 
-    int nerrs_local = 0;
-    auto ws = wsm.get_workspace(team);
+    Kokkos::parallel_reduce("unittest_workspace", policy, KOKKOS_LAMBDA(const MemberType& team, int& total_errs) {
 
-    // Test getting workspaces of different type
-    {
-      const auto ws_int = ws.take("ints");
-      // These nerrs_local increments are write race conditions among threads in
-      // a team, but that's OK: nerrs_local doesn't have to be accurate. A 0
-      // result will be a true 0 result.
-      if (ws_int.extent_int(0) != ints_per_ws) ++nerrs_local;
-      ws.release(ws_int);
+      int nerrs_local = 0;
+      auto ws = wsm.get_workspace(team);
 
-      const auto ws_dlb = ws.template take<double>("doubles");
-      if (ws_dlb.extent(0) != 18) ++nerrs_local;
-      ws.release(ws_dlb);
-    }
-    team.team_barrier();
+      // Test getting workspaces of different type
+      {
+        const auto ws_int = ws.take("ints");
+        // These nerrs_local increments are write race conditions among threads in
+        // a team, but that's OK: nerrs_local doesn't have to be accurate. A 0
+        // result will be a true 0 result.
+        if (ws_int.extent_int(0) != slot_length) ++nerrs_local;
+        ws.release(ws_int);
 
-    Kokkos::Array<Unmanaged<view_1d<int> >, num_ws> wssub;
-
-    Unmanaged<view_1d<int>> wsmacro1d;
-    Unmanaged<view_2d<int>> wsmacro2d;
-
-    // Main test. Test different means of taking and release spaces.
-    for (int r = 0; r < 10; ++r) {
-      if (r % 5 == 0) {
-        for (int w = 0; w < num_ws; ++w) {
-          char buf[8] = "ws";
-          buf[2] = 48 + w; // 48 is offset to integers in ascii
-          wssub[w] = ws.take(buf);
-        }
+        const auto ws_dlb = ws.template take<double>("doubles");
+        if (ws_dlb.extent(0) != 18) ++nerrs_local;
+        ws.release(ws_dlb);
       }
-      else if (r % 5 == 1) {
-        wsmacro1d = ws.take_macro_block("wsmacro1d", num_ws);
-        wsmacro2d = Unmanaged<view_2d<int>> (reinterpret_cast<int*>(wsmacro1d.data()),
-                                             num_ws,ints_per_ws);
-      }
-      else {
-        Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
-        Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
-        Kokkos::Array<const char*, num_ws> names = { {"ws0", "ws1", "ws2", "ws3"} };
-        if (r % 5 == 2) {
-          ws.take_many(names, ptrs);
-        }
-        else if (r % 5 == 3) {
-          ws.take_many_contiguous_unsafe(names, ptrs);
-        }
-        else { // % 5 == 4
-          ws.take_many_and_reset(names, ptrs);
-        }
-
-        for (int w = 0; w < num_ws; ++w) {
-          wssub[w] = *ptrs[w];
-        }
-      }
-
-      for (int w = 0; w < num_ws; ++w) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
-          if (r % 5 == 1) {
-            wsmacro2d(w,i) = i * w;
-          } else {
-            wssub[w](i) = i * w;
-          }
-        });
-      }
-
       team.team_barrier();
 
-      // metadata is not preserved when recasting take_macro_block data
-      // so only check for other types
-      if (r % 5 != 1) {
-        for (int w = 0; w < num_ws; ++w) {
-          // These spaces aren't free, but their metadata should be the same as it
-          // was when they were initialized
-          Kokkos::single(Kokkos::PerTeam(team), [&] () {
-            if (wsm.get_index(wssub[w]) != w) ++nerrs_local;
-            if (wsm.get_next(wssub[w]) != w+1) ++nerrs_local;
-  #ifndef NDEBUG
+      Kokkos::Array<Unmanaged<view_1d<int> >, n_slots_per_team> wssub;
+
+      Unmanaged<view_1d<int>> wsmacro1d;
+      Unmanaged<view_2d<int>> wsmacro2d;
+
+      // Main test. Test different means of taking and release spaces.
+      for (int r = 0; r < 10; ++r) {
+        if (r % 5 == 0) {
+          for (int w = 0; w < n_slots_per_team; ++w) {
             char buf[8] = "ws";
             buf[2] = 48 + w; // 48 is offset to integers in ascii
-            if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
-            if (ws.get_num_used() != 4) ++nerrs_local;
-  #endif
-            for (int i = 0; i < ints_per_ws; ++i) {
-              if (wssub[w](i) != i*w) ++nerrs_local;
+            wssub[w] = ws.take(buf);
+          }
+        }
+        else if (r % 5 == 1) {
+          wsmacro1d = ws.take_macro_block("wsmacro1d", n_slots_per_team);
+          wsmacro2d = Unmanaged<view_2d<int>> (reinterpret_cast<int*>(wsmacro1d.data()),
+                                               n_slots_per_team,slot_length);
+        }
+        else {
+          Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
+          Kokkos::Array<Unmanaged<view_1d<int> >*, n_slots_per_team> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
+          Kokkos::Array<const char*, n_slots_per_team> names = { {"ws0", "ws1", "ws2", "ws3"} };
+          if (r % 5 == 2) {
+            ws.take_many(names, ptrs);
+          }
+          else if (r % 5 == 3) {
+            ws.take_many_contiguous_unsafe(names, ptrs);
+          }
+          else { // % 5 == 4
+            ws.take_many_and_reset(names, ptrs);
+          }
+
+          for (int w = 0; w < n_slots_per_team; ++w) {
+            wssub[w] = *ptrs[w];
+          }
+        }
+
+        for (int w = 0; w < n_slots_per_team; ++w) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, slot_length), [&] (Int i) {
+            if (r % 5 == 1) {
+              wsmacro2d(w,i) = i * w;
+            } else {
+              wssub[w](i) = i * w;
             }
           });
         }
-      }
 
-      team.team_barrier();
+        team.team_barrier();
 
-      if (r % 5 == 0) {
-        ws.reset();
-      }
-      else if (r % 5 == 1) {
-        ws.release_macro_block(wsmacro1d,num_ws);
-      }
-      else if (r % 5 == 2) {
-        Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
-        ws.release_many_contiguous(ptrs);
-      }
-      else if (r % 5 == 3) {
-        // let take_and_reset next loop do the reset
-      }
-      else { // % 5 == 4
-        for (int w = num_ws - 1; w >= 0; --w) {
-          ws.release(wssub[w]); // release individually
-        }
-      }
-
-      team.team_barrier();
-    }
-
-#ifndef KOKKOS_ENABLE_CUDA
-#ifdef WS_EXPENSIVE_TEST
-    if (true)
-#else
-    if ( ExeSpace::concurrency() == 2 ) // the test below is expensive, we don't want all threads sweeps to run it
-#endif
-    {
-      // Test weird take/release permutations.
-      for (int r = 0; r < 3; ++r) {
-        int take_order[]    = {0, 1, 2, 3};
-        int release_order[] = {-3, -2, -1, 0};
-
-        do {
-          for (int w = 0; w < num_ws; ++w) {
-            char buf[8] = "ws";
-            buf[2] = 48 + take_order[w]; // 48 is offset to integers in ascii
-            wssub[take_order[w]] = ws.take(buf);
-          }
-          team.team_barrier();
-
-          for (int w = 0; w < num_ws; ++w) {
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
-                wssub[w](i) = i * w;
-              });
-          }
-
-          team.team_barrier();
-
-          // verify stuff
-          for (int w = 0; w < num_ws; ++w) {
+        // metadata is not preserved when recasting take_macro_block data
+        // so only check for other types
+        if (r % 5 != 1) {
+          for (int w = 0; w < n_slots_per_team; ++w) {
+            // These spaces aren't free, but their metadata should be the same as it
+            // was when they were initialized
             Kokkos::single(Kokkos::PerTeam(team), [&] () {
-#ifndef NDEBUG
-                char buf[8] = "ws";
-                buf[2] = 48 + w; // 48 is offset to integers in ascii
-                if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
-                if (ws.get_num_used() != 4) ++nerrs_local;
-#endif
-                for (int i = 0; i < ints_per_ws; ++i) {
-                  if (wssub[w](i) != i*w) ++nerrs_local;
-                }
-              });
+              if (wsm.get_index(wssub[w]) != w) ++nerrs_local;
+              if (wsm.get_next(wssub[w]) != w+1) ++nerrs_local;
+    #ifndef NDEBUG
+              char buf[8] = "ws";
+              buf[2] = 48 + w; // 48 is offset to integers in ascii
+              if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+              if (ws.get_num_used() != 4) ++nerrs_local;
+    #endif
+              for (int i = 0; i < slot_length; ++i) {
+                if (wssub[w](i) != i*w) ++nerrs_local;
+              }
+            });
           }
+        }
 
-          team.team_barrier();
+        team.team_barrier();
 
-          for (int w = 0; w < num_ws; ++w) {
-            ws.release(wssub[release_order[w] * -1]);
+        if (r % 5 == 0) {
+          ws.reset();
+        }
+        else if (r % 5 == 1) {
+          ws.release_macro_block(wsmacro1d,n_slots_per_team);
+        }
+        else if (r % 5 == 2) {
+          Kokkos::Array<Unmanaged<view_1d<int> >*, n_slots_per_team> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
+          ws.release_many_contiguous(ptrs);
+        }
+        else if (r % 5 == 3) {
+          // let take_and_reset next loop do the reset
+        }
+        else { // % 5 == 4
+          for (int w = n_slots_per_team - 1; w >= 0; --w) {
+            ws.release(wssub[w]); // release individually
           }
+        }
 
-          team.team_barrier();
-
-          std::next_permutation(release_order, release_order+4);
-
-        } while (std::next_permutation(take_order, take_order+4));
+        team.team_barrier();
       }
-      ws.reset();
 
-      // Test weird take/release permutations.
-#ifdef WS_EXPENSIVE_TEST
+  #ifndef KOKKOS_ENABLE_CUDA
+  #ifdef WS_EXPENSIVE_TEST
+      if (true)
+  #else
+      if ( ExeSpace::concurrency() == 2 ) // the test below is expensive, we don't want all threads sweeps to run it
+  #endif
       {
-        int actions[] = {-3, -2, -1, 1, 2, 3};
-        bool exp_active[] = {false, false, false, false};
+        // Test weird take/release permutations.
+        for (int r = 0; r < 3; ++r) {
+          int take_order[]    = {0, 1, 2, 3};
+          int release_order[] = {-3, -2, -1, 0};
 
-        do {
-          for (int a = 0; a < 6; ++a) {
-            int action = actions[a];
-            if (action < 0) {
-              action *= -1;
-              if (exp_active[action]) {
-                ws.release(wssub[action]);
-                exp_active[action] = false;
-              }
+          do {
+            for (int w = 0; w < n_slots_per_team; ++w) {
+              char buf[8] = "ws";
+              buf[2] = 48 + take_order[w]; // 48 is offset to integers in ascii
+              wssub[take_order[w]] = ws.take(buf);
             }
-            else {
-              if (!exp_active[action]) {
-                char buf[8] = "ws";
-                buf[2] = 48 + action; // 48 is offset to integers in ascii
-                wssub[action] = ws.take(buf);
-                exp_active[action] = true;
-              }
-            }
-          }
+            team.team_barrier();
 
-          for (int w = 0; w < num_ws; ++w) {
-            if (exp_active[w]) {
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
+            for (int w = 0; w < n_slots_per_team; ++w) {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(team, slot_length), [&] (Int i) {
                   wssub[w](i) = i * w;
                 });
             }
-          }
 
-          team.team_barrier();
+            team.team_barrier();
 
-          // verify stuff
-          Kokkos::single(Kokkos::PerTeam(team), [&] () {
-#ifndef NDEBUG
-              int exp_num_active = 0;
-#endif
-              for (int w = 0; w < num_ws; ++w) {
-                if (exp_active[w]) {
-#ifndef NDEBUG
+            // verify stuff
+            for (int w = 0; w < n_slots_per_team; ++w) {
+              Kokkos::single(Kokkos::PerTeam(team), [&] () {
+  #ifndef NDEBUG
                   char buf[8] = "ws";
                   buf[2] = 48 + w; // 48 is offset to integers in ascii
                   if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
-                  ++exp_num_active;
-                  if (!ws.template is_active<int>(wssub[w])) ++nerrs_local;
-#endif
-                  for (int i = 0; i < ints_per_ws; ++i) {
+                  if (ws.get_num_used() != 4) ++nerrs_local;
+  #endif
+                  for (int i = 0; i < slot_length; ++i) {
                     if (wssub[w](i) != i*w) ++nerrs_local;
                   }
+                });
+            }
+
+            team.team_barrier();
+
+            for (int w = 0; w < n_slots_per_team; ++w) {
+              ws.release(wssub[release_order[w] * -1]);
+            }
+
+            team.team_barrier();
+
+            std::next_permutation(release_order, release_order+4);
+
+          } while (std::next_permutation(take_order, take_order+4));
+        }
+        ws.reset();
+
+        // Test weird take/release permutations.
+  #ifdef WS_EXPENSIVE_TEST
+        {
+          int actions[] = {-3, -2, -1, 1, 2, 3};
+          bool exp_active[] = {false, false, false, false};
+
+          do {
+            for (int a = 0; a < 6; ++a) {
+              int action = actions[a];
+              if (action < 0) {
+                action *= -1;
+                if (exp_active[action]) {
+                  ws.release(wssub[action]);
+                  exp_active[action] = false;
                 }
               }
-#ifndef NDEBUG
-              if (ws.get_num_used() != exp_num_active) ++nerrs_local;
-#endif
-            });
+              else {
+                if (!exp_active[action]) {
+                  char buf[8] = "ws";
+                  buf[2] = 48 + action; // 48 is offset to integers in ascii
+                  wssub[action] = ws.take(buf);
+                  exp_active[action] = true;
+                }
+              }
+            }
 
-          team.team_barrier();
+            for (int w = 0; w < n_slots_per_team; ++w) {
+              if (exp_active[w]) {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(team, slot_length), [&] (Int i) {
+                    wssub[w](i) = i * w;
+                  });
+              }
+            }
 
-        } while (std::next_permutation(actions, actions + 6));
+            team.team_barrier();
+
+            // verify stuff
+            Kokkos::single(Kokkos::PerTeam(team), [&] () {
+  #ifndef NDEBUG
+                int exp_num_active = 0;
+  #endif
+                for (int w = 0; w < n_slots_per_team; ++w) {
+                  if (exp_active[w]) {
+  #ifndef NDEBUG
+                    char buf[8] = "ws";
+                    buf[2] = 48 + w; // 48 is offset to integers in ascii
+                    if (impl::strcmp(ws.get_name(wssub[w]), buf) != 0) ++nerrs_local;
+                    ++exp_num_active;
+                    if (!ws.template is_active<int>(wssub[w])) ++nerrs_local;
+  #endif
+                    for (int i = 0; i < slot_length; ++i) {
+                      if (wssub[w](i) != i*w) ++nerrs_local;
+                    }
+                  }
+                }
+  #ifndef NDEBUG
+                if (ws.get_num_used() != exp_num_active) ++nerrs_local;
+  #endif
+              });
+
+            team.team_barrier();
+
+          } while (std::next_permutation(actions, actions + 6));
+        }
+  #endif
+        ws.reset();
       }
-#endif
-      ws.reset();
-    }
-#endif
+  #endif
 
-    total_errs += nerrs_local;
-    team.team_barrier();
-  }, nerr);
+      total_errs += nerrs_local;
+      team.team_barrier();
+    }, nerr);
 
-#if 0
-  wsm.report();
-#endif
+  #if 0
+    wsm.report();
+  #endif
 
-  REQUIRE(nerr == 0);
+    REQUIRE(nerr == 0);
+  }
 }
 
 }; // struct UnitTest
