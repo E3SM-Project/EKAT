@@ -87,31 +87,33 @@ static void unittest_workspace()
 
   int nerr = 0;
   const int ints_per_ws = 37;
-  static constexpr const int num_ws = 4;
+  static constexpr const int num_workspaces = 4;
   const int ni = 128;
   const int nk = 128;
 
   TeamPolicy policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk));
 
   {
-    WorkspaceManager<double, Device> wsmd(17, num_ws, policy);
+    const int slot_length = 17;
+    WorkspaceManager<double, Device> wsmd(slot_length, num_workspaces, policy);
     REQUIRE(wsmd.m_reserve == 1);
-    REQUIRE(wsmd.m_size == 17);
+    REQUIRE(wsmd.m_size == slot_length);
   }
   {
     // Test constructing the WSM using view data
-    size_t n_bytes = WorkspaceManager<double, Device>::get_total_bytes_needed(17, num_ws, policy);
-    size_t n_slots = n_bytes/sizeof(double);
-    view_1d<double> tmp_view("", n_slots);
+    const int slot_length = 17;
+    size_t total_bytes = WorkspaceManager<double, Device>::get_total_bytes_needed(slot_length, num_workspaces, policy);
+    size_t total_data_size = total_bytes/sizeof(double);
+    view_1d<double> reserved_data("reserved_data", total_data_size);
 
     // Calculate next available location
-    double* data_end = tmp_view.data();
-    data_end += tmp_view.size();
+    double* data_end = reserved_data.data();
+    data_end += reserved_data.size();
 
-    WorkspaceManager<double, Device> wsm(tmp_view.data(), 17, num_ws, policy);
+    WorkspaceManager<double, Device> wsm(reserved_data.data(), slot_length, num_workspaces, policy);
 
     // Test that get_total_bytes_needed()/sizeof(double) returns correct n_slots
-    REQUIRE(n_slots == wsm.m_data.size());
+    REQUIRE(total_data_size == wsm.m_data.size());
 
     Kokkos::parallel_for("", policy, KOKKOS_LAMBDA(const MemberType& team) {
       auto ws = wsm.get_workspace(team);
@@ -130,9 +132,10 @@ static void unittest_workspace()
     });
   }
   {
-    WorkspaceManager<char, Device> wsmc(16, num_ws, policy);
+    const int slot_length = 16;
+    WorkspaceManager<char, Device> wsmc(slot_length, num_workspaces, policy);
     REQUIRE(wsmc.m_reserve == 8);
-    REQUIRE(wsmc.m_size == 16);
+    REQUIRE(wsmc.m_size == slot_length);
     Kokkos::parallel_for(
       "unittest_workspace char", policy,
       KOKKOS_LAMBDA(const MemberType& team) {
@@ -144,20 +147,21 @@ static void unittest_workspace()
       });
   }
   {
-    WorkspaceManager<short, Device> wsms(16, num_ws, policy);
+    const int slot_length = 16;
+    WorkspaceManager<short, Device> wsms(slot_length, num_workspaces, policy);
     REQUIRE(wsms.m_reserve == 4);
-    REQUIRE(wsms.m_size == 16);
+    REQUIRE(wsms.m_size == slot_length);
   }
 
   // Test host-explicit WorkspaceMgr
   {
     using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
     typename KokkosTypes<HostDevice>::TeamPolicy policy_host(ExeSpaceUtils<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk));
-    WorkspaceManager<short, HostDevice> wsmh(16, num_ws, policy_host);
+    WorkspaceManager<short, HostDevice> wsmh(16, num_workspaces, policy_host);
     wsmh.m_data(0, 0) = 0; // check on cuda machine
   }
 
-  WorkspaceManager<int, Device> wsm(ints_per_ws, num_ws, policy);
+  WorkspaceManager<int, Device> wsm(ints_per_ws, num_workspaces, policy);
 
   REQUIRE(wsm.m_reserve == 2);
   REQUIRE(wsm.m_size == ints_per_ws);
@@ -182,7 +186,7 @@ static void unittest_workspace()
     }
     team.team_barrier();
 
-    Kokkos::Array<Unmanaged<view_1d<int> >, num_ws> wssub;
+    Kokkos::Array<Unmanaged<view_1d<int> >, num_workspaces> wssub;
 
     Unmanaged<view_1d<int>> wsmacro1d;
     Unmanaged<view_2d<int>> wsmacro2d;
@@ -190,21 +194,21 @@ static void unittest_workspace()
     // Main test. Test different means of taking and release spaces.
     for (int r = 0; r < 10; ++r) {
       if (r % 5 == 0) {
-        for (int w = 0; w < num_ws; ++w) {
+        for (int w = 0; w < num_workspaces; ++w) {
           char buf[8] = "ws";
           buf[2] = 48 + w; // 48 is offset to integers in ascii
           wssub[w] = ws.take(buf);
         }
       }
       else if (r % 5 == 1) {
-        wsmacro1d = ws.take_macro_block("wsmacro1d", num_ws);
+        wsmacro1d = ws.take_macro_block("wsmacro1d", num_workspaces);
         wsmacro2d = Unmanaged<view_2d<int>> (reinterpret_cast<int*>(wsmacro1d.data()),
-                                             num_ws,ints_per_ws);
+                                             num_workspaces,ints_per_ws);
       }
       else {
         Unmanaged<view_1d<int> > ws1, ws2, ws3, ws4;
-        Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
-        Kokkos::Array<const char*, num_ws> names = { {"ws0", "ws1", "ws2", "ws3"} };
+        Kokkos::Array<Unmanaged<view_1d<int> >*, num_workspaces> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
+        Kokkos::Array<const char*, num_workspaces> names = { {"ws0", "ws1", "ws2", "ws3"} };
         if (r % 5 == 2) {
           ws.take_many(names, ptrs);
         }
@@ -215,12 +219,12 @@ static void unittest_workspace()
           ws.take_many_and_reset(names, ptrs);
         }
 
-        for (int w = 0; w < num_ws; ++w) {
+        for (int w = 0; w < num_workspaces; ++w) {
           wssub[w] = *ptrs[w];
         }
       }
 
-      for (int w = 0; w < num_ws; ++w) {
+      for (int w = 0; w < num_workspaces; ++w) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
           if (r % 5 == 1) {
             wsmacro2d(w,i) = i * w;
@@ -235,7 +239,7 @@ static void unittest_workspace()
       // metadata is not preserved when recasting take_macro_block data
       // so only check for other types
       if (r % 5 != 1) {
-        for (int w = 0; w < num_ws; ++w) {
+        for (int w = 0; w < num_workspaces; ++w) {
           // These spaces aren't free, but their metadata should be the same as it
           // was when they were initialized
           Kokkos::single(Kokkos::PerTeam(team), [&] () {
@@ -260,17 +264,17 @@ static void unittest_workspace()
         ws.reset();
       }
       else if (r % 5 == 1) {
-        ws.release_macro_block(wsmacro1d,num_ws);
+        ws.release_macro_block(wsmacro1d,num_workspaces);
       }
       else if (r % 5 == 2) {
-        Kokkos::Array<Unmanaged<view_1d<int> >*, num_ws> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
+        Kokkos::Array<Unmanaged<view_1d<int> >*, num_workspaces> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
         ws.release_many_contiguous(ptrs);
       }
       else if (r % 5 == 3) {
         // let take_and_reset next loop do the reset
       }
       else { // % 5 == 4
-        for (int w = num_ws - 1; w >= 0; --w) {
+        for (int w = num_workspaces - 1; w >= 0; --w) {
           ws.release(wssub[w]); // release individually
         }
       }
@@ -291,14 +295,14 @@ static void unittest_workspace()
         int release_order[] = {-3, -2, -1, 0};
 
         do {
-          for (int w = 0; w < num_ws; ++w) {
+          for (int w = 0; w < num_workspaces; ++w) {
             char buf[8] = "ws";
             buf[2] = 48 + take_order[w]; // 48 is offset to integers in ascii
             wssub[take_order[w]] = ws.take(buf);
           }
           team.team_barrier();
 
-          for (int w = 0; w < num_ws; ++w) {
+          for (int w = 0; w < num_workspaces; ++w) {
             Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
                 wssub[w](i) = i * w;
               });
@@ -307,7 +311,7 @@ static void unittest_workspace()
           team.team_barrier();
 
           // verify stuff
-          for (int w = 0; w < num_ws; ++w) {
+          for (int w = 0; w < num_workspaces; ++w) {
             Kokkos::single(Kokkos::PerTeam(team), [&] () {
 #ifndef NDEBUG
                 char buf[8] = "ws";
@@ -323,7 +327,7 @@ static void unittest_workspace()
 
           team.team_barrier();
 
-          for (int w = 0; w < num_ws; ++w) {
+          for (int w = 0; w < num_workspaces; ++w) {
             ws.release(wssub[release_order[w] * -1]);
           }
 
@@ -361,7 +365,7 @@ static void unittest_workspace()
             }
           }
 
-          for (int w = 0; w < num_ws; ++w) {
+          for (int w = 0; w < num_workspaces; ++w) {
             if (exp_active[w]) {
               Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ints_per_ws), [&] (Int i) {
                   wssub[w](i) = i * w;
@@ -376,7 +380,7 @@ static void unittest_workspace()
 #ifndef NDEBUG
               int exp_num_active = 0;
 #endif
-              for (int w = 0; w < num_ws; ++w) {
+              for (int w = 0; w < num_workspaces; ++w) {
                 if (exp_active[w]) {
 #ifndef NDEBUG
                   char buf[8] = "ws";
