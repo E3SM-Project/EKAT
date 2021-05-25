@@ -16,10 +16,10 @@ template <typename T, typename D>
 WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy, const double& overprov_factor) :
   m_tu(policy, overprov_factor)
 {
-  initialize_variables(size, max_used);
+  compute_internals(size, max_used);
   m_data = decltype(m_data) (Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
                              m_max_ws_idx, m_total*m_max_used);
-  init(*this, m_max_ws_idx, m_max_used);
+  init(m_max_ws_idx, m_max_used);
 }
 
 template <typename T, typename D>
@@ -27,13 +27,13 @@ WorkspaceManager<T, D>::WorkspaceManager(T* data, int size, int max_used,
                                          TeamPolicy policy, const double& overprov_factor) :
   m_tu(policy, overprov_factor)
 {
-  initialize_variables(size, max_used);
+  compute_internals(size, max_used);
   m_data = decltype(m_data) (data, m_max_ws_idx, m_total*m_max_used);
-  init(*this, m_max_ws_idx, m_max_used);
+  init(m_max_ws_idx, m_max_used);
 }
 
 template <typename T, typename D>
-void WorkspaceManager<T, D>::initialize_variables(const int size, const int max_used)
+void WorkspaceManager<T, D>::compute_internals(const int size, const int max_used)
 {
   m_max_ws_idx = m_tu.get_num_ws_slots();
   m_reserve    = (sizeof(T) > 2*sizeof(int)) ?
@@ -136,8 +136,7 @@ void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Wor
 { m_tu.release_workspace_idx(team, ws.m_ws_idx); }
 
 template <typename T, typename D>
-void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm,
-                                  const int max_ws_idx, const int max_used)
+void WorkspaceManager<T, D>::init(const int max_ws_idx, const int max_used)
 {
   Kokkos::parallel_for(
     "WorkspaceManager ctor",
@@ -145,7 +144,7 @@ void WorkspaceManager<T, D>::init(const WorkspaceManager<T, D>& wm,
     KOKKOS_LAMBDA(const MemberType& team) {
       Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, max_used), [&] (int i) {
-          wm.init_metadata(team.league_rank(), i);
+          init_metadata(team.league_rank(), i);
         });
     });
 }

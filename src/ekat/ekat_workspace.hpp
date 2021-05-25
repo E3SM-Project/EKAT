@@ -266,9 +266,6 @@ class WorkspaceManager
  private:
 #endif
 
-  // Initialize int and view-type class variables.
-  void initialize_variables(const int size, const int max_used);
-
   friend struct unit_test::UnitWrap;
 
   template <typename S=T>
@@ -292,7 +289,9 @@ class WorkspaceManager
   KOKKOS_INLINE_FUNCTION
   void init_metadata(const int ws_idx, const int slot) const;
 
-  static void init(const WorkspaceManager& wm, const int max_ws_idx, const int max_used);
+  void init(const int max_ws_idx, const int max_used);
+
+  void compute_internals(const int size, const int max_used);
 
   //
   // data
