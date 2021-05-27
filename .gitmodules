@@ -4,3 +4,6 @@
 [submodule "extern/yaml-cpp"]
 	path = extern/yaml-cpp
 	url = git@github.com:SNLComputation/yaml-cpp.git
+[submodule "extern/spdlog"]
+	path = extern/spdlog
+	url = git@github.com:gabime/spdlog.git

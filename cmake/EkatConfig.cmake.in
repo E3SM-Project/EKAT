@@ -6,5 +6,6 @@ include(CMakeFindDependencyMacro)
 # so we know exactly where they are: right next to us!
 find_dependency(yaml-cpp PATHS @CMAKE_INSTALL_PREFIX@)
 find_dependency(Kokkos PATHS @CMAKE_INSTALL_PREFIX@)
+find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@)
 
 include (${CMAKE_CURRENT_LIST_DIR}/EkatTargets.cmake)

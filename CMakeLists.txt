@@ -23,6 +23,7 @@ DisableMpiCxxBindings()
 # Scripts containing macros needed to handle TPLs
 include(EkatBuildKokkos)
 include(EkatBuildYamlCpp)
+include(EkatBuildSpdlog)
 
 # If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
 if (Kokkos_ENABLE_CUDA)
@@ -63,6 +64,10 @@ list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 # EKAT also has some yaml parsing utility
 BuildYamlcpp()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
+
+# EKAT uses the spdlog tpl to handle logging
+BuildSpdlog()
+list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${SPDLOG_LIBRARIES})
 
 set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
 
