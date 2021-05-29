@@ -10,6 +10,7 @@
 #include "ekat/ekat_type_traits.hpp"
 
 #include <Kokkos_Core.hpp>
+#include "spdlog/fmt/ostr.h"
 #include <iostream>
 #include <type_traits>
 
@@ -133,7 +134,7 @@ Mask<n> operator ! (const Mask<n>& m) {
 // input is a Pack; _s means the input is a scalar.
 // NOTE: for volatile overload, you should return void. If not, if/when Kokkos
 //       atomic ops are compiled for Pack, you will see a compiler warning like
-//   warning: implicit dereference will not access object of type ‘volatile ekat::Pack<...>' in statement 
+//   warning: implicit dereference will not access object of type ‘volatile ekat::Pack<...>' in statement
 //       *dest = return_val + val;
 //       ^
 #define ekat_pack_gen_assign_op_p(op)                       \

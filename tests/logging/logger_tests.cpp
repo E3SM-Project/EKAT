@@ -2,6 +2,7 @@
 #include "ekat/logging/ekat_log_file.hpp"
 #include "ekat/logging/ekat_log_mpi.hpp"
 #include "ekat/logging/ekat_logger.hpp"
+#include "ekat/ekat_pack.hpp"
 #include <fstream>
 
 using namespace ekat;
@@ -17,6 +18,13 @@ TEST_CASE("log tests", "[logging]") {
       Log::debug("now you can see debug messages because we reset the log level to debug.");
       Log::info("this is an info message with a number ({}).", 42);
       Log::critical("This is a test. Here is a critical message. This is only a test.");
+
+      ekat::Pack<double,4> apack;
+      for (int i=0; i<4; ++i) {
+        apack[i] = i + i/10.0;
+      }
+
+      Log::info("Packs fit into the formatting tool naturally; here's a Pack<double,4>: {}", apack);
 
     }
 
