@@ -1,0 +1,66 @@
+#ifndef EKAT_LOG_FILE_HPP
+#define EKAT_LOG_FILE_HPP
+
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/null_sink.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
+#include <string>
+
+// This file contains policy classes for choosing the behavior of the ekat
+// logger with respect to file output.
+// Each policy must implement the
+//
+// static spdlog::sink_ptr get_file_sink(std::string logfilename)
+//
+// method.
+
+namespace ekat {
+namespace logger {
+
+#define EKAT_LOG_N_FILES 5
+#define EKAT_LOG_MAX_FILE_SIZE_MB 8
+
+// No file output; use when only console logging is desired.
+struct LogNoFile {
+  static std::shared_ptr<spdlog::sinks::null_sink_mt> get_file_sink(const std::string& logfilename="") {
+  return std::make_shared<spdlog::sinks::null_sink_mt>();}
+};
+
+// Basic file output.  Each Logger (usually, 1 per MPI rank) writes to its own
+// file.  No file size limit.
+template <spdlog::level::level_enum FileLogLevel = spdlog::level::debug>
+struct LogBasicFile {
+  static std::shared_ptr<spdlog::sinks::basic_file_sink_mt> get_file_sink(
+    const std::string& logfilename = "ekat_log_file.txt") {
+    auto result = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logfilename);
+    result->set_level(FileLogLevel);
+    return result;
+  }
+};
+
+
+// Large file output.  Each Logger (usually, 1 per MPI rank) writes to its own
+// unique set of log files.  The number of log files is determined at compile
+// time by EKAT_N_LOG_FILES, and each file is limited to a maximum of
+// EKAT_MAX_LOG_FILE_SIZE_MB megabytes.  When the first file is full, it is
+// closed and the next file is started.   If the nth file gets full, the first
+// file is overwritten, then the second file is overwritten if that file gets
+// full, etc.
+template <spdlog::level::level_enum FileLogLevel = spdlog::level::debug>
+struct LogBigFiles {
+  static constexpr int one_mb = 1048576;
+  static constexpr int n_files = EKAT_LOG_N_FILES;
+  static constexpr int mb_per_file = EKAT_LOG_MAX_FILE_SIZE_MB;
+  static std::shared_ptr<spdlog::sinks::rotating_file_sink_mt> get_file_sink(
+    const std::string& logfilename = "ekat_log_file.txt") {
+    auto result = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+      logfilename, mb_per_file * one_mb, n_files);
+    result->set_level(FileLogLevel);
+    return result;
+  }
+};
+
+}// namespace logger
+}//  namespace ekat
+#endif
