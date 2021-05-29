@@ -21,7 +21,7 @@ namespace logger {
 #define EKAT_LOG_N_FILES 5
 #define EKAT_LOG_MAX_FILE_SIZE_MB 8
 
-// No file output; use when only console logging is desired.
+// No file output; only console logging.
 struct LogNoFile {
   static std::shared_ptr<spdlog::sinks::null_sink_mt> get_file_sink(const std::string& logfilename="") {
   return std::make_shared<spdlog::sinks::null_sink_mt>();}
@@ -32,7 +32,7 @@ struct LogNoFile {
 template <spdlog::level::level_enum FileLogLevel = spdlog::level::debug>
 struct LogBasicFile {
   static std::shared_ptr<spdlog::sinks::basic_file_sink_mt> get_file_sink(
-    const std::string& logfilename = "ekat_log_file.txt") {
+    const std::string& logfilename) {
     auto result = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logfilename);
     result->set_level(FileLogLevel);
     return result;
@@ -53,7 +53,7 @@ struct LogBigFiles {
   static constexpr int n_files = EKAT_LOG_N_FILES;
   static constexpr int mb_per_file = EKAT_LOG_MAX_FILE_SIZE_MB;
   static std::shared_ptr<spdlog::sinks::rotating_file_sink_mt> get_file_sink(
-    const std::string& logfilename = "ekat_log_file.txt") {
+    const std::string& logfilename) {
     auto result = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
       logfilename, mb_per_file * one_mb, n_files);
     result->set_level(FileLogLevel);

@@ -22,6 +22,7 @@ TEST_CASE("log_mpi", "[logging]") {
 
     Logger<LogBasicFile<Log::level::debug>, LogOnlyRank0> mylog("rank0_only", "debug");
 
-    mylog.warn("if you see this from any rank except 0, something is wrong.");
+    mylog.warn("if you see this in the console from any rank except 0, something is wrong.\n It will show up in every file.");
+    mylog.info("that previous message covered multiple lines.");
   }
 }

@@ -43,7 +43,6 @@ set(EKAT_HEADERS
   logging/ekat_logger.hpp
   logging/ekat_log_file.hpp
   logging/ekat_log_mpi.hpp
-  logging/ekat_log_output.hpp
   mpi/ekat_comm.hpp
   std_meta/ekat_std_any.hpp
   std_meta/ekat_std_enable_shared_from_this.hpp

@@ -9,24 +9,31 @@
 // logger with respect to mpi ranks.
 // Each policy must implement the
 //
-// static void update_console_sink(spdlog::sink_ptr& csink)
+// static void update_sinks(std::vector<spdlog::sink_ptr>& sinks)
+// static std::string name_append_rank(const std::string& name)
 //
-// method.
+// methods.
 namespace ekat {
 
-/** Console log ignores MPI Rank.
+/* Console log ignores MPI Rank; all ranks will write to the console without rank ids.
+  File logs (if used) will still have their rank id in their filenames.
 */
 struct LogIgnoreRank {
+  // leave sinks alone
   static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
+
+  // leave name alone
   static std::string name_append_rank(const std::string& name) {
     return name;
   }
 };
 
 
-/** Suppress output from ranks > 0.
+/* Suppress console output from ranks > 0.  All ranks still write to files, if
+  file logging is enabled.
 */
 struct LogOnlyRank0 {
+  // erase the console sink for all ranks != 0
   static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {
     const Comm mpicomm(MPI_COMM_WORLD);
     if (!mpicomm.am_i_root()) {
@@ -34,17 +41,20 @@ struct LogOnlyRank0 {
     }
   }
 
+  // append rank id to the log name
   static std::string name_append_rank(const std::string& name) {
     const Comm mpicomm(MPI_COMM_WORLD);
     return name + "_rank" + std::to_string(mpicomm.rank());
   }
 };
 
-/** Suppress output from ranks > 0.
+/* All ranks write to the console with rank ids.
 */
 struct LogAllRanks {
+  // leave all sinks alone, including the console
   static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
 
+  // append rank id to the log name
   static std::string name_append_rank(const std::string& name) {
     const Comm mpicomm(MPI_COMM_WORLD);
     return name + "_rank" + std::to_string(mpicomm.rank());
