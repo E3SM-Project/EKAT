@@ -2,6 +2,7 @@
 #include "ekat/logging/ekat_log_file.hpp"
 #include "ekat/logging/ekat_log_mpi.hpp"
 #include "ekat/logging/ekat_logger.hpp"
+#include <fstream>
 
 using namespace ekat;
 using namespace ekat::logger;
@@ -26,6 +27,11 @@ TEST_CASE("log tests", "[logging]") {
       mylog.info("This is a console-only message, with level = info");
       mylog.error("Here is an error message.");
 
+      // check that this log did not produce a file
+      const std::string logfilename = "ekat_log_test_console_only_logfile.txt";
+      std::ifstream lf(logfilename);
+      REQUIRE( !lf.is_open() );
+
     }
 
     SECTION("console and file logging, with mpi rank info") {
@@ -33,6 +39,15 @@ TEST_CASE("log tests", "[logging]") {
       Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("combined_console_file_mpi", "debug");
 
       mylog.debug("here is a debug message that will also show up in this rank's log file.");
+
+      // the file level is trace, but the log level is debug (debug > trace); trace messages will be skipped.
+      mylog.trace("this message won't show up anywhere.");
+      REQUIRE( !mylog.should_log(Log::level::trace) );
+
+      // verify that this log did produce a file
+      const std::string logfilename = "combined_console_file_mpi_rank0_logfile.txt";
+      std::ifstream lf(logfilename);
+      REQUIRE( lf.is_open() );
 
     }
 

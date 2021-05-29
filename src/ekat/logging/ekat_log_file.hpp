@@ -33,7 +33,7 @@ template <spdlog::level::level_enum FileLogLevel = spdlog::level::debug>
 struct LogBasicFile {
   static std::shared_ptr<spdlog::sinks::basic_file_sink_mt> get_file_sink(
     const std::string& logfilename) {
-    auto result = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logfilename);
+    auto result = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logfilename, true);
     result->set_level(FileLogLevel);
     return result;
   }

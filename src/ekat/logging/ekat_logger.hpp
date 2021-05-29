@@ -62,7 +62,6 @@ class Logger : public spdlog::logger {
 
     std::string fname = LogMpiPolicy::name_append_rank(log_name) + "_logfile.txt";
     auto fsink = LogFilePolicy::get_file_sink(fname);
-    fsink->set_level(clevel);
 
     this->sinks().push_back(csink);
     this->sinks().push_back(fsink);
@@ -70,6 +69,12 @@ class Logger : public spdlog::logger {
     LogMpiPolicy::update_sinks(this->sinks());
 
     this->set_level(clevel);
+  }
+
+  spdlog::sink_ptr get_console_sink() {return this->sinks()[0];}
+
+  spdlog::sink_ptr get_file_sink() {
+    return (this->sinks().size() > 1 ? this->sinks()[1] : spdlog::sink_ptr(nullptr));
   }
 
 };
