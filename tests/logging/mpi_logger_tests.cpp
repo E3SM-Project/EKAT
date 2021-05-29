@@ -65,4 +65,33 @@ TEST_CASE("log_mpi", "[logging]") {
     }
 
   }
+
+  SECTION("multiple logs, same file") {
+    // first, we create a main log.
+    // this log will determine the name of the shared log file.
+    Logger<LogBasicFile<Log::level::debug>, LogOnlyRank0> main_log("main_log", "info");
+
+    // now we can create a sub-log that share's the main log's file.
+    // this log will have a different name and, therefore, different message tags,
+    // in both the console and the log files.
+    // It can also have a different logging level.
+    Logger<LogSharedFile, LogOnlyRank0> component_log("component_log", "debug", main_log);
+
+    main_log.info("The main log sets up the logfile  {}", main_log.get_logfile_name());
+    component_log.debug("The component log shares the file; its messages are tagged with its name.");
+
+    REQUIRE(main_log.get_logfile_name() == component_log.get_logfile_name());
+
+    // check that the main log will not output debug messages
+    main_log.debug("this will not be logged from main_log.");
+    REQUIRE( !main_log.should_log(Log::level::debug) );
+
+    // check that the component log will output debug messages
+    component_log.debug("this will be logged from component_log.");
+    REQUIRE( component_log.should_log(Log::level::debug) );
+
+
+
+
+  }
 }

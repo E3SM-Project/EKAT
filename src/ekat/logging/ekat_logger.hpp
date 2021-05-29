@@ -5,6 +5,7 @@
 #include "ekat/logging/ekat_log_file.hpp"
 #include "ekat/logging/ekat_log_mpi.hpp"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/null_sink.h"
 
 namespace ekat {
 namespace logger {
@@ -52,6 +53,8 @@ template <typename LogFilePolicy = LogNoFile,    // see ekat_log_file.hpp
           typename LogMpiPolicy = LogIgnoreRank> // see ekat_log_mpi.hpp
 class Logger : public spdlog::logger {
   public:
+    Logger() = delete;
+
     Logger(const std::string& log_name, const std::string& level_str="debug") :
      spdlog::logger(LogMpiPolicy::name_append_rank(log_name))
   {
@@ -71,15 +74,83 @@ class Logger : public spdlog::logger {
     this->set_level(clevel);
   }
 
-  spdlog::sink_ptr get_console_sink() {return this->sinks()[0];}
-
-  spdlog::sink_ptr get_file_sink() {
-    return (this->sinks().size() > 1 ? this->sinks()[1] : spdlog::sink_ptr(nullptr));
+  spdlog::sink_ptr get_console_sink() {
+    return (this->sinks().size() > 1 ? this->sinks()[0] : spdlog::sink_ptr(nullptr));
   }
 
+  spdlog::sink_ptr get_file_sink() {
+    return (this->sinks().size() > 1 ? this->sinks()[1] : this->sinks()[0]);
+  }
+
+  template <typename FP = LogFilePolicy>
+  typename std::enable_if<FP::has_filename, std::string>::type
+  get_logfile_name() {
+    std::string result;
+    auto fsink = this->get_file_sink();
+    spdlog::sinks::basic_file_sink_mt* bptr =
+      dynamic_cast<spdlog::sinks::basic_file_sink_mt*>(fsink.get());
+    spdlog::sinks::rotating_file_sink_mt* rptr =
+      dynamic_cast<spdlog::sinks::rotating_file_sink_mt*>(fsink.get());
+    if (bptr) {
+      result = bptr->filename();
+    }
+    else if (rptr) {
+      result = rptr->filename();
+    }
+    return result;
+  }
+
+  template <typename FP = LogFilePolicy>
+  typename std::enable_if<!FP::has_filename, std::string>::type
+  get_logfile_name() {return "null";}
 };
 
+template <typename LogMpiPolicy>
+class Logger<LogSharedFile, LogMpiPolicy> : public spdlog::logger {
+  public:
+    Logger() = delete;
 
+    template <typename LogFilePolicy>
+    Logger(const std::string& log_name, const std::string& level_str,
+      Logger<LogFilePolicy, LogMpiPolicy>& other_log) :
+      spdlog::logger(LogMpiPolicy::name_append_rank(log_name))
+    {
+      const auto clevel = Log::level::from_str(level_str);
+      auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+      csink->set_level(clevel);
+
+      this->sinks().push_back(csink);
+      this->sinks().push_back(other_log.get_file_sink());
+
+      LogMpiPolicy::update_sinks(this->sinks());
+
+      this->set_level(clevel);
+    }
+
+    spdlog::sink_ptr get_console_sink() {
+      return (this->sinks().size() > 1 ? this->sinks()[0] : spdlog::sink_ptr(nullptr));
+    }
+
+    spdlog::sink_ptr get_file_sink() {
+      return (this->sinks().size() > 1 ? this->sinks()[1] : this->sinks()[0]);
+    }
+
+    std::string get_logfile_name() {
+      std::string result;
+      auto fsink = this->get_file_sink();
+      spdlog::sinks::basic_file_sink_mt* bptr =
+        dynamic_cast<spdlog::sinks::basic_file_sink_mt*>(fsink.get());
+      spdlog::sinks::rotating_file_sink_mt* rptr =
+        dynamic_cast<spdlog::sinks::rotating_file_sink_mt*>(fsink.get());
+      if (bptr) {
+        result = bptr->filename();
+      }
+      else if (rptr) {
+        result = rptr->filename();
+      }
+      return result;
+    }
+};
 
 
 } // namespace logger

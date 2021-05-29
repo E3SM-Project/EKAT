@@ -23,6 +23,7 @@ namespace logger {
 
 // No file output; only console logging.
 struct LogNoFile {
+  static constexpr bool has_filename = false;
   static std::shared_ptr<spdlog::sinks::null_sink_mt> get_file_sink(const std::string& logfilename="") {
   return std::make_shared<spdlog::sinks::null_sink_mt>();}
 };
@@ -31,12 +32,18 @@ struct LogNoFile {
 // file.  No file size limit.
 template <spdlog::level::level_enum FileLogLevel = spdlog::level::debug>
 struct LogBasicFile {
+  static constexpr bool has_filename = true;
   static std::shared_ptr<spdlog::sinks::basic_file_sink_mt> get_file_sink(
     const std::string& logfilename) {
     auto result = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logfilename, true);
     result->set_level(FileLogLevel);
     return result;
   }
+};
+
+
+struct LogSharedFile {
+  static constexpr bool has_filename = true;
 };
 
 
@@ -49,6 +56,7 @@ struct LogBasicFile {
 // full, etc.
 template <spdlog::level::level_enum FileLogLevel = spdlog::level::debug>
 struct LogBigFiles {
+  static constexpr bool has_filename = true;
   static constexpr int one_mb = 1048576;
   static constexpr int n_files = EKAT_LOG_N_FILES;
   static constexpr int mb_per_file = EKAT_LOG_MAX_FILE_SIZE_MB;

@@ -40,6 +40,8 @@ TEST_CASE("log tests", "[logging]") {
       std::ifstream lf(logfilename);
       REQUIRE( !lf.is_open() );
 
+      REQUIRE(mylog.get_logfile_name() == "null");
+
     }
 
     SECTION("console and file logging, with mpi rank info") {
@@ -56,6 +58,8 @@ TEST_CASE("log tests", "[logging]") {
       const std::string logfilename = "combined_console_file_mpi_rank0_logfile.txt";
       std::ifstream lf(logfilename);
       REQUIRE( lf.is_open() );
+
+      REQUIRE( mylog.get_logfile_name() == logfilename);
 
     }
 
