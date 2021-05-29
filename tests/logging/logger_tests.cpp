@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include "ekat/logging/ekat_log_file.hpp"
 #include "ekat/logging/ekat_log_mpi.hpp"
-#include "ekat/logging/ekat_log_output.hpp"
+// #include "ekat/logging/ekat_log_output.hpp"
 #include "ekat/logging/ekat_logger.hpp"
 
 using namespace ekat;
@@ -22,7 +22,7 @@ TEST_CASE("log tests", "[logging]") {
 
     SECTION("console only, no mpi") {
 
-      Logger<LogOutputPolicy<>> mylog("ekat_log_test_console_only", "debug");
+      Logger<> mylog("ekat_log_test_console_only", "debug");
 
       mylog.info("This is a console-only message, with level = info");
 
