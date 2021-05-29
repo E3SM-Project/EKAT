@@ -31,7 +31,7 @@ template <typename LogFilePolicy = LogNoFile,
 class Logger : public spdlog::logger {
   public:
   Logger(const std::string& log_name, const std::string& level_str="debug") :
-  spdlog::logger(log_name)
+  spdlog::logger(LogMpiPolicy::name_append_rank(log_name))
   {
 
     const auto clevel = Log::level::from_str(level_str);
@@ -44,6 +44,8 @@ class Logger : public spdlog::logger {
 
     this->sinks().push_back(csink);
     this->sinks().push_back(fsink);
+
+    LogMpiPolicy::update_sinks(this->sinks());
 
     this->set_level(clevel);
   }

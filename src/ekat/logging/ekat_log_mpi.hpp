@@ -17,7 +17,7 @@ namespace ekat {
 /** Console log ignores MPI Rank.
 */
 struct LogIgnoreRank {
-  static void update_console_sink(spdlog::sink_ptr& csink) {}
+  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
   static std::string name_append_rank(const std::string& name) {
     return name;
   }
@@ -27,22 +27,23 @@ struct LogIgnoreRank {
 /** Suppress output from ranks > 0.
 */
 struct LogOnlyRank0 {
-  static void update_console_sink(spdlog::sink_ptr& csink) {
+  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {
     const Comm mpicomm(MPI_COMM_WORLD);
     if (!mpicomm.am_i_root()) {
-      csink = std::make_shared<spdlog::sinks::null_sink_mt>();
+      sinks.erase(sinks.begin());
     }
   }
 
   static std::string name_append_rank(const std::string& name) {
-    return name + "_rank0";
+    const Comm mpicomm(MPI_COMM_WORLD);
+    return name + "_rank" + std::to_string(mpicomm.rank());
   }
 };
 
 /** Suppress output from ranks > 0.
 */
 struct LogAllRanks {
-  static void update_console_sink(spdlog::sink_ptr& csink) {}
+  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
 
   static std::string name_append_rank(const std::string& name) {
     const Comm mpicomm(MPI_COMM_WORLD);

@@ -1,7 +1,6 @@
 #include <catch2/catch.hpp>
 #include "ekat/logging/ekat_log_file.hpp"
 #include "ekat/logging/ekat_log_mpi.hpp"
-// #include "ekat/logging/ekat_log_output.hpp"
 #include "ekat/logging/ekat_logger.hpp"
 
 using namespace ekat;
@@ -25,6 +24,15 @@ TEST_CASE("log tests", "[logging]") {
       Logger<> mylog("ekat_log_test_console_only", "debug");
 
       mylog.info("This is a console-only message, with level = info");
+      mylog.error("Here is an error message.");
+
+    }
+
+    SECTION("console and file logging, with mpi rank info") {
+
+      Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("combined_console_file_mpi", "debug");
+
+      mylog.debug("here is a debug message that will also show up in this rank's log file.");
 
     }
 
