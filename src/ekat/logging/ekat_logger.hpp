@@ -56,14 +56,14 @@ class Logger : public spdlog::logger {
     Logger() = delete;
 
     Logger(const std::string& log_name, const std::string& level_str="debug") :
-     spdlog::logger(LogMpiPolicy::name_append_rank(log_name))
+     spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
   {
 
     const auto clevel = Log::level::from_str(level_str);
     auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     csink->set_level(clevel);
 
-    std::string fname = LogMpiPolicy::name_append_rank(log_name) + "_logfile.txt";
+    std::string fname = LogMpiPolicy::name_with_rank(log_name) + "_logfile.txt";
     auto fsink = LogFilePolicy::get_file_sink(fname);
 
     this->sinks().push_back(csink);
@@ -113,7 +113,7 @@ class Logger<LogSharedFile, LogMpiPolicy> : public spdlog::logger {
     template <typename LogFilePolicy>
     Logger(const std::string& log_name, const std::string& level_str,
       Logger<LogFilePolicy, LogMpiPolicy>& other_log) :
-      spdlog::logger(LogMpiPolicy::name_append_rank(log_name))
+      spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
     {
       const auto clevel = Log::level::from_str(level_str);
       auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();

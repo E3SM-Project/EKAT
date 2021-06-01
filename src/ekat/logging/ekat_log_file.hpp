@@ -41,7 +41,10 @@ struct LogBasicFile {
   }
 };
 
-
+// Special case: This policy is for logs that use the same file sink as an _existing_
+// Logger.  It does not implement the get_file_sink method because constructors the
+// Constructors for all Loggers using this policy must include an already-existing Logger
+// instance.   The new Logger will use the same file_sinks as the existing logger.
 struct LogSharedFile {
   static constexpr bool has_filename = true;
 };

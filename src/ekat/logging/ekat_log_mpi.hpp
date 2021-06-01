@@ -10,7 +10,7 @@
 // Each policy must implement the
 //
 // static void update_sinks(std::vector<spdlog::sink_ptr>& sinks)
-// static std::string name_append_rank(const std::string& name)
+// static std::string name_with_rank(const std::string& name)
 //
 // methods.
 namespace ekat {
@@ -23,7 +23,7 @@ struct LogIgnoreRank {
   static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
 
   // leave name alone
-  static std::string name_append_rank(const std::string& name) {
+  static std::string name_with_rank(const std::string& name) {
     return name;
   }
 };
@@ -42,7 +42,7 @@ struct LogOnlyRank0 {
   }
 
   // append rank id to the log name
-  static std::string name_append_rank(const std::string& name) {
+  static std::string name_with_rank(const std::string& name) {
     const Comm mpicomm(MPI_COMM_WORLD);
     return name + "_rank" + std::to_string(mpicomm.rank());
   }
@@ -55,7 +55,7 @@ struct LogAllRanks {
   static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
 
   // append rank id to the log name
-  static std::string name_append_rank(const std::string& name) {
+  static std::string name_with_rank(const std::string& name) {
     const Comm mpicomm(MPI_COMM_WORLD);
     return name + "_rank" + std::to_string(mpicomm.rank());
   }
