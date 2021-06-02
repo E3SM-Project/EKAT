@@ -18,13 +18,19 @@
 namespace ekat {
 namespace logger {
 
+// To support large logging tasks, you can optionally distribute output across a range
+// of files using the "rotating_file_sink".
+// These two #defines are used only by the LogBigFiles policy.
+// EKAT_LOG_N_FILES sets the number of rotating files
 #define EKAT_LOG_N_FILES 5
+// EKAT_LOG_MAX_FILE_SIZE_MB sets the max size of each file`
 #define EKAT_LOG_MAX_FILE_SIZE_MB 8
 
 // No file output; only console logging.
 struct LogNoFile {
   static constexpr bool has_filename = false;
-  static std::shared_ptr<spdlog::sinks::null_sink_mt> get_file_sink(const std::string& logfilename="") {
+  static std::shared_ptr<spdlog::sinks::null_sink_mt>
+    get_file_sink(const std::string& logfilename="") {
   return std::make_shared<spdlog::sinks::null_sink_mt>();}
 };
 
