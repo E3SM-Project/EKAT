@@ -47,15 +47,6 @@ struct LogBasicFile {
   }
 };
 
-// Special case: This policy is for logs that use the same file sink as an _existing_
-// Logger.  It does not implement the get_file_sink method because constructors the
-// Constructors for all Loggers using this policy must include an already-existing Logger
-// instance.   The new Logger will use the same file_sinks as the existing logger.
-struct LogSharedFile {
-  static constexpr bool has_filename = true;
-};
-
-
 // Large file output.  Each Logger (usually, 1 per MPI rank) writes to its own
 // unique set of log files.  The number of log files is determined at compile
 // time by EKAT_N_LOG_FILES, and each file is limited to a maximum of

@@ -15,20 +15,6 @@
 // methods.
 namespace ekat {
 
-/* Console log ignores MPI Rank; all ranks will write to the console without rank ids.
-  File logs (if used) will still have their rank id in their filenames.
-*/
-struct LogIgnoreRank {
-  // leave sinks alone
-  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
-
-  // leave name alone
-  static std::string name_with_rank(const std::string& name) {
-    return name;
-  }
-};
-
-
 /* Suppress console output from ranks > 0.  All ranks still write to files, if
   file logging is enabled.
 */

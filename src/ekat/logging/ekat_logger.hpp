@@ -50,12 +50,12 @@ namespace Log = spdlog;
   of its functionality.
 */
 template <typename LogFilePolicy = LogNoFile,    // see ekat_log_file.hpp
-          typename LogMpiPolicy = LogIgnoreRank> // see ekat_log_mpi.hpp
+          typename LogMpiPolicy = LogOnlyRank0> // see ekat_log_mpi.hpp
 class Logger : public spdlog::logger {
   public:
-    Logger() = delete;
 
-    Logger(const std::string& log_name, const Log::level::level_enum lev=Log::level::debug) :
+  // primary constructor
+  Logger(const std::string& log_name, const Log::level::level_enum lev=Log::level::debug) :
      spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
   {
     auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -71,6 +71,26 @@ class Logger : public spdlog::logger {
 
     this->set_level(lev);
   }
+
+  // shared file sink constructor
+  template <typename FP, typename MP>
+  Logger(const std::string& log_name, const Log::level::level_enum lev,
+    Logger<FP, MP>& other_log) :
+    spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
+  {
+    auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    csink->set_level(lev);
+    this->sinks().push_back(csink);
+    this->sinks().push_back(other_log.get_file_sink());
+    this->set_level(lev);
+
+    LogMpiPolicy::update_sinks(this->sinks());
+  }
+
+  // Constructor for externally created sinks
+  Logger(const std::string& log_name, const Log::level::level_enum lev,
+    spdlog::sink_ptr csink, spdlog::sink_ptr fsink) :
+    spdlog::logger(LogMpiPolicy::name_with_rank(log_name), {csink, fsink}) {}
 
   spdlog::sink_ptr get_console_sink() {
     return (this->sinks().size() > 1 ? this->sinks()[0] : spdlog::sink_ptr(nullptr));
@@ -101,53 +121,12 @@ class Logger : public spdlog::logger {
   template <typename FP = LogFilePolicy>
   typename std::enable_if<!FP::has_filename, std::string>::type
   get_logfile_name() {return "null";}
+
+  private:
+    Logger() = default;
+
 };
 
-template <typename LogMpiPolicy>
-class Logger<LogSharedFile, LogMpiPolicy> : public spdlog::logger {
-  public:
-    Logger() = delete;
-
-    template <typename LogFilePolicy>
-    Logger(const std::string& log_name, const Log::level::level_enum lev,
-      Logger<LogFilePolicy, LogMpiPolicy>& other_log) :
-      spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
-    {
-      auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-      csink->set_level(lev);
-
-      this->sinks().push_back(csink);
-      this->sinks().push_back(other_log.get_file_sink());
-
-      LogMpiPolicy::update_sinks(this->sinks());
-
-      this->set_level(lev);
-    }
-
-    spdlog::sink_ptr get_console_sink() {
-      return (this->sinks().size() > 1 ? this->sinks()[0] : spdlog::sink_ptr(nullptr));
-    }
-
-    spdlog::sink_ptr get_file_sink() {
-      return (this->sinks().size() > 1 ? this->sinks()[1] : this->sinks()[0]);
-    }
-
-    std::string get_logfile_name() {
-      std::string result;
-      auto fsink = this->get_file_sink();
-      spdlog::sinks::basic_file_sink_mt* bptr =
-        dynamic_cast<spdlog::sinks::basic_file_sink_mt*>(fsink.get());
-      spdlog::sinks::rotating_file_sink_mt* rptr =
-        dynamic_cast<spdlog::sinks::rotating_file_sink_mt*>(fsink.get());
-      if (bptr) {
-        result = bptr->filename();
-      }
-      else if (rptr) {
-        result = rptr->filename();
-      }
-      return result;
-    }
-};
 
 
 } // namespace logger

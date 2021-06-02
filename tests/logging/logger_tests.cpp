@@ -25,7 +25,6 @@ TEST_CASE("log tests", "[logging]") {
       }
 
       Log::info("Packs fit into the formatting tool naturally; here's a Pack<double,4>: {}", apack);
-
     }
 
     SECTION("console only, no mpi") {
@@ -41,7 +40,6 @@ TEST_CASE("log tests", "[logging]") {
       REQUIRE( !lf.is_open() );
 
       REQUIRE(mylog.get_logfile_name() == "null");
-
     }
 
     SECTION("console and file logging, with mpi rank info") {
@@ -60,7 +58,21 @@ TEST_CASE("log tests", "[logging]") {
       REQUIRE( lf.is_open() );
 
       REQUIRE( mylog.get_logfile_name() == logfilename);
-
     }
 
+
+    SECTION("create your own sinks") {
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
+//       using file_policy = LogBasicFile<Log::level::info>;
+      using file_policy = LogNoFile;
+      const std::string log_name = "external_sink_log";
+      auto console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+      auto file = file_policy::get_file_sink(log_name);
+
+      Logger<file_policy, LogOnlyRank0> mylog(log_name, Log::level::warn, console, file);
+
+      mylog.warn("This is a test.  Here is a warning message.  This is only a test.");
+    }
 }
