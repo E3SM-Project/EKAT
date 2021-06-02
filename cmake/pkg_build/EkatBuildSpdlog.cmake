@@ -32,7 +32,6 @@ macro (EkatSetSpdlogSourceDir)
 
   # If the variable existed, but not in the cache, set it in the cache
   set (SPDLOG_SOURCE_DIR "${SPDLOG_SOURCE_DIR}" CACHE STRING "spdlog source directory")
-  message(STATUS "SPDLOG_SOURCE_DIR = ${SPDLOG_SOURCE_DIR}")
 endmacro()
 
 # Process the spdlog subdirectory
