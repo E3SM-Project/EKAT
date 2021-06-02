@@ -55,13 +55,11 @@ class Logger : public spdlog::logger {
   public:
     Logger() = delete;
 
-    Logger(const std::string& log_name, const std::string& level_str="debug") :
+    Logger(const std::string& log_name, const Log::level::level_enum lev=Log::level::debug) :
      spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
   {
-
-    const auto clevel = Log::level::from_str(level_str);
     auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    csink->set_level(clevel);
+    csink->set_level(lev);
 
     std::string fname = LogMpiPolicy::name_with_rank(log_name) + "_logfile.txt";
     auto fsink = LogFilePolicy::get_file_sink(fname);
@@ -71,7 +69,7 @@ class Logger : public spdlog::logger {
 
     LogMpiPolicy::update_sinks(this->sinks());
 
-    this->set_level(clevel);
+    this->set_level(lev);
   }
 
   spdlog::sink_ptr get_console_sink() {
@@ -111,20 +109,19 @@ class Logger<LogSharedFile, LogMpiPolicy> : public spdlog::logger {
     Logger() = delete;
 
     template <typename LogFilePolicy>
-    Logger(const std::string& log_name, const std::string& level_str,
+    Logger(const std::string& log_name, const Log::level::level_enum lev,
       Logger<LogFilePolicy, LogMpiPolicy>& other_log) :
       spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
     {
-      const auto clevel = Log::level::from_str(level_str);
       auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-      csink->set_level(clevel);
+      csink->set_level(lev);
 
       this->sinks().push_back(csink);
       this->sinks().push_back(other_log.get_file_sink());
 
       LogMpiPolicy::update_sinks(this->sinks());
 
-      this->set_level(clevel);
+      this->set_level(lev);
     }
 
     spdlog::sink_ptr get_console_sink() {

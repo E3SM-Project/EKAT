@@ -30,7 +30,7 @@ TEST_CASE("log tests", "[logging]") {
 
     SECTION("console only, no mpi") {
 
-      Logger<> mylog("ekat_log_test_console_only", "debug");
+      Logger<> mylog("ekat_log_test_console_only", Log::level::debug);
 
       mylog.info("This is a console-only message, with level = info");
       mylog.error("Here is an error message.");
@@ -46,7 +46,7 @@ TEST_CASE("log tests", "[logging]") {
 
     SECTION("console and file logging, with mpi rank info") {
 
-      Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("combined_console_file_mpi", "debug");
+      Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("combined_console_file_mpi", Log::level::debug);
 
       mylog.debug("here is a debug message that will also show up in this rank's log file.");
 

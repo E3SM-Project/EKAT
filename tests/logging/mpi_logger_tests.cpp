@@ -17,7 +17,7 @@ TEST_CASE("log_mpi", "[logging]") {
   Comm comm(MPI_COMM_WORLD);
 
   SECTION("all ranks log") {
-    Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("mpilog", "trace");
+    Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("mpilog", Log::level::trace);
 
       // set the console log level higher than the log's
       mylog.get_console_sink()->set_level(Log::level::debug);
@@ -47,7 +47,7 @@ TEST_CASE("log_mpi", "[logging]") {
 
   SECTION("only rank 0") {
 
-    Logger<LogBasicFile<Log::level::debug>, LogOnlyRank0> mylog("rank0_only", "debug");
+    Logger<LogBasicFile<Log::level::debug>, LogOnlyRank0> mylog("rank0_only", Log::level::debug);
 
     mylog.warn("if you see this in the console from any rank except 0, something is wrong.\n It will show up in every file.");
     mylog.info("that previous message covered multiple lines.");
@@ -69,13 +69,13 @@ TEST_CASE("log_mpi", "[logging]") {
   SECTION("multiple logs, same file") {
     // first, we create a main log.
     // this log will determine the name of the shared log file.
-    Logger<LogBasicFile<Log::level::debug>, LogOnlyRank0> main_log("main_log", "info");
+    Logger<LogBasicFile<Log::level::debug>, LogOnlyRank0> main_log("main_log", Log::level::info);
 
     // now we can create a sub-log that share's the main log's file.
     // this log will have a different name and, therefore, different message tags,
     // in both the console and the log files.
     // It can also have a different logging level.
-    Logger<LogSharedFile, LogOnlyRank0> component_log("component_log", "debug", main_log);
+    Logger<LogSharedFile, LogOnlyRank0> component_log("component_log", Log::level::debug, main_log);
 
     main_log.info("The main log sets up the logfile  {}", main_log.get_logfile_name());
     component_log.debug("The component log shares the file; its messages are tagged with its name.");
@@ -89,9 +89,5 @@ TEST_CASE("log_mpi", "[logging]") {
     // check that the component log will output debug messages
     component_log.debug("this will be logged from component_log.");
     REQUIRE( component_log.should_log(Log::level::debug) );
-
-
-
-
   }
 }
