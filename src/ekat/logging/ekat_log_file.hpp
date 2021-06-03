@@ -31,7 +31,7 @@ struct LogNoFile {
   static constexpr bool has_filename = false;
   static std::shared_ptr<spdlog::sinks::null_sink_mt>
     get_file_sink(const std::string& logfilename="") {
-  return std::make_shared<spdlog::sinks::null_sink_mt>();}
+    return std::make_shared<spdlog::sinks::null_sink_mt>();}
 };
 
 // Basic file output.  Each Logger (usually, 1 per MPI rank) writes to its own

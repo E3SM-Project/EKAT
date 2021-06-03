@@ -8,7 +8,7 @@
 using namespace ekat;
 using namespace ekat::logger;
 
-TEST_CASE("log_mpi", "[logging]") {
+TEST_CASE("mpi log console: rank 0 only; file: all ranks", "[logging]") {
 
   Comm comm(MPI_COMM_WORLD);
   Logger<LogBasicFile<Log::level::debug>> mylog("console_rank0_only", Log::level::debug, comm);
@@ -31,7 +31,7 @@ TEST_CASE("log_mpi", "[logging]") {
   REQUIRE( mylog.logfile_name() == logfilename);
 }
 
-TEST_CASE("log_mpi_rank0_only", "[logging]") {
+TEST_CASE("mpi log console: rank 0 only; file: rank 0 only", "[logging]") {
   Comm comm(MPI_COMM_WORLD);
 
   Logger<LogBasicFile<Log::level::info>> mylog("all_output_rank0_only", Log::level::info, comm);
