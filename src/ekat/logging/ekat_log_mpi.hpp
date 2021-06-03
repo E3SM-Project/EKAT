@@ -19,10 +19,11 @@ namespace ekat {
   file logging is enabled.
 */
 struct LogOnlyRank0 {
-  // erase the console sink for all ranks != 0
+  // nullify the console sink for all ranks != 0
   static void update_sinks(std::vector<spdlog::sink_ptr>& sinks, const ekat::Comm& mpicomm=ekat::Comm()) {
     if (!mpicomm.am_i_root()) {
-      sinks.erase(sinks.begin());
+      //sinks.erase(sinks.begin()); // this is a hack, but it works
+      sinks[0] = std::make_shared<spdlog::sinks::null_sink_mt>();
     }
   }
 

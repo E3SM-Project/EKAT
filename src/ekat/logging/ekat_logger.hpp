@@ -62,7 +62,7 @@ class Logger : public spdlog::logger {
     auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     csink->set_level(lev);
 
-    std::string fname = LogMpiPolicy::name_with_rank(log_name) + "_logfile.txt";
+    std::string fname = LogMpiPolicy::name_with_rank(log_name, mpicomm) + "_logfile.txt";
     auto fsink = LogFilePolicy::get_file_sink(fname);
 
     this->sinks().push_back(csink);
@@ -94,11 +94,13 @@ class Logger : public spdlog::logger {
     spdlog::logger(LogMpiPolicy::name_with_rank(log_name, mpicomm), {csink, fsink}) {}
 
   spdlog::sink_ptr get_console_sink() {
-    return (this->sinks().size() > 1 ? this->sinks()[0] : spdlog::sink_ptr(nullptr));
+    //return (this->sinks().size() > 1 ? this->sinks()[0] : spdlog::sink_ptr(nullptr));
+    return this->sinks()[0];
   }
 
   spdlog::sink_ptr get_file_sink() {
-    return (this->sinks().size() > 1 ? this->sinks()[1] : this->sinks()[0]);
+    //return (this->sinks().size() > 1 ? this->sinks()[1] : this->sinks()[0]);
+    return this->sinks()[1];
   }
 
   template <typename FP = LogFilePolicy>
