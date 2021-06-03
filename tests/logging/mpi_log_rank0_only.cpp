@@ -1,6 +1,5 @@
 #include <catch2/catch.hpp>
 #include "ekat/logging/ekat_log_file.hpp"
-#include "ekat/logging/ekat_log_mpi.hpp"
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/mpi/ekat_comm.hpp"
 #include "ekat/ekat_pack.hpp"
@@ -12,24 +11,44 @@ using namespace ekat::logger;
 TEST_CASE("log_mpi", "[logging]") {
 
   Comm comm(MPI_COMM_WORLD);
+  Logger<LogBasicFile<Log::level::debug>> mylog("console_rank0_only", Log::level::debug, comm);
+  mylog.console_output_rank0_only(comm);
+  const std::string logfilename = "console_rank0_only_rank" + std::to_string(comm.rank())
+     + "_logfile.txt";
+  mylog.warn("if you see this in the console from any rank except 0, something is wrong.\n It will show up in every file.");
+  mylog.info("that previous message covered multiple lines.");
 
-  SECTION("only rank 0") {
+  ekat::Pack<double,4> apack;
+  for (int i=0; i<4; ++i) {
+    apack[i] = i + i/10.0;
+  }
+  mylog.debug("This debug message has a Pack<double,4> with data {}", apack);
 
-    Logger<LogBasicFile<Log::level::debug>, LogOnlyRank0> mylog("rank0_only", Log::level::debug, comm);
-    const std::string logfilename = LogOnlyRank0::name_with_rank("rank0_only", comm) + "_logfile.txt";
-    mylog.warn("if you see this in the console from any rank except 0, something is wrong.\n It will show up in every file.");
-    mylog.info("that previous message covered multiple lines.");
+  // verify that all ranks produce a file
+  std::ifstream lf(logfilename);
+  REQUIRE( lf.is_open() );
 
-    ekat::Pack<double,4> apack;
-    for (int i=0; i<4; ++i) {
-      apack[i] = i + i/10.0;
-    }
-    mylog.debug("This debug message has a Pack<double,4> with data {}", apack);
+  REQUIRE( mylog.logfile_name() == logfilename);
+}
 
-    // verify that all ranks produce a file
-    std::ifstream lf(logfilename);
-    REQUIRE( lf.is_open() );
+TEST_CASE("log_mpi_rank0_only", "[logging]") {
+  Comm comm(MPI_COMM_WORLD);
 
-    REQUIRE( mylog.get_logfile_name() == logfilename);
+  Logger<LogBasicFile<Log::level::info>> mylog("all_output_rank0_only", Log::level::info, comm);
+  mylog.console_output_rank0_only(comm);
+  mylog.file_output_rank0_only(comm);
+
+  mylog.warn("if you see this in the console or a file from any rank except 0, something is wrong.");
+
+  const std::string logfilename = "all_output_rank0_only_rank" + std::to_string(comm.rank())
+     + "_logfile.txt";
+  std::ifstream lf(logfilename);
+  if (comm.am_i_root()) {
+    REQUIRE(mylog.logfile_name() == logfilename);
+    REQUIRE(lf.good());
+  }
+  else {
+    REQUIRE(mylog.logfile_name() == "null");
+    REQUIRE(!lf.good());
   }
 }

@@ -1,6 +1,5 @@
 #include <catch2/catch.hpp>
 #include "ekat/logging/ekat_log_file.hpp"
-#include "ekat/logging/ekat_log_mpi.hpp"
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/mpi/ekat_comm.hpp"
 #include "ekat/ekat_pack.hpp"
@@ -8,7 +7,8 @@
 using namespace ekat;
 using namespace ekat::logger;
 
-bool trace_msg_in_file(Logger<LogBasicFile<Log::level::trace>, LogAllRanks>& logger) {
+template <typename FP>
+bool trace_msg_in_file(Logger<FP>& logger) {
   return (logger.should_log(Log::level::trace)) and (logger.get_file_sink()->should_log(Log::level::trace));
 }
 
@@ -17,7 +17,7 @@ TEST_CASE("log_mpi", "[logging]") {
   Comm comm(MPI_COMM_WORLD);
 
   SECTION("all ranks log") {
-    Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("mpilog", Log::level::trace, comm);
+    Logger<LogBasicFile<Log::level::trace>> mylog("mpilog", Log::level::trace, comm);
 
     // set the console log level higher than the log's
     mylog.get_console_sink()->set_level(Log::level::debug);

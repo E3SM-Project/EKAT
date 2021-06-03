@@ -23,7 +23,7 @@ namespace logger {
 // These two #defines are used only by the LogBigFiles policy.
 // EKAT_LOG_N_FILES sets the number of rotating files
 #define EKAT_LOG_N_FILES 5
-// EKAT_LOG_MAX_FILE_SIZE_MB sets the max size of each file`
+// EKAT_LOG_MAX_FILE_SIZE_MB sets the max size of each file
 #define EKAT_LOG_MAX_FILE_SIZE_MB 8
 
 // No file output; only console logging.

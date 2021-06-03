@@ -1,14 +1,16 @@
 #include <catch2/catch.hpp>
 #include "ekat/logging/ekat_log_file.hpp"
-#include "ekat/logging/ekat_log_mpi.hpp"
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/ekat_pack.hpp"
+#include "ekat/mpi/ekat_comm.hpp"
 #include <fstream>
 
 using namespace ekat;
 using namespace ekat::logger;
 
 TEST_CASE("log tests", "[logging]") {
+
+    ekat::Comm comm;
 
     SECTION("default logger") {
 
@@ -17,6 +19,7 @@ TEST_CASE("log tests", "[logging]") {
       Log::set_level(Log::level::debug);
       Log::debug("now you can see debug messages because we reset the log level to debug.");
       Log::info("this is an info message with a number ({}).", 42);
+      Log::warn("the default logger has no knowledge of MPI");
       Log::critical("This is a test. Here is a critical message. This is only a test.");
 
       ekat::Pack<double,4> apack;
@@ -29,7 +32,7 @@ TEST_CASE("log tests", "[logging]") {
 
     SECTION("console only, no mpi") {
 
-      Logger<> mylog("ekat_log_test_console_only", Log::level::debug);
+      Logger<> mylog("ekat_log_test_console_only", Log::level::debug, comm);
 
       mylog.info("This is a console-only message, with level = info");
       mylog.error("Here is an error message.");
@@ -39,12 +42,13 @@ TEST_CASE("log tests", "[logging]") {
       std::ifstream lf(logfilename);
       REQUIRE( !lf.is_open() );
 
-      REQUIRE(mylog.get_logfile_name() == "null");
+      REQUIRE(mylog.logfile_name() == "null");
     }
 
     SECTION("console and file logging, with mpi rank info") {
 
-      Logger<LogBasicFile<Log::level::trace>, LogAllRanks> mylog("combined_console_file_mpi", Log::level::debug);
+      Logger<LogBasicFile<Log::level::trace>>
+        mylog("combined_console_file_mpi", Log::level::debug, comm);
 
       mylog.debug("here is a debug message that will also show up in this rank's log file.");
 
@@ -57,7 +61,7 @@ TEST_CASE("log tests", "[logging]") {
       std::ifstream lf(logfilename);
       REQUIRE( lf.is_open() );
 
-      REQUIRE( mylog.get_logfile_name() == logfilename);
+      REQUIRE( mylog.logfile_name() == logfilename);
     }
 
 
@@ -65,13 +69,13 @@ TEST_CASE("log tests", "[logging]") {
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-//       using file_policy = LogBasicFile<Log::level::info>;
+
       using file_policy = LogNoFile;
       const std::string log_name = "external_sink_log";
       auto console = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
       auto file = file_policy::get_file_sink(log_name);
 
-      Logger<file_policy, LogOnlyRank0> mylog(log_name, Log::level::warn, console, file);
+      Logger<file_policy> mylog(log_name, Log::level::warn, console, file, comm);
 
       mylog.warn("This is a test.  Here is a warning message.  This is only a test.");
     }
