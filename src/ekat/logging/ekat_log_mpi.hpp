@@ -20,16 +20,14 @@ namespace ekat {
 */
 struct LogOnlyRank0 {
   // erase the console sink for all ranks != 0
-  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {
-    const Comm mpicomm(MPI_COMM_WORLD);
+  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks, const ekat::Comm& mpicomm=ekat::Comm()) {
     if (!mpicomm.am_i_root()) {
       sinks.erase(sinks.begin());
     }
   }
 
   // append rank id to the log name
-  static std::string name_with_rank(const std::string& name) {
-    const Comm mpicomm(MPI_COMM_WORLD);
+  static std::string name_with_rank(const std::string& name, const ekat::Comm& mpicomm=ekat::Comm()) {
     return name + "_rank" + std::to_string(mpicomm.rank());
   }
 };
@@ -38,11 +36,10 @@ struct LogOnlyRank0 {
 */
 struct LogAllRanks {
   // leave all sinks alone, including the console
-  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks) {}
+  static void update_sinks(std::vector<spdlog::sink_ptr>& sinks, const ekat::Comm& mpicomm=ekat::Comm()) {}
 
   // append rank id to the log name
-  static std::string name_with_rank(const std::string& name) {
-    const Comm mpicomm(MPI_COMM_WORLD);
+  static std::string name_with_rank(const std::string& name, const ekat::Comm& mpicomm=ekat::Comm()) {
     return name + "_rank" + std::to_string(mpicomm.rank());
   }
 };

@@ -55,8 +55,9 @@ class Logger : public spdlog::logger {
   public:
 
   // primary constructor
-  Logger(const std::string& log_name, const Log::level::level_enum lev=Log::level::debug) :
-     spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
+  Logger(const std::string& log_name, const Log::level::level_enum lev=Log::level::debug,
+    const ekat::Comm& mpicomm=ekat::Comm()) :
+    spdlog::logger(LogMpiPolicy::name_with_rank(log_name, mpicomm))
   {
     auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     csink->set_level(lev);
@@ -67,7 +68,7 @@ class Logger : public spdlog::logger {
     this->sinks().push_back(csink);
     this->sinks().push_back(fsink);
 
-    LogMpiPolicy::update_sinks(this->sinks());
+    LogMpiPolicy::update_sinks(this->sinks(), mpicomm);
 
     this->set_level(lev);
   }
@@ -75,8 +76,8 @@ class Logger : public spdlog::logger {
   // shared file sink constructor
   template <typename FP, typename MP>
   Logger(const std::string& log_name, const Log::level::level_enum lev,
-    Logger<FP, MP>& other_log) :
-    spdlog::logger(LogMpiPolicy::name_with_rank(log_name))
+    Logger<FP, MP>& other_log, const ekat::Comm& mpicomm=ekat::Comm()) :
+    spdlog::logger(LogMpiPolicy::name_with_rank(log_name, mpicomm))
   {
     auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     csink->set_level(lev);
@@ -84,13 +85,13 @@ class Logger : public spdlog::logger {
     this->sinks().push_back(other_log.get_file_sink());
     this->set_level(lev);
 
-    LogMpiPolicy::update_sinks(this->sinks());
+    LogMpiPolicy::update_sinks(this->sinks(), mpicomm);
   }
 
   // Constructor for externally created sinks
   Logger(const std::string& log_name, const Log::level::level_enum lev,
-    spdlog::sink_ptr csink, spdlog::sink_ptr fsink) :
-    spdlog::logger(LogMpiPolicy::name_with_rank(log_name), {csink, fsink}) {}
+    spdlog::sink_ptr csink, spdlog::sink_ptr fsink, const ekat::Comm& mpicomm=ekat::Comm()) :
+    spdlog::logger(LogMpiPolicy::name_with_rank(log_name, mpicomm), {csink, fsink}) {}
 
   spdlog::sink_ptr get_console_sink() {
     return (this->sinks().size() > 1 ? this->sinks()[0] : spdlog::sink_ptr(nullptr));
