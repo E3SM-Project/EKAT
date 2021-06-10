@@ -13,11 +13,13 @@ TEST_CASE("log tests", "[logging]") {
     ekat::Comm comm;
 
     SECTION("default logger") {
-
+      // this section is just for examples, and to make sure nothing went wrong
       Log::debug("here is a debug message");
       Log::info("You won't see the debug message because the default log level is '{0}', and {0} > debug = {1}", Log::level::to_string_view(Log::get_level()), (Log::get_level() > Log::level::debug) );
       Log::set_level(Log::level::debug);
       Log::debug("now you can see debug messages because we reset the log level to debug.");
+      Log::set_level(Log::level::trace);
+      Log::trace("trace messages have the lowest priority.");
       Log::info("this is an info message with a number ({}).", 42);
       Log::warn("the default logger has no knowledge of MPI");
       Log::critical("This is a test. Here is a critical message. This is only a test.");
@@ -31,7 +33,7 @@ TEST_CASE("log tests", "[logging]") {
     }
 
     SECTION("console only, no mpi") {
-
+      // setup a console-only logger
       Logger<> mylog("ekat_log_test_console_only", Log::level::debug, comm);
 
       mylog.info("This is a console-only message, with level = info");
@@ -62,6 +64,31 @@ TEST_CASE("log tests", "[logging]") {
       REQUIRE( lf.is_open() );
 
       REQUIRE( mylog.logfile_name() == logfilename);
+    }
+
+    SECTION("Debug excludes Tracer") {
+      Logger<LogBasicFile<Log::level::debug>>
+        mylog("debug_excludes_trace", Log::level::debug, comm);
+
+      mylog.debug("this debug message will show up in both the console and the log file.");
+      mylog.trace("Entered 'debug excludes tracer' section; this message will not show up anywhere.");
+    }
+
+    SECTION("log file check") {
+      // The log file is not necessarily written as you write log messages.
+      // For performance reasons, log messages may first be collated into a buffer; that
+      // buffer is then written according to spdlog's internal logic.
+      // This means that in order to check the previous section's log file, we have to
+      // wait for its log to go out of scope (which guarantees that the file will be written).
+
+      const std::string lfname = "debug_excludes_trace_rank0_logfile.txt";
+      std::ifstream lf(lfname);
+      REQUIRE(lf.is_open());
+      std::stringstream ss;
+      ss << lf.rdbuf();
+
+      REQUIRE( ss.str().find("[trace]") == std::string::npos );
+      REQUIRE( ss.str().find("[debug]") != std::string::npos );
     }
 
 
