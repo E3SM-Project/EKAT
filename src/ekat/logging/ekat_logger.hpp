@@ -125,9 +125,9 @@ class Logger : public spdlog::logger {
 
   Log::level::level_enum log_level() const {return this->level();}
 
-  Log::level::level_enum console_level() const {return this->get_console_sink()->level();}
+  Log::level::level_enum console_level() {return this->get_console_sink()->level();}
 
-  Log::level::level_enum file_level() const {return this->get_file_sink()->level();}
+  Log::level::level_enum file_level() {return this->get_file_sink()->level();}
 
   void set_log_level(const Log::level::level_enum lev) {
     this->set_level(lev);
