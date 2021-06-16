@@ -40,6 +40,9 @@ set(EKAT_HEADERS
   kokkos/ekat_kokkos_types.hpp
   kokkos/ekat_kokkos_utils.hpp
   kokkos/ekat_subview_utils.hpp
+  logging/ekat_logger.hpp
+  logging/ekat_log_file.hpp
+  logging/ekat_log_mpi.hpp
   mpi/ekat_comm.hpp
   std_meta/ekat_std_any.hpp
   std_meta/ekat_std_enable_shared_from_this.hpp
