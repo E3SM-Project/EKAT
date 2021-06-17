@@ -221,6 +221,10 @@ struct ExeSpaceUtils {
     return TeamPolicy(ni, team_size);
   }
 
+  static TeamPolicy get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
+    return get_default_team_policy(league_size, team_size_request);
+  }
+
   // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
   //       The latter is better when bool needs a default, the former is
   //       better when bool must be specified, but we want T to be deduced.
@@ -284,12 +288,30 @@ template <>
 struct ExeSpaceUtils<Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
 
+  static int num_warps (const int i) {
+    return (i+31)/32;
+  }
+
   static TeamPolicy get_default_team_policy (Int ni, Int nk) {
     return TeamPolicy(ni, std::min(128, 32*((nk + 31)/32)));
   }
 
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
     return TeamPolicy(ni, team_size);
+  }
+
+  // On GPU, the team-level ||scan in column_ops only works for team sizes that are a power of 2.
+  static TeamPolicy get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
+    auto prev_pow_2 = [](const int i) -> int {
+      // Multiply by 2 until pp2>i, then divide by 2 once.
+      int pp2 = 1;
+      while (pp2<=i) pp2 *= 2;
+      return pp2/2;
+    };
+
+    const int pp2 = prev_pow_2(team_size_request);
+    const int team_size = 32*num_warps(pp2);
+    return TeamPolicy(league_size, std::min(128, team_size));
   }
 
   // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
