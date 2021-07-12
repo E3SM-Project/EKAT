@@ -49,9 +49,11 @@ macro(BuildKokkos)
 
     # Enable Kokkos debug if the host project is in debug mode.
     if (CMAKE_BUILD_TYPE_ci STREQUAL "debug")
-      set(Kokkos_ENABLE_DEBUG TRUE  CACHE BOOL "Enable Kokkos Debug")
+      set(Kokkos_ENABLE_DEBUG              TRUE CACHE BOOL "Enable Kokkos Debug")
+      set(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK TRUE CACHE BOOL "Enable Kokkos Debug bounds checking")
     else()
-      set(Kokkos_ENABLE_DEBUG FALSE CACHE BOOL "Enable Kokkos Debug")
+      set(Kokkos_ENABLE_DEBUG              FALSE CACHE BOOL "Enable Kokkos Debug")
+      set(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK FALSE CACHE BOOL "Enable Kokkos Debug bounds checking")
     endif()
 
     add_subdirectory(${Kokkos_SOURCE_DIR} ${Kokkos_BINARY_DIR})
