@@ -78,6 +78,11 @@ set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of E
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
+option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
+
+if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(FATAL_ERROR "Code coverage will only work with Debug build type")
+endif()
 
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
