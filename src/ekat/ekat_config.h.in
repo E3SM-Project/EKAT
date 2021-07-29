@@ -19,4 +19,7 @@
 // Decide whether ekat defaults to BFB behavior when possible/appropriate
 #cmakedefine EKAT_DEFAULT_BFB
 
+// Decide whether ekat defaults to BFB behavior when possible/appropriate
+#cmakedefine EKAT_FPE
+
 #endif // EKAT_CONFIG_H

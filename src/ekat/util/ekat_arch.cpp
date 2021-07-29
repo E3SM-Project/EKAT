@@ -30,22 +30,22 @@ std::string active_avx_string () {
 
 std::string ekat_config_string () {
   std::stringstream ss;
-  ss << "ExecSpace name: " << DefaultDevice::execution_space::name() << "\n";
-  ss << "ExecSpace initialized: " << (DefaultDevice::execution_space::impl_is_initialized() ? "yes" : "no") << "\n";
-  ss << " avx " << active_avx_string()
+  ss << " ExecSpace name: " << DefaultDevice::execution_space::name() << "\n";
+  ss << " ExecSpace initialized: " << (DefaultDevice::execution_space::impl_is_initialized() ? "yes" : "no") << "\n";
+  ss << " active avx set: " << active_avx_string() << "\n"
      // << " packsize " << EKAT_PACK_SIZE
-     << " compiler " <<
+     << " compiler id: " <<
 #if defined __INTEL_COMPILER
-    "Intel"
+    "Intel\n"
 #elif defined __GNUG__
-    "GCC"
+    "GCC\n"
 #else
-    "unknown"
+    "unknown\n"
 #endif
-     << " default FPE mask " <<
+     << " default FPE mask: " <<
       ( get_default_fpes() == 0 ? "0 (NONE) \n" :
-        std::to_string(get_default_fpes()) + " (FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW)")
-     << " #host threads " <<
+        std::to_string(get_default_fpes()) + " (FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW) \n")
+     << " #host threads: " <<
 #ifdef KOKKOS_ENABLE_OPENMP
          Kokkos::OpenMP::concurrency()
 #elif defined _OPENMP
@@ -53,7 +53,7 @@ std::string ekat_config_string () {
 #else
          1
 #endif
-    ;
+     << "\n";
   return ss.str();
 }
 
