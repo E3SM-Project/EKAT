@@ -72,20 +72,20 @@ struct LinInterp
   int km1_pack() const { return m_km1_pack; }
   int km2_pack() const { return m_km2_pack; }
 
-  template<typename V>
+  template<typename V1, typename V2>
   KOKKOS_INLINE_FUNCTION
   void setup(const MemberType& team,
-             const V& x1,
-             const V& x2) const;
+             const V1& x1,
+             const V2& x2) const;
 
   // Linearly interpolate y(x1) onto coordinates x2
-  template <typename V>
+  template <typename V1, typename V2, typename V3, typename V4>
   KOKKOS_INLINE_FUNCTION
   void lin_interp(const MemberType& team,
-                  const V& x1,
-                  const V& x2,
-                  const V& y1,
-                  const V& y2) const;
+                  const V1& x1,
+                  const V2& x2,
+                  const V3& y1,
+                  const V4& y2) const;
 
   //
   // -------- Internal API, data ------

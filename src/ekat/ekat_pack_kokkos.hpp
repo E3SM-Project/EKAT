@@ -178,6 +178,21 @@ repack (const Kokkos::View<Pack<T, old_pack_size>**, Parms...>& vp) {
     (old_pack_size / new_pack_size) * vp.extent_int(1));
 }
 
+template <int new_pack_size,
+          typename T, typename ...Parms, int old_pack_size,
+          typename std::enable_if<(old_pack_size > new_pack_size), int>::type = 0>
+KOKKOS_FORCEINLINE_FUNCTION
+Unmanaged<Kokkos::View<const Pack<T, new_pack_size>**, Parms...> >
+repack (const Kokkos::View<const Pack<T, old_pack_size>**, Parms...>& vp) {
+  static_assert(new_pack_size > 0 &&
+                old_pack_size % new_pack_size == 0,
+                "New pack size must divide old pack size.");
+  return Unmanaged<Kokkos::View<const Pack<T, new_pack_size>**, Parms...> >(
+    reinterpret_cast<const Pack<T, new_pack_size>*>(vp.data()),
+    vp.extent_int(0),
+    (old_pack_size / new_pack_size) * vp.extent_int(1));
+}
+
 // 2d growing
 template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
@@ -193,6 +208,20 @@ repack (const Kokkos::View<Pack<T, old_pack_size>**, Parms...>& vp) {
     (new_pack_size / old_pack_size) * vp.extent_int(1));
 }
 
+template <int new_pack_size,
+          typename T, typename ...Parms, int old_pack_size,
+          typename std::enable_if<(old_pack_size < new_pack_size), int>::type = 0>
+KOKKOS_FORCEINLINE_FUNCTION
+Unmanaged<Kokkos::View<const Pack<T, new_pack_size>**, Parms...> >
+repack (const Kokkos::View<const Pack<T, old_pack_size>**, Parms...>& vp) {
+  static_assert(new_pack_size % old_pack_size == 0,
+                "New pack size must divide old pack size.");
+  return Unmanaged<Kokkos::View<const Pack<T, new_pack_size>**, Parms...> >(
+    reinterpret_cast<const Pack<T, new_pack_size>*>(vp.data()),
+    vp.extent_int(0),
+    (new_pack_size / old_pack_size) * vp.extent_int(1));
+}
+
 // 2d staying the same
 template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
@@ -200,6 +229,15 @@ template <int new_pack_size,
 KOKKOS_FORCEINLINE_FUNCTION
 Unmanaged<Kokkos::View<Pack<T, new_pack_size>**, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>**, Parms...>& vp) {
+  return vp;
+}
+
+template <int new_pack_size,
+          typename T, typename ...Parms, int old_pack_size,
+          typename std::enable_if<(new_pack_size == old_pack_size), int>::type = 0>
+KOKKOS_FORCEINLINE_FUNCTION
+Unmanaged<Kokkos::View<const Pack<T, new_pack_size>**, Parms...> >
+repack (const Kokkos::View<const Pack<T, old_pack_size>**, Parms...>& vp) {
   return vp;
 }
 
@@ -215,6 +253,20 @@ repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
                 "New pack size must divide old pack size.");
   return Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >(
     reinterpret_cast<Pack<T, new_pack_size>*>(vp.data()),
+    (old_pack_size / new_pack_size) * vp.extent_int(0));
+}
+
+template <int new_pack_size,
+          typename T, typename ...Parms, int old_pack_size,
+          typename std::enable_if<(old_pack_size > new_pack_size), int>::type = 0>
+KOKKOS_FORCEINLINE_FUNCTION
+Unmanaged<Kokkos::View<const Pack<T, new_pack_size>*, Parms...> >
+repack (const Kokkos::View<const Pack<T, old_pack_size>*, Parms...>& vp) {
+  static_assert(new_pack_size > 0 &&
+                old_pack_size % new_pack_size == 0,
+                "New pack size must divide old pack size.");
+  return Unmanaged<Kokkos::View<const Pack<T, new_pack_size>*, Parms...> >(
+    reinterpret_cast<const Pack<T, new_pack_size>*>(vp.data()),
     (old_pack_size / new_pack_size) * vp.extent_int(0));
 }
 
@@ -234,6 +286,21 @@ repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
     vp.extent_int(0) / (new_pack_size / old_pack_size));
 }
 
+template <int new_pack_size,
+          typename T, typename ...Parms, int old_pack_size,
+          typename std::enable_if<(old_pack_size < new_pack_size), int>::type = 0>
+KOKKOS_FORCEINLINE_FUNCTION
+Unmanaged<Kokkos::View<const Pack<T, new_pack_size>*, Parms...> >
+repack (const Kokkos::View<const Pack<T, old_pack_size>*, Parms...>& vp) {
+  static_assert(new_pack_size > 0 &&
+                new_pack_size % old_pack_size == 0,
+                "Old pack size must divide new pack size.");
+  EKAT_KERNEL_ASSERT(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
+  return Unmanaged<Kokkos::View<const Pack<T, new_pack_size>*, Parms...> >(
+    reinterpret_cast<const Pack<T, new_pack_size>*>(vp.data()),
+    vp.extent_int(0) / (new_pack_size / old_pack_size));
+}
+
 // 1d staying the same
 template <int new_pack_size,
           typename T, typename ...Parms, int old_pack_size,
@@ -241,6 +308,15 @@ template <int new_pack_size,
 KOKKOS_FORCEINLINE_FUNCTION
 Unmanaged<Kokkos::View<Pack<T, new_pack_size>*, Parms...> >
 repack (const Kokkos::View<Pack<T, old_pack_size>*, Parms...>& vp) {
+  return vp;
+}
+
+template <int new_pack_size,
+          typename T, typename ...Parms, int old_pack_size,
+          typename std::enable_if<(old_pack_size == new_pack_size), int>::type = 0>
+KOKKOS_FORCEINLINE_FUNCTION
+Unmanaged<Kokkos::View<const Pack<T, new_pack_size>*, Parms...> >
+repack (const Kokkos::View<const Pack<T, old_pack_size>*, Parms...>& vp) {
   return vp;
 }
 

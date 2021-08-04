@@ -63,7 +63,7 @@ void populate_li_input(int km1, int km2, Scalar* x1_i, Scalar* y1_i, Scalar* x2_
   std::sort(x2_i, x2_i + km2);
 }
 
-TEST_CASE("lin_interp", "soak") {
+TEST_CASE("lin_interp_soak", "lin_interp") {
 
   std::default_random_engine generator;
   std::uniform_int_distribution<int> k_dist(10,100);
@@ -186,6 +186,54 @@ TEST_CASE("lin_interp", "soak") {
       }
     }
   }
+}
+
+TEST_CASE("lin_interp_api", "lin_interp")
+{
+  // Test if API is flexible enough to handle various combinations
+  // of const and non-const inputs
+
+  const int ncol = 0;
+  const int km1 = 0;
+  const int km2 = 0;
+
+  using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
+  using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
+  LIV vect(ncol, km1, km2, 0);
+  const int km1_pack = ekat::npack<Pack>(km1);
+  const int km2_pack = ekat::npack<Pack>(km2);
+
+  using view_1d = typename LIV::template view_1d<Pack>;
+  using view_1dc = typename LIV::template view_1d<const Pack>;
+
+  view_1d
+    x1("x1", km1_pack),
+    x2("x2", km2_pack),
+    y1("y1", km1_pack),
+    y2("y2", km2_pack);
+
+  view_1dc x1c(x1), x2c(x2), y1c(y1);
+
+  Kokkos::parallel_for("lin-interp-ut-vect",
+                       vect.m_policy,
+                       KOKKOS_LAMBDA(typename LIV::MemberType const& team_member)
+  {
+    vect.setup(team_member, x1, x2);
+    vect.setup(team_member, x1, x2c);
+    vect.setup(team_member, x1c, x2);
+    vect.setup(team_member, x1c, x2c);
+
+    vect.lin_interp(team_member, x1, x2, y1, y2);
+    vect.lin_interp(team_member, x1, x2c, y1, y2);
+    vect.lin_interp(team_member, x1c, x2, y1, y2);
+    vect.lin_interp(team_member, x1c, x2c, y1, y2);
+
+    vect.lin_interp(team_member, x1, x2, y1c, y2);
+    vect.lin_interp(team_member, x1, x2c, y1c, y2);
+    vect.lin_interp(team_member, x1c, x2, y1c, y2);
+    vect.lin_interp(team_member, x1c, x2c, y1c, y2);
+  });
+
 }
 
 } // empty namespace
