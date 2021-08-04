@@ -19,24 +19,24 @@ LinInterp<ScalarT, PackSize, DeviceT>::LinInterp(int ncol, int km1, int km2, Sca
 {}
 
 template <typename ScalarT, int PackSize, typename DeviceT>
-template<typename V>
+template<typename V1, typename V2>
 KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::setup(const MemberType& team,
-                                        const V& x1,
-                                        const V& x2) const
+                                        const V1& x1,
+                                        const V2& x2) const
 {
   setup_impl(team, *this, ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2));
 }
 
 // Linearly interpolate y(x1) onto coordinates x2
 template <typename ScalarT, int PackSize, typename DeviceT>
-template <typename V>
+template <typename V1, typename V2, typename V3, typename V4>
 KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(const MemberType& team,
-                                             const V& x1,
-                                             const V& x2,
-                                             const V& y1,
-                                             const V& y2) const
+                                             const V1& x1,
+                                             const V2& x2,
+                                             const V3& y1,
+                                             const V4& y2) const
 {
   lin_interp_impl(team,
                   *this,
