@@ -73,7 +73,7 @@ add_library(ekat ${EKAT_SOURCES})
 # in case of mismatch language between compiler and linker.
 # Note: link both CXX and Fortran openmp libs, just in case.
 if (EKAT_OPENMP_TARGETS_FOUND)
-  target_link_libraries(ekat PUBLIC OpenMP_CXX;OpenMP::OpenMP_Fortran)
+  target_link_libraries(ekat PUBLIC OpenMP::OpenMP_CXX;OpenMP::OpenMP_Fortran)
 endif()
 
 target_include_directories(ekat PUBLIC
