@@ -68,6 +68,14 @@ set(EKAT_HEADERS
 # Create the library, and set all its properties
 add_library(ekat ${EKAT_SOURCES})
 
+# To better handle openmp link flags, we need to link the OpenMP cmake targets.
+# This is superior to setting openmp compile/link flags, since it works also
+# in case of mismatch language between compiler and linker.
+# Note: link both CXX and Fortran openmp libs, just in case.
+if (EKAT_OPENMP_TARGETS_FOUND)
+  target_link_libraries(ekat PUBLIC OpenMP::OpenMP_CXX;OpenMP::OpenMP_Fortran)
+endif()
+
 target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${EKAT_BINARY_DIR}/src>
