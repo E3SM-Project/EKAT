@@ -110,7 +110,7 @@ struct LinInterp
   int m_km2_pack;
   Scalar m_minthresh;
   TeamPolicy m_policy;
-  view_2d<IntPack> m_indx_map; // [x2-idx] -> x1-idx
+  view_2d<IntPack> m_indx_map; // [x2_idx] -> x1_idx
 };
 
 } //namespace ekat

@@ -51,14 +51,6 @@ void populate_li_input(int km1, int km2, Scalar* x1_i, Scalar* y1_i, Scalar* x2_
     x2_i[j] = x_dist(*generator);
   }
 
-  // make endpoints same
-  if (generator != &local_generator) {
-    x1_i[0] = 0.0;
-    x2_i[0] = 0.0;
-    x1_i[km1-1] = 1.0;
-    x2_i[km2-1] = 1.0;
-  }
-
   std::sort(x1_i, x1_i + km1);
   std::sort(x2_i, x2_i + km2);
 }
@@ -233,6 +225,10 @@ TEST_CASE("lin_interp_api", "lin_interp")
     vect.lin_interp(team_member, x1c, x2, y1c, y2);
     vect.lin_interp(team_member, x1c, x2c, y1c, y2);
   });
+}
+
+TEST_CASE("lin_interp_tvr", "lin_interp")
+{
 
 }
 

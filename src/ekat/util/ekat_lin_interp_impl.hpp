@@ -59,30 +59,30 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
 
   const int i = team.league_rank();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, liv.m_km2_pack), [&] (Int k2) {
-      const auto indx_pk = liv.m_indx_map(i, k2);
-      const auto end_mask = indx_pk == liv.m_km1 - 1;
-      if (end_mask.any()) {
-        const auto not_end = !end_mask;
-        ekat_masked_loop(end_mask, s) {
-          int k1 = indx_pk[s];
-          y2(k2)[s] = y1s(k1) + (y1s(k1)-y1s(k1-1))*(x2(k2)[s]-x1s(k1))/(x1s(k1)-x1s(k1-1));
-        }
-        ekat_masked_loop(not_end, s) {
-          int k1 = indx_pk[s];
-          y2(k2)[s] = y1s(k1) + (y1s(k1+1)-y1s(k1))*(x2(k2)[s]-x1s(k1))/(x1s(k1+1)-x1s(k1));
-        }
+    const auto indx_pk = liv.m_indx_map(i, k2);
+    const auto end_mask = indx_pk == liv.m_km1 - 1;
+    if (end_mask.any()) {
+      const auto not_end = !end_mask;
+      ekat_masked_loop(end_mask, s) {
+        int k1 = indx_pk[s];
+        y2(k2)[s] = y1s(k1) + (y1s(k1)-y1s(k1-1))*(x2(k2)[s]-x1s(k1))/(x1s(k1)-x1s(k1-1));
       }
-      else {
-        Pack x1p, x1p1, y1p, y1p1;
-        ekat::index_and_shift<1>(x1s, indx_pk, x1p, x1p1);
-        ekat::index_and_shift<1>(y1s, indx_pk, y1p, y1p1);
-        const auto& x2p = x2(k2);
-
-        y2(k2) = y1p + (y1p1-y1p)*(x2p-x1p)/(x1p1-x1p);
+      ekat_masked_loop(not_end, s) {
+        int k1 = indx_pk[s];
+        y2(k2)[s] = y1s(k1) + (y1s(k1+1)-y1s(k1))*(x2(k2)[s]-x1s(k1))/(x1s(k1+1)-x1s(k1));
       }
+    }
+    else {
+      Pack x1p, x1p1, y1p, y1p1;
+      ekat::index_and_shift<1>(x1s, indx_pk, x1p, x1p1);
+      ekat::index_and_shift<1>(y1s, indx_pk, y1p, y1p1);
+      const auto& x2p = x2(k2);
 
-      y2(k2).set(y2(k2) < liv.m_minthresh, liv.m_minthresh);
-    });
+      y2(k2) = y1p + (y1p1-y1p)*(x2p-x1p)/(x1p1-x1p);
+    }
+
+    y2(k2).set(y2(k2) < liv.m_minthresh, liv.m_minthresh);
+  });
 }
 
 template <typename ScalarT, int PackSize, typename DeviceT>
@@ -91,22 +91,21 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup_impl(
   const MemberType& team, const LinInterp& liv, const view_1d<const Pack>& x1, const view_1d<const Pack>& x2)
 {
   auto x1s = ekat::scalarize(x1);
+  auto begin_x1 = x1s.data();
+  auto end_x1 = begin_x1 + liv.m_km1;
 
   const int i = team.league_rank();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, liv.m_km2_pack), [&] (Int k2) {
-      for (int s = 0; s < Pack::n; ++s) {
-        const Scalar x1_indv = x2(k2)[s];
-        auto begin = x1s.data();
-        auto upper = begin + liv.m_km1;
-
-        auto ub = upper_bound(begin, upper, x1_indv);
-        int x1_idx = ub - begin;
-        if (x1_idx > 0) {
-          --x1_idx;
-        }
-        liv.m_indx_map(i, k2)[s] = x1_idx;
+    for (int s = 0; s < Pack::n; ++s) {
+      const Scalar x2_indv = x2(k2)[s];
+      auto ub = upper_bound(begin_x1, end_x1, x2_indv);
+      int x1_idx = ub - begin_x1;
+      if (x1_idx > 0) {
+        --x1_idx;
       }
-    });
+      liv.m_indx_map(i, k2)[s] = x1_idx;
+    }
+  });
 }
 
 } // namespace ekat
