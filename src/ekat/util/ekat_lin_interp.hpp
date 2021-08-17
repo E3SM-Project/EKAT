@@ -87,6 +87,15 @@ struct LinInterp
                   const V3& y1,
                   const V4& y2) const;
 
+  template <typename V1, typename V2, typename V3, typename V4, typename RangePolicy>
+  KOKKOS_INLINE_FUNCTION
+  void lin_interp(const MemberType& team,
+                  const RangePolicy& range_policy,
+                  const V1& x1,
+                  const V2& x2,
+                  const V3& y1,
+                  const V4& y2) const;
+
   //
   // -------- Internal API, data ------
   //
@@ -95,9 +104,11 @@ struct LinInterp
   static void setup_impl(
     const MemberType& team, const LinInterp& liv, const view_1d<const Pack>& x1, const view_1d<const Pack>& x2);
 
+  template <typename RangePolicy>
   KOKKOS_INLINE_FUNCTION
   static void lin_interp_impl(
     const MemberType& team,
+    const RangePolicy& range_policy,
     const LinInterp& liv,
     const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
     const view_1d<Pack>& y2);

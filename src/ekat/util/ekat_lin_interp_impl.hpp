@@ -28,17 +28,17 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup(const MemberType& team,
   setup_impl(team, *this, ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2));
 }
 
-// Linearly interpolate y(x1) onto coordinates x2
 template <typename ScalarT, int PackSize, typename DeviceT>
 template <typename V1, typename V2, typename V3, typename V4>
 KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(const MemberType& team,
-                                             const V1& x1,
-                                             const V2& x2,
-                                             const V3& y1,
-                                             const V4& y2) const
+                                                       const V1& x1,
+                                                       const V2& x2,
+                                                       const V3& y1,
+                                                       const V4& y2) const
 {
   lin_interp_impl(team,
+                  Kokkos::TeamThreadRange(team, m_km2_pack),
                   *this,
                   ekat::repack<Pack::n>(x1),
                   ekat::repack<Pack::n>(x2),
@@ -47,9 +47,30 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(const MemberType& team,
 }
 
 template <typename ScalarT, int PackSize, typename DeviceT>
+template <typename V1, typename V2, typename V3, typename V4, typename RangePolicy>
+KOKKOS_INLINE_FUNCTION
+void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(const MemberType& team,
+                                                       const RangePolicy& range_policy,
+                                                       const V1& x1,
+                                                       const V2& x2,
+                                                       const V3& y1,
+                                                       const V4& y2) const
+{
+  lin_interp_impl(team,
+                  range_policy,
+                  *this,
+                  ekat::repack<Pack::n>(x1),
+                  ekat::repack<Pack::n>(x2),
+                  ekat::repack<Pack::n>(y1),
+                  ekat::repack<Pack::n>(y2));
+}
+
+template <typename ScalarT, int PackSize, typename DeviceT>
+template <typename RangePolicy>
 KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
   const MemberType& team,
+  const RangePolicy& range_policy,
   const LinInterp& liv,
   const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
   const view_1d<Pack>& y2)
@@ -58,7 +79,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
   auto y1s = ekat::scalarize(y1);
 
   const int i = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, liv.m_km2_pack), [&] (Int k2) {
+  Kokkos::parallel_for(range_policy, [&] (Int k2) {
     const auto indx_pk = liv.m_indx_map(i, k2);
     const auto end_mask = indx_pk == liv.m_km1 - 1;
     if (end_mask.any()) {

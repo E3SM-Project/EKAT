@@ -229,6 +229,41 @@ TEST_CASE("lin_interp_api", "lin_interp")
 
 TEST_CASE("lin_interp_tvr", "lin_interp")
 {
+  // Test if API is flexible enough to handle custom range policy
+
+  using Pack = ekat::Pack<Real,1>;
+  using LIV = ekat::LinInterp<Real,Pack::n>;
+
+  LIV vect(0, 0, 0, 0);
+
+  typename LIV::KT::view_2d<Pack>
+    x1kv("x1kv", 0, 0),
+    x2kv("x2kv", 0, 0);
+
+  typename LIV::KT::view_3d<Pack>
+    y1kv("y1kv", 0, 0, 0),
+    y2kv("y2kv", 0, 0, 0);
+
+  Kokkos::parallel_for("lin-interp-ut-vect",
+                       vect.m_policy,
+                       KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
+    const int i = team.league_rank();
+    vect.setup(team,
+               ekat::subview(x1kv, i),
+               ekat::subview(x2kv, i));
+    team.team_barrier();
+
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, 0), [&] (int k) {
+
+        vect.lin_interp(team,
+                        Kokkos::TeamVectorRange(team, 0),
+                        ekat::subview(x1kv, i),
+                        ekat::subview(x2kv, i),
+                        ekat::subview(y1kv, i, k),
+                        ekat::subview(y2kv, i, k));
+    });
+  });
 
 }
 
