@@ -86,7 +86,7 @@ struct LinInterp
     const Int col=-1) const;
 
   // Same as above except uses a user-provided range boundary struct. This will likely
-  // be a TeamVectorRange.
+  // be a ThreadVectorRange.
   template<typename V1, typename V2, typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
   void setup(
@@ -111,7 +111,7 @@ struct LinInterp
     const Int col=-1) const;
 
   // Same as above except uses a user-provided range boundary struct. This will likely
-  // be a TeamVectorRange.
+  // be a ThreadVectorRange.
   template <typename V1, typename V2, typename V3, typename V4, typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
   void lin_interp(
