@@ -195,7 +195,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
 
     // Run LiVect ThreadVectorRange
     {
-      LIV1::TeamPolicy policy(outer_dim, inner_dim, km2);
+      LIV1::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV1::ExeSpace>::value ? inner_dim : 1, km2);
       Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
         const int i = team.league_rank();
