@@ -130,23 +130,21 @@ struct LinInterp
 
   template <typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
-  static void setup_impl(
+  void setup_impl(
     const MemberType& team,
     const RangeBoundary& range_boundary,
-    const LinInterp& liv,
     const view_1d<const Pack>& x1,
     const view_1d<const Pack>& x2,
-    const Int col);
+    const Int col) const;
 
   template <typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
-  static void lin_interp_impl(
+  void lin_interp_impl(
     const MemberType& team,
     const RangeBoundary& range_boundary,
-    const LinInterp& liv,
     const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
     const view_1d<Pack>& y2,
-    const Int col);
+    const Int col) const;
 
   int m_km1;
   int m_km2;

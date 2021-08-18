@@ -27,7 +27,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup(
   const Int col) const
 {
   setup_impl(team, Kokkos::TeamThreadRange(team, m_km2_pack),
-             *this, ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2), col);
+             ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2), col);
 }
 
 template <typename ScalarT, int PackSize, typename DeviceT>
@@ -41,7 +41,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup(
   const Int col) const
 {
   setup_impl(team, range_boundary,
-             *this, ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2), col);
+             ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2), col);
 }
 
 template <typename ScalarT, int PackSize, typename DeviceT>
@@ -57,7 +57,6 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(
 {
   lin_interp_impl(team,
                   Kokkos::TeamThreadRange(team, m_km2_pack),
-                  *this,
                   ekat::repack<Pack::n>(x1),
                   ekat::repack<Pack::n>(x2),
                   ekat::repack<Pack::n>(y1),
@@ -79,7 +78,6 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(
 {
   lin_interp_impl(team,
                   range_boundary,
-                  *this,
                   ekat::repack<Pack::n>(x1),
                   ekat::repack<Pack::n>(x2),
                   ekat::repack<Pack::n>(y1),
@@ -93,18 +91,17 @@ KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
   const MemberType& team,
   const RangeBoundary& range_boundary,
-  const LinInterp& liv,
   const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
   const view_1d<Pack>& y2,
-  const Int col)
+  const Int col) const
 {
   auto x1s = ekat::scalarize(x1);
   auto y1s = ekat::scalarize(y1);
 
   const int i = col == -1 ? team.league_rank() : col;
   Kokkos::parallel_for(range_boundary, [&] (Int k2) {
-    const auto indx_pk = liv.m_indx_map(i, k2);
-    const auto end_mask = indx_pk == liv.m_km1 - 1;
+    const auto indx_pk = m_indx_map(i, k2);
+    const auto end_mask = indx_pk == m_km1 - 1;
     if (end_mask.any()) {
       const auto not_end = !end_mask;
       ekat_masked_loop(end_mask, s) {
@@ -125,7 +122,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
       y2(k2) = y1p + (y1p1-y1p)*(x2p-x1p)/(x1p1-x1p);
     }
 
-    y2(k2).set(y2(k2) < liv.m_minthresh, liv.m_minthresh);
+    y2(k2).set(y2(k2) < m_minthresh, m_minthresh);
   });
 }
 
@@ -135,14 +132,13 @@ KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::setup_impl(
   const MemberType& team,
   const RangeBoundary& range_boundary,
-  const LinInterp& liv,
   const view_1d<const Pack>& x1,
   const view_1d<const Pack>& x2,
-  const Int col)
+  const Int col) const
 {
   auto x1s = ekat::scalarize(x1);
   auto begin_x1 = x1s.data();
-  auto end_x1 = begin_x1 + liv.m_km1;
+  auto end_x1 = begin_x1 + m_km1;
 
   const int i = col == -1 ? team.league_rank() : col;
   Kokkos::parallel_for(range_boundary, [&] (Int k2) {
@@ -153,7 +149,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup_impl(
       if (x1_idx > 0) {
         --x1_idx;
       }
-      liv.m_indx_map(i, k2)[s] = x1_idx;
+      m_indx_map(i, k2)[s] = x1_idx;
     }
   });
 }
