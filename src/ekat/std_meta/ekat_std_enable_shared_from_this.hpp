@@ -48,11 +48,11 @@ public:
   enable_shared_from_this () = default;
   virtual ~enable_shared_from_this () = default;
 
-  std::shared_ptr<T> shared_from_this () {
+  std::shared_ptr<T> shared_from_this () const noexcept {
     return m_self.lock();
   }
 
-  std::weak_ptr<T> weak_from_this () {
+  std::weak_ptr<T> weak_from_this () const noexcept {
     return m_self;
   }
 
