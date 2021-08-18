@@ -72,49 +72,80 @@ struct LinInterp
   int km1_pack() const { return m_km1_pack; }
   int km2_pack() const { return m_km2_pack; }
 
+  // Setup the index map. This must be called before lin_interp. By default, will launch a
+  // TeamThreadRange kernel. By default, the column idx will be team.league_rank(); this can be
+  // overridden by the col argument.
   template<typename V1, typename V2>
   KOKKOS_INLINE_FUNCTION
-  void setup(const MemberType& team,
-             const V1& x1,
-             const V2& x2) const;
+  void setup(
+    const MemberType& team,
+    const V1& x1,
+    const V2& x2,
+    const Int col=-1) const;
+  
+  // Same as above except uses a user-provided range boundary struct. This will likely
+  // be a TeamVectorRange.
+  template<typename V1, typename V2, typename RangeBoundary>
+  KOKKOS_INLINE_FUNCTION
+  void setup(
+    const MemberType& team,
+    const RangeBoundary& range_boundary,
+    const V1& x1,
+    const V2& x2,
+    const Int col=-1) const;
 
-  // Linearly interpolate y(x1) onto coordinates x2
+  // Linearly interpolate y(x1) onto coordinates x2. By default, will launch a
+  // TeamThreadRange kernel. The x1 and x2 should match what was given to setup.
+  // By default, the column idx will be team.league_rank(); this can be
+  // overridden by the col argument.
   template <typename V1, typename V2, typename V3, typename V4>
   KOKKOS_INLINE_FUNCTION
-  void lin_interp(const MemberType& team,
-                  const V1& x1,
-                  const V2& x2,
-                  const V3& y1,
-                  const V4& y2) const;
+  void lin_interp(
+    const MemberType& team,
+    const V1& x1,
+    const V2& x2,
+    const V3& y1,
+    const V4& y2,
+    const Int col=-1) const;
 
-  template <typename V1, typename V2, typename V3, typename V4, typename RangePolicy>
+  // Same as above except uses a user-provided range boundary struct. This will likely
+  // be a TeamVectorRange.
+  template <typename V1, typename V2, typename V3, typename V4, typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
-  void lin_interp(const MemberType& team,
-                  const RangePolicy& range_policy,
-                  const V1& x1,
-                  const V2& x2,
-                  const V3& y1,
-                  const V4& y2) const;
+  void lin_interp(
+    const MemberType& team,
+    const RangeBoundary& range_boundary,
+    const V1& x1,
+    const V2& x2,
+    const V3& y1,
+    const V4& y2,
+    const Int col=-1) const;
 
   //
   // -------- Internal API, data ------
   //
 
+  template <typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
   static void setup_impl(
-    const MemberType& team, const LinInterp& liv, const view_1d<const Pack>& x1, const view_1d<const Pack>& x2);
+    const MemberType& team,
+    const RangeBoundary& range_boundary,
+    const LinInterp& liv,
+    const view_1d<const Pack>& x1,
+    const view_1d<const Pack>& x2,
+    const Int col);
 
-  template <typename RangePolicy>
+  template <typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
   static void lin_interp_impl(
     const MemberType& team,
-    const RangePolicy& range_policy,
+    const RangeBoundary& range_boundary,
     const LinInterp& liv,
     const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
-    const view_1d<Pack>& y2);
+    const view_1d<Pack>& y2,
+    const Int col);
 
 
-  int m_ncol;
   int m_km1;
   int m_km2;
   int m_km1_pack;
