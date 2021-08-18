@@ -199,14 +199,17 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
         const int i = team.league_rank();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
-          const auto& tvr = Kokkos::ThreadVectorRange(team, km2);
+        for (int j = 0; j < inner_dim; ++j) {
           const int col = i*inner_dim + j;
-          vect1.setup(team, tvr,
+          vect1.setup(team,
                       ekat::subview(x1kv3, i, j),
                       ekat::subview(x2kv3, i, j),
                       col);
-          team.team_barrier();
+        }
+        team.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
+          const auto& tvr = Kokkos::ThreadVectorRange(team, km2);
+          const int col = i*inner_dim + j;
           vect1.lin_interp(team, tvr,
                            ekat::subview(x1kv3, i, j),
                            ekat::subview(x2kv3, i, j),
