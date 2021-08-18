@@ -178,7 +178,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
     // Run LiVect TeamThreadRange
     {
       Kokkos::parallel_for("lin-interp-ut-vect-ttr",
-                           vect.m_policy,
+                           vect.policy(),
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
         const int i = team_member.league_rank();
         vect.setup(team_member,
@@ -260,7 +260,7 @@ TEST_CASE("lin_interp_api", "lin_interp")
   view_1dc x1c(x1), x2c(x2), y1c(y1);
 
   Kokkos::parallel_for("lin-interp-ut-vect",
-                       vect.m_policy,
+                       vect.policy(),
                        KOKKOS_LAMBDA(typename LIV::MemberType const& team_member)
   {
     vect.setup(team_member, x1, x2);
@@ -297,7 +297,7 @@ TEST_CASE("lin_interp_tvr", "lin_interp")
     y2kv("y2kv", 0, 0, 0);
 
   Kokkos::parallel_for("lin-interp-ut-vect",
-                       vect.m_policy,
+                       vect.policy(),
                        KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
     const int i = team.league_rank();
     vect.setup(team,

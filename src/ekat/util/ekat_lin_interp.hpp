@@ -69,8 +69,10 @@ struct LinInterp
 
   LinInterp(int ncol, int km1, int km2, Scalar minthresh);
 
+  // Simple getters
   int km1_pack() const { return m_km1_pack; }
   int km2_pack() const { return m_km2_pack; }
+  const TeamPolicy& policy() const { return m_policy; }
 
   // Setup the index map. This must be called before lin_interp. By default, will launch a
   // TeamThreadRange kernel. By default, the column idx will be team.league_rank(); this can be
@@ -82,7 +84,7 @@ struct LinInterp
     const V1& x1,
     const V2& x2,
     const Int col=-1) const;
-  
+
   // Same as above except uses a user-provided range boundary struct. This will likely
   // be a TeamVectorRange.
   template<typename V1, typename V2, typename RangeBoundary>
@@ -124,6 +126,7 @@ struct LinInterp
   //
   // -------- Internal API, data ------
   //
+ private:
 
   template <typename RangeBoundary>
   KOKKOS_INLINE_FUNCTION
@@ -144,7 +147,6 @@ struct LinInterp
     const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
     const view_1d<Pack>& y2,
     const Int col);
-
 
   int m_km1;
   int m_km2;
