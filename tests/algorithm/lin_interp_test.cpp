@@ -193,7 +193,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       });
     }
 
-    // Run LiVect ThreadVectorRange
+    // Run LiVect ThreadVectorRange, doing setup from main parallel for
     {
       LIV1::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV1::ExeSpace>::value ? inner_dim : 1, km2);
       Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
@@ -229,6 +229,41 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km2; ++j) {
           ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
+          ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,1>(y2_f90[i][j], y2kvm3(i/inner_dim, i%inner_dim, j)[0]);
+        }
+      }
+    }
+
+    // Run LiVect ThreadVectorRange, doing setup from inner TTR parallel for
+    {
+      LIV1::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV1::ExeSpace>::value ? inner_dim : 1, km2);
+      Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
+                           KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
+        const int i = team.league_rank();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
+          const auto& tvr = Kokkos::ThreadVectorRange(team, km2);
+          const int col = i*inner_dim + j;
+          vect1.setup(team, tvr,
+                      ekat::subview(x1kv3, i, j),
+                      ekat::subview(x2kv3, i, j),
+                      col);
+          team.team_barrier();
+          vect1.lin_interp(team, tvr,
+                           ekat::subview(x1kv3, i, j),
+                           ekat::subview(x2kv3, i, j),
+                           ekat::subview(y1kv3, i, j),
+                           ekat::subview(y2kv3, i, j),
+                           col);
+        });
+      });
+    }
+
+    // Compare results
+    {
+      auto y2kvm3 = Kokkos::create_mirror_view(y2kv3);
+      Kokkos::deep_copy(y2kvm3, y2kv3);
+      for (int i = 0; i < ncol; ++i) {
+        for (int j = 0; j < km2; ++j) {
           ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,1>(y2_f90[i][j], y2kvm3(i/inner_dim, i%inner_dim, j)[0]);
         }
       }
