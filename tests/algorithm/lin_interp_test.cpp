@@ -51,14 +51,6 @@ void populate_li_input(int km1, int km2, Scalar* x1_i, Scalar* y1_i, Scalar* x2_
     x2_i[j] = x_dist(*generator);
   }
 
-  // make endpoints same
-  if (generator != &local_generator) {
-    x1_i[0] = 0.0;
-    x2_i[0] = 0.0;
-    x1_i[km1-1] = 1.0;
-    x2_i[km2-1] = 1.0;
-  }
-
   std::sort(x1_i, x1_i + km1);
   std::sort(x2_i, x2_i + km2);
 }
@@ -86,6 +78,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       populate_li_input(km1, km2, x1[i].data(), y1[i].data(), x2[i].data(), &generator);
     }
 
+    // Views for testing TeamThreadRange
     using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
     using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
     LIV vect(ncol, km1, km2, minthresh);
@@ -97,25 +90,44 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       y1kv("y1kv", ncol, km1_pack),
       y2kv("y2kv", ncol, km2_pack);
 
+    // Views for testing ThreadVectorRange
+    LIV vect1(ncol, km1, km2, minthresh);
+    const int outer_dim = 2;
+    const int inner_dim = ncol/outer_dim;
+    typename LIV::KT::view_3d<Pack>
+      x1kv3("x1kv3", outer_dim, inner_dim, km1_pack),
+      x2kv3("x2kv3", outer_dim, inner_dim, km2_pack),
+      y1kv3("y1kv3", outer_dim, inner_dim, km1_pack),
+      y2kv3("y2kv3", outer_dim, inner_dim, km2_pack);
+
     // Initialize kokkos packed inputs
     {
       auto x1kvm = Kokkos::create_mirror_view(x1kv);
       auto x2kvm = Kokkos::create_mirror_view(x2kv);
       auto y1kvm = Kokkos::create_mirror_view(y1kv);
 
+      auto x1kvm3 = Kokkos::create_mirror_view(x1kv3);
+      auto x2kvm3 = Kokkos::create_mirror_view(x2kv3);
+      auto y1kvm3 = Kokkos::create_mirror_view(y1kv3);
+
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km1_pack; ++j) {
           for (int s = 0; s < Pack::n; ++s) {
-            if (j*Pack::n + s < km1) {
-              x1kvm(i, j)[s] = x1[i][j*Pack::n + s];
-              y1kvm(i, j)[s] = y1[i][j*Pack::n + s];
+            const int scalar_idx = j*Pack::n + s;
+            if (scalar_idx < km1) {
+              x1kvm(i, j)[s] = x1[i][scalar_idx];
+              y1kvm(i, j)[s] = y1[i][scalar_idx];
+              x1kvm3(i/inner_dim, i%inner_dim, j)[s] = x1[i][scalar_idx];
+              y1kvm3(i/inner_dim, i%inner_dim, j)[s] = y1[i][scalar_idx];
             }
           }
         }
         for (int j = 0; j < km2_pack; ++j) {
           for (int s = 0; s < Pack::n; ++s) {
-            if (j*Pack::n + s < km2) {
-              x2kvm(i, j)[s] = x2[i][j*Pack::n + s];
+            const int scalar_idx = j*Pack::n + s;
+            if (scalar_idx < km2) {
+              x2kvm(i, j)[s] = x2[i][scalar_idx];
+              x2kvm3(i/inner_dim, i%inner_dim, j)[s] = x2[i][scalar_idx];
             }
           }
         }
@@ -124,6 +136,10 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       Kokkos::deep_copy(x1kv, x1kvm);
       Kokkos::deep_copy(x2kv, x2kvm);
       Kokkos::deep_copy(y1kv, y1kvm);
+
+      Kokkos::deep_copy(x1kv3, x1kvm3);
+      Kokkos::deep_copy(x2kv3, x2kvm3);
+      Kokkos::deep_copy(y1kv3, y1kvm3);
     }
 
     std::vector<Real> x1f(ncol*km1), y1f(ncol*km1), x2f(ncol*km2), y2f(ncol*km2);
@@ -157,10 +173,10 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       }
     }
 
-    // Run LiVect
+    // Run LiVect TeamThreadRange
     {
-      Kokkos::parallel_for("lin-interp-ut-vect",
-                           vect.m_policy,
+      Kokkos::parallel_for("lin-interp-ut-vect-ttr",
+                           vect.policy(),
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
         const int i = team_member.league_rank();
         vect.setup(team_member,
@@ -175,13 +191,82 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       });
     }
 
+    // Run LiVect ThreadVectorRange, doing setup from main parallel for
+    {
+      LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, vect1.km2_pack());
+      Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
+                           KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
+        const int i = team.league_rank();
+        for (int j = 0; j < inner_dim; ++j) {
+          const int col = i*inner_dim + j;
+          vect1.setup(team,
+                      ekat::subview(x1kv3, i, j),
+                      ekat::subview(x2kv3, i, j),
+                      col);
+        }
+        team.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
+          const auto& tvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
+          const int col = i*inner_dim + j;
+          vect1.lin_interp(team, tvr,
+                           ekat::subview(x1kv3, i, j),
+                           ekat::subview(x2kv3, i, j),
+                           ekat::subview(y1kv3, i, j),
+                           ekat::subview(y2kv3, i, j),
+                           col);
+        });
+      });
+    }
+
     // Compare results
     {
       auto y2kvm = Kokkos::create_mirror_view(y2kv);
+      auto y2kvm3 = Kokkos::create_mirror_view(y2kv3);
       Kokkos::deep_copy(y2kvm, y2kv);
+      Kokkos::deep_copy(y2kvm3, y2kv3);
       for (int i = 0; i < ncol; ++i) {
         for (int j = 0; j < km2; ++j) {
-          ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm(i, j / Pack::n)[j % Pack::n]);
+          const int k_idx = j / Pack::n;
+          const int p_idx = j % Pack::n;
+          ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm(i, k_idx)[p_idx]);
+          ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm3(i/inner_dim, i%inner_dim, k_idx)[p_idx]);
+        }
+      }
+    }
+
+    // Run LiVect ThreadVectorRange, doing setup from inner TTR parallel for
+    {
+      LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, vect1.km2_pack());
+      Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
+                           KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
+        const int i = team.league_rank();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
+          const auto& tvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
+          const int col = i*inner_dim + j;
+          vect1.setup(team, tvr,
+                      ekat::subview(x1kv3, i, j),
+                      ekat::subview(x2kv3, i, j),
+                      col);
+          team.team_barrier();
+          vect1.lin_interp(team, tvr,
+                           ekat::subview(x1kv3, i, j),
+                           ekat::subview(x2kv3, i, j),
+                           ekat::subview(y1kv3, i, j),
+                           ekat::subview(y2kv3, i, j),
+                           col);
+        });
+      });
+    }
+
+    // Compare results
+    {
+      auto y2kvm3 = Kokkos::create_mirror_view(y2kv3);
+      Kokkos::deep_copy(y2kvm3, y2kv3);
+      for (int i = 0; i < ncol; ++i) {
+        for (int j = 0; j < km2; ++j) {
+          const int k_idx = j / Pack::n;
+          const int p_idx = j % Pack::n;
+          ekat::catch2_req_pk_sensitive<EKAT_TEST_STRICT_FP,Pack::n>(y2_f90[i][j], y2kvm3(i/inner_dim, i%inner_dim, k_idx)[p_idx]);
         }
       }
     }
@@ -215,7 +300,7 @@ TEST_CASE("lin_interp_api", "lin_interp")
   view_1dc x1c(x1), x2c(x2), y1c(y1);
 
   Kokkos::parallel_for("lin-interp-ut-vect",
-                       vect.m_policy,
+                       vect.policy(),
                        KOKKOS_LAMBDA(typename LIV::MemberType const& team_member)
   {
     vect.setup(team_member, x1, x2);
@@ -233,7 +318,6 @@ TEST_CASE("lin_interp_api", "lin_interp")
     vect.lin_interp(team_member, x1c, x2, y1c, y2);
     vect.lin_interp(team_member, x1c, x2c, y1c, y2);
   });
-
 }
 
 } // empty namespace
