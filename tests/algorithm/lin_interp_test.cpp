@@ -95,10 +95,10 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
     const int outer_dim = 2;
     const int inner_dim = ncol/outer_dim;
     typename LIV::KT::view_3d<Pack>
-      x1kv3("x1kv3", outer_dim, inner_dim, km1),
-      x2kv3("x2kv3", outer_dim, inner_dim, km2),
-      y1kv3("y1kv3", outer_dim, inner_dim, km1),
-      y2kv3("y2kv3", outer_dim, inner_dim, km2);
+      x1kv3("x1kv3", outer_dim, inner_dim, km1_pack),
+      x2kv3("x2kv3", outer_dim, inner_dim, km2_pack),
+      y1kv3("y1kv3", outer_dim, inner_dim, km1_pack),
+      y2kv3("y2kv3", outer_dim, inner_dim, km2_pack);
 
     // Initialize kokkos packed inputs
     {
@@ -193,7 +193,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
 
     // Run LiVect ThreadVectorRange, doing setup from main parallel for
     {
-      LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, km2_pack);
+      LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, vect1.km2_pack());
       Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
         const int i = team.league_rank();
@@ -206,7 +206,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
         }
         team.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
-          const auto& tvr = Kokkos::ThreadVectorRange(team, km2_pack);
+          const auto& tvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
           const int col = i*inner_dim + j;
           vect1.lin_interp(team, tvr,
                            ekat::subview(x1kv3, i, j),
@@ -236,12 +236,12 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
 
     // Run LiVect ThreadVectorRange, doing setup from inner TTR parallel for
     {
-      LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, km2_pack);
+      LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, vect1.km2_pack());
       Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
         const int i = team.league_rank();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
-          const auto& tvr = Kokkos::ThreadVectorRange(team, km2_pack);
+          const auto& tvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
           const int col = i*inner_dim + j;
           vect1.setup(team, tvr,
                       ekat::subview(x1kv3, i, j),
