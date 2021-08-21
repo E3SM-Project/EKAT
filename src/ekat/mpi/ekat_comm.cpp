@@ -37,6 +37,16 @@ void Comm::barrier () const
   MPI_Barrier(m_mpi_comm);
 }
 
+Comm Comm::split (const int color) const
+{
+  check_mpi_inited ();
+
+  MPI_Comm new_comm;
+  MPI_Comm_split(m_mpi_comm,color,m_rank,&new_comm);
+
+  return Comm(new_comm);
+}
+
 void Comm::check_mpi_inited () const
 {
   int flag;

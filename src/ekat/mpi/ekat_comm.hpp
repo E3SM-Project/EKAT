@@ -50,7 +50,12 @@ public:
   template<typename T>
   void broadcast (T* vals, const int count, const int root) const;
 
+  template<typename T>
+  void all_gather (const T* my_vals, T* all_vals, const int count) const;
+
   void barrier () const;
+
+  Comm split (const int color) const;
 private:
 
   template<typename T>
@@ -97,6 +102,17 @@ void Comm::broadcast (T* vals, const int count, const int root) const
   check_mpi_inited();
   MPI_Bcast(vals,count,get_mpi_type<T>(),root,m_mpi_comm);
 }
+
+template<typename T>
+void Comm::all_gather (const T* my_vals, T* all_vals, const int count) const
+{
+  check_mpi_inited();
+  auto mpi_type = get_mpi_type<T>();
+  MPI_Allgather(my_vals, count,mpi_type,
+                all_vals,count,mpi_type,
+                m_mpi_comm);
+}
+
 
 } // namespace ekat
 
