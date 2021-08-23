@@ -70,8 +70,11 @@ struct LinInterp
   LinInterp(int ncol, int km1, int km2, Scalar minthresh);
 
   // Simple getters
+  KOKKOS_INLINE_FUNCTION
   int km1_pack() const { return m_km1_pack; }
+  KOKKOS_INLINE_FUNCTION
   int km2_pack() const { return m_km2_pack; }
+
   const TeamPolicy& policy() const { return m_policy; }
 
   // Setup the index map. This must be called before lin_interp. By default, will launch a
