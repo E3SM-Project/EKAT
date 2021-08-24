@@ -31,22 +31,20 @@ void Comm::reset_mpi_comm (MPI_Comm new_mpi_comm)
 #endif
 }
 
-template<>
-void Comm::scan_sum<int>(const int* my_vals, int* my_sums, const int count) const {
+void Comm::barrier () const
+{
   check_mpi_inited();
-  MPI_Scan(my_vals,my_sums,count,MPI_INT,MPI_SUM,m_mpi_comm);
+  MPI_Barrier(m_mpi_comm);
 }
 
-template<>
-void Comm::scan_sum<float>(const float* my_vals, float* my_sums, const int count) const {
-  check_mpi_inited();
-  MPI_Scan(my_vals,my_sums,count,MPI_FLOAT,MPI_SUM,m_mpi_comm);
-}
+Comm Comm::split (const int color) const
+{
+  check_mpi_inited ();
 
-template<>
-void Comm::scan_sum<double>(const double* my_vals, double* my_sums, const int count) const {
-  check_mpi_inited();
-  MPI_Scan(my_vals,my_sums,count,MPI_DOUBLE,MPI_SUM,m_mpi_comm);
+  MPI_Comm new_comm;
+  MPI_Comm_split(m_mpi_comm,color,m_rank,&new_comm);
+
+  return Comm(new_comm);
 }
 
 void Comm::check_mpi_inited () const

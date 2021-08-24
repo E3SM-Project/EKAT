@@ -1,6 +1,8 @@
 #ifndef EKAT_COMM_HPP
 #define EKAT_COMM_HPP
 
+#include <type_traits>
+
 #include <mpi.h>
 
 namespace ekat
@@ -36,12 +38,39 @@ public:
   int  size () const { return m_size; }
   MPI_Comm mpi_comm () const { return m_mpi_comm; }
 
-  // Convenience function wrapping MPI_Scan.
-  // Note: the function is templated on T, but only int, float, double are implemented (eti-ed).
+  // Convenience functions wrapping MPI analogues.
+  // NOTE: the methods are templated on the values types, but so far the only
+  // supporterd types are: int, float, double
   template<typename T>
-  void scan_sum (const T* my_vals, T* my_sums, const int count) const;
+  void scan (const T* my_vals, T* result, const int count, const MPI_Op op) const;
 
+  template<typename T>
+  void all_reduce (const T* my_vals, T* result, const int count, const MPI_Op op) const;
+
+  template<typename T>
+  void broadcast (T* vals, const int count, const int root) const;
+
+  template<typename T>
+  void all_gather (const T* my_vals, T* all_vals, const int count) const;
+
+  void barrier () const;
+
+  Comm split (const int color) const;
 private:
+
+  template<typename T>
+  static MPI_Datatype get_mpi_type () {
+    // Sanity check
+    static_assert (
+        std::is_same<T,int>::value ||
+        std::is_same<T,float>::value ||
+        std::is_same<T,double>::value,
+        "Error! Type not supported for MPI operations.\n");
+
+    return std::is_same<T,int>::value ? MPI_INT :
+          (std::is_same<T,float>::value ? MPI_FLOAT : MPI_DOUBLE);
+  }
+
   // Checks (with an assert) that MPI is already init-ed.
   void check_mpi_inited () const;
 
@@ -50,6 +79,40 @@ private:
   int       m_size;
   int       m_rank;
 };
+
+// ========================= IMPLEMENTATION =========================== //
+
+template<typename T>
+void Comm::scan (const T* my_vals, T* result, const int count, const MPI_Op op) const
+{
+  check_mpi_inited();
+  MPI_Scan(my_vals,result,count,get_mpi_type<T>(),op,m_mpi_comm);
+}
+
+template<typename T>
+void Comm::all_reduce (const T* my_vals, T* result, const int count, const MPI_Op op) const
+{
+  check_mpi_inited();
+  MPI_Allreduce(my_vals,result,count,get_mpi_type<T>(),op,m_mpi_comm);
+}
+
+template<typename T>
+void Comm::broadcast (T* vals, const int count, const int root) const
+{
+  check_mpi_inited();
+  MPI_Bcast(vals,count,get_mpi_type<T>(),root,m_mpi_comm);
+}
+
+template<typename T>
+void Comm::all_gather (const T* my_vals, T* all_vals, const int count) const
+{
+  check_mpi_inited();
+  auto mpi_type = get_mpi_type<T>();
+  MPI_Allgather(my_vals, count,mpi_type,
+                all_vals,count,mpi_type,
+                m_mpi_comm);
+}
+
 
 } // namespace ekat
 
