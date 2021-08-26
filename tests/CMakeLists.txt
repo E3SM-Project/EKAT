@@ -16,6 +16,9 @@ endif ()
 set (EKAT_TEST_MAX_RANKS 4 CACHE STRING "Max number of ranks for tests")
 set (EKAT_TEST_MAX_THREADS ${DEFAULT_MAX_THREADS} CACHE STRING "Max number of threads for tests")
 set (EKAT_TEST_THREAD_INC 1  CACHE STRING "Increment for threads for tests")
+set (EKAT_TEST_MPI_EXEC_NAME "mpiexec" CACHE STRING "Name of mpirun executable")
+set (EKAT_TEST_MPI_NP_FLAG "-n" CACHE STRING "Flag to specify number of MPI processes")
+set (EKAT_TEST_MPI_EXTRA_ARGS "--bind-to core" CACHE STRING "Flag to specify extra args for MPI")
 
 #######################
 ###    PRECISION    ###
