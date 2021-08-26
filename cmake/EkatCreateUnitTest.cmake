@@ -253,9 +253,12 @@ function(EkatCreateUnitTest target_name target_srcs)
         set(invokeExecCurr "${invokeExec}")
       endif()
 
-      # Create the test
+      # Create the test. But first: atomize the extra args so we can run
+      # outside of a shell process.
+      set(mpi_extra_args_sep ${ecut_MPI_EXTRA_ARGS})
+      separate_arguments(mpi_extra_args_sep)
       add_test(NAME ${FULL_TEST_NAME}
-               COMMAND ${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr})
+               COMMAND ${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${mpi_extra_args_sep} ${invokeExecCurr})
 
       # Set test properties
       math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
