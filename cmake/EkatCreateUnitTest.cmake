@@ -221,14 +221,13 @@ function(EkatCreateUnitTest target_name target_srcs)
     message (FATAL_ERROR "Error! THREAD_START < THREAD_END, but the increment is negative.")
   endif()
 
-  # Check both, in case user has negative increment
-  if (MPI_END_RANK GREATER 1 OR MPI_START_RANK GREATER 1)
-    if ("${ecut_MPI_EXEC_NAME}" STREQUAL "")
-      set (ecut_MPI_EXEC_NAME "mpiexec")
-    endif()
-    if ("${ecut_MPI_NP_FLAG}" STREQUAL "")
-      set (ecut_MPI_NP_FLAG "-n")
-    endif()
+  # Since we can't build without MPI, we must be prepared to supply the right
+  # MPI_EXEC.
+  if ("${ecut_MPI_EXEC_NAME}" STREQUAL "")
+    set (ecut_MPI_EXEC_NAME "mpiexec")
+  endif()
+  if ("${ecut_MPI_NP_FLAG}" STREQUAL "")
+    set (ecut_MPI_NP_FLAG "-n")
   endif()
 
   #------------------------------------------------#
@@ -246,31 +245,17 @@ function(EkatCreateUnitTest target_name target_srcs)
       # Create the test name
       set(FULL_TEST_NAME ${target_name}_ut_np${NRANKS}_omp${NTHREADS})
 
-      set(USE_MPI FALSE)
-      if (${NRANKS} GREATER 1)
-        set(USE_MPI TRUE)
-      endif()
-
       # Setup valgrind commmand modifications
       if (EKAT_ENABLE_VALGRIND)
-        if (USE_MPI)
-          set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/mpi.supp")
-        else()
-          set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/serial.supp")
-        endif()
+        set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/mpi.supp")
         set(invokeExecCurr "valgrind --error-exitcode=1 --suppressions=${VALGRIND_SUP_FILE} ${invokeExec}")
       else()
         set(invokeExecCurr "${invokeExec}")
       endif()
 
       # Create the test
-      if (USE_MPI)
-        add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
-      else()
-        add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${invokeExecCurr}")
-      endif()
+      add_test(NAME ${FULL_TEST_NAME}
+               COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
 
       # Set test properties
       math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
@@ -288,11 +273,9 @@ function(EkatCreateUnitTest target_name target_srcs)
       endif()
 
       set (RES_GROUPS "devices:1")
-      if (USE_MPI)
-        foreach (rank RANGE 2 ${NRANKS})
-          set (RES_GROUPS "${RES_GROUPS},devices:1")
-        endforeach()
-      endif()
+      foreach (rank RANGE 1 ${NRANKS})
+        set (RES_GROUPS "${RES_GROUPS},devices:1")
+      endforeach()
       set_property(TEST ${FULL_TEST_NAME} PROPERTY RESOURCE_GROUPS "${RES_GROUPS}")
     endforeach()
   endforeach()
@@ -304,7 +287,7 @@ function(EkatCreateUnitTest target_name target_srcs)
       foreach (NTHREADS RANGE ${THREAD_START} ${THREAD_END} ${THREAD_INCREMENT})
         # Create the test
         set(FULL_TEST_NAME ${target_name}_ut_np${NRANKS}_omp${NTHREADS})
-        list(APPEND tests_names ${FULL_TEST_NAME}) 
+        list(APPEND tests_names ${FULL_TEST_NAME})
       endforeach ()
     endforeach()
     set_tests_properties (${tests_names} PROPERTIES RESOURCE_LOCK ${target_name}_serial)
