@@ -255,7 +255,7 @@ function(EkatCreateUnitTest target_name target_srcs)
 
       # Create the test
       add_test(NAME ${FULL_TEST_NAME}
-               COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
+               COMMAND ${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr})
 
       # Set test properties
       math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
