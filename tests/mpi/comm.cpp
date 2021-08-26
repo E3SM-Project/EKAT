@@ -3,6 +3,57 @@
 
 namespace {
 
+template<typename T>
+void test_scan (const ekat::Comm& comm) {
+  const int rank = comm.rank();
+  T val = rank;
+  T sum;
+
+  comm.scan(&val,&sum,1,MPI_SUM);
+
+  const T sum_gauss = T(rank*(rank+1))/2;
+
+  REQUIRE(sum==sum_gauss);
+}
+
+template<typename T>
+void test_broadcast (const ekat::Comm& comm) {
+  const int rank = comm.rank();
+  const int size = comm.size();
+  T* vals = new T[size];
+  vals[rank] = -rank;
+
+  for (int i=0; i<size; ++i) {
+    comm.broadcast(&vals[i],1,i);
+
+    REQUIRE (vals[i]==T(-i));
+  }
+
+  delete[] vals;
+}
+
+template<typename T>
+void test_reduce (const ekat::Comm& comm, T val, const T tgt, const MPI_Op op) {
+  T reduced_val;
+  comm.all_reduce(&val,&reduced_val,1,op);
+  REQUIRE (reduced_val==tgt);
+}
+
+template<typename T>
+void test_gather (const ekat::Comm& comm) {
+  const T rank = comm.rank();
+  const int size = comm.size();
+  T* ranks = new T [size];
+
+  comm.all_gather(&rank, ranks, 1);
+
+  for (int i=0; i<size; ++i) {
+    REQUIRE (ranks [i]==T(i));
+  }
+  delete[] ranks;
+}
+
+
 TEST_CASE ("ekat_comm","") {
   using namespace ekat;
 
@@ -10,98 +61,45 @@ TEST_CASE ("ekat_comm","") {
   const int rank = comm.rank();
   const int size = comm.size();
 
+  REQUIRE (comm.root_rank()==0);
+  REQUIRE (comm.am_i_root() == (comm.root_rank()==comm.rank()));
+
   SECTION ("scan") {
-    int    val_i = rank;
-    float  val_f = rank;
-    double val_d = rank;
-
-    int    sum_i;
-    float  sum_f;
-    double sum_d;
-
-    comm.scan(&val_i,&sum_i,1,MPI_SUM);
-    comm.scan(&val_f,&sum_f,1,MPI_SUM);
-    comm.scan(&val_d,&sum_d,1,MPI_SUM);
-
-    const int    sum_gauss_i = rank*(rank+1)/2;
-    const float  sum_gauss_f = sum_gauss_i;
-    const double sum_gauss_d = sum_gauss_i;
-
-    REQUIRE(sum_i==sum_gauss_i);
-    REQUIRE(sum_f==sum_gauss_f);
-    REQUIRE(sum_d==sum_gauss_d);
+    test_scan<int>(comm);
+    test_scan<float>(comm);
+    test_scan<double>(comm);
   }
 
   SECTION ("broadcast") {
-    int*    ints    = new int   [size];
-    float*  floats  = new float [size];
-    double* doubles = new double[size];
-
-    ints   [rank] = -rank;
-    floats [rank] = -rank;
-    doubles[rank] = -rank;
-
-    for (int i=0; i<size; ++i) {
-      comm.broadcast(&ints   [i],1,i);
-      comm.broadcast(&floats [i],1,i);
-      comm.broadcast(&doubles[i],1,i);
-
-      REQUIRE (ints   [i]==-i);
-      REQUIRE (floats [i]==-i);
-      REQUIRE (doubles[i]==-i);
-    }
-
-    delete[] ints;
-    delete[] floats;
-    delete[] doubles;
+    test_broadcast<char>(comm);
+#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
+    test_broadcast<bool>(comm);
+#endif
+    test_broadcast<int>(comm);
+    test_broadcast<float>(comm);
+    test_broadcast<double>(comm);
   }
 
   SECTION ("reduce") {
-    int    val_i = rank;
-    float  val_f = rank;
-    double val_d = rank;
+    const int sum_gauss = (size-1)*size/2;
+    test_reduce<int>(comm,rank,sum_gauss,MPI_SUM);
+    test_reduce<float>(comm,rank,sum_gauss,MPI_SUM);
+    test_reduce<double>(comm,rank,sum_gauss,MPI_SUM);
 
-    int    sum_i;
-    float  sum_f;
-    double sum_d;
-
-    comm.all_reduce(&val_i,&sum_i,1,MPI_SUM);
-    comm.all_reduce(&val_f,&sum_f,1,MPI_SUM);
-    comm.all_reduce(&val_d,&sum_d,1,MPI_SUM);
-
-    const int n = size - 1;
-
-    const int    sum_gauss_i = n*(n+1)/2;
-    const float  sum_gauss_f = sum_gauss_i;
-    const double sum_gauss_d = sum_gauss_i;
-
-    REQUIRE (sum_i==sum_gauss_i);
-    REQUIRE (sum_f==sum_gauss_f);
-    REQUIRE (sum_d==sum_gauss_d);
+#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
+    test_reduce<bool>(comm,comm.am_i_root(),size==1,MPI_LAND);
+    test_reduce<bool>(comm,comm.am_i_root(),true,MPI_LOR);
+#endif
   }
 
   SECTION ("gather") {
-    int*    ranks_i = new int   [size];
-    float*  ranks_f = new float [size];
-    double* ranks_d = new double[size];
-
-    int    rank_i = rank;
-    float  rank_f = rank;
-    double rank_d = rank;
-
-    comm.all_gather(&rank_i, ranks_i, 1);
-    comm.all_gather(&rank_f, ranks_f, 1);
-    comm.all_gather(&rank_d, ranks_d, 1);
-
-    for (int i=0; i<size; ++i) {
-      REQUIRE (ranks_i [i]==i);
-      REQUIRE (ranks_f [i]==i);
-      REQUIRE (ranks_d [i]==i);
-    }
-
-    delete[] ranks_i;
-    delete[] ranks_f;
-    delete[] ranks_d;
+    test_gather<char>(comm);
+#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
+    test_gather<bool>(comm);
+#endif
+    test_gather<int>(comm);
+    test_gather<float>(comm);
+    test_gather<double>(comm);
   }
 
   SECTION ("split") {

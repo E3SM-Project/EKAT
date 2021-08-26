@@ -33,7 +33,11 @@ public:
   //   2) the call is collective on both the stored and input comm's
   void reset_mpi_comm (MPI_Comm new_mpi_comm);
 
-  bool am_i_root () const { return m_rank==0; }
+  // Expose root rank, to avoid having users "assuming" root=0,
+  // even though it's probably a safe assumption.
+  int root_rank () const { return 0; }
+  bool am_i_root () const { return m_rank==root_rank(); }
+
   int  rank () const { return m_rank; }
   int  size () const { return m_size; }
   MPI_Comm mpi_comm () const { return m_mpi_comm; }
@@ -62,13 +66,22 @@ private:
   static MPI_Datatype get_mpi_type () {
     // Sanity check
     static_assert (
+        std::is_same<T,char>::value ||
+#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
+        // MPI started supporting C++ bool type only "recently"
+        std::is_same<T,bool>::value ||
+#endif
         std::is_same<T,int>::value ||
         std::is_same<T,float>::value ||
         std::is_same<T,double>::value,
         "Error! Type not supported for MPI operations.\n");
 
-    return std::is_same<T,int>::value ? MPI_INT :
-          (std::is_same<T,float>::value ? MPI_FLOAT : MPI_DOUBLE);
+    return std::is_same<T,char>::value ? MPI_CHAR :
+#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
+          (std::is_same<T,bool>::value ? MPI_CXX_BOOL :
+#endif
+          (std::is_same<T,int>::value ? MPI_INT :
+          (std::is_same<T,float>::value ? MPI_FLOAT : MPI_DOUBLE)));
   }
 
   // Checks (with an assert) that MPI is already init-ed.
