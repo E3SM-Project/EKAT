@@ -236,6 +236,7 @@ function(EkatCreateUnitTest target_name target_srcs)
 
   if (ecut_EXE_ARGS)
     set(invokeExec "./${target_name} ${ecut_EXE_ARGS}")
+    separate_arguments(invokeExec)
   else()
     set(invokeExec "./${target_name}")
   endif()
