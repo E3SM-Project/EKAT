@@ -270,7 +270,8 @@ static void unittest_workspace()
           Kokkos::Array<Unmanaged<view_1d<int> >*, n_slots_per_team> ptrs = { {&ws1, &ws2, &ws3, &ws4} };
           Kokkos::Array<const char*, n_slots_per_team> names = { {"ws0", "ws1", "ws2", "ws3"} };
           if (r % 5 == 2) {
-            ws.take_many(names, ptrs);
+            // ws.take_many(names, ptrs);
+            ws.take_many_refs(names,ws1,ws2,ws3,ws4);
           }
           else if (r % 5 == 3) {
             ws.take_many_contiguous_unsafe(names, ptrs);
