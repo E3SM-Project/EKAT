@@ -223,7 +223,7 @@ function(EkatCreateUnitTest target_name target_srcs)
 
   # If MPI_EXEC_NAME wasn't given, make sure we don't need more than one proc.
   if (NOT ecut_MPI_EXEC_NAME)
-    if (MPI_START_RANK NOT EQUAL MPI_END_RANK)
+    if (NOT MPI_START_RANK EQUAL MPI_END_RANK)
       message (FATAL_ERROR "Error! MPI_START_RANK != MPI_END_RANK, but MPI_EXEC_NAME was not given.")
     endif()
   endif()
