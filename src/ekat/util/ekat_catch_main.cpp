@@ -2,9 +2,10 @@
 
 #include "catch2/catch.hpp"
 
+#include "ekat/mpi/ekat_comm.hpp"
+#include "ekat/util/ekat_test_utils.hpp"
 #include "ekat/ekat_session.hpp"
 #include "ekat/ekat_assert.hpp"
-#include "ekat/util/ekat_test_utils.hpp"
 
 #include <mpi.h>
 
@@ -53,9 +54,8 @@ int main (int argc, char **argv) {
     args.push_back(argv[i]);
   }
 
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  int dev_id = ekat::get_test_device(rank);
+  ekat::Comm comm(MPI_COMM_WORLD);
+  int dev_id = ekat::get_test_device(comm.rank());
   // Create it outside the if, so its c_str pointer survives
   std::string new_arg;
   if (dev_id>=0) {
@@ -68,6 +68,8 @@ int main (int argc, char **argv) {
   // Ekat provides a defalt one, but the user can choose
   // to not use it, and provide one instead.
   ekat_initialize_test_session(args.size(),args.data());
+
+  std::cout << "Starting catch session on rank " << comm.rank() << " out of " << comm.size() << "\n";
 
   // Run tests
   int num_failed = catch_session.run(argc, argv);
