@@ -221,13 +221,11 @@ function(EkatCreateUnitTest target_name target_srcs)
     message (FATAL_ERROR "Error! THREAD_START < THREAD_END, but the increment is negative.")
   endif()
 
-  # Since we can't build without MPI, we must be prepared to supply the right
-  # MPI_EXEC.
-  if ("${ecut_MPI_EXEC_NAME}" STREQUAL "")
-    set (ecut_MPI_EXEC_NAME "mpiexec")
-  endif()
-  if ("${ecut_MPI_NP_FLAG}" STREQUAL "")
-    set (ecut_MPI_NP_FLAG "-n")
+  # If MPI_EXEC_NAME wasn't given, make sure we don't need more than one proc.
+  if (NOT ecut_MPI_EXEC_NAME)
+    if (NOT MPI_START_RANK EQUAL MPI_END_RANK)
+      message (FATAL_ERROR "Error! MPI_START_RANK != MPI_END_RANK, but MPI_EXEC_NAME was not given.")
+    endif()
   endif()
 
   #------------------------------------------------#
@@ -258,8 +256,12 @@ function(EkatCreateUnitTest target_name target_srcs)
       # outside of a shell process.
       set(mpi_extra_args_sep ${ecut_MPI_EXTRA_ARGS})
       separate_arguments(mpi_extra_args_sep)
-      add_test(NAME ${FULL_TEST_NAME}
-               COMMAND ${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${mpi_extra_args_sep} ${invokeExecCurr})
+      if (ecut_MPI_EXEC_NAME)
+        add_test(NAME ${FULL_TEST_NAME}
+                 COMMAND ${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${mpi_extra_args_sep} ${invokeExecCurr})
+      else()
+        add_test(NAME ${FULL_TEST_NAME} COMMAND ${invokeExecCurr})
+      endif()
 
       # Set test properties
       math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
