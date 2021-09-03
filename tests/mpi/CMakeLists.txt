@@ -1,6 +1,8 @@
 include(EkatCreateUnitTest)
 
 # Comm tests
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/comm.vvt
+               ${CMAKE_CURRENT_BINARY_DIR}/comm.vvt)
 EkatCreateUnitTest(comm comm.cpp
   LIBS ekat
   MPI_EXEC_NAME ${EKAT_TEST_MPI_EXEC_NAME}

@@ -1,0 +1,29 @@
+# VVT setting to test the comm executable
+#VVT: parameterize (autotype) : np = 8
+
+import vvtest_util as vvt
+import subprocess
+
+print ( 'Starting test {0} np={1}'.format( vvt.NAME, vvt.np ) )
+
+proc = subprocess.Popen("${EKAT_TEST_MPI_EXEC_NAME} ${EKAT_TEST_MPI_EXTRA_ARGS} ${EKAT_TEST_MPI_NP_FLAG} {} ${CMAKE_CURRENT_BINARY_DIR}/comm".format(vvt.np),
+                        shell=True)
+
+output, errput = proc.communicate()
+if output is not None:
+    try:
+        output = output.decode('utf-8', errors='ignore')
+        output = output.strip()
+    except AttributeError:
+        pass
+if errput is not None:
+    try:
+        errput = errput.decode('utf-8', errors='ignore')
+        errput = errput.strip()
+    except AttributeError:
+        pass
+
+stat = proc.wait()
+
+print ("output: {}".format(output))
+print ("errput: {}".format(errput))
