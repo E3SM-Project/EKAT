@@ -68,7 +68,11 @@ int main (int argc, char **argv) {
   // to not use it, and provide one instead.
   ekat_initialize_test_session(args.size(),args.data(),(comm.rank()==0));
 
+#ifndef NDEBUG
+  MPI_Barrier(comm.mpi_comm());
   std::cout << "Starting catch session on rank " << comm.rank() << " out of " << comm.size() << "\n";
+  MPI_Barrier(comm.mpi_comm());
+#endif
 
   // Run tests
   int num_failed = catch_session.run(argc, argv);
