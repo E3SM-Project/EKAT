@@ -66,7 +66,7 @@ int main (int argc, char **argv) {
   // Initialize test session (initializes kokkos and print config settings).
   // Ekat provides a default impl, but the user can choose
   // to not use it, and provide one instead.
-  ekat_initialize_test_session(args.size(),args.data(),(comm.rank()==0));
+  ekat_initialize_test_session(args.size(),args.data(),comm.am_i_root());
 
 #ifndef NDEBUG
   MPI_Barrier(comm.mpi_comm());
