@@ -9,7 +9,7 @@
 
 #include <mpi.h>
 
-void ekat_initialize_test_session (int argc, char** argv);
+void ekat_initialize_test_session (int argc, char** argv, const bool print_config);
 void ekat_finalize_test_session ();
 
 int main (int argc, char **argv) {
@@ -64,10 +64,9 @@ int main (int argc, char **argv) {
   }
 
   // Initialize test session (initializes kokkos and print config settings).
-  // Ekat provides a defalt impl, but the user can choose
-  // Ekat provides a defalt one, but the user can choose
+  // Ekat provides a default impl, but the user can choose
   // to not use it, and provide one instead.
-  ekat_initialize_test_session(args.size(),args.data());
+  ekat_initialize_test_session(args.size(),args.data(),(comm.rank()==0));
 
   std::cout << "Starting catch session on rank " << comm.rank() << " out of " << comm.size() << "\n";
 
