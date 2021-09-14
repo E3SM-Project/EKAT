@@ -278,7 +278,6 @@ function(EkatCreateUnitTest target_name target_srcs)
         set_tests_properties(${FULL_TEST_NAME} PROPERTIES ${ecut_PROPERTIES})
       endif()
 
-      set (RES_GROUPS "devices:1")
       foreach (rank RANGE 1 ${NRANKS})
         set (RES_GROUPS "${RES_GROUPS},devices:1")
       endforeach()
