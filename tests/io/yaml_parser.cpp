@@ -21,6 +21,7 @@ TEST_CASE ("yaml_parser","") {
   auto& options   = params.sublist("Options");
 
   REQUIRE (constants.isParameter("Two Logicals"));
+  REQUIRE (constants.isParameter("Three Doubles"));
   REQUIRE (constants.isParameter("One String"));
   REQUIRE (options.isParameter("My Int"));
   REQUIRE (options.isParameter("My Bool"));
@@ -31,6 +32,9 @@ TEST_CASE ("yaml_parser","") {
   REQUIRE (logicals.size()==2);
   REQUIRE (logicals[0] == 1);
   REQUIRE (logicals[1] == 0);
+
+  std::vector<double> doubles;
+  REQUIRE_NOTHROW(doubles = constants.get<std::vector<double>>("Three Doubles"));
 
   std::string str = "multiple words string";
   REQUIRE (constants.get<std::string>("One String") == str);

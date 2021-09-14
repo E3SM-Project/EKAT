@@ -1,6 +1,7 @@
 #include "ekat/ekat_parse_yaml_file.hpp"
 #include "ekat/ekat_assert.hpp"
 
+#include <stdexcept>
 #include <yaml-cpp/yaml.h>
 
 #include <iostream>
@@ -13,74 +14,34 @@ void parse_node (const YAML::Node& node,
                  ParameterList& list);
 
 // Helpers
-bool is_bool (const std::string& key) {
-  return key=="true" || key=="false" ||
-         key=="TRUE" || key=="FALSE";
+bool is_bool (const std::string& s) {
+  return s=="true" || s=="false" ||
+         s=="TRUE" || s=="FALSE";
 }
 
-bool str2bool (const std::string& key) {
-  return (key=="true" || key=="TRUE");
+bool str2bool (const std::string& s) {
+  return (s=="true" || s=="TRUE");
 }
 
-bool is_int (const std::string& key) {
-  const auto& f = std::use_facet<std::ctype<char>>(std::locale());
-  constexpr auto digit = std::ctype_base::digit;
-  bool first_char = true;
-  for (auto ch : key) {
-    if (ch=='+' || ch=='-') {
-      // A sign is only allowed at the beginning
-      if (!first_char) {
-        return false;
-      }
-    } else if (!f.is(digit,ch)) {
-      return false;
-    }
-    first_char = false;
+bool is_int (const std::string& s) {
+  try {
+    std::size_t n;
+    std::stoi(s,&n);
+    return n==s.size();
+  } catch (...) {
+    return false;
   }
-  return true;
 }
 
-bool is_double (const std::string& key) {
-  const auto& f = std::use_facet<std::ctype<char>>(std::locale());
-  constexpr auto digit = std::ctype_base::digit;
-  bool point_found = false;
-  bool exp_found = false;
-  bool exp_symbol_found = false;
-  bool exp_symbol_just_found = false;
-  bool first_char = true;
-  for (auto ch : key) {
-    if (ch=='+' || ch=='-') {
-      // Ok to add +/- in front of a number
-      // Ok to add +/- after 'e'/'E', for the exponent
-      // Any other case is wrong
-      if (!first_char || !exp_symbol_just_found) {
-        return false;
-      }
-      exp_symbol_just_found = false;
-    } else if (ch=='.') {
-      if(point_found || exp_symbol_found) {
-        // Only one decimal point allowed, and it cannot be in the exponent
-        return false;
-      }
-      // Mark that we found the decimal point
-      point_found = true;
-      exp_symbol_just_found = false;
-    } else if (ch=='e' || ch=='E') {
-      // Mark that we found the exp letter (e or E)
-      exp_symbol_found = true;
-      exp_symbol_just_found = true;
-    } else if (f.is(digit,ch)) {
-      // If e/E was found, we found the exponent
-      exp_found = exp_symbol_found;
-      exp_symbol_just_found = false;
-    } else {
-      return false;
-    }
-    first_char = false;
+bool is_double (const std::string& s) {
+  try {
+    std::size_t n;
+    std::stod(s,&n);
+    return n==s.size();
+    return true;
+  } catch (...) {
+    return false;
   }
-
-  // If we found 'e' or 'E', we need to have found an exponent
-  return exp_found==exp_symbol_found;
 }
 
 // ---------- IMPLEMENTATION -------------- // 
