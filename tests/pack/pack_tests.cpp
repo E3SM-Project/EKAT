@@ -22,12 +22,10 @@ struct TestMask {
   using Pack = ekat::Pack<int, PACKN>;
 
   static int sum_true (const Mask& m) {
-    int sum1 = 0, sum2 = 0, sum3 = 0;
+    int sum1 = 0, sum2 = 0;
     ekat_masked_loop(m, s) ++sum1;
-    ekat_masked_loop_no_force_vec(m, s) ++sum2;
-    ekat_masked_loop_no_vec(m, s) ++sum3;
+    ekat_masked_loop_no_vec(m, s) ++sum2;
     REQUIRE(sum1 == sum2);
-    REQUIRE(sum2 == sum3);
     return sum1;
   }
 

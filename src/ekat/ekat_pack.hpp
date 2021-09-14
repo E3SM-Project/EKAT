@@ -91,9 +91,6 @@ operator << (std::ostream& os, const Mask<n>& m) {
 #define ekat_masked_loop(mask, s)                         \
   vector_simd for (int s = 0; s < mask.n; ++s) if (mask[s])
 
-#define ekat_masked_loop_no_force_vec(mask, s)              \
-  vector_ivdep for (int s = 0; s < mask.n; ++s) if (mask[s])
-
 #define ekat_masked_loop_no_vec(mask, s)                    \
   vector_novec for (int s = 0; s < mask.n; ++s) if (mask[s])
 

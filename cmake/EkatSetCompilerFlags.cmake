@@ -50,6 +50,7 @@ macro (SetCompilerFlags)
     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wall")
   endif()
 
+  # Language-specific flags to be used regardless of build type.
   if (DEFINED BASE_FFLAGS)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${BASE_FFLAGS}")
   else ()
@@ -73,7 +74,7 @@ macro (SetCompilerFlags)
 
   # C++ Flags
 
-  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict")
   endif()
 
@@ -87,13 +88,15 @@ macro (SetCompilerFlags)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
   endif ()
 
+  set (EKAT_COVERAGE_FLAGS "--coverage")
+
   if (EKAT_ENABLE_COVERAGE)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EKAT_COVERAGE_FLAGS}")
   endif()
 
   # Handle Cuda.
   find_package(CUDA QUIET)
-  if (${CUDA_FOUND})
+  if (CUDA_FOUND)
     # We found cuda, but we may be only interested in running on host.
     # Check if the compiler is not nvcc; if not, do not add cuda support
     execute_process(COMMAND ${CMAKE_CXX_COMPILER} "--nvcc-wrapper-show"
@@ -129,10 +132,9 @@ macro (SetCompilerFlags)
 
   ##############################################################################
   # Optimization flags
-  # 1) OPT_FLAGS if specified sets the Fortran,C, and CXX optimization flags
-  # 2) OPT_FFLAGS if specified sets the Fortran optimization flags
-  # 3) OPT_CFLAGS if specified sets the C optimization flags
-  # 4) OPT_CXXFLAGS if specified sets the CXX optimization flags
+  # If OPT_FLAGS is set (to non-empty string), append it to Fortran/C/CXX release flags.
+  # Otherwise, for LANG=F,C,CXX, if DEBUG_<LANG>FLAGS is set (to non-empty string),
+  # append it to <LANG> debug flags, otherwise set some defaults.
   ##############################################################################
   if (OPT_FLAGS)
     # Flags for Fortran C and CXX
@@ -147,85 +149,69 @@ macro (SetCompilerFlags)
       set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} ${OPT_FFLAGS}")
     else ()
       # Defaults
-      if (CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
-        set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3")
-      elseif (CMAKE_Fortran_COMPILER_ID STREQUAL Intel)
-        set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3")
-      endif ()
+      set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3")
     endif ()
 
     if (OPT_CFLAGS)
       set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OPT_CFLAGS}")
     else ()
-      if (CMAKE_C_COMPILER_ID STREQUAL GNU)
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-      elseif (CMAKE_C_COMPILER_ID STREQUAL Intel)
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-      endif ()
+      set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
     endif ()
 
     if (OPT_CXXFLAGS)
       set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPT_CXXFLAGS}")
     else ()
       if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp-simd")
       elseif (CMAKE_CXX_COMPILER_ID STREQUAL Intel)
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -qopenmp-simd")
       endif ()
     endif ()
   endif ()
 
   ##############################################################################
   # DEBUG flags
-  # 1) DEBUG_FLAGS if specified sets the Fortran,C, and CXX debug flags
-  # 2) DEBUG_FFLAGS if specified sets the Fortran debugflags
-  # 3) DEBUG_CFLAGS if specified sets the C debug flags
-  # 4) DEBUG_CXXFLAGS if specified sets the CXX debug flags
+  # If DEBUG_FLAGS is set (to non-empty string), append it to Fortran/C/CXX debug flags.
+  # Otherwise, for LANG=F,C,CXX, if DEBUG_<LANG>FLAGS is set (to non-empty string),
+  # append it to <LANG> debug flags, otherwise set some defaults.
   ##############################################################################
   if (DEBUG_FLAGS)
     set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${DEBUG_FLAGS}")
     set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${DEBUG_FLAGS}")
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEBUG_FLAGS}")
   else ()
-    set (EKAT_COVERAGE_FLAGS "--coverage")
-
     if (DEBUG_FFLAGS)
       set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${DEBUG_FFLAGS}")
     else ()
-      if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel")
-        set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -no-vec")
-      endif()
-      set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -g -O0")
-      if (EKAT_ENABLE_COVERAGE)
-        set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${EKAT_COVERAGE_FLAGS}")
-      endif()
+      set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -O0")
     endif ()
 
     if (DEBUG_CFLAGS)
       set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${DEBUG_CFLAGS}")
     else ()
-      set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0")
-      if (EKAT_ENABLE_COVERAGE)
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${EKAT_COVERAGE_FLAGS}")
-      endif()
+      set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
     endif ()
 
     if (DEBUG_CXXFLAGS)
       set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEBUG_CXXFLAGS}")
     else ()
-      if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -no-vec")
-      endif()
-      set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
-      if (EKAT_ENABLE_COVERAGE)
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${EKAT_COVERAGE_FLAGS}")
+      if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -qopenmp-simd -O0")
+      elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp-simd -O0")
       endif()
     endif ()
 
   endif ()
 
+  if (EKAT_ENABLE_COVERAGE)
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${EKAT_COVERAGE_FLAGS}")
+    set(CMAKE_C_FLAGS_DEBUG       "${CMAKE_C_FLAGS_DEBUG} ${EKAT_COVERAGE_FLAGS}")
+    set(CMAKE_CXX_FLAGS_DEBUG     "${CMAKE_CXX_FLAGS_DEBUG} ${EKAT_COVERAGE_FLAGS}")
+  endif()
+
   option(DEBUG_TRACE "Enables TRACE level debugging checks. Very slow" FALSE)
-  if (${DEBUG_TRACE})
+  if (DEBUG_TRACE)
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG_TRACE")
   endif ()
 
@@ -254,28 +240,4 @@ macro (SetCompilerFlags)
       message(FATAL_ERROR "Unable to find OpenMP")
     endif()
   endif()
-
-  ##############################################################################
-  # Allow the option to add compiler flags to those provided
-  ##############################################################################
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ADD_Fortran_FLAGS}")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ADD_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ADD_CXX_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${ADD_LINKER_FLAGS}")
-
-  ##############################################################################
-  # Allow the option to override compiler flags
-  ##############################################################################
-  if (FORCE_Fortran_FLAGS)
-    set(CMAKE_Fortran_FLAGS ${FORCE_Fortran_FLAGS})
-  endif ()
-  if (FORCE_C_FLAGS)
-    set(CMAKE_C_FLAGS ${FORCE_C_FLAGS})
-  endif ()
-  if (FORCE_CXX_FLAGS)
-    set(CMAKE_CXX_FLAGS ${FORCE_CXX_FLAGS})
-  endif ()
-  if (FORCE_LINKER_FLAGS)
-    set(CMAKE_EXE_LINKER_FLAGS ${FORCE_LINKER_FLAGS})
-  endif ()
 endmacro()
