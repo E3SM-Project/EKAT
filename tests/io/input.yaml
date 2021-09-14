@@ -2,7 +2,7 @@
 ---
 Constants:
   One Double: 9.8
-  Two Doubles: [1.024e3, .1]
+  Three Doubles: [1.024e3, .1 , -1.0E-2]
   Two Logicals: [TRUE, false]
   One String: multiple words string
   Nested Sublist:
@@ -11,5 +11,5 @@ Options:
   My Bool: FALSE
   My Int: -2
   My String: string
-  My Real: 1.0
+  My Real: -1.0
 ...
