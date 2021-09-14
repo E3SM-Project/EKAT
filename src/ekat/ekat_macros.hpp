@@ -7,11 +7,9 @@
 #elif defined(__GNUG__) && !defined(__clang__)
 # define vector_simd _Pragma("omp simd")
 # define vector_novec
-# define restrict __restrict__
 #else
 # define vector_simd
 # define vector_novec
-# define restrict
 #endif
 
 // Annotate a loop with this symbol if vector_simd should work but
