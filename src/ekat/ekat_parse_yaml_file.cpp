@@ -24,24 +24,17 @@ bool str2bool (const std::string& s) {
 }
 
 bool is_int (const std::string& s) {
-  try {
-    std::size_t n;
-    std::stoi(s,&n);
-    return n==s.size();
-  } catch (...) {
-    return false;
-  }
+  std::istringstream is(s);
+  int d;
+  is >> d;
+  return !is.fail() && is.eof();
 }
 
 bool is_double (const std::string& s) {
-  try {
-    std::size_t n;
-    std::stod(s,&n);
-    return n==s.size();
-    return true;
-  } catch (...) {
-    return false;
-  }
+  std::istringstream is(s);
+  double d;
+  is >> d;
+  return !is.fail() && is.eof();
 }
 
 // ---------- IMPLEMENTATION -------------- // 
