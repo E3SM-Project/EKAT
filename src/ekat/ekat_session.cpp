@@ -53,7 +53,7 @@ void initialize_ekat_session (bool print_config) {
   enable_default_fpes ();
 
   if (!Kokkos::is_initialized()) {
-    printf("Calling initialize_kokkos\n");
+    if (print_config) printf("Calling initialize_kokkos\n");
     ekat_impl::initialize_kokkos();
   }
 
