@@ -75,7 +75,7 @@ int main (int argc, char **argv) {
 #endif
 
   // Run tests
-  int num_failed = catch_session.run(argc, argv);
+  int num_failed = catch_session.run();
 
   // Finalizes test session (finalizes kokkos).
   // Ekat provides a defalt impl, but the user can choose
