@@ -43,6 +43,24 @@ function (DisableMpiCxxBindings)
   unset (DISTRO_NAME)
 endfunction()
 
+# Set MPI runtime env vars for comm world rank/size, depending on mpi distribution
+macro (SetMpiRuntimeEnvVars)
+  set (DISTRO_NAME)
+  GetMpiDistributionName (DISTRO_NAME)
+
+  if (DISTRO_NAME STREQUAL "openmpi")
+    set(EKAT_MPIRUN_COMM_WORLD_SIZE "OMPI_COMM_WORLD_SIZE")
+    set(EKAT_MPIRUN_COMM_WORLD_RANK "OMPI_COMM_WORLD_RANK")
+  elseif (DISTRO_NAME STREQUAL "mpich")
+    set(EKAT_MPIRUN_COMM_WORLD_SIZE "PMI_SIZE")
+    set(EKAT_MPIRUN_COMM_WORLD_RANK "PMI_RANK")
+  else ()
+    message (FATAL_ERROR "Unsupported MPI distribution.")
+  endif()
+
+  unset (DISTRO_NAME)
+endmacro()
+
 # Set the MPI cxx backend compiler var name
 macro (SetMpiCxxBackendCompilerVarName OUTPUT_VAR_NAME)
   set (DISTRO_NAME)

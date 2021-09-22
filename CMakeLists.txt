@@ -120,12 +120,15 @@ add_subdirectory(src/ekat)
 ###     EKAT TESTING     ###
 ############################
 
-# Copy/install test-launcher to build/install folder
+# Set some vars needed to configure test-launcher
+SetMpiRuntimeEnvVars()
 if (Kokkos_ENABLE_CUDA)
   set (TEST_LAUNCHER_ON_GPU True)
 else()
   set (TEST_LAUNCHER_ON_GPU False)
 endif()
+
+# Configure/install test-launcher to build/install folder
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/test-launcher
                ${CMAKE_BINARY_DIR}/bin/test-launcher)
 include(GNUInstallDirs)

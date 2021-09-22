@@ -112,8 +112,8 @@ def run_test(executable,exec_args):
 
     # Check if we're run with MPI
     if "OMPI_COMM_WORLD_SIZE" in env:
-        nranks = int(env["OMPI_COMM_WORLD_SIZE"])
-        myrank = int(env["OMPI_COMM_WORLD_RANK"])
+        nranks = int(env["${EKAT_MPIRUN_COMM_WORLD_SIZE}"])
+        myrank = int(env["${EKAT_MPIRUN_COMM_WORLD_RANK}"])
     else:
         nranks = 1
         myrank = 0
