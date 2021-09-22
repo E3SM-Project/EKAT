@@ -102,9 +102,9 @@ endif()
 include(EkatSetCompilerFlags)
 SetCompilerFlags()
 
-############################
-##     EKAT VALGRIND SUPPORT ###
-############################
+##################################
+##    EKAT VALGRIND SUPPORT    ###
+##################################
 
 if (EKAT_ENABLE_VALGRIND)
   add_subdirectory(valgrind_support)
@@ -119,6 +119,18 @@ add_subdirectory(src/ekat)
 ############################
 ###     EKAT TESTING     ###
 ############################
+
+# Copy/install test-launcher to build/install folder
+if (Kokkos_ENABLE_CUDA)
+  set (TEST_LAUNCHER_ON_GPU True)
+else()
+  set (TEST_LAUNCHER_ON_GPU False)
+endif()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/test-launcher
+               ${CMAKE_BINARY_DIR}/bin/test-launcher)
+include(GNUInstallDirs)
+install (PROGRAMS ${CMAKE_BINARY_DIR}/bin/test-launcher
+         DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # By default, we DO build ekat tests. This may change in the future
 option (EKAT_ENABLE_TESTS "Whether tests should be built." ON)
