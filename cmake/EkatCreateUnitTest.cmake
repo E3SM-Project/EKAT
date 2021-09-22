@@ -13,7 +13,8 @@ include(EkatUtils) # To check macro args
 #      Note: for each combination of valid mpi-rank and thread value, a new test will be created,
 #            with suffix '_npN_omp_M', with N numver of mpi ranks, and M number of omp threads.
 #    - MPI_EXEC_NAME: name of the mpi launcher (usually, mpiexe or mpirun, but may be another wrapper)
-#    - MPI_NP_FLAG: the flag used to specify the number of mpi ranks (usually, -np or -n)
+#    - MPI_NP_FLAG: the flag used to specify the number of mpi ranks (usually, -np or -n).
+#                   If --map-by is used, the macro will pass `--map-by ppr:NRANKS:pe=NTHREADS` to mpiexec
 #    - MPI_EXTRA_ARGS: additional args to be forwarded to the mpi launches (e.g., --map-by, --bind-to, ...)
 #    - COMPILE_DEFS: a list of additional defines for the compiler
 #    - COMPILER_FLAGS: a list of additional flags for the compiler
@@ -253,8 +254,13 @@ function(EkatCreateUnitTest target_name target_srcs)
 
       # Create the test.
       if (ecut_MPI_EXEC_NAME)
+        if (ecut_MPI_NP_FLAG STREQUAL "--map-by")
+          set (RANK_MAPPING "--map-by ppr:${NRANKS}:node:pe=${NTHREADS}")
+        else()
+          set (RANK_MAPPING "${ecut_MPI_NP_FLAG} ${NRANKS}")
+        endif()
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
+                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${RANK_MAPPING} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
       else()
         add_test(NAME ${FULL_TEST_NAME} COMMAND sh -c "${invokeExecCurr}")
       endif()
