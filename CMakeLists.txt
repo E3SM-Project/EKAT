@@ -17,6 +17,7 @@ list(APPEND CMAKE_MODULE_PATH
 # We should avoid cxx bindings in mpi; they are already deprecated,
 # and can cause headaches at link time, cause they require -lmpi_cxx
 # (for openpmi; -lmpicxx for mpich) flag.
+find_package(MPI REQUIRED)
 include(EkatMpiUtils)
 DisableMpiCxxBindings()
 
@@ -28,14 +29,18 @@ include(EkatBuildSpdlog)
 # If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
 if (Kokkos_ENABLE_CUDA)
   # Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
-  EkatSetKokkosSourceDir()
+  #EkatSetKokkosSourceDir()
 
-  include (EkatSetNvccWrapper)
-  EkatSetNvccWrapper()
+  #include (EkatSetNvccWrapper)
+  #EkatSetNvccWrapper()
+
+  set (CXX_LANGS CXX CUDA)
+else()
+  set (CXX_LANGS CXX)
 endif()
 
 # EKAT has mostly C++, but some Fortran too
-project (EKAT CXX Fortran)
+project (EKAT ${CXX_LANGS} Fortran)
 
 include(EkatUtils)
 IsDebugBuild(EKAT_IS_DEBUG_BUILD)
