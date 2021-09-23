@@ -13,7 +13,8 @@ include(EkatUtils) # To check macro args
 #      Note: for each combination of valid mpi-rank and thread value, a new test will be created,
 #            with suffix '_npN_omp_M', with N numver of mpi ranks, and M number of omp threads.
 #    - MPI_EXEC_NAME: name of the mpi launcher (usually, mpiexe or mpirun, but may be another wrapper)
-#    - MPI_NP_FLAG: the flag used to specify the number of mpi ranks (usually, -np or -n)
+#    - MPI_NP_FLAG: the flag used to specify the number of mpi ranks (usually, -np or -n).
+#                   If --map-by is used, the macro will pass `--map-by ppr:NRANKS:pe=NTHREADS` to mpiexec
 #    - MPI_EXTRA_ARGS: additional args to be forwarded to the mpi launches (e.g., --map-by, --bind-to, ...)
 #    - COMPILE_DEFS: a list of additional defines for the compiler
 #    - COMPILER_FLAGS: a list of additional flags for the compiler
@@ -232,10 +233,11 @@ function(EkatCreateUnitTest target_name target_srcs)
   # Loop over MPI/OpenMP configs, and create tests #
   #------------------------------------------------#
 
+  set (launcher ${CMAKE_BINARY_DIR}/bin/test-launcher)
   if (ecut_EXE_ARGS)
-    set(invokeExec "./${target_name} ${ecut_EXE_ARGS}")
+    set(invokeExec "${launcher} -e ./${target_name} ${ecut_EXE_ARGS}")
   else()
-    set(invokeExec "./${target_name}")
+    set(invokeExec "${launcher} -e ./${target_name}")
   endif()
 
   foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
@@ -253,8 +255,13 @@ function(EkatCreateUnitTest target_name target_srcs)
 
       # Create the test.
       if (ecut_MPI_EXEC_NAME)
+        if (ecut_MPI_NP_FLAG STREQUAL "--map-by")
+          set (RANK_MAPPING "--map-by ppr:${NRANKS}:node:pe=${NTHREADS}")
+        else()
+          set (RANK_MAPPING "${ecut_MPI_NP_FLAG} ${NRANKS}")
+        endif()
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${ecut_MPI_NP_FLAG} ${NRANKS} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
+                 COMMAND sh -c "${ecut_MPI_EXEC_NAME} ${RANK_MAPPING} ${ecut_MPI_EXTRA_ARGS} ${invokeExecCurr}")
       else()
         add_test(NAME ${FULL_TEST_NAME} COMMAND sh -c "${invokeExecCurr}")
       endif()
@@ -274,6 +281,7 @@ function(EkatCreateUnitTest target_name target_srcs)
         set_tests_properties(${FULL_TEST_NAME} PROPERTIES ${ecut_PROPERTIES})
       endif()
 
+      set(RES_GROUPS "")
       foreach (rank RANGE 1 ${CURR_CORES})
         list (APPEND RES_GROUPS "devices:1")
       endforeach()

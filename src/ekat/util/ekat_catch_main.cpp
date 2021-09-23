@@ -17,6 +17,13 @@ int main (int argc, char **argv) {
   // Initialize MPI
   MPI_Init(&argc,&argv);
 
+  auto is_int = [] (const std::string& s)->bool {
+    std::istringstream is(s);
+    int d;
+    is >> d;
+    return !is.fail() && is.eof();
+  };
+
   // Read possible ekat-specific arguments
   auto const readCommaSeparaterParams = [] (const std::string& cmd_line_arg) {
     if (cmd_line_arg=="") {
@@ -39,13 +46,20 @@ int main (int argc, char **argv) {
   };
   Catch::Session catch_session;
   auto cli = catch_session.cli();
+  auto& ts = ekat::TestSession::get();
+  auto& device = ts.params["kokkos-device-id"];
+  device = "-1";
   cli |= Catch::clara::Opt(readCommaSeparaterParams, "key1=val1[,key2=val2[,...]]")
              ["--ekat-test-params"]
              ("list of parameters to forward to the test");
+  cli |= Catch::clara::Opt(device, "device")["--ekat-kokkos-device"]
+             ("The device to be used (for GPU runs only");
   catch_session.cli(cli);
 
   EKAT_REQUIRE_MSG(catch_session.applyCommandLine(argc,argv)==0,
                      "Error! Something went wrong while parsing command line.\n");
+
+  EKAT_REQUIRE_MSG (is_int(device), "Error! Please, specify an integer value for the device id.\n");
 
   // If we are on a gpu build, we might have a test device id to use
   // so start by creating a copy of argv that we can extend
@@ -55,11 +69,11 @@ int main (int argc, char **argv) {
   }
 
   ekat::Comm comm(MPI_COMM_WORLD);
-  int dev_id = ekat::get_test_device(comm.rank());
+  //int dev_id = ekat::get_test_device(comm.rank());
   // Create it outside the if, so its c_str pointer survives
   std::string new_arg;
-  if (dev_id>=0) {
-    new_arg = "--kokkos-device-id=" + std::to_string(dev_id);
+  if (std::stoi(device) != -1) {
+    new_arg = "--kokkos-device-id=" + device;
     args.push_back(const_cast<char*>(new_arg.c_str()));
   }
 
