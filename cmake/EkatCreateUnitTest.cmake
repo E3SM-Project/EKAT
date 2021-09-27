@@ -245,10 +245,12 @@ function(EkatCreateUnitTest target_name target_srcs)
       # Create the test name
       set(FULL_TEST_NAME ${target_name}_ut_np${NRANKS}_omp${NTHREADS})
 
-      # Setup valgrind commmand modifications
+      # Setup valgrind/memcheck commmand modifications
       if (EKAT_ENABLE_VALGRIND)
         set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/mpi.supp")
         set(invokeExecCurr "valgrind --error-exitcode=1 --suppressions=${VALGRIND_SUP_FILE} ${invokeExec}")
+      elseif(EKAT_ENABLE_CUDA_MEMCHECK)
+        set(invokeExecCurr "cuda-memcheck --error-exitcode 1 ${invokeExec}")
       else()
         set(invokeExecCurr "${invokeExec}")
       endif()
