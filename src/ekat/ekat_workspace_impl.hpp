@@ -138,15 +138,22 @@ void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Wor
 template <typename T, typename D>
 void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int max_used)
 {
+  auto policy = ExeSpaceUtils<ExeSpace>::get_default_team_policy(max_ws_idx, max_used);
+
   Kokkos::parallel_for(
     "WorkspaceManager ctor",
-    ExeSpaceUtils<ExeSpace>::get_default_team_policy(max_ws_idx, max_used),
-    KOKKOS_LAMBDA(const MemberType& team) {
-      Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, max_used), [&] (int i) {
-          init_slot_metadata(team.league_rank(), i);
-        });
-    });
+    policy,
+    *this);
+}
+
+template <typename T, typename D>
+KOKKOS_INLINE_FUNCTION
+void WorkspaceManager<T, D>::operator() (const MemberType& team) const
+{
+  Kokkos::parallel_for(
+    Kokkos::TeamThreadRange(team, m_max_used), [&] (int i) {
+      init_slot_metadata(team.league_rank(), i);
+  });
 }
 
 template <typename T, typename D>

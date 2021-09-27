@@ -314,6 +314,11 @@ class WorkspaceManager
 #endif
   view_1d<int> m_next_slot;
   view_2d<T> m_data;
+
+// operator() needs to be public
+public:
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const MemberType& team) const;
 }; // class WorkspaceManager
 
 template <typename T, typename D>
