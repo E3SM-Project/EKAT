@@ -148,6 +148,10 @@ if (EKAT_ENABLE_CUDA_MEMCHECK AND NOT Kokkos_ENABLE_CUDA)
   message(FATAL_ERROR "Makes no sense to turn on cuda-memcheck without CUDA")
 endif()
 
+if (EKAT_ENABLE_CUDA_MEMCHECK AND EKAT_ENABLE_VALGRIND)
+  message(FATAL_ERROR "Cannot simultanously enable valgrind and cuda-memcheck")
+endif()
+
 ###########################################
 ###   Package ekat as a CMake package   ###
 ###########################################
