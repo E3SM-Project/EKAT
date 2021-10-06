@@ -233,11 +233,11 @@ function(EkatCreateUnitTest target_name target_srcs)
   # Loop over MPI/OpenMP configs, and create tests #
   #------------------------------------------------#
 
-  set (launcher ${CMAKE_BINARY_DIR}/bin/test-launcher)
+  set (launcher "${CMAKE_BINARY_DIR}/bin/test-launcher -e")
   if (ecut_EXE_ARGS)
-    set(invokeExec "${launcher} -e ./${target_name} ${ecut_EXE_ARGS}")
+    set(invokeExec "./${target_name} ${ecut_EXE_ARGS}")
   else()
-    set(invokeExec "${launcher} -e ./${target_name}")
+    set(invokeExec "./${target_name}")
   endif()
 
   foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
@@ -254,6 +254,9 @@ function(EkatCreateUnitTest target_name target_srcs)
       else()
         set(invokeExecCurr "${invokeExec}")
       endif()
+
+      # Prepend launcher to serial command
+      set(invokeExecCurr "${launcher} ${invokeExecCurr}")
 
       # Create the test.
       if (ecut_MPI_EXEC_NAME)
