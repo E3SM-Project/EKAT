@@ -1,6 +1,7 @@
 #ifndef EKAT_MAP_KEY_ITERATOR_HPP
 #define EKAT_MAP_KEY_ITERATOR_HPP
 
+#include <iterator>
 #include <map>
 
 namespace ekat {
@@ -19,34 +20,74 @@ namespace ekat {
  */
 
 template<typename MapType>
-class map_key_iterator;
+struct map_key_iterator;
 template<typename MapType>
-class map_key_const_iterator;
+struct map_key_const_iterator;
 
 template<typename Key, typename Value>
-class map_key_iterator<std::map<Key,Value>> final : public std::map<Key, Value>::iterator
+struct map_key_iterator<std::map<Key,Value>> final
 {
 public:
+  using iterator          = map_key_iterator<std::map<Key,Value>>;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using difference_type   = std::ptrdiff_t;
+  using value_type        = Key;
+  using pointer           = value_type*;
+  using reference         = value_type&;
+
   using map_iterator = typename std::map<Key,Value>::iterator;
 
-  map_key_iterator ( ) : map_iterator ( ) { };
-  map_key_iterator ( map_iterator it_ ) : map_iterator ( it_ ) { };
+  map_key_iterator ( map_iterator it )
+    : m_iter (it)
+  {
+    // nothing to do here
+  }
 
-  Key *operator -> ( ) { return ( Key * ) &( map_iterator::operator -> ( )->first ); }
-  Key operator * ( ) { return map_iterator::operator * ( ).first; }
+  pointer    operator -> ( ) { return & (m_iter->first); }
+  reference  operator *  ( ) { return    m_iter->first;  }
+
+  iterator& operator++()   { m_iter++; return *this;}
+  iterator operator++(int) { auto retval = *this; m_iter++; return retval; }
+  iterator& operator--()   { m_iter--; return *this;}
+  iterator operator--(int) { auto retval = *this; m_iter--; return retval; }
+
+  bool operator==(iterator other) const {return m_iter == other.m_iter;}
+  bool operator!=(iterator other) const {return m_iter != other.m_iter;}
+private:
+  map_iterator m_iter;
 };
 
 template<typename Key, typename Value>
-class map_key_const_iterator<std::map<Key,Value>> final : public std::map<Key, Value>::const_iterator
+struct map_key_const_iterator<std::map<Key,Value>> final
 {
 public:
-  using map_const_iterator = typename std::map<Key,Value>::const_iterator;
+  using iterator          = map_key_const_iterator<std::map<Key,Value>>;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using difference_type   = std::ptrdiff_t;
+  using value_type        = Key;
+  using pointer           = value_type*;
+  using reference         = value_type&;
 
-  map_key_const_iterator ( ) : map_const_iterator ( ) { };
-  map_key_const_iterator ( map_const_iterator it_ ) : map_const_iterator ( it_ ) { };
+  using map_iterator = typename std::map<Key,Value>::const_iterator;
 
-  const Key *operator -> ( ) { return ( const Key * ) &( map_const_iterator::operator -> ( )->first ); }
-  Key operator * ( ) { return map_const_iterator::operator * ( ).first; }
+  map_key_const_iterator ( map_iterator it )
+    : m_iter (it)
+  {
+    // nothing to do here
+  }
+
+  pointer    operator -> ( ) { return & (m_iter->first); }
+  reference  operator *  ( ) { return    m_iter->first;  }
+
+  iterator& operator++()   { m_iter++; return *this;}
+  iterator operator++(int) { auto retval = *this; m_iter++; return retval; }
+  iterator& operator--()   { m_iter--; return *this;}
+  iterator operator--(int) { auto retval = *this; m_iter--; return retval; }
+
+  bool operator==(iterator other) const {return m_iter == other.m_iter;}
+  bool operator!=(iterator other) const {return m_iter != other.m_iter;}
+private:
+  map_iterator m_iter;
 };
 
 } // namespace ekat
