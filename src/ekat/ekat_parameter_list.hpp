@@ -2,6 +2,7 @@
 #define EKAT_PARAMETER_LIST_HPP
 
 #include "ekat/std_meta/ekat_std_any.hpp"
+#include "ekat/std_meta/ekat_std_map_key_iterator.hpp"
 #include "ekat_assert.hpp"
 
 #include <map>
@@ -76,15 +77,15 @@ public:
   void import (const ParameterList& src);
 
   // Access const iterators to stored data
-  std::map<std::string,any>::const_iterator
-  params_cbegin () const { return m_params.cbegin(); }
-  std::map<std::string,any>::const_iterator
-  params_cend () const { return m_params.cend(); }
+  using params_names_const_iter   = map_key_const_iterator<std::map<std::string,any>>;
+  using sublists_names_const_iter = map_key_const_iterator<std::map<std::string,ParameterList>>;
 
-  std::map<std::string,ParameterList>::const_iterator
-  sublists_cbegin () const { return m_sublists.cbegin(); }
-  std::map<std::string,ParameterList>::const_iterator
-  sublists_cend () const { return m_sublists.cend(); }
+  params_names_const_iter   params_names_cbegin ()   const { return params_names_const_iter(m_params.cbegin()); }
+  params_names_const_iter   params_names_cend   ()   const { return params_names_const_iter(m_params.cend());   }
+
+  sublists_names_const_iter sublists_names_cbegin () const { return sublists_names_const_iter(m_sublists.cbegin()); }
+  sublists_names_const_iter sublists_names_cend   () const { return sublists_names_const_iter(m_sublists.cend());   }
+
 private:
 
   std::string                           m_name;
