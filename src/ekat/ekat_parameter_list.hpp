@@ -74,6 +74,17 @@ public:
 
   // Add content of src into *this. Existing items will be overwritten.
   void import (const ParameterList& src);
+
+  // Access const iterators to stored data
+  std::map<std::string,any>::const_iterator
+  params_cbegin () const { return m_params.cbegin(); }
+  std::map<std::string,any>::const_iterator
+  params_cend () const { return m_params.cend(); }
+
+  std::map<std::string,ParameterList>::const_iterator
+  sublists_cbegin () const { return m_sublists.cbegin(); }
+  std::map<std::string,ParameterList>::const_iterator
+  sublists_cend () const { return m_sublists.cend(); }
 private:
 
   std::string                           m_name;
