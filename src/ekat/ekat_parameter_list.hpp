@@ -2,6 +2,7 @@
 #define EKAT_PARAMETER_LIST_HPP
 
 #include "ekat/std_meta/ekat_std_any.hpp"
+#include "ekat/std_meta/ekat_std_map_key_iterator.hpp"
 #include "ekat_assert.hpp"
 
 #include <map>
@@ -74,6 +75,17 @@ public:
 
   // Add content of src into *this. Existing items will be overwritten.
   void import (const ParameterList& src);
+
+  // Access const iterators to stored data
+  using params_names_const_iter   = map_key_const_iterator<std::map<std::string,any>>;
+  using sublists_names_const_iter = map_key_const_iterator<std::map<std::string,ParameterList>>;
+
+  params_names_const_iter   params_names_cbegin ()   const { return params_names_const_iter(m_params.cbegin()); }
+  params_names_const_iter   params_names_cend   ()   const { return params_names_const_iter(m_params.cend());   }
+
+  sublists_names_const_iter sublists_names_cbegin () const { return sublists_names_const_iter(m_sublists.cbegin()); }
+  sublists_names_const_iter sublists_names_cend   () const { return sublists_names_const_iter(m_sublists.cend());   }
+
 private:
 
   std::string                           m_name;
