@@ -91,20 +91,21 @@ OR
     )
 
     parser.add_argument("-e","--executable", help="The name of the executable to run",required=True)
-    #  parser.add_argument("exec_args",nargs=argparse.REMAINDER,help="Additional args to fwd to the executable")
+    parser.add_argument("-p","--print-omp-affinity", help="Print threads affinity at runtime",action="store_true")
 
     return parser.parse_known_args(args[1:])
 
 ###############################################################################
-def run_test(executable,exec_args):
+def run_test(executable,print_omp_affinity,exec_args):
 ###############################################################################
 
     print("execname: {}".format(executable))
 
     omp_env = []
     # Uncomment the next line if you want to print OMP env and bindings when the executable runs
-    # omp_env.append("OMP_DISPLAY_ENV=verbose")
-    # omp_env.append("OMP_DISPLAY_AFFINITY=true")
+    if print_omp_affinity:
+        omp_env.append("OMP_DISPLAY_ENV=verbose")
+        omp_env.append("OMP_DISPLAY_AFFINITY=true")
     omp_env.append("OMP_PROC_BIND=spread")
     omp_env.append("OMP_PLACES=threads")
 
@@ -123,6 +124,7 @@ def run_test(executable,exec_args):
 
     # If run with --resource-spec-file, we will have some special env var set
     if "CTEST_RESOURCE_GROUP_COUNT" in env:
+        print ("HAS RESOURCE SPECS")
         # Total number of resources for this test (for all ranks/threads)
         res_count = int(env["CTEST_RESOURCE_GROUP_COUNT"])
         my_res_id = myrank % res_count
@@ -158,6 +160,8 @@ def run_test(executable,exec_args):
         if ${TEST_LAUNCHER_ON_GPU}:
             expect (len(my_ids)==1, "Error! For GPU runs, each rank should use only one device.")
             exec_args.append(" --ekat-kokkos-device {}".format(ids[0]))
+    else:
+        print ("NO RESOURCE SPECS")
 
     cmd += " {}".format(executable)
     cmd += " {}".format(" ".join(exec_args))

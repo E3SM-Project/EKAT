@@ -37,7 +37,7 @@ function(EkatCreateUnitTest target_name target_srcs)
   #   Parse function inputs   #
   #---------------------------#
 
-  set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION SERIAL THREADS_SERIAL RANKS_SERIAL)
+  set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
   set(oneValueArgs DEP MPI_EXEC_NAME MPI_NP_FLAG)
   set(multiValueArgs
     MPI_RANKS THREADS
@@ -233,7 +233,11 @@ function(EkatCreateUnitTest target_name target_srcs)
   # Loop over MPI/OpenMP configs, and create tests #
   #------------------------------------------------#
 
-  set (launcher "${CMAKE_BINARY_DIR}/bin/test-launcher -e")
+  if (ecut_PRINT_OMP_AFFINITY)
+    set (launcher "${CMAKE_BINARY_DIR}/bin/test-launcher -p -e")
+  else()
+    set (launcher "${CMAKE_BINARY_DIR}/bin/test-launcher -e")
+  endif()
   if (ecut_EXE_ARGS)
     set(invokeExec "./${target_name} ${ecut_EXE_ARGS}")
   else()
