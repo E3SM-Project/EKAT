@@ -116,7 +116,7 @@ class WorkspaceManager
   //
   // Returns a Workspace object which provides access to sub-blocks.
   KOKKOS_INLINE_FUNCTION
-  Workspace get_workspace(const MemberType& team) const;
+  Workspace get_workspace(const MemberType& team, const char* name = "") const;
 
   // call from device
   //
@@ -251,7 +251,7 @@ class WorkspaceManager
 #endif
 
     KOKKOS_INLINE_FUNCTION
-    Workspace(const WorkspaceManager& parent, int ws_idx, const MemberType& team);
+    Workspace(const WorkspaceManager& parent, int ws_idx, const MemberType& team, const char* ws_name);
 
     friend struct unit_test::UnitWrap;
     friend class WorkspaceManager;
@@ -260,6 +260,7 @@ class WorkspaceManager
     const MemberType& m_team;
     const int m_ws_idx; // Workspace idx for m_team
     int& m_next_slot; // the next free ws slot to allocate
+    const char* m_ws_name;
   }; // class Workspace
 
 #ifndef KOKKOS_ENABLE_CUDA
