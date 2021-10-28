@@ -80,6 +80,7 @@ option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever p
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
 option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
+option (EKAT_TEST_LAUNCHER_NO_BUFFER "Whether test-launcher should buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently" OFF)
 
 if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   message(FATAL_ERROR "Code coverage will only work with Debug build type")

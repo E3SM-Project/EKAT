@@ -233,11 +233,16 @@ function(EkatCreateUnitTest target_name target_srcs)
   # Loop over MPI/OpenMP configs, and create tests #
   #------------------------------------------------#
 
+  # Set up launcher prefix
+  set(launcher "${CMAKE_BINARY_DIR}/bin/test-launcher")
   if (ecut_PRINT_OMP_AFFINITY)
-    set (launcher "${CMAKE_BINARY_DIR}/bin/test-launcher -p -e")
-  else()
-    set (launcher "${CMAKE_BINARY_DIR}/bin/test-launcher -e")
+    string(APPEND launcher " -p")
   endif()
+  if (EKAT_TEST_LAUNCHER_NO_BUFFER)
+    string(APPEND launcher " -b")
+  endif()
+  string(APPEND launcher " -e")
+
   if (ecut_EXE_ARGS)
     set(invokeExec "./${target_name} ${ecut_EXE_ARGS}")
   else()

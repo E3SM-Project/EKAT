@@ -59,14 +59,13 @@ def run_cmd(cmd, input_str=None, from_dir=None, verbose=None, dry_run=False,
             output = output.strip()
         except AttributeError:
             print("Something funky for output")
-            pass
+
     if errput is not None:
         try:
             errput = errput.decode('utf-8', errors='ignore')
             errput = errput.strip()
         except AttributeError:
             print("Something funky for errput")
-            pass
 
     stat = proc.wait()
 
@@ -90,12 +89,14 @@ OR
     )
 
     parser.add_argument("-e","--executable", help="The name of the executable to run",required=True)
+    parser.add_argument("-b","--buffer-output", action="store_true",
+                        help="Buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently")
     parser.add_argument("-p","--print-omp-affinity", help="Print threads affinity at runtime",action="store_true")
 
     return parser.parse_known_args(args[1:])
 
 ###############################################################################
-def run_test(executable,print_omp_affinity,exec_args):
+def run_test(executable,buffer_output,print_omp_affinity,exec_args):
 ###############################################################################
 
     print("execname: {}".format(executable))
@@ -139,7 +140,7 @@ def run_test(executable,print_omp_affinity,exec_args):
         expect (my_res_name=="devices", "Error! My ctest resource group should be 'devices'.")
         key += "_DEVICES"
         expect(key in env, "Error! CTEST_RESOURCE_GROUP_{} found in the env, but can't find {}".format(my_res_id,key))
-        my_res_str = env[key];
+        my_res_str = env[key]
 
         # Split the CTEST_RESOURCE_GROUP_[N]_DEVICE string into tokens, and get the slots ids
         my_res = my_res_str.split(';')
@@ -176,7 +177,7 @@ def run_test(executable,print_omp_affinity,exec_args):
     cmd += " {}".format(executable)
     cmd += " {}".format(" ".join(exec_args))
 
-    if "SCREAM_TEST_LAUNCHER_NO_BUFFER" in env:
+    if buffer_output:
         stat, out, _ = run_cmd(cmd,verbose=True,combine_output=True,env=env)
         sys.stdout.flush()
         sys.stdout.write(out)
