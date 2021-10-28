@@ -58,20 +58,18 @@ def run_cmd(cmd, input_str=None, from_dir=None, verbose=None, dry_run=False,
             output = output.decode('utf-8', errors='ignore')
             output = output.strip()
         except AttributeError:
-            print("Something funcky for output")
-            pass
+            print("Something funky for output")
+
     if errput is not None:
         try:
             errput = errput.decode('utf-8', errors='ignore')
             errput = errput.strip()
         except AttributeError:
-            print("Something funcky for errput")
-            pass
+            print("Something funky for errput")
 
     stat = proc.wait()
 
     return stat, output, errput
-
 
 ###############################################################################
 def parse_command_line(args, description):
@@ -91,25 +89,31 @@ OR
     )
 
     parser.add_argument("-e","--executable", help="The name of the executable to run",required=True)
+    parser.add_argument("-b","--buffer-output", action="store_true",
+                        help="Buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently")
     parser.add_argument("-p","--print-omp-affinity", help="Print threads affinity at runtime",action="store_true")
 
     return parser.parse_known_args(args[1:])
 
 ###############################################################################
-def run_test(executable,print_omp_affinity,exec_args):
+def run_test(executable,buffer_output,print_omp_affinity,exec_args):
 ###############################################################################
 
     print("execname: {}".format(executable))
 
+    env = os.environ
+
     omp_env = []
-    # Uncomment the next line if you want to print OMP env and bindings when the executable runs
     if print_omp_affinity:
         omp_env.append("OMP_DISPLAY_ENV=verbose")
         omp_env.append("OMP_DISPLAY_AFFINITY=true")
-    omp_env.append("OMP_PROC_BIND=spread")
-    omp_env.append("OMP_PLACES=threads")
 
-    env = os.environ
+    # Be sure to respect user env settings if they are there
+    if "OMP_PROC_BIND" not in env:
+        omp_env.append("OMP_PROC_BIND=spread")
+
+    if "OMP_PLACES" not in env:
+        omp_env.append("OMP_PLACES=threads")
 
     # Check if we're run with MPI
     if "${EKAT_MPIRUN_COMM_WORLD_SIZE}" in env and "${EKAT_MPIRUN_COMM_WORLD_RANK}" in env:
@@ -136,7 +140,7 @@ def run_test(executable,print_omp_affinity,exec_args):
         expect (my_res_name=="devices", "Error! My ctest resource group should be 'devices'.")
         key += "_DEVICES"
         expect(key in env, "Error! CTEST_RESOURCE_GROUP_{} found in the env, but can't find {}".format(my_res_id,key))
-        my_res_str = env[key];
+        my_res_str = env[key]
 
         # Split the CTEST_RESOURCE_GROUP_[N]_DEVICE string into tokens, and get the slots ids
         my_res = my_res_str.split(';')
@@ -144,13 +148,20 @@ def run_test(executable,print_omp_affinity,exec_args):
         for res in my_res:
             id_slots_tokens = res.split(',')
             id_tokens = id_slots_tokens[0].split(':')
-            ids.append(id_tokens[1])
+            ids.append(int(id_tokens[1]))
+
+        # CTest should already present these in lexicographic order, which should match
+        # numeric order thanks to our recent change to prepend leading 0's to fill empty
+        # digits. This sort shouldn't be necessary but it can't hurt.
+        ids.sort()
+
+        # Convert back to str so ids can be used in shell commands
+        ids = [str(item) for item in ids]
 
         # Now get the chunk of ids that belongs to this rank
         expect (len(ids) % nranks == 0, "Error! Number of ranks does not divide the number of resources.")
         ids_per_rank = int(len(ids) / nranks)
         my_ids = ids[myrank*ids_per_rank : (myrank+1)*ids_per_rank]
-        ids_str = "{" + "},{".join(my_ids) + "}"
 
         # Start placing on the correct cpu set
         cmd += " taskset -c " + ",".join(my_ids)
@@ -166,8 +177,13 @@ def run_test(executable,print_omp_affinity,exec_args):
     cmd += " {}".format(executable)
     cmd += " {}".format(" ".join(exec_args))
 
-    stat, out, _ = run_cmd (cmd,verbose=True,arg_stdout=None,combine_output=True,env=env)
-    print (out)
+    if buffer_output:
+        stat, out, _ = run_cmd(cmd,verbose=True,combine_output=True,env=env)
+        sys.stdout.flush()
+        sys.stdout.write(out)
+        sys.stdout.flush()
+    else:
+        stat = run_cmd (cmd,verbose=True,arg_stdout=None,combine_output=True,env=env)[0]
 
     return stat==0
 
