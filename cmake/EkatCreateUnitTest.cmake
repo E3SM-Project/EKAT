@@ -241,7 +241,7 @@ function(EkatCreateUnitTest target_name target_srcs)
   if (EKAT_TEST_LAUNCHER_NO_BUFFER)
     string(APPEND launcher " -b")
   endif()
-  string(APPEND launcher " -e")
+  string(APPEND launcher " --")
 
   if (ecut_EXE_ARGS)
     set(invokeExec "./${target_name} ${ecut_EXE_ARGS}")
