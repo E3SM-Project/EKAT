@@ -98,8 +98,8 @@ OR
 def run_test(buffer_output,print_omp_affinity,exec_args):
 ###############################################################################
 
-    expect(exec_args, "Nothing to run?")
-    print("execname: {}".format(exec_args[1]))
+    expect(len(exec_args) >= 2 and exec_args[0] == "--",
+           "Expected exec_args='-- <exe> [<exe-args>], got: {}".format(exec_args))
 
     env = os.environ
 
