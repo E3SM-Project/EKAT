@@ -12,6 +12,10 @@
 #define TWOBLUECUBES_SINGLE_INCLUDE_CATCH_HPP_INCLUDED
 // start catch.hpp
 
+// This is to get MPI defs (outside of Catch scope!), so that
+// we can later customize the reporter, and have it not print
+// the same message on N ranks
+#include <mpi.h>
 
 #define CATCH_VERSION_MAJOR 2
 #define CATCH_VERSION_MINOR 9
@@ -15745,6 +15749,15 @@ void ConsoleReporter::testGroupEnded(TestGroupStats const& _testGroupStats) {
     StreamingReporterBase::testGroupEnded(_testGroupStats);
 }
 void ConsoleReporter::testRunEnded(TestRunStats const& _testRunStats) {
+    // Avoid having all ranks writing that all tests passed
+    int mpi_inited;
+    MPI_Initialized(&mpi_inited);
+    if (mpi_inited) {
+      int rank = -1;
+      MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+      if(rank != 0 && _testRunStats.totals.testCases.allPassed())
+          return;
+    }
     printTotalsDivider(_testRunStats.totals);
     printTotals(_testRunStats.totals);
     stream << std::endl;
