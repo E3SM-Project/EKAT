@@ -254,6 +254,10 @@ function(EkatCreateUnitTest test_name test_srcs)
   else()
     set(invokeExec "./${target_name}")
   endif()
+  if (NOT ecut_EXCLUDE_MAIN_CPP)
+    set (invokeExec "${invokeExec} --use-colour no")
+  endif()
+
 
   foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
     foreach (NTHREADS RANGE ${THREAD_START} ${THREAD_END} ${THREAD_INCREMENT})
