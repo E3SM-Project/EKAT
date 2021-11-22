@@ -10,7 +10,7 @@
 
 #ifdef EKAT_TEST_DOUBLE_PRECISION
 using Real = double;
-#elif EKAT_TEST_SINGLE_PRECISION
+#elif defined(EKAT_TEST_SINGLE_PRECISION)
 using Real = float;
 #endif
 
