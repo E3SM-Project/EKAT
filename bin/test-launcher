@@ -20,39 +20,37 @@ def expect(condition, error_msg, exc_type=SystemExit, error_prefix="ERROR:"):
         raise exc_type(msg)
 
 ###############################################################################
-def run_cmd(cmd, input_str=None, from_dir=None, verbose=None, dry_run=False,
-            arg_stdout=subprocess.PIPE, arg_stderr=subprocess.PIPE, env=None, combine_output=False):
+def run_cmd(cmd, env):
 ###############################################################################
     """
-    Wrapper around subprocess to make it much more convenient to run shell commands
-
-    >>> run_cmd('ls file_i_hope_doesnt_exist')[0] != 0
-    True
+    We've noticed some LLNL clusters cannot run MPI programs via subprocess for
+    some unknown and extremely subtle reason. Therefore, we use os.system unless
+    the user requests buffering, in which case we must use subprocess.
     """
-    arg_stderr = subprocess.STDOUT if combine_output else arg_stderr
-    from_dir = str(from_dir) if from_dir else from_dir
+    prev_env = dict(os.environ)
 
-    if verbose:
-        print("RUN: {}\nFROM: {}".format(cmd, os.getcwd() if from_dir is None else from_dir))
+    print("RUN: {}\nFROM: {}".format(cmd, os.getcwd()))
 
-    if dry_run:
-        return 0, "", ""
+    os.environ = env
+    stat = os.system(cmd)
+    os.environ = prev_env
 
-    if input_str is not None:
-        stdin = subprocess.PIPE
-        input_str = input_str.encode('utf-8')
-    else:
-        stdin = None
+    return stat
+
+###############################################################################
+def run_cmd_buff(cmd, env):
+###############################################################################
+    arg_stderr = subprocess.STDOUT
+
+    print("RUN: {}\nFROM: {}".format(cmd, os.getcwd()))
 
     proc = subprocess.Popen(cmd,
                             shell=True,
-                            stdout=arg_stdout,
+                            stdout=subprocess.PIPE,
                             stderr=arg_stderr,
-                            stdin=stdin,
-                            cwd=from_dir,
                             env=env)
 
-    output, errput = proc.communicate(input_str)
+    output, _ = proc.communicate()
     if output is not None:
         try:
             output = output.decode('utf-8', errors='ignore')
@@ -60,16 +58,9 @@ def run_cmd(cmd, input_str=None, from_dir=None, verbose=None, dry_run=False,
         except AttributeError:
             print("Something funky for output")
 
-    if errput is not None:
-        try:
-            errput = errput.decode('utf-8', errors='ignore')
-            errput = errput.strip()
-        except AttributeError:
-            print("Something funky for errput")
-
     stat = proc.wait()
 
-    return stat, output, errput
+    return stat, output
 
 ###############################################################################
 def parse_command_line(args, description):
@@ -178,12 +169,12 @@ def run_test(buffer_output,print_omp_affinity,exec_args):
     cmd += " {}".format(" ".join(exec_args[1:]))
 
     if buffer_output:
-        stat, out, _ = run_cmd(cmd,verbose=True,combine_output=True,env=env)
+        stat, out = run_cmd_buff(cmd, env)
         sys.stdout.flush()
         sys.stdout.write(out)
         sys.stdout.flush()
     else:
-        stat = run_cmd (cmd,verbose=True,arg_stdout=None,combine_output=True,env=env)[0]
+        stat = run_cmd(cmd, env)
 
     return stat==0
 
