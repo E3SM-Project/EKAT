@@ -13,8 +13,8 @@ macro (CheckMacroArgs macroName parsePrefix validOptions validOneValueArgs valid
              "Warning: the following arguments to macro ${macroName} were not recognized:\n"
              "   ${${parsePrefix}_UNPARSED_ARGUMENTS}\n"
              " Here's a list of valid arguments:\n"
-             "   options: ${validOptions}\n"             
-             "   oneValueArgs: ${validOneValueArgs}\n"             
+             "   options: ${validOptions}\n"
+             "   oneValueArgs: ${validOneValueArgs}\n"
              "   multiValueArgs: ${validMultiValueArgs}\n")
   endif ()
 
@@ -113,3 +113,19 @@ macro (EkatDisableAllWarning targetName)
 
 endmacro (EkatDisableAllWarning)
 
+function(separate_cut_arguments prefix options oneValueArgs multiValueArgs return_varname)
+  set(result)
+  foreach(item IN LISTS options)
+    if (${prefix}_${item})
+      list(APPEND result ${item})
+    endif()
+  endforeach()
+
+  foreach(item IN LISTS oneValueArgs multiValueArgs)
+    if (${prefix}_${item})
+      list(APPEND result ${item} ${${prefix}_${item}})
+    endif()
+  endforeach()
+
+  set(${return_varname} ${result} PARENT_SCOPE)
+endfunction(separate_cut_arguments)
