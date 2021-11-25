@@ -1,10 +1,24 @@
 include(CMakeParseArguments) # Needed for backwards compatibility
 include(EkatUtils) # To check macro args
 
-# Note: we hace to set this variable here, so CMAKE_CURRENT_LIST_DIR gets the
+# Note: we have to set this variable here, so CMAKE_CURRENT_LIST_DIR gets the
 #       directory of this file. If we did it inside the function, it would get
 #       the directory from where the function is called
-set (CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/catch2/include)
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/catch2/include)
+
+set(CUT_EXEC_OPTIONS EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
+set(CUT_EXEC_1V_ARGS)
+set(CUT_EXEC_MV_ARGS
+  INCLUDE_DIRS
+  COMPILER_DEFS
+  COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
+  COMPILER_FLAGS
+  COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
+  LIBS LIBS_DIRS LINKER_FLAGS)
+
+set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
+set(CUT_TEST_1V_ARGS EXE_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
+set(CUT_TEST_MV_ARGS MPI_RANKS THREADS MPI_EXTRA_ARGS LABELS PROPERTIES)
 
 # This function takes the following mandatory arguments:
 #    - exec_name: the name of the test executable that will be created.
@@ -21,32 +35,16 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   #---------------------------#
   #   Parse function inputs   #
   #---------------------------#
-  set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
-  set(multiValueArgs
-    INCLUDE_DIRS
-    COMPILER_DEFS
-    COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
-    COMPILER_FLAGS
-    COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
-    LIBS LIBS_DIRS LINKER_FLAGS)
 
   # ecute = Ekat Create Unit Test Exec
-  cmake_parse_arguments(ecute "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  CheckMacroArgs(EkatCreateUnitTestExec ecute "${options}" "${oneValueArgs}" "${multiValueArgs}")
+  cmake_parse_arguments(ecute "${CUT_EXEC_OPTIONS}" "${CUT_EXEC_1V_ARGS}" "${CUT_EXEC_MV_ARGS}" ${ARGN})
+  CheckMacroArgs(EkatCreateUnitTestExec ecute "${CUT_EXEC_OPTIONS}" "${CUT_EXEC_1V_ARGS}" "${CUT_EXEC_MV_ARGS}")
 
-  # Strip leading/trailing whitespaces from some vars, to avoid either cmake errors
+  # Strip leading/trailing whitespaces from args to avoid either cmake errors
   # (e.g., in target_link_libraries) or compiler errors (e.g. if COMPILER_DEFS=" ")
-  string(STRIP "${ecute_LIBS}" ecute_LIBS)
-  string(STRIP "${ecute_COMPILER_DEFS}" ecute_COMPILER_DEFS)
-  string(STRIP "${ecute_COMPILER_C_DEFS}" ecute_COMPILER_C_DEFS)
-  string(STRIP "${ecute_COMPILER_CXX_DEFS}" ecute_COMPILER_CXX_DEFS)
-  string(STRIP "${ecute_COMPILER_F_DEFS}" ecute_COMPILER_F_DEFS)
-  string(STRIP "${ecute_COMPILER_FLAGS}" ecute_COMPILER_FLAGS)
-  string(STRIP "${ecute_COMPILER_C_FLAGS}" ecute_COMPILER_C_FLAGS)
-  string(STRIP "${ecute_COMPILER_CXX_FLAGS}" ecute_COMPILER_CXX_FLAGS)
-  string(STRIP "${ecute_COMPILER_F_FLAGS}" ecute_COMPILER_F_FLAGS)
-  string(STRIP "${ecute_LIBS_DIRS}" ecute_LIBS_DIRS)
-  string(STRIP "${ecute_INCLUDE_DIRS}" ecute_INCLUDE_DIRS)
+  foreach(item IN LISTS CUT_EXEC_1V_ARGS CUT_EXEC_MV_ARGS)
+    string(STRIP "${ecute_${item}}" ecute_${item})
+  endforeach()
 
   #-------------------------------------------------#
   #   Create the executable and set its properties  #
@@ -59,7 +57,7 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   if (ecute_LIBS_DIRS)
     link_directories("${ecute_LIBS_DIRS}")
   endif()
-  add_executable (${target_name} ${exec_srcs})
+  add_executable(${target_name} ${exec_srcs})
 
   #---------------------------#
   # Set all target properties #
@@ -147,16 +145,9 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
   #   Parse function inputs   #
   #---------------------------#
 
-  set(options SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
-  set(oneValueArgs EXE_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
-  set(multiValueArgs
-    MPI_RANKS THREADS
-    MPI_EXTRA_ARGS
-    LABELS PROPERTIES)
-
   # ecutfe = Ekat Create Unit Test From Exec
-  cmake_parse_arguments(ecutfe "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  CheckMacroArgs(EkatCreateUnitTestFromExec ecutfe "${options}" "${oneValueArgs}" "${multiValueArgs}")
+  cmake_parse_arguments(ecutfe "${CUT_TEST_OPTIONS}" "${CUT_TEST_1V_ARGS}" "${CUT_TEST_MV_ARGS}" ${ARGN})
+  CheckMacroArgs(EkatCreateUnitTestFromExec ecutfe "${CUT_TEST_OPTIONS}" "${CUT_TEST_1V_ARGS}" "${CUT_TEST_MV_ARGS}" ${ARGN})
 
   #--------------------------#
   # Setup MPI/OpenMP configs #
@@ -348,18 +339,9 @@ endfunction(EkatCreateUnitTestFromExec)
 # to create a suite of unit tests. The optional arguments are the union of
 # the optional arguments of the two functions above
 function(EkatCreateUnitTest test_name test_srcs)
-  set(options EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
-  set(oneValueArgs EXE_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
-  set(multiValueArgs
-    MPI_RANKS THREADS
-    MPI_EXTRA_ARGS
-    LABELS PROPERTIES
-    INCLUDE_DIRS
-    COMPILER_DEFS
-    COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
-    COMPILER_FLAGS
-    COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
-    LIBS LIBS_DIRS LINKER_FLAGS)
+  set(options ${CUT_EXEC_OPTIONS} ${CUT_TEST_OPTIONS})
+  set(oneValueArgs ${CUT_EXEC_1V_ARGS} ${CUT_TEST_1V_ARGS})
+  set(multiValueArgs ${CUT_EXEC_MV_ARGS} ${CUT_TEST_MV_ARGS})
 
   # ecut = Ekat Create Unit Test
   cmake_parse_arguments(ecut "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -369,56 +351,14 @@ function(EkatCreateUnitTest test_name test_srcs)
   #      Create Exec Phase       #
   #------------------------------#
 
-  set(options_ExecPhase EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
-  set(multiValueArgs_ExecPhase
-    INCLUDE_DIRS
-    COMPILER_DEFS
-    COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
-    COMPILER_FLAGS
-    COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
-    LIBS LIBS_DIRS LINKER_FLAGS)
-
-  set (execPhaseArgs)
-  foreach(item IN LISTS options_ExecPhase)
-    if (ecut_${item})
-      list(APPEND execPhaseArgs ${item})
-    endif()
-  endforeach()
-  foreach(item IN LISTS multiValueArgs_ExecPhase)
-    if (ecut_${item})
-      list(APPEND execPhaseArgs ${item} ${ecut_${item}})
-    endif()
-  endforeach()
-
-  EkatCreateUnitTestExec(${test_name} "${test_srcs}" ${execPhaseArgs})
+  separate_cut_arguments(ecut "${CUT_EXEC_OPTIONS}" "${CUT_EXEC_1V_ARGS}" "${CUT_EXEC_MV_ARGS}" options_ExecPhase)
+  EkatCreateUnitTestExec("${test_name}" "${test_srcs}" ${options_ExecPhase})
 
   #------------------------------#
   #      Create Tests Phase      #
   #------------------------------#
-  set(options_TestPhase SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
-  set(oneValueArgs_TestPhase EXE_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
-  set(multiValueArgs_TestPhase
-    MPI_RANKS THREADS
-    MPI_EXTRA_ARGS
-    LABELS PROPERTIES)
 
-  set (testPhaseArgs)
-  foreach(item IN LISTS options_TestPhase)
-    if (ecut_${item})
-      list(APPEND testPhaseArgs ${item})
-    endif()
-  endforeach()
-  foreach(item IN LISTS oneValueArgs_TestPhase)
-    if (ecut_${item})
-      list(APPEND testPhaseArgs ${item} ${ecut_${item}})
-    endif()
-  endforeach()
-  foreach(item IN LISTS multiValueArgs_TestPhase)
-    if (ecut_${item})
-      list(APPEND testPhaseArgs ${item} ${ecut_${item}})
-    endif()
-  endforeach()
-
-  EkatCreateUnitTestFromExec(${test_name} ${test_name} ${testPhaseArgs})
+  separate_cut_arguments(ecut "${CUT_TEST_OPTIONS}" "${CUT_TEST_1V_ARGS}" "${CUT_TEST_MV_ARGS}" options_TestPhase)
+  EkatCreateUnitTestFromExec("${test_name}" "${test_name}" ${options_TestPhase})
 
 endfunction(EkatCreateUnitTest)
