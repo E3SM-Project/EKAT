@@ -129,6 +129,58 @@ static void unittest_workspace()
         {&ws1, &ws2, &ws3, &ws4});
     });
   }
+
+  {
+    // Test constructing the WSM with empty constructor
+    const int slot_length = 17;
+    size_t total_bytes = WorkspaceManager<double, Device>::get_total_bytes_needed(slot_length, n_slots_per_team, policy);
+    size_t total_data_size = total_bytes/sizeof(double);
+    view_1d<double> reserved_data("reserved_data", total_data_size);
+
+    // Calculate next available location
+    double* data_end = reserved_data.data();
+    data_end += reserved_data.size();
+
+    WorkspaceManager<double, Device> wsm1;
+    WorkspaceManager<double, Device> wsm2;
+
+    // Test both setup with and without user supplied data
+    wsm1.setup(reserved_data.data(), slot_length, n_slots_per_team, policy);
+    wsm2.setup(slot_length, n_slots_per_team, policy);
+
+    // Test that get_total_bytes_needed()/sizeof(double) returns correct n_slots
+    REQUIRE(total_data_size == wsm1.m_data.size());
+
+    // Test sizes are set correctly in setup()
+    REQUIRE(wsm1.m_size == slot_length);
+    REQUIRE(wsm2.m_size == slot_length);
+    REQUIRE(wsm1.m_reserve == 1);
+    REQUIRE(wsm2.m_reserve == 1);
+
+    // Take and release some views
+    Kokkos::parallel_for("", policy, KOKKOS_LAMBDA(const MemberType& team) {
+      auto ws1 = wsm1.get_workspace(team);
+      auto ws2 = wsm2.get_workspace(team);
+
+      Unmanaged<view_1d<double> > v11, v12, v13, v14,
+                                  v21, v22, v23, v24;
+      ws1.template take_many_contiguous_unsafe<4>(
+        {"v11", "v12", "v13", "v14"},
+        {&v11, &v12, &v13, &v14});
+      ws2.template take_many_contiguous_unsafe<4>(
+        {"v21", "v22", "v23", "v24"},
+        {&v21, &v22, &v23, &v24});
+
+      // Assert the memory access has not exceeded the allocation
+      const int dist = data_end - (v14.data()+v14.size());
+      EKAT_KERNEL_ASSERT_MSG(dist >= 0, "Error! Local view extended past allocation");
+
+      ws1.template release_many_contiguous<4>(
+        {&v11, &v12, &v13, &v14});
+      ws2.template release_many_contiguous<4>(
+        {&v21, &v22, &v23, &v24});
+    });
+  }
   {
     const int slot_length = 16;
     WorkspaceManager<char, Device> wsmc(slot_length, n_slots_per_team, policy);

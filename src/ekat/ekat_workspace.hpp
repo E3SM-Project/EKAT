@@ -80,6 +80,9 @@ class WorkspaceManager
   //
 
   // Constructor, call from host
+  WorkspaceManager() = default;
+
+  // Constructor, call from host
   //   size: The number of T's per sub-block
   //   max_used: The maximum number of active sub-blocks
   //   policy: The team policy for Kokkos kernels using this WorkspaceManager
@@ -109,6 +112,19 @@ class WorkspaceManager
   // Will report usage statistics for your workspaces. These statistics will
   // have much more detail for debug builds.
   void report() const;
+
+  // call from host.
+  //
+  // Setup routine for the WSM if the user used the empty constructor
+  void setup(int size, int max_used, TeamPolicy policy,
+             const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+
+  // call from host.
+  //
+  // Setup routine for the WSM if the user used the empty constructor.
+  // Same as above, but here the user initializes the data.
+  void setup(T* data, int size, int max_used, TeamPolicy policy,
+             const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   class Workspace;
 
