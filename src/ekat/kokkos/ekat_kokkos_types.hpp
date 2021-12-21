@@ -4,6 +4,7 @@
 #include "ekat/ekat_config.h"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 #include "ekat/std_meta/ekat_std_type_traits.hpp"
+#include <Kokkos_DualView.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 
 /*
@@ -46,6 +47,9 @@ struct KokkosTypes
 
   template <typename DataType, typename MemoryTraits = Kokkos::MemoryManaged>
   using view = Kokkos::View<DataType, Layout, Device, MemoryTraits>;
+
+  template <typename DataType, typename MemoryTraits = Kokkos::MemoryManaged>
+  using dual_view = Kokkos::DualView<DataType, Layout, Device, MemoryTraits>;
 
   // left-layout views, may be useful for interacting with fortran
   template <typename DataType, typename MemoryTraits = Kokkos::MemoryManaged>
