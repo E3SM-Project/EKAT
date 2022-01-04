@@ -477,7 +477,10 @@ class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueTyp
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION
   int get_workspace_idx(const MemberType& /*team_member*/) const
-  { return omp_get_thread_num() / this->_team_size; }
+  {
+    EKAT_KERNEL_ASSERT_MSG (this->_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return omp_get_thread_num() / this->_team_size;
+  }
 };
 #endif
 
@@ -522,7 +525,7 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
   // How many ws slots are there
   int get_num_ws_slots() const
   {
-    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    EKAT_ASSERT_MSG (this->_team_size>0, "Error! TeamUtils not yet inited.\n");
     return _num_ws_slots;
   }
 
@@ -530,6 +533,8 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
   KOKKOS_INLINE_FUNCTION
   int get_workspace_idx(const MemberType& team_member) const
   {
+    EKAT_KERNEL_ASSERT_MSG (this->_num_teams>0, "Error! TeamUtils not yet inited.\n");
+
     if (!_need_ws_sharing) {
       return team_member.league_rank();
     }
