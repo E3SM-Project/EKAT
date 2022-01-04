@@ -150,7 +150,7 @@ void view_reduction (const TeamMember& team,
       result += ekat::reduce_sum<Serialize>(packed_result);
     }
   }
-      
+
   // If last pack has garbage, we did not include it in the main reduction,
   // so manually add the last pack (only the non-garbage part)
   if (has_garbage_end) {
@@ -441,6 +441,8 @@ class TeamUtils : public TeamUtilsCommonBase<ValueType, ExeSpace>
   TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
     TeamUtilsCommonBase<ValueType, ExeSpace>(policy)
   { }
+
+  TeamUtils& operator= (const TeamUtils& src) = default;
 };
 
 /*
@@ -457,6 +459,8 @@ class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueTyp
   TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
     TeamUtilsCommonBase<ValueType,Kokkos::OpenMP>(policy)
   { }
+
+  TeamUtils& operator= (const TeamUtils& src) = default;
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION
@@ -500,6 +504,8 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
       _rand_pool = RandomGenerator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
   }
+
+  TeamUtils& operator= (const TeamUtils& src) = default;
 
   // How many ws slots are there
   int get_num_ws_slots() const { return _num_ws_slots; }
