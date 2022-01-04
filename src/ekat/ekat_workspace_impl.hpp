@@ -62,6 +62,8 @@ int WorkspaceManager<T, D>::get_total_bytes_needed(int size, int max_used, TeamP
 template <typename T, typename D>
 void WorkspaceManager<T, D>::report() const
 {
+  EKAT_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
+
 #ifndef NDEBUG
   auto host_num_used   = Kokkos::create_mirror_view(m_num_used);
   auto host_high_water = Kokkos::create_mirror_view(m_high_water);
@@ -128,6 +130,8 @@ void WorkspaceManager<T, D>::setup (int size, int max_used, TeamPolicy policy,
   m_data = decltype(m_data) (Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
                              m_max_ws_idx, m_total*m_max_used);
   init_all_metadata(m_max_ws_idx, m_max_used);
+
+  is_initialized = true;
 }
 
 template <typename T, typename D>
@@ -139,19 +143,27 @@ void WorkspaceManager<T, D>::setup (T* data, int size, int max_used, TeamPolicy 
   compute_internals(size, max_used);
   m_data = decltype(m_data) (data, m_max_ws_idx, m_total*m_max_used);
   init_all_metadata(m_max_ws_idx, m_max_used);
+
+  is_initialized = true;
 }
 
 template <typename T, typename D>
 KOKKOS_INLINE_FUNCTION
 typename WorkspaceManager<T, D>::Workspace
 WorkspaceManager<T, D>::get_workspace(const MemberType& team, const char* ws_name) const
-{ return Workspace(*this, m_tu.get_workspace_idx(team), team, ws_name); }
+{
+  EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
+  return Workspace(*this, m_tu.get_workspace_idx(team), team, ws_name);
+}
 
 
 template <typename T, typename D>
 KOKKOS_INLINE_FUNCTION
 void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Workspace& ws) const
-{ m_tu.release_workspace_idx(team, ws.m_ws_idx); }
+{
+  EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
+  m_tu.release_workspace_idx(team, ws.m_ws_idx);
+}
 
 template <typename T, typename D>
 void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int max_used)
@@ -179,6 +191,8 @@ template <typename S>
 KOKKOS_FORCEINLINE_FUNCTION
 int WorkspaceManager<T, D>::set_next_and_get_index(const Unmanaged<view_1d<S> >& space, int next) const
 {
+  EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
+
   const auto metadata = reinterpret_cast<int*>(reinterpret_cast<T*>(space.data()) - m_reserve);
   metadata[1] = next;
   return metadata[0];
@@ -190,6 +204,8 @@ KOKKOS_FORCEINLINE_FUNCTION
 Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
 WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) const
 {
+  EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
+
   Unmanaged<view_1d<S> > space(
     reinterpret_cast<S*>(&m_data(team_idx, slot*m_total) + m_reserve),
     sizeof(T) == sizeof(S) ?

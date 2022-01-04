@@ -321,6 +321,7 @@ class WorkspaceManager
 
   TeamUtils<T,ExeSpace> m_tu;
   int m_max_ws_idx, m_reserve, m_size, m_total, m_max_used;
+  bool is_initialized=false;
 #ifndef NDEBUG
   view_1d<int> m_num_used;
   view_1d<int> m_high_water;
