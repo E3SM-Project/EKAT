@@ -441,16 +441,6 @@ class TeamUtils : public TeamUtilsCommonBase<ValueType, ExeSpace>
   TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
     TeamUtilsCommonBase<ValueType, ExeSpace>(policy)
   { }
-
-  TeamUtils& operator= (const TeamUtils& src)
-  {
-    this->_team_size = src._team_size;
-    this->_num_teams = src._num_teams;
-    this->_max_threads = src._max_threads;
-    this->_league_size = src._league_size;
-
-    return *this;
-  }
 };
 
 /*
@@ -467,16 +457,6 @@ class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueTyp
   TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
     TeamUtilsCommonBase<ValueType,Kokkos::OpenMP>(policy)
   { }
-
-  TeamUtils& operator= (const TeamUtils& src)
-  {
-    this->_team_size = src._team_size;
-    this->_num_teams = src._num_teams;
-    this->_max_threads = src._max_threads;
-    this->_league_size = src._league_size;
-
-    return *this;
-  }
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION
@@ -519,21 +499,6 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
     if (_need_ws_sharing) {
       _rand_pool = RandomGenerator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
-  }
-
-  TeamUtils& operator= (const TeamUtils& src)
-  {
-    this->_num_ws_slots = src._num_ws_slots;
-    this->_need_ws_sharing = src._need_ws_sharing;
-    this->_open_ws_slots = src._open_ws_slots;
-    this->_rand_pool = src._rand_pool;
-
-    this->_team_size = src._team_size;
-    this->_num_teams = src._num_teams;
-    this->_max_threads = src._max_threads;
-    this->_league_size = src._league_size;
-
-    return *this;
   }
 
   // How many ws slots are there

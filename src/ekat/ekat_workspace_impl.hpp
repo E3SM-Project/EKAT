@@ -15,23 +15,16 @@ namespace ekat {
 
 template <typename T, typename D>
 WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy,
-                                         const double& overprov_factor) :
-  m_tu(policy, overprov_factor)
+                                         const double& overprov_factor)
 {
-  compute_internals(size, max_used);
-  m_data = decltype(m_data) (Kokkos::ViewAllocateWithoutInitializing("Workspace.m_data"),
-                             m_max_ws_idx, m_total*m_max_used);
-  init_all_metadata(m_max_ws_idx, m_max_used);
+  setup(size, max_used, policy, overprov_factor);
 }
 
 template <typename T, typename D>
 WorkspaceManager<T, D>::WorkspaceManager(T* data, int size, int max_used,
-                                         TeamPolicy policy, const double& overprov_factor) :
-  m_tu(policy, overprov_factor)
+                                         TeamPolicy policy, const double& overprov_factor)
 {
-  compute_internals(size, max_used);
-  m_data = decltype(m_data) (data, m_max_ws_idx, m_total*m_max_used);
-  init_all_metadata(m_max_ws_idx, m_max_used);
+  setup(data, size, max_used, policy, overprov_factor);
 }
 
 template <typename T, typename D>
