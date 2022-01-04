@@ -150,7 +150,7 @@ void view_reduction (const TeamMember& team,
       result += ekat::reduce_sum<Serialize>(packed_result);
     }
   }
-      
+
   // If last pack has garbage, we did not include it in the main reduction,
   // so manually add the last pack (only the non-garbage part)
   if (has_garbage_end) {
@@ -380,7 +380,9 @@ template <typename ValueType, typename ExeSpace = Kokkos::DefaultExecutionSpace>
 class TeamUtilsCommonBase
 {
 protected:
-  int _team_size, _num_teams, _max_threads, _league_size;
+  int _team_size=0, _num_teams, _max_threads, _league_size;
+
+  TeamUtilsCommonBase() = default;
 
   template <typename TeamPolicy>
   TeamUtilsCommonBase(const TeamPolicy& policy)
@@ -406,13 +408,25 @@ protected:
 public:
 
   // How many thread teams can run concurrently
-  int get_num_concurrent_teams() const { return _num_teams; }
+  int get_num_concurrent_teams() const
+  {
+    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _num_teams;
+  }
 
   // How many threads can run concurrently
-  int get_max_concurrent_threads() const { return _max_threads; }
+  int get_max_concurrent_threads() const
+  {
+    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _max_threads;
+  }
 
   // How many ws slots are there
-  int get_num_ws_slots() const { return _num_teams; }
+  int get_num_ws_slots() const
+  {
+    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _num_teams;
+  }
 
   /*
    * Of the C concurrently running teams, which "slot" is open
@@ -433,10 +447,14 @@ template <typename ValueType, typename ExeSpace = Kokkos::DefaultExecutionSpace>
 class TeamUtils : public TeamUtilsCommonBase<ValueType, ExeSpace>
 {
  public:
+  TeamUtils() = default;
+
   template <typename TeamPolicy>
   TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
     TeamUtilsCommonBase<ValueType, ExeSpace>(policy)
   { }
+
+  TeamUtils& operator= (const TeamUtils& src) = default;
 };
 
 /*
@@ -447,15 +465,22 @@ template <typename ValueType>
 class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueType,Kokkos::OpenMP>
 {
  public:
+  TeamUtils() = default;
+
   template <typename TeamPolicy>
   TeamUtils(const TeamPolicy& policy, const double& = 1.0) :
     TeamUtilsCommonBase<ValueType,Kokkos::OpenMP>(policy)
   { }
 
+  TeamUtils& operator= (const TeamUtils& src) = default;
+
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION
   int get_workspace_idx(const MemberType& /*team_member*/) const
-  { return omp_get_thread_num() / this->_team_size; }
+  {
+    EKAT_KERNEL_ASSERT_MSG (this->_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return omp_get_thread_num() / this->_team_size;
+  }
 };
 #endif
 
@@ -478,6 +503,8 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
   RandomGenerator _rand_pool;
 
  public:
+  TeamUtils() = default;
+
   template <typename TeamPolicy>
   TeamUtils(const TeamPolicy& policy, const double& overprov_factor = 1.0) :
     TeamUtilsCommonBase<ValueType,Kokkos::Cuda>(policy),
@@ -493,13 +520,21 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
     }
   }
 
+  TeamUtils& operator= (const TeamUtils& src) = default;
+
   // How many ws slots are there
-  int get_num_ws_slots() const { return _num_ws_slots; }
+  int get_num_ws_slots() const
+  {
+    EKAT_ASSERT_MSG (this->_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _num_ws_slots;
+  }
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION
   int get_workspace_idx(const MemberType& team_member) const
   {
+    EKAT_KERNEL_ASSERT_MSG (this->_num_teams>0, "Error! TeamUtils not yet inited.\n");
+
     if (!_need_ws_sharing) {
       return team_member.league_rank();
     }
