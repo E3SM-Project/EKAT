@@ -380,7 +380,7 @@ template <typename ValueType, typename ExeSpace = Kokkos::DefaultExecutionSpace>
 class TeamUtilsCommonBase
 {
 protected:
-  int _team_size, _num_teams, _max_threads, _league_size;
+  int _team_size=0, _num_teams, _max_threads, _league_size;
 
   TeamUtilsCommonBase() = default;
 
@@ -408,13 +408,25 @@ protected:
 public:
 
   // How many thread teams can run concurrently
-  int get_num_concurrent_teams() const { return _num_teams; }
+  int get_num_concurrent_teams() const
+  {
+    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _num_teams;
+  }
 
   // How many threads can run concurrently
-  int get_max_concurrent_threads() const { return _max_threads; }
+  int get_max_concurrent_threads() const
+  {
+    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _max_threads;
+  }
 
   // How many ws slots are there
-  int get_num_ws_slots() const { return _num_teams; }
+  int get_num_ws_slots() const
+  {
+    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _num_teams;
+  }
 
   /*
    * Of the C concurrently running teams, which "slot" is open
@@ -508,7 +520,11 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
   TeamUtils& operator= (const TeamUtils& src) = default;
 
   // How many ws slots are there
-  int get_num_ws_slots() const { return _num_ws_slots; }
+  int get_num_ws_slots() const
+  {
+    EKAT_ASSERT_MSG (_team_size>0, "Error! TeamUtils not yet inited.\n");
+    return _num_ws_slots;
+  }
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION
