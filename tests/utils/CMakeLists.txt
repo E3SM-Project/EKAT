@@ -5,6 +5,10 @@ EkatCreateUnitTest(debug_tools debug_tools_tests.cpp
   LIBS ekat)
 
 # Test utilities (c++)
+EkatCreateUnitTest(meta_utils meta_utils.cpp
+  LIBS ekat)
+
+# Test utilities (c++)
 EkatCreateUnitTest(util_cxx util_tests.cpp
   LIBS ekat)
 
