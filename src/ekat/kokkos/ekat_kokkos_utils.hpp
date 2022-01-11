@@ -205,23 +205,28 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
  */
 template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
-  using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
-  static TeamPolicy get_default_team_policy (Int ni, Int /* nk */) {
+  template<typename... Props>
+  using TeamPolicy = Kokkos::TeamPolicy<ExeSpace,Props...>;
+
+  template<typename... Props>
+  static TeamPolicy<Props...> get_default_team_policy (Int ni, Int /* nk */) {
 #ifdef EKAT_MIMIC_GPU
     const int max_threads = ExeSpace::concurrency();
     const int team_size = max_threads < 7 ? max_threads : 7;
-    return TeamPolicy(ni, team_size);
+    return TeamPolicy<Props...> (ni, team_size);
 #else
-    return TeamPolicy(ni, 1);
+    return TeamPolicy<Props...> (ni, 1);
 #endif
   }
 
-  static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
-    return TeamPolicy(ni, team_size);
+  template<typename... Props>
+  static TeamPolicy<Props...> get_team_policy_force_team_size (Int ni, Int team_size) {
+    return TeamPolicy<Props...>(ni, team_size);
   }
 
-  static TeamPolicy get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
+  template<typename... Props>
+  static TeamPolicy<Props...> get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
     return get_default_team_policy(league_size, team_size_request);
   }
 
@@ -286,22 +291,27 @@ struct ExeSpaceUtils {
 #ifdef KOKKOS_ENABLE_CUDA
 template <>
 struct ExeSpaceUtils<Kokkos::Cuda> {
-  using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+  template<typename...Props>
+  using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda,Props...>;
 
   static int num_warps (const int i) {
     return (i+31)/32;
   }
 
-  static TeamPolicy get_default_team_policy (Int ni, Int nk) {
-    return TeamPolicy(ni, std::min(128, 32*((nk + 31)/32)));
+  template<typename...Props>
+  static TeamPolicy<Props...> get_default_team_policy (Int ni, Int nk) {
+    return TeamPolicy<Props...> (ni, std::min(128, 32*((nk + 31)/32)));
   }
 
-  static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
-    return TeamPolicy(ni, team_size);
+  template<typename...Props>
+  static TeamPolicy<Props...> get_team_policy_force_team_size (Int ni, Int team_size) {
+    return TeamPolicy<Props...> (ni, team_size);
   }
 
   // On GPU, the team-level ||scan in column_ops only works for team sizes that are a power of 2.
-  static TeamPolicy get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
+  template<typename...Props>
+  static TeamPolicy<Props...>
+  get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
     auto prev_pow_2 = [](const int i) -> int {
       // Multiply by 2 until pp2>i, then divide by 2 once.
       int pp2 = 1;
@@ -311,7 +321,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 
     const int pp2 = prev_pow_2(team_size_request);
     const int team_size = 32*num_warps(pp2);
-    return TeamPolicy(league_size, std::min(128, team_size));
+    return TeamPolicy<Props...> (league_size, std::min(128, team_size));
   }
 
   // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
