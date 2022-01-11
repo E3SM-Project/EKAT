@@ -227,7 +227,7 @@ struct ExeSpaceUtils {
 
   template<typename... Props>
   static TeamPolicy<Props...> get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
-    return get_default_team_policy(league_size, team_size_request);
+    return get_default_team_policy<Props...>(league_size, team_size_request);
   }
 
   // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
