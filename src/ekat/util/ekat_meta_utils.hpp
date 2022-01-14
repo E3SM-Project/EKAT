@@ -2,6 +2,7 @@
 #define EKAT_META_UTILS_HPP
 
 #include <tuple>
+#include <type_traits>
 
 namespace ekat
 {
@@ -85,35 +86,6 @@ struct AccessList <TypeList<T,Ts...>,0> {
   using type = T;
 };
 
-// A map of types
-template<typename KP, typename VP>
-struct TypeMap;
-
-template<typename... Ks, typename... Vs>
-struct TypeMap<TypeList<Ks...>,TypeList<Vs...>> : public std::tuple<Vs...> {
-  using keys = TypeList<Ks...>;
-  using vals = TypeList<Vs...>;
-  using self = TypeMap<keys,vals>;
-  static_assert (keys::size==vals::size, "Error! Keys and values have different sizes.\n");
-  static_assert (UniqueTypeList<keys>::value, "Error! Keys are not unique.\n");
-
-  template<typename K>
-  struct AtHelper {
-    static constexpr int pos = FirstOf<K,keys>::pos;
-    static_assert(pos>=0, "Error! Input type not found in this TypeMap.\n");
-    // For pos<0, expose whatever you want. This helper won't compile anyways
-    using type = typename std::conditional<pos<0,void,typename AccessList<vals,pos>::type>::type;
-  };
-
-  template<typename K>
-  using at_t = typename AtHelper<K>::type;
-
-  template<typename K>
-  at_t<K>& at () { return std::get<AtHelper<K>::pos>(*this); }
-
-  static constexpr int size = keys::size;
-};
-
 // Given a class template C, and a pack of template args T1,...,Tn,
 // create a pack containing the C<T1>,...,C<Tn>
 template<template<typename> class C, typename P>
@@ -158,6 +130,94 @@ struct TypeListFor<TypeList<T,Ts...>> {
     l(T());
     TypeListFor<TypeList<Ts...>> pf(l);
   }
+};
+
+// A map of types
+template<typename KP, typename VP>
+struct TypeMap;
+
+template<typename... Ks, typename... Vs>
+struct TypeMap<TypeList<Ks...>,TypeList<Vs...>> : public std::tuple<Vs...> {
+  struct NotFound {};
+private:
+
+  template<typename T>
+  using base_t = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+
+  template<typename V1, typename V2>
+  static typename std::enable_if<std::is_same<base_t<V1>,base_t<V2>>::value,bool>::type
+  check_eq (const V1& v1, const V2& v2) {
+    return v1==v2;
+  }
+  template<typename V1, typename V2>
+  static typename std::enable_if<!std::is_same<base_t<V1>,base_t<V2>>::value,bool>::type
+  check_eq (const V1& /* v1 */, const V2& /* v2 */) {
+    return false;
+  }
+public:
+
+  using keys = TypeList<Ks...>;
+  using vals = TypeList<Vs...>;
+  using self = TypeMap<keys,vals>;
+  static_assert (keys::size==vals::size, "Error! Keys and values have different sizes.\n");
+  static_assert (UniqueTypeList<keys>::value, "Error! Keys are not unique.\n");
+
+  template<typename K>
+  struct AtHelper {
+    static constexpr int pos = FirstOf<K,keys>::pos;
+  private:
+    // The second arg to std::conditional must be instantiated. If pos<0,
+    // AccessList does not compile. Hence, if pos<0, use 0, which will for
+    // sure work (TypeList has size>=1). The corresponding type will not
+    // be exposed anyways. It's just to get a valid instantiation of
+    // std::conditional.
+    struct GetSafe {
+      static constexpr int safe_pos = pos>=0 ? pos : 0;
+      using type = typename AccessList<vals,safe_pos>::type;
+    };
+  public:
+    using type = typename std::conditional<(pos<0),NotFound,typename GetSafe::type>::type;
+  };
+
+  template<typename K>
+  static constexpr bool has_t () {
+    return not std::is_same<at_t<K>,NotFound>::value;
+  }
+
+  template<typename V>
+  bool has_v (const V& v) const {
+    if (FirstOf<V,vals>::pos==-1) {
+      return false;
+    }
+    bool found = false;
+    TypeListFor<keys>([&](auto t){
+      using key_t = decltype(t);
+      const auto& value = at<key_t>();
+      if (check_eq(v,value)) {
+        found = true;
+        return;
+      }
+    });
+    return found;
+  }
+
+
+  template<typename K>
+  using at_t = typename AtHelper<K>::type;
+
+  template<typename K>
+  at_t<K>& at () {
+    static_assert (has_t<K>(), "Error! Type not found in this TypeMap's keys.\n");
+    return std::get<AtHelper<K>::pos>(*this);
+  }
+
+  template<typename K>
+  const at_t<K>& at () const {
+    static_assert (has_t<K>(), "Error! Type not found in this TypeMap's keys.\n");
+    return std::get<AtHelper<K>::pos>(*this);
+  }
+
+  static constexpr int size = keys::size;
 };
 
 } // namespace ekat
