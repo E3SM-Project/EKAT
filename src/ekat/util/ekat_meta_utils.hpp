@@ -128,7 +128,7 @@ struct TypeListFor<TypeList<T,Ts...>> {
   template<typename Lambda>
   constexpr TypeListFor (Lambda&& l) {
     l(T());
-    TypeListFor<TypeList<Ts...>> pf(l);
+    TypeListFor<TypeList<Ts...>> tlf(l);
   }
 };
 
@@ -186,19 +186,7 @@ public:
 
   template<typename V>
   bool has_v (const V& v) const {
-    if (FirstOf<V,vals>::pos==-1) {
-      return false;
-    }
-    bool found = false;
-    TypeListFor<keys>([&](auto t){
-      using key_t = decltype(t);
-      const auto& value = at<key_t>();
-      if (check_eq(v,value)) {
-        found = true;
-        return;
-      }
-    });
-    return found;
+    return has_v_impl<(FirstOf<V,vals>::pos>=0)>(v,*this);
   }
 
 
@@ -218,6 +206,28 @@ public:
   }
 
   static constexpr int size = keys::size;
+private:
+
+  template<bool has_V_type, typename V>
+  typename std::enable_if<has_V_type,bool>::type
+  has_v_impl (const V& v, const self& map) const {
+    bool found = false;
+    TypeListFor<keys>([&](auto t){
+      using key_t = decltype(t);
+      const auto& value = map.at<key_t>();
+      if (check_eq(v,value)) {
+        found = true;
+        return;
+      }
+    });
+    return found;
+  }
+
+  template<bool has_V_type, typename V>
+  typename std::enable_if<!has_V_type,bool>::type
+  has_v_impl (const V& /*v*/, const self& /*map*/) const {
+    return false;
+  }
 };
 
 } // namespace ekat
