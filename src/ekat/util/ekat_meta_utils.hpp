@@ -7,33 +7,24 @@
 namespace ekat
 {
 
-// A parameter pack. To be used for template specializations
+// A list of types is just an alias for tuple
 template<typename... Ts>
-struct TypeList;
+using TypeList = std::tuple<Ts...>;
 
-template<typename T>
-struct TypeList<T> {
-  using head = T;
-  static constexpr int size = 1;
-};
+template<typename TL>
+struct type_list_size : std::tuple_size<TL> {};
 
-template<typename T, typename... Ts>
-struct TypeList<T,Ts...> {
-private:
-  using tail = TypeList<Ts...>;
-public:
-  using head = T;
-  static constexpr int size = 1 + tail::size;
-};
-
-// Cat two packs
-template<typename P1, typename P2>
-struct CatLists;
+// Cat two type lists
+template<typename TL1, typename TL2>
+struct CatTypeLists;
 
 template<typename... T1s, typename... T2s>
-struct CatLists<TypeList<T1s...>,TypeList<T2s...>> {
+struct CatTypeLists<TypeList<T1s...>,TypeList<T2s...>> {
   using type = TypeList<T1s...,T2s...>;
 };
+
+template<typename TL1, typename TL2>
+using type_list_cat = typename CatTypeLists<TL1,TL2>::type;
 
 // Find position of first occurrence of type T in a TypeList, store in 'pos'.
 // If not found, set pos = -1.
@@ -54,65 +45,30 @@ public:
 };
 
 // Check if a TypeList contains unique types
-template<typename P>
-struct UniqueTypeList;
+template<typename TL>
+struct is_type_list_unique;
 
 template<typename T>
-struct UniqueTypeList<TypeList<T>> : std::true_type {};
+struct is_type_list_unique<TypeList<T>> : std::true_type {};
 
 template<typename T, typename... Ts>
-struct UniqueTypeList<TypeList<T,Ts...>> {
+struct is_type_list_unique<TypeList<T,Ts...>> {
   static constexpr bool value = FirstOf<T,TypeList<Ts...>>::pos==-1 &&
-                                UniqueTypeList<TypeList<Ts...>>::value;
+                                is_type_list_unique<TypeList<Ts...>>::value;
 };
 
-// Access N-th entry of a pack
-template<typename P, int N>
-struct AccessList;
-
-template<typename T, typename... Ts, int N>
-struct AccessList <TypeList<T,Ts...>,N> {
-private:
-  using pack = TypeList<T,Ts...>;
-  using tail = TypeList<Ts...>;
-  static_assert (N>=0 && N<pack::size, "Error! Index out of bounds.\n");
-
-public:
-  using type = typename AccessList<tail,N-1>::type;
-};
-
-template<typename T, typename... Ts>
-struct AccessList <TypeList<T,Ts...>,0> {
-  using type = T;
-};
-
-// Given a class template C, and a pack of template args T1,...,Tn,
-// create a pack containing the C<T1>,...,C<Tn>
-template<template<typename> class C, typename P>
-struct ApplyTemplate;
-
-template<template<typename> class C, typename T>
-struct ApplyTemplate<C,TypeList<T>> {
-  using type = TypeList<C<T>>;
-};
-
-template<template<typename> class C, typename T, typename... Ts>
-struct ApplyTemplate<C,TypeList<T,Ts...>> {
-private:
-  using head = TypeList<C<T>>;
-  using tail = typename ApplyTemplate<C,TypeList<Ts...>>::type;
-public:
-  using type = typename CatLists<head,tail>::type;
-};
+// Access N-th entry of a type list
+template<typename TL, int N>
+using type_list_get = typename std::tuple_element<N,TL>::type;
 
 // Iterate over a TypeList
 // Requires a generic lambda that only accept an instance of the
-// pack types. Can only use input to deduce its type.
+// type list types. Can only use input to deduce its type.
 //  auto l = [&](auto t) {
 //    using T = decltype(t);
 //    call_some_func<T>(...);
 //  };
-template<typename P>
+template<typename TL>
 struct TypeListFor;
 
 template<typename T>
@@ -132,12 +88,16 @@ struct TypeListFor<TypeList<T,Ts...>> {
   }
 };
 
-// A map of types
-template<typename KP, typename VP>
+// A map of types. Much like a tuple, but can be accessed with a type,
+// rather than an int.
+template<typename Keys, typename Vals>
 struct TypeMap;
 
 template<typename... Ks, typename... Vs>
 struct TypeMap<TypeList<Ks...>,TypeList<Vs...>> : public std::tuple<Vs...> {
+  // Helper type. Since it's not exposed, there's no risk it can clash with
+  // an actual entry of the keys or vals type lists (unlike something like 'void',
+  // which could potentially be used by the user).
   struct NotFound {};
 private:
 
@@ -159,21 +119,25 @@ public:
   using keys = TypeList<Ks...>;
   using vals = TypeList<Vs...>;
   using self = TypeMap<keys,vals>;
-  static_assert (keys::size==vals::size, "Error! Keys and values have different sizes.\n");
-  static_assert (UniqueTypeList<keys>::value, "Error! Keys are not unique.\n");
+  static constexpr int size = type_list_size<keys>::value;
+  static_assert (size>0,
+                 "Error! TypeMap instantiated with a 0-length keys TypeList.\n");
+  static_assert (size==type_list_size<vals>::value,
+                 "Error! Keys and values have different sizes.\n");
+  static_assert (is_type_list_unique<keys>::value, "Error! Keys are not unique.\n");
 
   template<typename K>
   struct AtHelper {
     static constexpr int pos = FirstOf<K,keys>::pos;
   private:
     // The second arg to std::conditional must be instantiated. If pos<0,
-    // AccessList does not compile. Hence, if pos<0, use 0, which will for
+    // type_list_get does not compile. Hence, if pos<0, use 0, which will for
     // sure work (TypeList has size>=1). The corresponding type will not
     // be exposed anyways. It's just to get a valid instantiation of
     // std::conditional.
     struct GetSafe {
       static constexpr int safe_pos = pos>=0 ? pos : 0;
-      using type = typename AccessList<vals,safe_pos>::type;
+      using type = type_list_get<vals,safe_pos>;
     };
   public:
     using type = typename std::conditional<(pos<0),NotFound,typename GetSafe::type>::type;
@@ -205,7 +169,6 @@ public:
     return std::get<AtHelper<K>::pos>(*this);
   }
 
-  static constexpr int size = keys::size;
 private:
 
   template<bool has_V_type, typename V>
@@ -229,6 +192,31 @@ private:
   has_v_impl (const V& /*v*/, const self& /*map*/) const {
     return false;
   }
+};
+
+// Given a class template C, and a type list with template args T1,...,Tn,
+// create a type list containing the C<T1>,...,C<Tn> types. E.g., with
+//
+//   template<typename T> using vec = std::vector<T>;
+//   using types = TypeList<int,float,double>;
+//   using vec_types = ApplyTemplate<vec,types>::type;
+//
+// Then vec_type is TypeList<std::vector<int>,std::vector<float>,std::vector<double>>;
+template<template<typename> class C, typename TL>
+struct ApplyTemplate;
+
+template<template<typename> class C, typename T>
+struct ApplyTemplate<C,TypeList<T>> {
+  using type = TypeList<C<T>>;
+};
+
+template<template<typename> class C, typename T, typename... Ts>
+struct ApplyTemplate<C,TypeList<T,Ts...>> {
+private:
+  using head = TypeList<C<T>>;
+  using tail = typename ApplyTemplate<C,TypeList<Ts...>>::type;
+public:
+  using type = type_list_cat<head,tail>;
 };
 
 } // namespace ekat

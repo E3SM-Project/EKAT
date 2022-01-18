@@ -18,23 +18,27 @@ TEST_CASE ("meta_utils") {
   using L5 = TypeList<std::string,std::string,std::string>;
 
   SECTION ("type_list") {
+    // Check access of type list
+    REQUIRE (std::is_same<type_list_get<L1,0>,int>::value);
+    REQUIRE (std::is_same<type_list_get<L1,1>,float>::value);
+    REQUIRE (std::is_same<type_list_get<L1,2>,double>::value);
+
     // Check size is correct
-    REQUIRE (std::is_same<L1::head,int>::value);
-    constexpr int L1size = L1::size;
+    REQUIRE (std::is_same<type_list_get<L1,0>,int>::value);
+    constexpr int L1size = type_list_size<L1>::value;
     REQUIRE (L1size==3);
 
     // Check concat of two lists equals list of union of their types
-    using L1L2 = typename CatLists<L1,L2>::type;
+    using L1L2 = type_list_cat<L1,L2>;
+    using L1L3 = type_list_cat<L1,L3>;
+
     REQUIRE (std::is_same<L1L2,TypeList<int,float,double,char,void>>::value);
-    constexpr int L1L2size = L1L2::size;
+    constexpr int L1L2size = type_list_size<L1L2>::value;
     REQUIRE (L1L2size==5);
 
     // Check unique returns the expected value
-    using L1L2 = typename CatLists<L1,L2>::type;
-    using L1L3 = typename CatLists<L1,L3>::type;
-
-    REQUIRE (UniqueTypeList<L1L2>::value);
-    REQUIRE (not UniqueTypeList<L1L3>::value);
+    REQUIRE (is_type_list_unique<L1L2>::value);
+    REQUIRE (not is_type_list_unique<L1L3>::value);
 
     // Check we can find the first entry of a type in a list (if found)
     constexpr auto f_pos = FirstOf<float,L1>::pos;
@@ -42,11 +46,6 @@ TEST_CASE ("meta_utils") {
 
     REQUIRE (f_pos==1);
     REQUIRE (v_pos==-1);
-
-    // Check access of type list
-    REQUIRE (std::is_same<typename AccessList<L1,0>::type,int>::value);
-    REQUIRE (std::is_same<typename AccessList<L1,1>::type,float>::value);
-    REQUIRE (std::is_same<typename AccessList<L1,2>::type,double>::value);
   }
 
   SECTION ("type_map") {
@@ -98,9 +97,9 @@ TEST_CASE ("meta_utils") {
     // Given a template type, instantiate it over all types in a type list
     using Templates = typename ApplyTemplate<TestVec,L1>::type;
 
-    REQUIRE (std::is_same<typename AccessList<Templates,0>::type,TestVec<int>>::value);
-    REQUIRE (std::is_same<typename AccessList<Templates,1>::type,TestVec<float>>::value);
-    REQUIRE (std::is_same<typename AccessList<Templates,2>::type,TestVec<double>>::value);
+    REQUIRE (std::is_same<type_list_get<Templates,0>,TestVec<int>>::value);
+    REQUIRE (std::is_same<type_list_get<Templates,1>,TestVec<float>>::value);
+    REQUIRE (std::is_same<type_list_get<Templates,2>,TestVec<double>>::value);
   }
 
   SECTION ("list_for") {
