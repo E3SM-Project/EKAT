@@ -214,7 +214,8 @@ private:
     bool found = false;
     TypeListFor<keys>([&](auto t){
       using key_t = decltype(t);
-      const auto& value = map.at<key_t>();
+
+      const auto& value = map.template at<key_t>();
       if (check_eq(v,value)) {
         found = true;
         return;
