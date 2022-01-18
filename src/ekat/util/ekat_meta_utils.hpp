@@ -14,7 +14,7 @@ using TypeList = std::tuple<Ts...>;
 template<typename TL>
 struct type_list_size : std::tuple_size<TL> {};
 
-// Cat two type lists
+// Concatenate two type lists
 template<typename TL1, typename TL2>
 struct CatTypeLists;
 

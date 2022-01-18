@@ -28,7 +28,7 @@ TEST_CASE ("meta_utils") {
     constexpr int L1size = type_list_size<L1>::value;
     REQUIRE (L1size==3);
 
-    // Check concat of two lists equals list of union of their types
+    // Check concatenation of two lists equals list of union of their types
     using L1L2 = type_list_cat<L1,L2>;
     using L1L3 = type_list_cat<L1,L3>;
 
