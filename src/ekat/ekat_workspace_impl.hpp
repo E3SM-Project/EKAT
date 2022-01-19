@@ -148,6 +148,23 @@ void WorkspaceManager<T, D>::setup (T* data, int size, int max_used, TeamPolicy 
 }
 
 template <typename T, typename D>
+void WorkspaceManager<T, D>::reset_internals()
+{
+#ifndef NDEBUG
+  Kokkos::deep_copy(m_active, false);
+  Kokkos::deep_copy(m_counts, 0);
+  Kokkos::deep_copy(m_high_water, 0);
+  Kokkos::deep_copy(m_next_slot, 0);
+#endif
+
+  auto policy = ExeSpaceUtils<ExeSpace>::get_default_team_policy(m_max_ws_idx, m_max_used);
+  Kokkos::parallel_for(
+    "WorkspaceManager reset",
+    policy,
+    *this);
+}
+
+template <typename T, typename D>
 KOKKOS_INLINE_FUNCTION
 typename WorkspaceManager<T, D>::Workspace
 WorkspaceManager<T, D>::get_workspace(const MemberType& team, const char* ws_name) const
@@ -171,7 +188,7 @@ void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int m
   auto policy = ExeSpaceUtils<ExeSpace>::get_default_team_policy(max_ws_idx, max_used);
 
   Kokkos::parallel_for(
-    "WorkspaceManager ctor",
+    "WorkspaceManager setup",
     policy,
     *this);
 }

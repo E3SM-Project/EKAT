@@ -157,29 +157,34 @@ static void unittest_workspace()
     REQUIRE(wsm1.m_reserve == 1);
     REQUIRE(wsm2.m_reserve == 1);
 
-    // Take and release some views
-    Kokkos::parallel_for("", policy, KOKKOS_LAMBDA(const MemberType& team) {
-      auto ws1 = wsm1.get_workspace(team);
-      auto ws2 = wsm2.get_workspace(team);
+    // Take and release some views inside an outer iteration. This tests the need
+    // for reset_internals().
+    for (int n=0; n<5; ++n) {
+      wsm1.reset_internals();
+      wsm2.reset_internals();
+      Kokkos::parallel_for("", policy, KOKKOS_LAMBDA(const MemberType& team) {
+        auto ws1 = wsm1.get_workspace(team);
+        auto ws2 = wsm2.get_workspace(team);
 
-      Unmanaged<view_1d<double> > v11, v12, v13, v14,
-                                  v21, v22, v23, v24;
-      ws1.template take_many_contiguous_unsafe<4>(
-        {"v11", "v12", "v13", "v14"},
-        {&v11, &v12, &v13, &v14});
-      ws2.template take_many_contiguous_unsafe<4>(
-        {"v21", "v22", "v23", "v24"},
-        {&v21, &v22, &v23, &v24});
+        Unmanaged<view_1d<double> > v11, v12, v13, v14,
+                                    v21, v22, v23, v24;
+        ws1.template take_many_contiguous_unsafe<4>(
+          {"v11", "v12", "v13", "v14"},
+          {&v11, &v12, &v13, &v14});
+        ws2.template take_many_contiguous_unsafe<4>(
+          {"v21", "v22", "v23", "v24"},
+          {&v21, &v22, &v23, &v24});
 
-      // Assert the memory access has not exceeded the allocation
-      const int dist = data_end - (v14.data()+v14.size());
-      EKAT_KERNEL_ASSERT_MSG(dist >= 0, "Error! Local view extended past allocation");
+        // Assert the memory access has not exceeded the allocation
+        const int dist = data_end - (v14.data()+v14.size());
+        EKAT_KERNEL_ASSERT_MSG(dist >= 0, "Error! Local view extended past allocation");
 
-      ws1.template release_many_contiguous<4>(
-        {&v11, &v12, &v13, &v14});
-      ws2.template release_many_contiguous<4>(
-        {&v21, &v22, &v23, &v24});
-    });
+        ws1.template release_many_contiguous<4>(
+          {&v11, &v12, &v13, &v14});
+        ws2.template release_many_contiguous<4>(
+          {&v21, &v22, &v23, &v24});
+      });
+    }
   }
   {
     const int slot_length = 16;
