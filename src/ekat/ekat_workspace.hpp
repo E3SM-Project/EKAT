@@ -126,6 +126,13 @@ class WorkspaceManager
   void setup(T* data, int size, int max_used, TeamPolicy policy,
              const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
 
+  // call from host.
+  //
+  // Reset the internal structures that might have changed when taking and releasing blocks.
+  // This is useful when using the WorkspaceManager inside an iterative method, where setup()
+  // is called during an initialization phase, but the WSM is used inside an iteration loop.
+  void reset_internals();
+
   class Workspace;
 
   // call from device
