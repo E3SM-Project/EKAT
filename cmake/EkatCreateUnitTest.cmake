@@ -17,7 +17,7 @@ set(CUT_EXEC_MV_ARGS
   LIBS LIBS_DIRS LINKER_FLAGS)
 
 set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
-set(CUT_TEST_1V_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
+set(CUT_TEST_1V_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG EXEC_LAUNCHER)
 set(CUT_TEST_MV_ARGS EXE_ARGS MPI_RANKS THREADS MPI_EXTRA_ARGS LABELS PROPERTIES)
 
 # This function takes the following mandatory arguments:
@@ -140,6 +140,9 @@ endfunction(EkatCreateUnitTestExec)
 #    - PROPERTIES: a list of properties for ALL the tests in the threads/ranks combinations
 #    - SERIAL: if this options is present, the different tests (corresponding to different
 #      THREADS/RANKS combination will NOT be allowed to run concurrently (via setting of a RESOURCE_LOCK).
+#    - EXEC_LAUNCHER: a command to pre-pend to the (serial) test executable. For instance, this could
+#                     be a profiler, or valgrind, or another script. E.g., for running tests through valgrind,
+#                     you can pass 'EXEC_LAUNCHER "valgrind --error-exitcode=1 --suppressions=my_supp_file.txt"'
 function(EkatCreateUnitTestFromExec test_name test_exec)
 
   #---------------------------#
@@ -256,20 +259,14 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
   # Loop over MPI/OpenMP configs, and create tests #
   #------------------------------------------------#
 
-  # Set up launcher prefix
-  set(launcher "${CMAKE_BINARY_DIR}/bin/test-launcher")
-  if (ecutfe_PRINT_OMP_AFFINITY)
-    string(APPEND launcher " -p")
-  endif()
-  if (EKAT_TEST_LAUNCHER_BUFFER)
-    string(APPEND launcher " -b")
-  endif()
-  string(APPEND launcher " --")
-
   if (ecutfe_EXE_ARGS)
     set(invokeExec "./${test_exec} ${ecutfe_EXE_ARGS}")
   else()
     set(invokeExec "./${test_exec}")
+  endif()
+
+  if (ecutfe_EXEC_LAUNCHER)
+    set (invokeExec "${ecutfe_EXEC_LAUNCHER} ${invokeExec}")
   endif()
 
   foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
@@ -283,18 +280,7 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
         string (APPEND FULL_TEST_NAME "_omp${NTHREADS}")
       endif()
 
-      # Setup valgrind/memcheck commmand modifications
-      if (EKAT_ENABLE_VALGRIND)
-        set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/mpi.supp")
-        set(invokeExecCurr "valgrind --error-exitcode=1 --suppressions=${VALGRIND_SUP_FILE} ${invokeExec}")
-      elseif(EKAT_ENABLE_CUDA_MEMCHECK)
-        set(invokeExecCurr "cuda-memcheck --error-exitcode 1 ${invokeExec}")
-      else()
-        set(invokeExecCurr "${invokeExec}")
-      endif()
 
-      # Prepend launcher to serial command
-      set(invokeExecCurr "${launcher} ${invokeExecCurr}")
 
       # Create the test.
       if (ecutfe_MPI_EXEC_NAME)
@@ -304,9 +290,9 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
           set (RANK_MAPPING "${ecutfe_MPI_NP_FLAG} ${NRANKS}")
         endif()
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecutfe_MPI_EXEC_NAME} ${RANK_MAPPING} ${ecutfe_MPI_EXTRA_ARGS} ${invokeExecCurr}")
+                 COMMAND sh -c "${ecutfe_MPI_EXEC_NAME} ${RANK_MAPPING} ${ecutfe_MPI_EXTRA_ARGS} ${invokeExec}")
       else()
-        add_test(NAME ${FULL_TEST_NAME} COMMAND sh -c "${invokeExecCurr}")
+        add_test(NAME ${FULL_TEST_NAME} COMMAND sh -c "${invokeExec}")
       endif()
 
       # Set test properties
