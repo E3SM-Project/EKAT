@@ -71,8 +71,6 @@ set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of E
 
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
-option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
-option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
 option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
 
 if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -97,14 +95,6 @@ endif()
 include(EkatSetCompilerFlags)
 SetCompilerFlags()
 
-##################################
-##    EKAT VALGRIND SUPPORT    ###
-##################################
-
-if (EKAT_ENABLE_VALGRIND)
-  add_subdirectory(valgrind_support)
-endif()
-
 ############################
 ###    EKAT LIBRARIES    ###
 ############################
@@ -115,35 +105,12 @@ add_subdirectory(src/ekat)
 ###     EKAT TESTING     ###
 ############################
 
-# Set some vars needed to configure test-launcher
-SetMpiRuntimeEnvVars()
-if (Kokkos_ENABLE_CUDA)
-  set (TEST_LAUNCHER_ON_GPU True)
-else()
-  set (TEST_LAUNCHER_ON_GPU False)
-endif()
-
-# Configure/install test-launcher to build/install folder
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/test-launcher
-               ${CMAKE_BINARY_DIR}/bin/test-launcher)
-include(GNUInstallDirs)
-install (PROGRAMS ${CMAKE_BINARY_DIR}/bin/test-launcher
-         DESTINATION ${CMAKE_INSTALL_BINDIR})
-
 # By default, we DO build ekat tests. This may change in the future
 option (EKAT_ENABLE_TESTS "Whether tests should be built." ON)
 
 if (EKAT_ENABLE_TESTS)
   enable_testing()
   add_subdirectory(tests)
-endif()
-
-if (EKAT_ENABLE_CUDA_MEMCHECK AND NOT Kokkos_ENABLE_CUDA)
-  message(FATAL_ERROR "Makes no sense to turn on cuda-memcheck without CUDA")
-endif()
-
-if (EKAT_ENABLE_CUDA_MEMCHECK AND EKAT_ENABLE_VALGRIND)
-  message(FATAL_ERROR "Cannot simultanously enable valgrind and cuda-memcheck")
 endif()
 
 ###########################################
