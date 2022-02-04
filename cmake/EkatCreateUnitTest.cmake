@@ -6,7 +6,7 @@ include(EkatUtils) # To check macro args
 #       the directory from where the function is called
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/Catch2/single_include)
 
-set(CUT_EXEC_OPTIONS EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
+set(CUT_EXEC_OPTIONS EXCLUDE_CATCH_MAIN EXCLUDE_TEST_SESSION)
 set(CUT_EXEC_1V_ARGS)
 set(CUT_EXEC_MV_ARGS
   INCLUDE_DIRS
@@ -75,7 +75,7 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   set_target_properties(${target_name} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_modules)
 
   # Link flags/libs
-  if (NOT ecute_EXCLUDE_MAIN_CPP)
+  if (NOT ecute_EXCLUDE_CATCH_MAIN)
     target_link_libraries(${target_name} PUBLIC ekat_test_main)
   endif ()
   if (NOT ecute_EXCLUDE_TEST_SESSION)
@@ -365,7 +365,7 @@ function(EkatCreateUnitTest test_name test_srcs)
   #------------------------------#
 
   # For catch2-based tests, pass option to remove colours (doesn't play well with CTest log files)
-  if (NOT ecut_EXCLUDE_MAIN_CPP)
+  if (NOT ecut_EXCLUDE_CATCH_MAIN)
     list (APPEND ecut_EXE_ARGS "--use-colour no")
   endif()
 

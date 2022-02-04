@@ -35,14 +35,14 @@ if (EKAT_TEST_DOUBLE_PRECISION)
     LIBS ekat
     COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
     THREADS ${EKAT_TEST_MAX_THREADS}
-    EXCLUDE_MAIN_CPP)
+    EXCLUDE_CATCH_MAIN)
 endif()
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(tridiag${SP_POSTFIX} "${TRIDIAG_SRCS}"
     LIBS ekat
     COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
     THREADS ${EKAT_TEST_MAX_THREADS}
-    EXCLUDE_MAIN_CPP)
+    EXCLUDE_CATCH_MAIN)
 endif()
 
 # Check that the tridiags main returns nonzero if invalid flags are passed
