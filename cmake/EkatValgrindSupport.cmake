@@ -1,3 +1,5 @@
+include (EkatUtils)
+
 # This macro adds ekat's valgrind_support subfolder, which generates
 # valgrind suppression files for both serial and MPI calls
 
