@@ -76,8 +76,6 @@ Here are some of EKAT's cmake config options:
 - EKAT_TEST_THREADS_INC: increment in number of threads for each test.
 - EKAT_DEFAULT_BFB: in certain kernels, whether to default to a BFB, serialized, implementation.
 - EKAT_DISABLE_TPL_WARNINGS: whether warnings from TPLs should be disabled.
-- EKAT_ENABLE_VALGRIND: whether tests should be run through valgrind.
-- EKAT_ENABLE_CUDA_MEMCHECK: whether tests should be run through cuda-memcheck.
 - EKAT_ENABLE_COVERAGE: whether to enable code coverage in the compiler.
 
 Once CMake configuration has completed, you can build and test EKAT with the usual `make` and `ctest` commands.
