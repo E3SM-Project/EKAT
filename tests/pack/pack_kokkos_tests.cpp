@@ -242,7 +242,7 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
     });
 
     auto small = repack<4>(test_k_array);
-    if (small.extent(0) != 4 * num_bigs) ++nerrs_local;
+    if (small.extent_int(0) != 4 * num_bigs) ++nerrs_local;
 
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, num_bigs*4), [&] (int i) {

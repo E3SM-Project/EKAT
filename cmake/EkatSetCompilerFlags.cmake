@@ -94,42 +94,6 @@ macro (SetCompilerFlags)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EKAT_COVERAGE_FLAGS}")
   endif()
 
-  # Handle Cuda.
-  find_package(CUDA QUIET)
-  if (CUDA_FOUND)
-    # We found cuda, but we may be only interested in running on host.
-    # Check if the compiler is not nvcc; if not, do not add cuda support
-    execute_process(COMMAND ${CMAKE_CXX_COMPILER} "--nvcc-wrapper-show"
-      RESULT_VARIABLE WRAPS_NVCC
-      OUTPUT_VARIABLE WRAPS_NVCC_OUT1
-      ERROR_QUIET)
-
-    # Need to check OMPI_CXX/MPICH_CXX (if user is using mpicxx)
-    set (mpi_distro_name)
-    GetMpiDistributionName(mpi_distro_name)
-    if (NOT "${mpi_distro_name}" STREQUAL "unknown")
-      set (mpi_cxx_backend_var_name)
-      SetMpiCxxBackendCompilerVarName(mpi_cxx_backend_var_name)
-      if (DEFINED ENV{${mpi_cxx_backend_var_name}})
-        execute_process(COMMAND $ENV{${mpi_cxx_backend_var_name}} "--nvcc-wrapper-show"
-          RESULT_VARIABLE WRAPS_NVCC
-          OUTPUT_VARIABLE WRAPS_NVCC_OUT2
-          ERROR_QUIET)
-      endif()
-      unset (mpi_cxx_backend_var_name)
-    endif()
-
-    string (FIND "${WRAPS_NVCC_OUT1} ${WRAPS_NVCC_OUT2}" "nvcc" pos)
-    if (${pos} GREATER -1)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --expt-extended-lambda")
-      # Turn off fused multiply add for debug so we can stay BFB with host
-      set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --fmad=false")
-      message (STATUS "Cuda enabled!")
-    else ()
-      message (STATUS "Cuda was found, but the C++ compiler is not nvcc_wrapper, so building without Cuda support.")
-    endif ()
-  endif ()
-
   ##############################################################################
   # Optimization flags
   # If OPT_FLAGS is set (to non-empty string), append it to Fortran/C/CXX release flags.

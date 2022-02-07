@@ -10,32 +10,26 @@ endif(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 # Add our own cmake goodies to cmake module search path
 list(APPEND CMAKE_MODULE_PATH
      ${EKAT_CMAKE_PATH}
-     ${EKAT_CMAKE_PATH}/mpi
      ${EKAT_CMAKE_PATH}/pkg_build
 )
 
-# We should avoid cxx bindings in mpi; they are already deprecated,
-# and can cause headaches at link time, cause they require -lmpi_cxx
-# (for openpmi; -lmpicxx for mpich) flag.
-include(EkatMpiUtils)
-DisableMpiCxxBindings()
 
 # Scripts containing macros needed to handle TPLs
 include(EkatBuildKokkos)
 include(EkatBuildYamlCpp)
 include(EkatBuildSpdlog)
 
-# If building on cuda, use ekat_mpicxx compiler, which sets nvcc_wrapper as backend compiler
-if (Kokkos_ENABLE_CUDA)
-  # Note: we need Kokkos_SOURCE_DIR to be defined *before* calling EkatSetNvccWrapper.
-  EkatSetKokkosSourceDir()
-
-  include (EkatSetNvccWrapper)
-  EkatSetNvccWrapper()
-endif()
-
 # EKAT has mostly C++, but some Fortran too
 project (EKAT CXX Fortran)
+
+# EKAT requires MPI.
+find_package(MPI REQUIRED)
+
+# We should avoid cxx bindings in mpi; they are already deprecated,
+# and can cause headaches at link time, cause they require -lmpi_cxx
+# (for openpmi; -lmpicxx for mpich) flag.
+include(EkatMpiUtils)
+DisableMpiCxxBindings()
 
 include(EkatUtils)
 IsDebugBuild(EKAT_IS_DEBUG_BUILD)
@@ -188,9 +182,6 @@ install (FILES
   ${EKAT_CMAKE_PATH}/EkatSetCompilerFlags.cmake
   ${EKAT_CMAKE_PATH}/EkatUtils.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
-
-install (DIRECTORY ${EKAT_CMAKE_PATH}/mpi
-         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
 
 install (DIRECTORY ${EKAT_CMAKE_PATH}/pkg_build
          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)

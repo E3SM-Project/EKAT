@@ -54,8 +54,8 @@ cmake \
   -C /path/to/my-mach.cmake                         \
   \
   -D CMAKE_BUILD_TYPE:STRING=DEBUG                  \
-  -D CMAKE_CXX_COMPILER:STRING=mpicxx               \
-  -D CMAKE_Fortran_COMPILER:STRING=mpifort          \
+  -D CMAKE_CXX_COMPILER:STRING=g++                  \
+  -D CMAKE_Fortran_COMPILER:STRING=gfortran         \
   -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_DIR}       \
   \
   -D EKAT_DISABLE_TPL_WARNINGS:BOOL=ON              \
