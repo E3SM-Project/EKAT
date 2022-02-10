@@ -83,6 +83,7 @@ target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${EKAT_BINARY_DIR}/src>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules>
+  $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/Catch2/single_include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat_f90_modules>)
 
@@ -129,7 +130,7 @@ install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules
 add_library(ekat_test_main util/ekat_catch_main.cpp)
 target_link_libraries(ekat_test_main PUBLIC ekat)
 target_include_directories(ekat_test_main PUBLIC
-  $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/catch2/include>
+  $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/Catch2/single_include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 
@@ -138,7 +139,7 @@ install (TARGETS ekat_test_main
          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install (DIRECTORY ${EKAT_SOURCE_DIR}/extern/catch2/include/catch2
+install (DIRECTORY ${EKAT_SOURCE_DIR}/extern/Catch2/single_include/catch2
          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # Pre-compile ekat_test_session.cpp into its own mini-library.
