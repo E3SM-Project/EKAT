@@ -49,7 +49,7 @@ macro (BuildCatch2)
 
     if (EKAT_DISABLE_TPL_WARNINGS)
       include (EkatUtils)
-      EkatDisableAllWarning(Catch2Targets)
+      EkatDisableAllWarning(Catch2)
     endif ()
 
     # Make sure it is processed only once
