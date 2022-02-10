@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include "ekat/logging/ekat_log_file.hpp"
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/ekat_pack.hpp"

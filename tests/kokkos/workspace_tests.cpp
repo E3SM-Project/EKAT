@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #include "ekat/ekat_workspace.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"

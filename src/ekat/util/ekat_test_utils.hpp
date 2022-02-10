@@ -3,6 +3,8 @@
 
 #include "ekat/ekat_pack.hpp"
 
+#include "catch2/catch_approx.hpp"
+
 #include <map>
 
 namespace ekat {
@@ -52,7 +54,7 @@ void catch2_req_pk_sensitive(const Scalar lhs, const Scalar rhs)
     REQUIRE(lhs == rhs);
   } else {
     if (Packsize > 1) {
-      REQUIRE(lhs == Approx(rhs));
+      REQUIRE(lhs == Catch::Approx(rhs));
     } else {
       REQUIRE(lhs == rhs);
     }

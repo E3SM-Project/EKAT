@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_RUNNER
 
-#include "catch2/catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "ekat/mpi/ekat_comm.hpp"
 #include "ekat/util/ekat_test_utils.hpp"
@@ -49,10 +49,10 @@ int main (int argc, char **argv) {
   auto& ts = ekat::TestSession::get();
   auto& device = ts.params["kokkos-device-id"];
   device = "-1";
-  cli |= Catch::clara::Opt(readCommaSeparaterParams, "key1=val1[,key2=val2[,...]]")
+  cli |= Catch::Clara::Opt(readCommaSeparaterParams, "key1=val1[,key2=val2[,...]]")
              ["--ekat-test-params"]
              ("list of parameters to forward to the test");
-  cli |= Catch::clara::Opt(device, "device")["--ekat-kokkos-device"]
+  cli |= Catch::Clara::Opt(device, "device")["--ekat-kokkos-device"]
              ("The device to be used (for GPU runs only");
   catch_session.cli(cli);
 

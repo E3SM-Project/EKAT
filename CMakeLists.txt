@@ -18,6 +18,7 @@ list(APPEND CMAKE_MODULE_PATH
 include(EkatBuildKokkos)
 include(EkatBuildYamlCpp)
 include(EkatBuildSpdlog)
+include(EkatBuildCatch2)
 
 # EKAT has mostly C++, but some Fortran too
 project (EKAT CXX Fortran)
@@ -62,6 +63,10 @@ list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
 # EKAT uses the spdlog tpl to handle logging
 BuildSpdlog()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${SPDLOG_LIBRARIES})
+
+# EKAT offers Catch2 for unit testing
+BuildCatch2()
+list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${CATCH2_LIBRARIES})
 
 set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
 
