@@ -1,11 +1,6 @@
 include(CMakeParseArguments) # Needed for backwards compatibility
 include(EkatUtils) # To check macro args
 
-# Note: we have to set this variable here, so CMAKE_CURRENT_LIST_DIR gets the
-#       directory of this file. If we did it inside the function, it would get
-#       the directory from where the function is called
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/Catch2/src)
-
 set(CUT_EXEC_OPTIONS EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
 set(CUT_EXEC_1V_ARGS)
 set(CUT_EXEC_MV_ARGS

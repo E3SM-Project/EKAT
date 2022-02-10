@@ -128,9 +128,6 @@ install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules
 # unit test don't have to all pointlessly rebuild the same file.
 add_library(ekat_test_main util/ekat_catch_main.cpp)
 target_link_libraries(ekat_test_main PUBLIC ekat)
-target_include_directories(ekat_test_main PUBLIC
-  $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/Catch2/src>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 
 install (TARGETS ekat_test_main
