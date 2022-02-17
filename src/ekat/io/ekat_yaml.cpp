@@ -1,12 +1,14 @@
-#include "ekat/ekat_parse_yaml_file.hpp"
+#include "ekat/io/ekat_yaml.hpp"
 #include "ekat/ekat_assert.hpp"
 
-#include <stdexcept>
 #include <yaml-cpp/yaml.h>
 
-#include <iostream>
+#include <sstream>
+#include <fstream>
 
 namespace ekat {
+
+// =============================== READ ============================ //
 
 template<YAML::NodeType::value Type>
 void parse_node (const YAML::Node& node,
@@ -102,7 +104,7 @@ void parse_node<YAML::NodeType::Sequence> (
     list.set(key,vec);
   } else if (seq_type==bool_type) {
     // NOTE: std::vector<bool> is a BAD thing to use.
-    std::vector<int> vec(n);
+    std::vector<char> vec(n);
     for (int i=0; i<n; ++i) {
       std::string str = node[i].as<std::string>();
       vec[i] = str2bool(str) ? 1 : 0;
@@ -123,7 +125,6 @@ void parse_node<YAML::NodeType::Sequence> (
     list.set(key,vec);
   }
 }
-
 
 template<>
 void parse_node<YAML::NodeType::Map> (
@@ -178,6 +179,104 @@ void parse_yaml_file (const std::string& fname, ParameterList& params) {
   ParameterList temp(params.name());
   parse_node<YAML::NodeType::Map> (root, temp.name(), temp);
   params = temp.sublist(params.name());
+}
+
+// =============================== WRITE ============================ //
+
+void write_parameter_list (const ParameterList& params, std::ostream& out, int indent) {
+  std::string tab(indent,' ');
+
+  // Write parameters
+  for (auto it=params.params_names_cbegin(); it!=params.params_names_cend(); ++it) {
+    const auto& pname = *it;
+    out << tab << pname << ": ";
+    if (params.isType<bool>(pname)) {
+      auto b = params.get<bool>(pname);
+      out << (b ? "true" : "false");
+    } else if (params.isType<int>(pname)) {
+      auto i = params.get<int>(pname);
+      out << i;
+    } else if (params.isType<double>(pname)) {
+      auto d = params.get<double>(pname);
+      out << std::showpoint << d;
+    } else if (params.isType<std::string>(pname)) {
+      auto s = params.get<std::string>(pname);
+      out << s;
+    } else if (params.isType<std::vector<char>>(pname)) {
+      auto cv = params.get<std::vector<char>>(pname);
+      int n = cv.size();
+      if (n==0) {
+        out << "[]";
+      } else {
+        out << '[' << (cv[0] ? "true" : "false");
+        for (int i=1; i<n; ++i) {
+          out << ", " << (cv[i] ? "true" : "false");
+        }
+        out << ']';
+      }
+    } else if (params.isType<std::vector<int>>(pname)) {
+      auto sv = params.get<std::vector<int>>(pname);
+      int n = sv.size();
+      if (n==0) {
+        out << "[]";
+      } else {
+        out << '[' << sv[0];
+        for (int i=1; i<n; ++i) {
+          out << ", " << sv[i];
+        }
+        out << ']';
+      }
+    } else if (params.isType<std::vector<double>>(pname)) {
+      auto sv = params.get<std::vector<double>>(pname);
+      int n = sv.size();
+      if (n==0) {
+        out << "[]";
+      } else {
+        out << '[' << sv[0];
+        for (int i=1; i<n; ++i) {
+          out << ", " << sv[i];
+        }
+        out << ']';
+      }
+    } else if (params.isType<std::vector<std::string>>(pname)) {
+      auto sv = params.get<std::vector<std::string>>(pname);
+      int n = sv.size();
+      if (n==0) {
+        out << "[]";
+      } else {
+        out << '[' << sv[0];
+        for (int i=1; i<n; ++i) {
+          out << ", " << sv[i];
+        }
+        out << ']';
+      }
+    }
+    
+    out << "\n";
+  }
+
+  // Write sublists
+  for (auto it=params.sublists_names_cbegin(); it!=params.sublists_names_cend(); ++it) {
+    out << tab << *it << ":\n";
+    write_parameter_list(params.sublist(*it),out,indent+2);
+  }
+}
+
+void write_yaml_file (const std::string& fname, const ParameterList& params) {
+  // YAML::Emitter emitter;
+
+  // YAML::Node root = parameter_list_to_yaml_node(params);
+  std::ofstream ofile(fname);
+
+  // Header
+  ofile << "%YAML 1.1\n"
+        << "---\n";
+
+  // Body
+  write_parameter_list (params,ofile,0);
+
+  // Footer
+  ofile << "...\n";
 }
 
 } // namespace ekat

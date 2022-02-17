@@ -9,12 +9,12 @@ EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
 set(EKAT_SOURCES
   ekat_assert.cpp
   ekat_parameter_list.cpp
-  ekat_parse_yaml_file.cpp
   ekat_session.cpp
+  io/ekat_yaml.cpp
+  io/ekat_array_io.cpp
+  io/ekat_array_io_mod.f90
   mpi/ekat_comm.cpp
   util/ekat_arch.cpp
-  util/ekat_array_io.cpp
-  util/ekat_array_io_mod.f90
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
 )
@@ -36,6 +36,7 @@ set(EKAT_HEADERS
   ekat_type_traits.hpp
   ekat_workspace.hpp
   ekat_workspace_impl.hpp
+  io/ekat_yaml.hpp
   kokkos/ekat_kokkos_meta.hpp
   kokkos/ekat_kokkos_types.hpp
   kokkos/ekat_kokkos_utils.hpp
