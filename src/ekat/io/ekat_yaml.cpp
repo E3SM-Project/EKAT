@@ -250,6 +250,12 @@ void write_parameter_list (const ParameterList& params, std::ostream& out, int i
         }
         out << ']';
       }
+    } else {
+      EKAT_ERROR_MSG (
+          "[write_yaml_file] Error! The writer function can only write the following types:\n\n"
+          "  bool, int, double, std::string, \n"
+          "  std::vector<char>, std::vector<int>, std::vector<double>, std::vector<std::string>\n\n"
+          "where std::vector<char> is interpreted as an array of bool's.\n");
     }
     
     out << "\n";
