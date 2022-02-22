@@ -1,3 +1,4 @@
+#include "ekat/util/ekat_meta_utils.hpp"
 #include "ekat/io/ekat_yaml.hpp"
 #include "ekat/ekat_assert.hpp"
 
@@ -5,8 +6,15 @@
 
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 
 namespace ekat {
+
+// These are the values we can parse.
+using values_t     = TypeList<bool,int,double,std::string>;
+
+// These are the vector<T> values we can store. char is to store bool.
+using seq_values_t = TypeList<char,int,double,std::string>;
 
 // =============================== READ ============================ //
 
@@ -15,28 +23,72 @@ void parse_node (const YAML::Node& node,
                  const std::string& key,
                  ParameterList& list);
 
-// Helpers
-bool is_bool (const std::string& s) {
+// Check if input string can be interpreted as given type
+template<typename T>
+bool is_type (const std::string& s);
+
+template<>
+bool is_type<bool> (const std::string& s) {
   return s=="true" || s=="false" ||
          s=="TRUE" || s=="FALSE";
 }
-
-bool str2bool (const std::string& s) {
-  return (s=="true" || s=="TRUE");
-}
-
-bool is_int (const std::string& s) {
+template<>
+bool is_type<int> (const std::string& s) {
   std::istringstream is(s);
   int d;
   is >> d;
   return !is.fail() && is.eof();
 }
-
-bool is_double (const std::string& s) {
+template<>
+bool is_type<double> (const std::string& s) {
   std::istringstream is(s);
   double d;
   is >> d;
   return !is.fail() && is.eof();
+}
+template<>
+bool is_type<std::string> (const std::string&) {
+  // This is the fallback case. A string...is a string.
+  return true;
+}
+
+// Convert a string to the given type
+template<typename T>
+T str2type (const std::string& s);
+
+template<>
+bool str2type<bool> (const std::string& s) {
+  return (s=="true" || s=="TRUE");
+}
+template<>
+char str2type<char> (const std::string& s) {
+  return (s=="true" || s=="TRUE") ? 1 : 0;
+}
+template<>
+int str2type<int> (const std::string& s) {
+  return std::stoi(s);
+}
+template<>
+double str2type<double> (const std::string& s) {
+  return std::stod(s);
+}
+template<>
+std::string str2type<std::string> (const std::string& s) {
+  return s;
+}
+
+// Returns true if all entries of the node sequence can be
+// interpreted as values of type T
+template<typename T>
+bool is_seq (const YAML::Node& node) {
+  int n = node.size();
+  for (int i=0; i<n; ++i) {
+    std::string str = node[i].as<std::string>();
+    if (not is_type<T>(str)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // ---------- IMPLEMENTATION -------------- // 
@@ -53,15 +105,15 @@ void parse_node<YAML::NodeType::Scalar> (
   // Extract scalar as string, then try some casts
   // First int, then double, and finally fall back to string
   std::string str = node.as<std::string>();
-  if (is_int(str)) {
-    list.set(key,std::stoi(str));
-  } else if (is_bool(str)) {
-    list.set(key,str2bool(str));
-  } else if (is_double(str)) {
-    list.set(key,std::stod(str));
-  } else {
-    list.set(key,str);
-  }
+
+  TypeListFor<values_t>([&](auto t) -> bool{
+    using vtype = decltype(t);
+    if (is_type<vtype>(str)) {
+      list.set(key,str2type<vtype>(str));
+      return true;
+    }
+    return false;
+  });
 }
 
 template<>
@@ -73,57 +125,25 @@ void parse_node<YAML::NodeType::Sequence> (
   EKAT_REQUIRE_MSG (node.Type()==YAML::NodeType::Sequence,
                       "Error! Actual node type incompatible with template parameter.\n");
 
-  constexpr int str_type = 0;
-  constexpr int dbl_type = 1;
-  constexpr int int_type = 2;
-  constexpr int bool_type = 3;
-  int seq_type = -1;
+  // Loop over the value types, just to find the one corresponding to seq_type
+  using val_to_seq_val = TypeMap<values_t,seq_values_t>;
   int n = node.size();
-  for (int i=0; i<n; ++i) {
-    std::string str = node[i].as<std::string>();
-    int ith_type = is_int(str)
-                     ? int_type
-                     : (is_double(str)
-                          ? dbl_type
-                          : (is_bool(str) ? bool_type : str_type));
-
-    EKAT_REQUIRE_MSG(seq_type==-1 || seq_type==ith_type,
-                       "Error! Found a squence with entries of mixed types.\n"
-                       "       Common case is a sequence with int and doubles, such as\n"
-                       "          [ 2.3 1 ]\n");
-
-    seq_type = ith_type;
-  }
-
-  if (seq_type==int_type) {
-    std::vector<int> vec(n);
-    for (int i=0; i<n; ++i) {
-      std::string str = node[i].as<std::string>();
-      vec[i] = std::stoi(str);
+  TypeListFor<values_t>([&](auto t)->bool {
+    using vtype = decltype(t);
+    if (is_seq<vtype>(node)) {
+      // Once we know the value type, create the proper std::vector, fill it, and set it in the list
+      using seq_val_t = val_to_seq_val::at_t<vtype>; 
+      std::vector<seq_val_t> vec(n);
+      for (int i=0; i<n; ++i) {
+        std::string str = node[i].as<std::string>();
+        vec[i] = str2type<seq_val_t>(str);
+      }
+      list.set(key,vec);
+      // Returning true allows to immediately break from the TypeListFor
+      return true;
     }
-    list.set(key,vec);
-  } else if (seq_type==bool_type) {
-    // NOTE: std::vector<bool> is a BAD thing to use.
-    std::vector<char> vec(n);
-    for (int i=0; i<n; ++i) {
-      std::string str = node[i].as<std::string>();
-      vec[i] = str2bool(str) ? 1 : 0;
-    }
-    list.set(key,vec);
-  } else if (seq_type==dbl_type) {
-    std::vector<double> vec(n);
-    for (int i=0; i<n; ++i) {
-      std::string str = node[i].as<std::string>();
-      vec[i] = std::stod(str);
-    }
-    list.set(key,vec);
-  } else {
-    std::vector<std::string> vec(n);
-    for (int i=0; i<n; ++i) {
-      vec[i] = node[i].as<std::string>();
-    }
-    list.set(key,vec);
-  }
+    return false;
+  });
 }
 
 template<>
@@ -183,82 +203,80 @@ void parse_yaml_file (const std::string& fname, ParameterList& params) {
 
 // =============================== WRITE ============================ //
 
+// Helper functions to allow printing values correctly. In particular:
+//  - char(0) and char(1) printed as "false", "true"
+//  - double printed with at least 1 decimal digit, and no trailing zeros
+
+template<typename T>
+std::string write_param (const T& t) {
+  std::stringstream s;
+  s << std::boolalpha << t;
+  return s.str();
+}
+template<>
+std::string write_param<double> (const double& t) {
+  std::stringstream ss;
+  ss << std::showpoint << std::setprecision(14) << t;
+  std::string s = ss.str();
+  auto dot = s.find('.');
+  auto last_nz = s.find_last_not_of('0');
+  if (last_nz==dot) {
+    return s.substr(0,dot+2);
+  } else {
+    return s.substr(0,last_nz+1);
+  }
+}
+template<>
+std::string write_param<char> (const char& t) {
+  return (t ? "true" : "false");
+}
+
 void write_parameter_list (const ParameterList& params, std::ostream& out, int indent) {
   std::string tab(indent,' ');
+
+  // Helper lambda, to try all possible value types
+  auto try_values = [&](const std::string& pname) -> bool {
+    bool found = false;
+    TypeListFor<values_t>([&](auto t) ->bool {
+      using vtype = decltype(t);
+      if (params.isType<vtype>(pname)) {
+        auto v = params.get<vtype>(pname);
+        out << write_param(v) << '\n';
+        found = true;
+      }
+      return found;
+    });
+    return found;
+  };
+
+  // Helper lambda, to try all possible sequence types
+  auto try_sequences = [&](const std::string& pname) {
+    bool found = false;
+    TypeListFor<seq_values_t>([&](auto t) ->bool {
+      using vtype = std::vector<decltype(t)>;
+      if (params.isType<vtype>(pname)) {
+        auto v = params.get<vtype>(pname);
+        std::stringstream s;
+        for (const auto& it : v)
+          s << write_param(it) << ", ";
+        // Skip trailing ", " in s
+        out << "[" << s.str().substr(0,s.str().size()-2) << "]\n";
+        found = true;
+      }
+      return found;
+    });
+    return found;
+  };
 
   // Write parameters
   for (auto it=params.params_names_cbegin(); it!=params.params_names_cend(); ++it) {
     const auto& pname = *it;
     out << tab << pname << ": ";
-    if (params.isType<bool>(pname)) {
-      auto b = params.get<bool>(pname);
-      out << (b ? "true" : "false");
-    } else if (params.isType<int>(pname)) {
-      auto i = params.get<int>(pname);
-      out << i;
-    } else if (params.isType<double>(pname)) {
-      auto d = params.get<double>(pname);
-      out << std::showpoint << d;
-    } else if (params.isType<std::string>(pname)) {
-      auto s = params.get<std::string>(pname);
-      out << s;
-    } else if (params.isType<std::vector<char>>(pname)) {
-      auto cv = params.get<std::vector<char>>(pname);
-      int n = cv.size();
-      if (n==0) {
-        out << "[]";
-      } else {
-        out << '[' << (cv[0] ? "true" : "false");
-        for (int i=1; i<n; ++i) {
-          out << ", " << (cv[i] ? "true" : "false");
-        }
-        out << ']';
-      }
-    } else if (params.isType<std::vector<int>>(pname)) {
-      auto sv = params.get<std::vector<int>>(pname);
-      int n = sv.size();
-      if (n==0) {
-        out << "[]";
-      } else {
-        out << '[' << sv[0];
-        for (int i=1; i<n; ++i) {
-          out << ", " << sv[i];
-        }
-        out << ']';
-      }
-    } else if (params.isType<std::vector<double>>(pname)) {
-      auto sv = params.get<std::vector<double>>(pname);
-      int n = sv.size();
-      if (n==0) {
-        out << "[]";
-      } else {
-        out << '[' << sv[0];
-        for (int i=1; i<n; ++i) {
-          out << ", " << sv[i];
-        }
-        out << ']';
-      }
-    } else if (params.isType<std::vector<std::string>>(pname)) {
-      auto sv = params.get<std::vector<std::string>>(pname);
-      int n = sv.size();
-      if (n==0) {
-        out << "[]";
-      } else {
-        out << '[' << sv[0];
-        for (int i=1; i<n; ++i) {
-          out << ", " << sv[i];
-        }
-        out << ']';
-      }
-    } else {
-      EKAT_ERROR_MSG (
+    EKAT_REQUIRE_MSG (try_values(pname) or try_sequences(pname),
           "[write_yaml_file] Error! The writer function can only write the following types:\n\n"
           "  bool, int, double, std::string, \n"
           "  std::vector<char>, std::vector<int>, std::vector<double>, std::vector<std::string>\n\n"
           "where std::vector<char> is interpreted as an array of bool's.\n");
-    }
-    
-    out << "\n";
   }
 
   // Write sublists
