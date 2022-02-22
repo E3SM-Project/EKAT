@@ -2,6 +2,8 @@
 
 #include "ekat/util/ekat_meta_utils.hpp"
 
+#include <iostream>
+
 // We can't define template alias inside the TEST_CASE block,
 // since, upon macro expansion, those blocks are at function scope.
 
@@ -122,5 +124,18 @@ TEST_CASE ("meta_utils") {
     });
 
     REQUIRE (size==6);
+
+    // Break the for loop before the end
+    size = 0;
+    TypeListFor<K>([&](auto t) -> bool {
+      const auto& m = map.at<decltype(t)>();
+      size += m.size();
+      if (size==5) {
+        return true;
+      }
+      return false;
+    });
+
+    REQUIRE (size==5);
   }
 }
