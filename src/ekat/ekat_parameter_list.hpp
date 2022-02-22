@@ -71,7 +71,7 @@ public:
   // NOTE: this *requires* op<< to be overloaded for all the stored parameters.
   //       The code won't crash otherwise, but instead of the parameter, you
   //       will get a message informing you of the lack of op<< overload.
-  void print (std::ostream& out = std::cout, const int indent = 0) const;
+  void print (std::ostream& out = std::cout, const int indent = 0, const int indent_inc = 1) const;
 
   // Add content of src into *this. Existing items will be overwritten.
   void import (const ParameterList& src);

@@ -79,12 +79,36 @@ struct TypeListFor<TypeList<T>> {
   }
 };
 
+// This specialization, on top of doing recursion to implement
+// the for loop, also allows to break from the loop, in case
+// the lambda object returns a bool, and the return value is true.
 template<typename T, typename...Ts>
 struct TypeListFor<TypeList<T,Ts...>> {
+private:
   template<typename Lambda>
-  constexpr TypeListFor (Lambda&& l) {
+  struct ReturnsBool {
+    using ret_type = decltype(std::declval<Lambda>()(T()));
+    static constexpr bool value = std::is_same<ret_type,bool>::value;
+  };
+
+  template<typename Lambda>
+  typename std::enable_if<not ReturnsBool<Lambda>::value>::type
+  run (Lambda&& l) {
     l(T());
     TypeListFor<TypeList<Ts...>> tlf(l);
+  }
+  template<typename Lambda>
+  typename std::enable_if<ReturnsBool<Lambda>::value>::type
+  run (Lambda&& l) {
+    if (l(T())) {
+      return;
+    }
+    TypeListFor<TypeList<Ts...>> tlf(l);
+  }
+public:
+  template<typename Lambda>
+  constexpr TypeListFor (Lambda&& l) {
+    run(l);
   }
 };
 
@@ -218,6 +242,9 @@ private:
 public:
   using type = type_list_cat<head,tail>;
 };
+
+template<template<typename> class C, typename T>
+using apply_template_t = typename ApplyTemplate<C,T>::type;
 
 } // namespace ekat
 

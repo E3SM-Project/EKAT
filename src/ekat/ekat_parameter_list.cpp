@@ -1,5 +1,7 @@
 #include "ekat/ekat_parameter_list.hpp"
 
+#include <ios>
+
 namespace ekat {
 
 ParameterList& ParameterList::sublist (const std::string& name) {
@@ -10,19 +12,16 @@ ParameterList& ParameterList::sublist (const std::string& name) {
   return m_sublists[name];
 }
 
-void ParameterList::print(std::ostream& out, const int indent) const {
-  std::string tab;
-  for (int i=0; i<indent; ++i) {
-    tab += " ";
-  }
+void ParameterList::print(std::ostream& out, const int indent, const int indent_inc) const {
+  std::string tab(indent,' ');
 
   out << tab << name() << ":\n";
-  tab += " ";
+  tab.append(indent_inc,' ');
   for (auto it : m_params) {
-    out << tab << it.first << ": " << it.second << "\n";
+    out << std::showpoint << tab << it.first << ": " << it.second << "\n";
   }
   for (auto it : m_sublists) {
-    it.second.print(out,indent+1);
+    it.second.print(out,indent+indent_inc,indent_inc);
   }
 }
 

@@ -1,5 +1,9 @@
 #include <catch2/catch.hpp>
-#include "ekat/ekat_parse_yaml_file.hpp"
+
+#include "ekat/io/ekat_yaml.hpp"
+#include "ekat/util/ekat_string_utils.hpp"
+
+#include <fstream>
 
 namespace {
 
@@ -26,8 +30,8 @@ TEST_CASE ("yaml_parser","") {
   REQUIRE (options.isParameter("My Int"));
   REQUIRE (options.isParameter("My Bool"));
 
-  std::vector<int> logicals;
-  REQUIRE_NOTHROW(logicals = constants.get<std::vector<int>>("Two Logicals"));
+  std::vector<char> logicals;
+  REQUIRE_NOTHROW(logicals = constants.get<std::vector<char>>("Two Logicals"));
 
   REQUIRE (logicals.size()==2);
   REQUIRE (logicals[0] == 1);
@@ -55,6 +59,33 @@ TEST_CASE ("yaml_parser","") {
   REQUIRE (!options.isType<std::string>("My Real"));
   REQUIRE_THROWS(options.isType<double>("I am not in the list"));
 
+}
+
+TEST_CASE ("write_yaml") {
+  using namespace ekat;
+  std::string ifile = "input.yaml";
+  std::string ofile = "output.yaml";
+
+  ParameterList params1("parameters"),params2("parameters");
+
+  parse_yaml_file(ifile,params1);
+  write_yaml_file (ofile,params1);
+  parse_yaml_file(ofile,params2);
+
+  // The two files might not match, since the order of yaml entries
+  // might not be preserved. So print param lists, split by line,
+  // and check that they have the same lines.
+  std::stringstream ss1,ss2;
+  params1.print(ss1);
+  params2.print(ss2);
+
+  auto lines1 = split(ss1.str(),'\n');
+  auto lines2 = split(ss2.str(),'\n');
+
+  REQUIRE (lines1.size()==lines2.size());
+  for (auto line : lines1) {
+    REQUIRE (contains(lines2,line));
+  }
 }
 
 } // anonymous namespace
