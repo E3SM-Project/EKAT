@@ -13,7 +13,7 @@ namespace ekat {
  * as well as arrays (a Sequence, in YAML lingo) of these types. In particular,
  * the parser will try to interpret the input string to bool, int, and double (in this
  * order), and if all casts fail, it will store it as a string. The input will be
- * interpreted as a bool only if it is "true", "false", "TRUE", "FALSE".
+ * interpreted as a bool only if it is "true" or "false" (case insensitive).
  * For Sequence inputs, the type of each entry must be the same; if not, an
  * exception will be thrown. Sequence of inputs will be stored as std::vector of
  * the corresponding type. Sequence of bool are an exception, since std::vector<bool>

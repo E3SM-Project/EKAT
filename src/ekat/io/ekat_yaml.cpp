@@ -1,3 +1,4 @@
+#include "ekat/util/ekat_string_utils.hpp"
 #include "ekat/util/ekat_meta_utils.hpp"
 #include "ekat/io/ekat_yaml.hpp"
 #include "ekat/ekat_assert.hpp"
@@ -29,8 +30,8 @@ bool is_type (const std::string& s);
 
 template<>
 bool is_type<bool> (const std::string& s) {
-  return s=="true" || s=="false" ||
-         s=="TRUE" || s=="FALSE";
+  return s==CaseInsensitiveString("true") ||
+         s==CaseInsensitiveString("false");
 }
 template<>
 bool is_type<int> (const std::string& s) {
@@ -58,7 +59,7 @@ T str2type (const std::string& s);
 
 template<>
 bool str2type<bool> (const std::string& s) {
-  return (s=="true" || s=="TRUE");
+  return s==CaseInsensitiveString("true");
 }
 template<>
 char str2type<char> (const std::string& s) {
