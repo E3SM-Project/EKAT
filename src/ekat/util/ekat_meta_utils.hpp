@@ -243,6 +243,9 @@ public:
   using type = type_list_cat<head,tail>;
 };
 
+template<template<typename> class C, typename T>
+using apply_template_t = typename ApplyTemplate<C,T>::type;
+
 } // namespace ekat
 
 #endif // EKAT_META_UTILS_HPP
