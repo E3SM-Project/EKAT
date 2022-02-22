@@ -48,14 +48,18 @@ macro (BuildYamlcpp)
     option (YAML_CPP_BUILD_TESTS "Enable yaml-cpp tests" OFF)
     add_subdirectory (${YAMLCPP_SOURCE_DIR} ${YAMLCPP_BINARY_DIR})
 
-    set (YAMLCPP_INCLUDE_DIRS
-       $<BUILD_INTERFACE:${YAMLCPP_SOURCE_DIR}/include>
-       $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/yaml-cpp/include>)
     set (YAMLCPP_LIBRARIES yaml-cpp)
 
     if (EKAT_DISABLE_TPL_WARNINGS)
       include (EkatUtils)
       EkatDisableAllWarning(yaml-cpp)
+      target_include_directories(yaml-cpp SYSTEM PUBLIC
+         $<BUILD_INTERFACE:${YAMLCPP_SOURCE_DIR}/include>
+         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/yaml-cpp/include>)
+    else()
+      target_include_directories(yaml-cpp PUBLIC
+         $<BUILD_INTERFACE:${YAMLCPP_SOURCE_DIR}/include>
+         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/yaml-cpp/include>)
     endif ()
 
     # Make sure it is processed only once

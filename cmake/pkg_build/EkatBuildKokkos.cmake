@@ -58,10 +58,14 @@ macro(BuildKokkos)
 
     add_subdirectory(${Kokkos_SOURCE_DIR} ${Kokkos_BINARY_DIR})
 
-    set (Kokkos_INCLUDE_DIRS
-      ${Kokkos_SOURCE_DIR}/core/src
-      ${Kokkos_SOURCE_DIR}/algorithms/src
-      ${Kokkos_BINARY_DIR}
+    set (Kokkos_INCLUDE_DIRS_BUILD_INTERFACE
+       ${Kokkos_SOURCE_DIR}/core/src
+       ${Kokkos_SOURCE_DIR}/algorithms/src
+       ${Kokkos_BINARY_DIR}
+    )
+    set (Kokkos_INCLUDE_DIRS_INSTALL_INTERFACE
+       ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+       ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/kokkos
     )
     set(Kokkos_LIBRARIES kokkos)
 
@@ -69,6 +73,15 @@ macro(BuildKokkos)
       include (EkatUtils)
       EkatDisableAllWarning(kokkoscore)
       EkatDisableAllWarning(kokkoscontainers)
+      target_include_directories(kokkos SYSTEM INTERFACE
+          "$<BUILD_INTERFACE:${Kokkos_INCLUDE_DIRS_BUILD_INTERFACE}>"
+          "$<INSTALL_INTERFACE:${Kokkos_INCLUDE_DIRS_INSTALL_INTERFACE}>"
+      )
+    else()
+      target_include_directories(kokkos INTERFACE
+          "$<BUILD_INTERFACE:${Kokkos_INCLUDE_DIRS_BUILD_INTERFACE}>"
+          "$<INSTALL_INTERFACE:${Kokkos_INCLUDE_DIRS_INSTALL_INTERFACE}>"
+      )
     endif ()
 
     # Make sure it is processed only once
