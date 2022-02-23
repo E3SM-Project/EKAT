@@ -12,7 +12,10 @@ int main (int argc, char **argv) {
       // Performance test.
       ekat::test::perf::Input in;
       const auto stat = in.parse(argc, argv);
-      if (stat) ekat::test::perf::run<Real>(in);
+      if (stat)
+        ekat::test::perf::run<Real>(in);
+      else
+        return -1;
     } else {
       // Correctness tests.
       num_failed = Catch::Session().run(argc, argv);
