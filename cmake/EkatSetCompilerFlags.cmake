@@ -204,4 +204,18 @@ macro (SetCompilerFlags)
       message(FATAL_ERROR "Unable to find OpenMP")
     endif()
   endif()
+
+  ##############################################################################
+  # CUDA
+  ##############################################################################
+  if (Kokkos_ENABLE_CUDA)
+    # We must find CUDA
+    find_package(CUDA REQUIRED)
+
+    # Turn off fused multiply add for debug so we can stay BFB with host
+    set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --fmad=false")
+
+    # We need host-device lambdas
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --expt-extended-lambda")
+  endif()
 endmacro()
