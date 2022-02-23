@@ -29,4 +29,12 @@ EkatCreateUnitTest(math_util math_util_tests.cpp
 EkatCreateUnitTest(regress_fail regress_fail.cpp
   LIBS ekat EXE_ARGS " < CTestTestfile.cmake"
   PROPERTIES WILL_FAIL true
-  )
+  LABELS "MustFail"
+)
+
+# Test that Catch returns a failure if invalid flags are passed
+EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
+  EXE_ARGS " --non-existent-flag"
+  PROPERTIES WILL_FAIL true
+  LABELS "MustFail"
+)

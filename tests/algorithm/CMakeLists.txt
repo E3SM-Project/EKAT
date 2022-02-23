@@ -44,3 +44,16 @@ if (EKAT_TEST_SINGLE_PRECISION)
     THREADS ${EKAT_TEST_MAX_THREADS}
     EXCLUDE_MAIN_CPP)
 endif()
+
+# Check that the tridiags main returns nonzero if invalid flags are passed
+if (EKAT_TEST_SINGLE_PRECISION)
+  set (invalid_flags_exec tridiag${SP_POSTFIX})
+else()
+  set (invalid_flags_exec tridiag${DP_POSTFIX})
+endif()
+
+EkatCreateUnitTestFromExec(tridiag_invalid_flags ${invalid_flags_exec}
+  EXE_ARGS "--non-existent-flag"
+  PROPERTIES WILL_FAIL TRUE
+  LABELS "MustFail"
+)

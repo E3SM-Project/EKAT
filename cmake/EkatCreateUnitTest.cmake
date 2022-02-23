@@ -17,8 +17,8 @@ set(CUT_EXEC_MV_ARGS
   LIBS LIBS_DIRS LINKER_FLAGS)
 
 set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
-set(CUT_TEST_1V_ARGS EXE_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
-set(CUT_TEST_MV_ARGS MPI_RANKS THREADS MPI_EXTRA_ARGS LABELS PROPERTIES)
+set(CUT_TEST_1V_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
+set(CUT_TEST_MV_ARGS EXE_ARGS MPI_RANKS THREADS MPI_EXTRA_ARGS LABELS PROPERTIES)
 
 # This function takes the following mandatory arguments:
 #    - exec_name: the name of the test executable that will be created.
@@ -271,9 +271,6 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
   else()
     set(invokeExec "./${test_exec}")
   endif()
-  if (NOT ecutfe_EXCLUDE_MAIN_CPP)
-    set (invokeExec "${invokeExec} --use-colour no")
-  endif()
 
   foreach (NRANKS RANGE ${MPI_START_RANK} ${MPI_END_RANK} ${MPI_INCREMENT})
     foreach (NTHREADS RANGE ${THREAD_START} ${THREAD_END} ${THREAD_INCREMENT})
@@ -381,7 +378,13 @@ function(EkatCreateUnitTest test_name test_srcs)
   #      Create Tests Phase      #
   #------------------------------#
 
+  # For catch2-based tests, pass option to remove colours (doesn't play well with CTest log files)
+  if (NOT ecut_EXCLUDE_MAIN_CPP)
+    list (APPEND ecut_EXE_ARGS "--use-colour no")
+  endif()
+
   separate_cut_arguments(ecut "${CUT_TEST_OPTIONS}" "${CUT_TEST_1V_ARGS}" "${CUT_TEST_MV_ARGS}" options_TestPhase)
+
   EkatCreateUnitTestFromExec("${test_name}" "${test_name}" ${options_TestPhase})
 
 endfunction(EkatCreateUnitTest)
