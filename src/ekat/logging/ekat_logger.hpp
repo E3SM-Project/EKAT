@@ -57,8 +57,8 @@ class Logger : public spdlog::logger {
   private:
     std::string logfile_name_;
 
-    std::string name_with_rank(const std::string& name, const ekat::Comm& comm) const {
-      return name + "_rank" + std::to_string(comm.rank());
+    static std::string name_with_rank(const std::string& name, const ekat::Comm& comm) {
+      return name + "_rank" + std::to_string(comm.size()) + "." + std::to_string(comm.rank());
     }
 
     Logger() = default;

@@ -18,7 +18,10 @@ TEST_CASE("multiple logs, same file", "[logging]") {
   // this log will determine the name of the shared log file.
   Logger<file_policy> main_log("main_log", Log::level::info, comm);
   main_log.console_output_rank0_only(comm);
-  const std::string logfilename = "main_log_rank" + std::to_string(comm.rank()) + "_logfile.txt";
+  const std::string logfilename = "main_log_rank"
+                                + std::to_string(comm.size()) + "."
+                                + std::to_string(comm.rank())
+                                + "_logfile.txt";
   REQUIRE( main_log.logfile_name() == logfilename);
 
   // now we can create a sub-log that share's the main log's file.

@@ -59,7 +59,9 @@ TEST_CASE("log tests", "[logging]") {
       REQUIRE( !mylog.should_log(Log::level::trace) );
 
       // verify that this log did produce a file
-      const std::string logfilename = "combined_console_file_mpi_rank0_logfile.txt";
+      const std::string logfilename = "combined_console_file_mpi_rank"
+                                    + std::to_string(comm.size())
+                                    + ".0_logfile.txt";
       std::ifstream lf(logfilename);
       REQUIRE( lf.is_open() );
 
@@ -81,7 +83,10 @@ TEST_CASE("log tests", "[logging]") {
       // This means that in order to check the previous section's log file, we have to
       // wait for its log to go out of scope (which guarantees that the file will be written).
 
-      const std::string lfname = "debug_excludes_trace_rank0_logfile.txt";
+
+      const std::string lfname = "debug_excludes_trace_rank"
+                               + std::to_string(comm.size())
+                               + ".0_logfile.txt";
       std::ifstream lf(lfname);
       REQUIRE(lf.is_open());
       std::stringstream ss;
