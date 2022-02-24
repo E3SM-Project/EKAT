@@ -33,26 +33,28 @@ const Real* flatten(const vector_2d_t& data)
   return result;
 }
 
-template <typename Scalar>
-void populate_li_input(int km1, int km2, Scalar* x1_i, Scalar* y1_i, Scalar* x2_i, std::default_random_engine* generator = nullptr)
+template <typename Scalar, typename PDF>
+void populate_array(int length, Scalar* x,
+                    std::default_random_engine& generator,
+                    PDF&& pdf,
+                    const bool sort)
 {
-  std::default_random_engine local_generator;
-  if (generator == nullptr) {
-    generator = &local_generator;
-  }
+  for (int j = 0; j < length; ++j)
+    x[j] = pdf(generator);
+
+  if (sort)
+    std::sort(x, x + length);
+}
+
+template <typename Scalar>
+void populate_li_input(int km1, int km2, Scalar* x1_i, Scalar* y1_i, Scalar* x2_i, std::default_random_engine& generator)
+{
   std::uniform_real_distribution<Real> x_dist(0.0,1.0);
   std::uniform_real_distribution<Real> y_dist(0.0,100.0);
 
-  for (int j = 0; j < km1; ++j) {
-    x1_i[j] = x_dist(*generator);
-    y1_i[j] = y_dist(*generator);
-  }
-  for (int j = 0; j < km2; ++j) {
-    x2_i[j] = x_dist(*generator);
-  }
-
-  std::sort(x1_i, x1_i + km1);
-  std::sort(x2_i, x2_i + km2);
+  populate_array(km1,x1_i,generator,x_dist,true);
+  populate_array(km1,y1_i,generator,y_dist,false);
+  populate_array(km2,x2_i,generator,x_dist,true);
 }
 
 TEST_CASE("lin_interp_soak", "lin_interp") {
@@ -75,7 +77,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       y2_f90(ncol, std::vector<Real>(km2));
 
     for (int i = 0; i < ncol; ++i) {
-      populate_li_input(km1, km2, x1[i].data(), y1[i].data(), x2[i].data(), &generator);
+      populate_li_input(km1, km2, x1[i].data(), y1[i].data(), x2[i].data(), generator);
     }
 
     // Views for testing TeamThreadRange
