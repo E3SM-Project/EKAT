@@ -95,9 +95,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
-include(EkatSetCompilerFlags)
-SetCompilerFlags()
-
 ##################################
 ##    EKAT VALGRIND SUPPORT    ###
 ##################################

@@ -1,7 +1,8 @@
 include(GNUInstallDirs)
+include(EkatSetCompilerFlags)
+include (EkatUtils)
 
 # Generate configuration file
-include (EkatUtils)
 EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
                 ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
                 F90_FILE ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f)
@@ -71,6 +72,15 @@ add_library(ekat ${EKAT_SOURCES})
 
 # Link MPI
 target_link_libraries (ekat PUBLIC MPI::MPI_CXX MPI::MPI_Fortran)
+
+# Set all sorts of flags on the ekat library
+SetBasicFlags(ekat)
+SetWarningFlags(ekat)
+SetFpModelFlags(ekat)
+SetDebugFlags(ekat)
+SetOptFlags(ekat)
+SetOmpFlags(ekat)
+SetCudaFlags(ekat)
 
 # To better handle openmp link flags, we need to link the OpenMP cmake targets.
 # This is superior to setting openmp compile/link flags, since it works also
