@@ -1,3 +1,5 @@
+include(GNUInstallDirs)
+
 # Where ekat's cmake scripts live
 set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_LIST_DIR}/../ CACHE INTERNAL "")
 
@@ -72,6 +74,26 @@ macro (BuildEkat)
     setVars("BUILD_EKAT" FALSE)
 
     add_subdirectory (${EKAT_CMAKE_PATH}/../ ${CMAKE_BINARY_DIR}/externals/ekat)
+
+    set (EKAT_INCLUDE_DIRS
+       $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
+       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR})
+
+    if (EKAT_DISABLE_TPL_WARNINGS)
+      include (EkatUtils)
+      EkatDisableAllWarning(ekat)
+      EkatDisableAllWarning(ekat_test_main)
+      EkatDisableAllWarning(ekat_test_session)
+      target_include_directories(ekat SYSTEM PUBLIC
+        $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+      )
+    else()
+      target_include_directories(ekat PUBLIC
+        $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+      )
+    endif ()
 
     # Make sure that future includes of this script don't rebuild ekat
     set_property(GLOBAL PROPERTY EKAT_BUILT TRUE)
