@@ -72,8 +72,6 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       x1(ncol, std::vector<Real>(km1)),
       x2(ncol, std::vector<Real>(km2)),
       y1(ncol, std::vector<Real>(km1)),
-      y2_base(ncol, std::vector<Real>(km2)),
-      y2_cmp(ncol, std::vector<Real>(km2)),
       y2_f90(ncol, std::vector<Real>(km2));
 
     for (int i = 0; i < ncol; ++i) {
