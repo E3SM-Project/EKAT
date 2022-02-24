@@ -408,8 +408,12 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
   const Real minthresh = 0.000001;
   const int ncol = 10;
 
-  real_pdf x_dist(0.0,1.0);
-  real_pdf y_dist(0.0,100.0);
+  // Generate increments for x1/y1, so that we get fairly
+  // spread out grids/values. This will reduce the chance
+  // of cancellations in the LinInterp impl, so that we
+  // can easily compare against the exact value for y2.
+  real_pdf dx_dist(0.1,1.0);
+  real_pdf dy_dist(0.1,1.0);
 
   // Mini lambda, to get scalarized subview
   auto get_col = [](const packed_view_2d& pv, int i) ->
@@ -417,6 +421,7 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
       return ekat::scalarize(ekat::subview(pv,i));
   };
 
+  constexpr Real tol = std::numeric_limits<Real>::epsilon()*10;
   // increase iterations for a more-thorough testing
   for (int r = 0; r < 100; ++r) {
     const int km1 = k_dist(generator);
@@ -432,6 +437,7 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
       y1_d("y1", ncol, km1_pack),
       y2_d("y2", ncol, km2_pack);
 
+
     // Initialize kokkos packed inputs
     auto x1_h = Kokkos::create_mirror_view(x1_d);
     auto x2_h = Kokkos::create_mirror_view(x2_d);
@@ -439,11 +445,17 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
     auto y2_h = Kokkos::create_mirror_view(y2_d);
 
     for (int i = 0; i < ncol; ++i) {
-      populate_array (km1,get_col(x1_h,i).data(),generator,x_dist,true);
-      populate_array (km1,get_col(y1_h,i).data(),generator,y_dist,false);
+      // Do a scan sum of x1 and y1.
+      auto x1s = get_col(x1_h,i);
+      auto y1s = get_col(y1_h,i);
+      populate_array (km1,x1s.data(),generator,dx_dist,true);
+      populate_array (km1,y1s.data(),generator,dy_dist,true);
+      for (int k=1; k<km1; ++k) {
+        x1s[k] = x1s[k-1] + x1s[k];
+        y1s[k] = y1s[k-1] + y1s[k];
+      }
 
       // Force x2 = (x1(:,1:end-1) + x1(:2:end)) / 2
-      auto x1s = get_col(x1_h,i);
       auto x2s = get_col(x2_h,i);
       for (int k=0; k<km2; ++k) {
         x2s(k) = (x1s(k) + x1s(k+1)) / 2;
@@ -473,11 +485,12 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
     Kokkos::deep_copy(y2_h, y2_d);
     auto y2_h_s = ekat::scalarize(y2_h);
     auto y1_h_s = ekat::scalarize(y1_h);
+    auto x2_h_s = ekat::scalarize(x2_h);
+    auto x1_h_s = ekat::scalarize(x1_h);
     using Catch::Detail::Approx;
-    constexpr auto tol = 1e-10;
     for (int i = 0; i < ncol; ++i) {
       for (int j = 0; j < km2; ++j) {
-        auto target = Approx( (y1_h_s(i,j)+y1_h_s(i,j+1))/2.0 ).epsilon(tol).margin(10*tol);
+        auto target = Approx( (y1_h_s(i,j)+y1_h_s(i,j+1))/2 ).epsilon(tol).margin(10*tol);
         REQUIRE ( y2_h_s(i,j)==target );
       }
     }
