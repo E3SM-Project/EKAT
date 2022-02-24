@@ -320,4 +320,346 @@ TEST_CASE("lin_interp_api", "lin_interp")
   });
 }
 
+TEST_CASE("lin_interp_identity", "lin_interp") {
+  using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
+  using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
+  using packed_view_2d = typename LIV::template view_2d<Pack>;
+  using real_pdf = std::uniform_real_distribution<Real>;
+
+  std::default_random_engine generator;
+  std::uniform_int_distribution<int> k_dist(10,100);
+  const Real minthresh = 0.000001;
+  const int ncol = 10;
+
+  real_pdf x_dist(0.0,1.0);
+  real_pdf y_dist(0.0,100.0);
+
+  // Mini lambda, to get scalarized subview
+  auto get_col = [](const packed_view_2d& pv, int i) ->
+    decltype(ekat::scalarize(ekat::subview(pv,i))) {
+      return ekat::scalarize(ekat::subview(pv,i));
+  };
+
+  // increase iterations for a more-thorough testing
+  for (int r = 0; r < 100; ++r) {
+    const int km1 = k_dist(generator);
+    const int km2 = km1;
+
+    // Views for testing TeamThreadRange
+    LIV vect(ncol, km1, km2, minthresh);
+    const int km1_pack = ekat::npack<Pack>(km1);
+    const int km2_pack = ekat::npack<Pack>(km2);
+    packed_view_2d
+      x1_d("x1", ncol, km1_pack),
+      x2_d("x2", ncol, km2_pack),
+      y1_d("y1", ncol, km1_pack),
+      y2_d("y2", ncol, km2_pack);
+
+    // Initialize kokkos packed inputs
+    auto x1_h = Kokkos::create_mirror_view(x1_d);
+    auto x2_h = Kokkos::create_mirror_view(x2_d);
+    auto y1_h = Kokkos::create_mirror_view(y1_d);
+    auto y2_h = Kokkos::create_mirror_view(y2_d);
+
+    for (int i = 0; i < ncol; ++i) {
+      populate_array (km1,get_col(x1_h,i).data(),generator,x_dist,true);
+      populate_array (km1,get_col(y1_h,i).data(),generator,y_dist,false);
+    }
+    Kokkos::deep_copy(x1_d, x1_h);
+    Kokkos::deep_copy(y1_d, y1_h);
+    Kokkos::deep_copy(x2_d, x1_d); // Force x2==x1
+
+    // Run LiVect TeamThreadRange
+    Kokkos::parallel_for("lin-interp-ut-vect-ttr",
+                         vect.policy(),
+                         KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
+      const int i = team_member.league_rank();
+      vect.setup(team_member,
+                 ekat::subview(x1_d, i),
+                 ekat::subview(x2_d, i));
+      team_member.team_barrier();
+      vect.lin_interp(team_member,
+                      ekat::subview(x1_d, i),
+                      ekat::subview(x2_d, i),
+                      ekat::subview(y1_d, i),
+                      ekat::subview(y2_d, i));
+    });
+
+    // Compare results
+    Kokkos::deep_copy(y2_h, y2_d);
+    auto y2_h_s = ekat::scalarize(y2_h);
+    auto y1_h_s = ekat::scalarize(y1_h);
+    for (int i = 0; i < ncol; ++i) {
+      for (int j = 0; j < km2; ++j) {
+        REQUIRE ( y2_h_s(i,j)==y1_h_s(i,j) );
+      }
+    }
+  }
+}
+
+TEST_CASE("lin_interp_avg", "lin_interp") {
+  using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
+  using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
+  using packed_view_2d = typename LIV::template view_2d<Pack>;
+  using real_pdf = std::uniform_real_distribution<Real>;
+
+  std::default_random_engine generator;
+  std::uniform_int_distribution<int> k_dist(10,100);
+  const Real minthresh = 0.000001;
+  const int ncol = 10;
+
+  real_pdf x_dist(0.0,1.0);
+  real_pdf y_dist(0.0,100.0);
+
+  // Mini lambda, to get scalarized subview
+  auto get_col = [](const packed_view_2d& pv, int i) ->
+    decltype(ekat::scalarize(ekat::subview(pv,i))) {
+      return ekat::scalarize(ekat::subview(pv,i));
+  };
+
+  // increase iterations for a more-thorough testing
+  for (int r = 0; r < 100; ++r) {
+    const int km1 = k_dist(generator);
+    const int km2 = km1-1;
+
+    // Views for testing TeamThreadRange
+    LIV vect(ncol, km1, km2, minthresh);
+    const int km1_pack = ekat::npack<Pack>(km1);
+    const int km2_pack = ekat::npack<Pack>(km2);
+    packed_view_2d
+      x1_d("x1", ncol, km1_pack),
+      x2_d("x2", ncol, km2_pack),
+      y1_d("y1", ncol, km1_pack),
+      y2_d("y2", ncol, km2_pack);
+
+    // Initialize kokkos packed inputs
+    auto x1_h = Kokkos::create_mirror_view(x1_d);
+    auto x2_h = Kokkos::create_mirror_view(x2_d);
+    auto y1_h = Kokkos::create_mirror_view(y1_d);
+    auto y2_h = Kokkos::create_mirror_view(y2_d);
+
+    for (int i = 0; i < ncol; ++i) {
+      populate_array (km1,get_col(x1_h,i).data(),generator,x_dist,true);
+      populate_array (km1,get_col(y1_h,i).data(),generator,y_dist,false);
+
+      // Force x2 = (x1(:,1:end-1) + x1(:2:end)) / 2
+      auto x1s = get_col(x1_h,i);
+      auto x2s = get_col(x2_h,i);
+      for (int k=0; k<km2; ++k) {
+        x2s(k) = (x1s(k) + x1s(k+1)) / 2;
+      }
+    }
+    Kokkos::deep_copy(x1_d, x1_h);
+    Kokkos::deep_copy(y1_d, y1_h);
+    Kokkos::deep_copy(x2_d, x2_h);
+
+    // Run LiVect TeamThreadRange
+    Kokkos::parallel_for("lin-interp-ut-vect-ttr",
+                         vect.policy(),
+                         KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
+      const int i = team_member.league_rank();
+      vect.setup(team_member,
+                 ekat::subview(x1_d, i),
+                 ekat::subview(x2_d, i));
+      team_member.team_barrier();
+      vect.lin_interp(team_member,
+                      ekat::subview(x1_d, i),
+                      ekat::subview(x2_d, i),
+                      ekat::subview(y1_d, i),
+                      ekat::subview(y2_d, i));
+    });
+
+    // Compare results
+    Kokkos::deep_copy(y2_h, y2_d);
+    auto y2_h_s = ekat::scalarize(y2_h);
+    auto y1_h_s = ekat::scalarize(y1_h);
+    using Catch::Detail::Approx;
+    constexpr auto tol = 1e-10;
+    for (int i = 0; i < ncol; ++i) {
+      for (int j = 0; j < km2; ++j) {
+        auto target = Approx( (y1_h_s(i,j)+y1_h_s(i,j+1))/2.0 ).epsilon(tol).margin(10*tol);
+        REQUIRE ( y2_h_s(i,j)==target );
+      }
+    }
+  }
+}
+
+TEST_CASE("lin_interp_down_sampling", "lin_interp") {
+  using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
+  using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
+  using packed_view_2d = typename LIV::template view_2d<Pack>;
+  using real_pdf = std::uniform_real_distribution<Real>;
+
+  std::default_random_engine generator;
+  std::uniform_int_distribution<int> k_dist(10,100);
+  const Real minthresh = 0.000001;
+  const int ncol = 10;
+
+  real_pdf x_dist(0.0,1.0);
+  real_pdf y_dist(0.0,100.0);
+
+  // Mini lambda, to get scalarized subview
+  auto get_col = [](const packed_view_2d& pv, int i) ->
+    decltype(ekat::scalarize(ekat::subview(pv,i))) {
+      return ekat::scalarize(ekat::subview(pv,i));
+  };
+
+  // increase iterations for a more-thorough testing
+  for (int r = 0; r < 100; ++r) {
+    const int km2 = k_dist(generator);
+    const int km1 = km2*2;
+
+    // Views for testing TeamThreadRange
+    LIV vect(ncol, km1, km2, minthresh);
+    const int km1_pack = ekat::npack<Pack>(km1);
+    const int km2_pack = ekat::npack<Pack>(km2);
+    packed_view_2d
+      x1_d("x1", ncol, km1_pack),
+      x2_d("x2", ncol, km2_pack),
+      y1_d("y1", ncol, km1_pack),
+      y2_d("y2", ncol, km2_pack);
+
+    // Initialize kokkos packed inputs
+    auto x1_h = Kokkos::create_mirror_view(x1_d);
+    auto x2_h = Kokkos::create_mirror_view(x2_d);
+    auto y1_h = Kokkos::create_mirror_view(y1_d);
+    auto y2_h = Kokkos::create_mirror_view(y2_d);
+
+    for (int i = 0; i < ncol; ++i) {
+      populate_array (km1,get_col(x1_h,i).data(),generator,x_dist,true);
+      populate_array (km1,get_col(y1_h,i).data(),generator,y_dist,false);
+
+      // Force x2 = x1(:,1:2:end)
+      auto x1s = get_col(x1_h,i);
+      auto x2s = get_col(x2_h,i);
+      for (int k=0; k<km2; ++k) {
+        x2s(k) = x1s(2*k);
+      }
+    }
+    Kokkos::deep_copy(x1_d, x1_h);
+    Kokkos::deep_copy(y1_d, y1_h);
+    Kokkos::deep_copy(x2_d, x2_h);
+
+    // Run LiVect TeamThreadRange
+    Kokkos::parallel_for("lin-interp-ut-vect-ttr",
+                         vect.policy(),
+                         KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
+      const int i = team_member.league_rank();
+      vect.setup(team_member,
+                 ekat::subview(x1_d, i),
+                 ekat::subview(x2_d, i));
+      team_member.team_barrier();
+      vect.lin_interp(team_member,
+                      ekat::subview(x1_d, i),
+                      ekat::subview(x2_d, i),
+                      ekat::subview(y1_d, i),
+                      ekat::subview(y2_d, i));
+    });
+
+    // Compare results
+    Kokkos::deep_copy(y2_h, y2_d);
+    auto y2_h_s = ekat::scalarize(y2_h);
+    auto y1_h_s = ekat::scalarize(y1_h);
+    for (int i = 0; i < ncol; ++i) {
+      for (int j = 0; j < km2; ++j) {
+        REQUIRE ( y2_h_s(i,j)==y1_h_s(i,2*j) );
+      }
+    }
+  }
+}
+
+TEST_CASE("lin_interp_monotone", "lin_interp") {
+  using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
+  using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
+  using packed_view_2d = typename LIV::template view_2d<Pack>;
+  using real_pdf = std::uniform_real_distribution<Real>;
+
+  std::default_random_engine generator;
+  std::uniform_int_distribution<int> k_dist(10,100);
+  const Real minthresh = 0.000001;
+  const int ncol = 10;
+
+  real_pdf x_dist(0.0,1.0);
+  real_pdf y_dist(0.0,100.0);
+
+  // Mini lambda, to get scalarized subview
+  auto get_col = [](const packed_view_2d& pv, int i) ->
+    decltype(ekat::scalarize(ekat::subview(pv,i))) {
+      return ekat::scalarize(ekat::subview(pv,i));
+  };
+
+  // Mini lambda, to get min-max of a scalarized subview
+  using col_type = decltype(get_col(std::declval<packed_view_2d>(),0));
+  auto minmax = [](const col_type& v) -> std::pair<Real,Real> {
+    std::pair<Real,Real> minmax {v[0],v[0]};
+    for (int i=1; i<v.extent_int(0); ++i) {
+      minmax.first = std::min(minmax.first,v[i]);
+      minmax.second = std::max(minmax.second,v[i]);
+    }
+    return minmax;
+  };
+
+  // increase iterations for a more-thorough testing
+  for (int r = 0; r < 100; ++r) {
+    const int km1 = k_dist(generator);
+    const int km2 = k_dist(generator);
+
+    // Views for testing TeamThreadRange
+    LIV vect(ncol, km1, km2, minthresh);
+    const int km1_pack = ekat::npack<Pack>(km1);
+    const int km2_pack = ekat::npack<Pack>(km2);
+    packed_view_2d
+      x1_d("x1", ncol, km1_pack),
+      x2_d("x2", ncol, km2_pack),
+      y1_d("y1", ncol, km1_pack),
+      y2_d("y2", ncol, km2_pack);
+
+    // Initialize kokkos packed inputs
+    auto x1_h = Kokkos::create_mirror_view(x1_d);
+    auto x2_h = Kokkos::create_mirror_view(x2_d);
+    auto y1_h = Kokkos::create_mirror_view(y1_d);
+    auto y2_h = Kokkos::create_mirror_view(y2_d);
+
+    for (int i = 0; i < ncol; ++i) {
+      populate_array (km1,get_col(x1_h,i).data(),generator,x_dist,true);
+      populate_array (km1,get_col(y1_h,i).data(),generator,y_dist,false);
+
+      // Generate x2 in a way that guarantees its range is contained in that of x1
+      auto mm1 = minmax(get_col(x1_h,i));
+      auto delta = mm1.second-mm1.first;
+      real_pdf x2_dist(mm1.first+delta/1000,mm1.second-delta/1000);
+      populate_array (km2,get_col(x2_h,i).data(),generator,x2_dist,true);
+    }
+    Kokkos::deep_copy(x1_d, x1_h);
+    Kokkos::deep_copy(y1_d, y1_h);
+    Kokkos::deep_copy(x2_d, x2_h);
+
+    // Run LiVect TeamThreadRange
+    Kokkos::parallel_for("lin-interp-ut-vect-ttr",
+                         vect.policy(),
+                         KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
+      const int i = team_member.league_rank();
+      vect.setup(team_member,
+                 ekat::subview(x1_d, i),
+                 ekat::subview(x2_d, i));
+      team_member.team_barrier();
+      vect.lin_interp(team_member,
+                      ekat::subview(x1_d, i),
+                      ekat::subview(x2_d, i),
+                      ekat::subview(y1_d, i),
+                      ekat::subview(y2_d, i));
+    });
+
+    // Check minmax of y2 is bounded by minmax of y1
+    Kokkos::deep_copy(y2_h, y2_d);
+    auto y2_h_s = ekat::scalarize(y2_h);
+    auto y1_h_s = ekat::scalarize(y1_h);
+    for (int i = 0; i < ncol; ++i) {
+      auto mm1 = minmax(ekat::subview(y1_h_s,i));
+      auto mm2 = minmax(ekat::subview(y2_h_s,i));
+      REQUIRE ( (mm2.first>=mm1.first && mm2.second<=mm1.second) );
+    }
+  }
+}
+
 } // empty namespace
