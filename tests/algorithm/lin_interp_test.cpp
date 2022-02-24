@@ -602,7 +602,7 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
   };
 
   // Mini lambda, to get min-max of a scalarized subview
-  using col_type = decltype(get_col(std::declval<packed_view_2d>(),0));
+  using col_type = decltype(get_col(std::declval<packed_view_2d::HostMirror>(),0));
   auto minmax = [](const col_type& v) -> std::pair<Real,Real> {
     std::pair<Real,Real> minmax {v[0],v[0]};
     for (int i=1; i<v.extent_int(0); ++i) {
