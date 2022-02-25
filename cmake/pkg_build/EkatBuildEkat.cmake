@@ -75,10 +75,6 @@ macro (BuildEkat)
 
     add_subdirectory (${EKAT_CMAKE_PATH}/../ ${CMAKE_BINARY_DIR}/externals/ekat)
 
-    set (EKAT_INCLUDE_DIRS
-       $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
-       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR})
-
     if (EKAT_DISABLE_TPL_WARNINGS)
       include (EkatUtils)
       EkatDisableAllWarning(ekat)
@@ -86,12 +82,12 @@ macro (BuildEkat)
       EkatDisableAllWarning(ekat_test_session)
       target_include_directories(ekat SYSTEM PUBLIC
         $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>
       )
     else()
       target_include_directories(ekat PUBLIC
         $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>
       )
     endif ()
 
