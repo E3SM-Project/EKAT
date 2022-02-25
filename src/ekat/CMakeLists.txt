@@ -71,7 +71,7 @@ set(EKAT_HEADERS
 add_library(ekat ${EKAT_SOURCES})
 
 # Link MPI
-target_link_libraries (ekat PUBLIC MPI::MPI_CXX MPI::MPI_Fortran)
+target_link_libraries (ekat PUBLIC MPI::MPI_C)
 
 # Set all sorts of flags on the ekat library
 SetBasicFlags(ekat)

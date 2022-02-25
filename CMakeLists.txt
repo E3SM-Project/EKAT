@@ -20,10 +20,17 @@ include(EkatBuildYamlCpp)
 include(EkatBuildSpdlog)
 
 # EKAT has mostly C++, but some Fortran too
-project (EKAT CXX Fortran)
+project (EKAT C CXX Fortran)
 
 # EKAT requires MPI.
-find_package(MPI REQUIRED)
+find_package(MPI REQUIRED COMPONENTS C)
+
+# NOTE: may be an overkill, but depending on which FindMPI module is called,
+#       if _FIND_REQUIRED is not checked, we may not get a fatal error
+#       if the required components are not found. So check the _FOUND var.
+if (NOT MPI_C_FOUND)
+  message (FATAL_ERROR "EKAT *requires* the C component of MPI to be found")
+endif()
 
 # We should avoid cxx bindings in mpi; they are already deprecated,
 # and can cause headaches at link time, cause they require -lmpi_cxx
