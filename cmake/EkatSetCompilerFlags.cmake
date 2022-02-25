@@ -1,100 +1,146 @@
 include (EkatUtils)
 
-##############################################################################
-# Compiler specific options
-##############################################################################
+# Call this at the beginning of a new scope (project/folder),
+# so it can overrule parent project/folder default flags for
+# debug/release build types for that project/folder.
+macro (ResetFlags)
+  set(options DEBUG RELEASE COMMON)
+  set(args1v)
+  set(argsMv)
+  cmake_parse_arguments(RF "${options}" "${args1v}" "${argsMv}" ${ARGN})
 
-# Small function to set the compiler flag '-fp model' given the name of the model
-# Note: this is an Intel-only flag
-function (EKAT_set_fpmodel_flags fpmodel_string flags)
-  string(TOLOWER "${fpmodel_string}" fpmodel_string_lower)
-  if (("${fpmodel_string_lower}" STREQUAL "precise") OR
-      ("${fpmodel_string_lower}" STREQUAL "strict") OR
-      ("${fpmodel_string_lower}" STREQUAL "fast") OR
-      ("${fpmodel_string_lower}" STREQUAL "fast=1") OR
-      ("${fpmodel_string_lower}" STREQUAL "fast=2"))
-    if (CMAKE_Fortran_COMPILER_ID STREQUAL Intel)
-      set (${flags} "-fp-model ${fpmodel_string_lower}" PARENT_SCOPE)
-    elseif (CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
-      if ("${fpmodel_string_lower}" STREQUAL "strict")
-        set (${flags} "-ffp-contract=off" PARENT_SCOPE)
-      endif ()
-    endif ()
-  elseif ("${fpmodel_string_lower}" STREQUAL "")
-    set (${flags} "" PARENT_SCOPE)
-  else()
-    message(FATAL_ERROR "FP_MODEL_FLAG string '${fpmodel_string}' is not recognized.")
+  if (RF_DEBUG)
+    # Reset DEBUG flags
+    set (CMAKE_C_FLAGS_DEBUG "")
+    set (CMAKE_CXX_FLAGS_DEBUG "")
+    set (CMAKE_Fortran_FLAGS_DEBUG "")
   endif()
-endfunction()
+  if (RF_RELEASE)
+    # Reset RELEASE flags
+    set (CMAKE_C_FLAGS_RELEASE "")
+    set (CMAKE_CXX_FLAGS_RELEASE "")
+    set (CMAKE_Fortran_FLAGS_RELEASE "")
+  endif()
+  if (RF_COMMON)
+    # Reset <LANG> flags
+    set (CMAKE_C_FLAGS "")
+    set (CMAKE_CXX_FLAGS "")
+    set (CMAKE_Fortran_FLAGS "")
+  endif()
+endmacro ()
+
+# Set CMAKE_<LANG>_FLAGS
+macro (SetFlags)
+  set(options)
+  set(args1v)
+  set(argsMv FLAGS FFLAGS CFLAGS CXXFLAGS LDFLAGS)
+  cmake_parse_arguments(SF "${options}" "${args1v}" "${argsMv}" ${ARGN})
+
+  # TODO: should this be a warning instead?
+  if (SF_FLAGS AND (SF_FFLAGS OR SF_CFLAGS OR SF_CXXFLAGS))
+    message (FATAL_ERROR "[SetFlags] Input FLAGS arg overrides <LANG>FLAGS")
+  endif()
+
+  if (SF_FLAGS)
+    # Flags for Fortran C and CXX
+    string(APPEND CMAKE_Fortran_FLAGS " ${SF_FLAGS}")
+    string(APPEND CMAKE_C_FLAGS " ${SF_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS " ${SF_FLAGS}")
+  else ()
+    # Fortran
+    if (SF_FFLAGS)
+      string(APPEND CMAKE_Fortran_FLAGS " ${SF_FFLAGS}")
+    endif ()
+
+    # C
+    if (SF_CFLAGS)
+      string(APPEND CMAKE_C_FLAGS " ${SF_CFLAGS}")
+    endif ()
+
+    # CXX
+    if (SF_CXXFLAGS)
+      string(APPEND CMAKE_CXX_FLAGS " ${SF_CXXFLAGS}")
+    endif ()
+  endif ()
+
+  # Linker
+  if (SF_LDFLAGS)
+    string(APPEND CMAKE_EXE_LINKER_FLAGS " ${SF_LDFLAGS}")
+  endif()
+endmacro()
+
+#############################
+# Common basic flags (regardless of build type)
+#############################
+macro (SetGeneralFlags)
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    SetFlags (FFLAGS -assume byterecl -ftz CXXFLAGS -restrict)
+  elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    SetFlags (FFLAGS -ffree-line-length-none)
+  endif()
+endmacro()
 
 #############################
 # Floating point model
 #############################
-macro (SetFpModelFlags targetName)
+macro (SetFpModelFlags)
+  # Set the compiler flag for floating point model,
+  # given the Intel name of the model. Supports only GNU and Intel
+  # compilers. For GNU, map intel keyword to setting for ffp-contract,
+  # with strict->off, everythingelse->fast (the gcc default)
   if (DEFINED ${PROJECT_NAME}_FPMODEL)
-    EKAT_set_fpmodel_flags("${${PROJECT_NAME}_FPMODEL}" FP_MODEL_FLAG)
-    string(TOLOWER "${${PROJECT_NAME}_FPMODEL}" fpmodel_string_lower)
-    if (fpmodel_string_lower STREQUAL "strict")
-      set (${PROJECT_NAME}_STRICT_FP TRUE PARENT_SCOPE BOOL)
+    string(TOLOWER "${${PROJECT_NAME}_FPMODEL}" fpmodel_string)
+    if (("${fpmodel_string}" STREQUAL "precise") OR
+        ("${fpmodel_string}" STREQUAL "strict") OR
+        ("${fpmodel_string}" STREQUAL "fast") OR
+        ("${fpmodel_string}" STREQUAL "fast=1") OR
+        ("${fpmodel_string}" STREQUAL "fast=2"))
+      if (CMAKE_Fortran_COMPILER_ID STREQUAL Intel)
+        set (FP_MODEL_FLAG -fp-model ${fpmodel_string})
+      elseif (CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
+        if ("${fpmodel_string}" STREQUAL "strict")
+          set (FP_MODEL_FLAG -ffp-contract=off)
+        else ()
+          set (FP_MODEL_FLAG -ffp-contract=fast)
+        endif ()
+      endif ()
+      SetFlags (FLAGS ${FP_MODEL_FLAG})
+    elseif (NOT "${fpmodel_string}" STREQUAL "")
+      string (CONCAT MSG
+              "FP_MODEL_FLAG string '${fpmodel_string}' is not recognized.\n"
+              "Valid options: 'precise', 'strict', 'fast', 'fast=1', 'fast=2'.\n"
+              "An empty string is also allowed, leaving the choice to the compiler.\n")
+      message ("${MSG}")
+      message(FATAL_ERROR "Please, use a valid FP model string.")
     endif()
-    target_compile_options (${targetName} PRIVATE ${FP_MODEL_FLAG})
   endif ()
 endmacro ()
 
 #############################
 # Warnings
 #############################
-macro (SetWarningFlags targetName)
-  # TODO: should we remove this altogether?
-  set(options PRIVATE)
-  set(args1v)
-  set(argsMv)
-  cmake_parse_arguments(SWF "${options}" "${args1v}" "${argsMv}" ${ARGN})
-
-  if (SWF_PRIVATE)
-    set (scope PRIVATE)
-  else()
-    set (scope PUBLIC)
-  endif()
-  
+macro (SetWarningFlags)
   # enable all warning but disable Intel vectorization remarks like
   #    "remark: simd loop has only one iteration"
   # since we would get hit with 1000's of those anytime we use Packs with packsize=1.
 
-  target_compile_options (${targetName} ${scope} $<$<COMPILE_LANGUAGE:C>:-Wall>)
-  target_compile_options (${targetName} ${scope} $<$<COMPILE_LANGUAGE:CXX>:-Wall>)
-
-  # Some flags need a switch based on compiler id
-  target_compile_options (${targetName} ${scope}
-    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<Fortran_COMPILER_ID:Intel>>:-diag-disable=remark>)
-  target_compile_options (${targetName} ${scope}
-    $<$<AND:$<COMPILE_LANGUAGE:Fortran>,$<Fortran_COMPILER_ID:Intel>>:-warn all -diag-disable=remark -fpscomp logicals>)
-
-  target_compile_options (${targetName} ${scope}
-    $<$<AND:$<COMPILE_LANGUAGE:Fortran>,$<Fortran_COMPILER_ID:GNU>>:-Wall>)
-endmacro()
-
-#############################
-# Common basic flags (regardless of build type)
-#############################
-macro (SetBasicFlags targetName)
-  # Fortran Flags
-  target_compile_options (${targetName} PUBLIC
-    $<$<AND:$<COMPILE_LANGUAGE:Fortran>,$<Fortran_COMPILER_ID:GNU>>:-ffree-line-length-none>)
-  target_compile_options (${targetName} PUBLIC
-    $<$<AND:$<COMPILE_LANGUAGE:Fortran>,$<Fortran_COMPILER_ID:Intel>>:-assume byterecl -ftz>)
-
-  # C++ Flags
-  target_compile_options (${targetName} PUBLIC
-    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Intel>>:-restrict>)
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    set (FFLAGS -warn all -diag-disable=remark -fpscomp logicals)
+    set (CXXFLAGS -Wall -diag-disable-remark)
+  else()
+    set (FFLAGS -Wall)
+    set (CXXFLAGS -Wall)
+  endif()
+    
+  SetFlags(FFLAGS ${FFLAGS} CFLAGS -Wall CXXFLAGS ${CXXFLAGS})
 endmacro()
 
 #############################
 # Profiling/coverage flags
 #############################
-macro (SetProfilingFlags targetName)
-  set(options COVERAGE)
-  set(args1v PROFILER)
+macro (SetProfilingFlags)
+  set(options)
+  set(args1v PROFILER COVERAGE)
   set(argsMv)
   cmake_parse_arguments(SPF "${options}" "${args1v}" "${argsMv}" ${ARGN})
 
@@ -104,70 +150,74 @@ macro (SetProfilingFlags targetName)
   if (SPF_PROFILER)
     string(TOUPPER "${SPF_PROFILER}" PROFILER_UPPER)
     if ("${PROFILER_UPPER}" STREQUAL "VTUNE")
-      target_compile_definitions(${targetName} PUBLIC VTUNE_PROFILE)
+      add_compile_definitions(VTUNE_PROFILE)
     elseif ("${PROFILER_UPPER}" STREQUAL "CUDA")
-      target_compile_definitions(${targetName} PUBLIC CUDA_PROFILE)
+      add_compile_definitions(CUDA_PROFILE)
     elseif ("${PROFILER_UPPER}" STREQUAL "GPROF")
-      target_compile_definitions(${targetName} PUBLIC GPROF_PROFILE)
-      target_compile_options(${targetName} PUBLIC -pg)
-      target_link_options (${targetName} PUBLIC -pg)
+      add_compile_definitions(GPROF_PROFILE)
+      SetFlags(FLAGS -pg LDFLAGS -pg)
     endif ()
   endif()
 
   if (SPF_COVERAGE)
-    target_compile_options (${targetName} PUBLIC --coverage)
-    target_link_options (${targetName} PUBLIC --coverage)
+    SetFlags (FLAGS --coverage LDFLAGS --coverage)
   endif()
 endmacro()
 
 #############################
 # Optimization flags
 #############################
-macro (SetOptFlags targetName)
+macro (SetReleaseFlags)
   set(options)
   set(args1v)
   set(argsMv FLAGS FFLAGS CFLAGS CXXFLAGS)
-  cmake_parse_arguments(OPT "${options}" "${args1v}" "${argsMv}" ${ARGN})
+  cmake_parse_arguments(SRF "${options}" "${args1v}" "${argsMv}" ${ARGN})
 
   # TODO: should this be a warning instead?
-  if (OPT_FLAGS AND (OPT_FFLAGS OR OPT_CFLAGS OR OPT_CXXFLAGS))
-    message (FATAL_ERROR "[SetOptFlags] Input FLAGS arg overrides <LANG>FLAGS")
+  if (SRF_FLAGS AND (SRF_FFLAGS OR SRF_CFLAGS OR SRF_CXXFLAGS))
+    message (FATAL_ERROR "[SetReleaseFlags] Input FLAGS arg overrides <LANG>FLAGS")
   endif()
 
   ##############################################################################
   # Optimization flags
-  # If OPT_FLAGS is set (to non-empty string), append it to Fortran/C/CXX flags.
+  # If SRF_FLAGS is set (to non-empty string), append it to Fortran/C/CXX flags.
   # Otherwise, for LANG=F,C,CXX, if DEBUG_<LANG>FLAGS is set (to non-empty string),
   # append it to <LANG> debug flags, otherwise set some defaults.
   ##############################################################################
 
-  if (OPT_FLAGS)
+  if (SRF_FLAGS)
     # Flags for Fortran C and CXX
-    target_compile_options(${targetName} PUBLIC ${OPT_FLAGS})
+    string(APPEND CMAKE_C_FLAGS_RELEASE " ${SRF_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " ${SRF_FLAGS}")
+    string(APPEND CMAKE_Fortran_FLAGS_RELEASE " ${SRF_FLAGS}")
   else ()
     # Fortran
-    if (OPT_FFLAGS)
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:${OPT_FFLAGS}>)
+    if (SRF_FFLAGS)
+      string(APPEND CMAKE_Fortran_FLAGS_RELEASE " ${SRF_FFLAGS}")
     else ()
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:-O3>)
+      string(APPEND CMAKE_Fortran_FLAGS_RELEASE " -O3")
     endif ()
 
     # C
-    if (OPT_CFLAGS)
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:C>:${OPT_CFLAGS}>)
+    if (SRF_CFLAGS)
+      string(APPEND CMAKE_C_FLAGS_RELEASE " ${SRF_CFLAGS}")
     else ()
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:C>:-O3>)
+      string(APPEND CMAKE_C_FLAGS_RELEASE " -O3")
     endif ()
 
     # CXX
-    if (OPT_CXXFLAGS)
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${OPT_CXXFLAGS}>)
+    if (SRF_CXXFLAGS)
+      string(APPEND CMAKE_CXX_FLAGS_RELEASE " ${SRF_FFLAGS}")
     else ()
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-O3>)
-      target_compile_options(${targetName} PUBLIC
-        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-fopenmp-simd>)
-      target_compile_options(${targetName} PUBLIC
-        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Intel>>:-qopenmp-simd>)
+      string(APPEND CMAKE_CXX_FLAGS_RELEASE " -O3")
+
+      # The default flags for CXX include openmp-simd,
+      # which is different depending on the compiler
+      if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        string (APPEND CMAKE_CXX_FLAGS_RELEASE " -fopenmp-simd")
+      elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+        string (APPEND CMAKE_CXX_FLAGS_RELEASE " -qopenmp-simd")
+      endif()
     endif ()
   endif ()
 endmacro()
@@ -175,50 +225,57 @@ endmacro()
 #############################
 # DEBUG flags
 #############################
-macro (SetDebugFlags targetName)
+macro (SetDebugFlags)
   set(options)
   set(args1v)
   set(argsMv FLAGS FFLAGS CFLAGS CXXFLAGS)
   cmake_parse_arguments(DEBUG "${options}" "${args1v}" "${argsMv}" ${ARGN})
 
   # TODO: should this be a warning instead?
-  if (DEBUG_FLAGS AND (DEBUG_FFLAGS OR DEBUG_CFLAGS OR DEBUG_CXXFLAGS))
-    message (FATAL_ERROR "[SetDebugFlags] Input FLAGS arg overrides <LANG>FLAGS")
+  if (SDF_FLAGS AND (SDF_FFLAGS OR SDF_CFLAGS OR SDF_CXXFLAGS))
+    message (FATAL_ERROR "[SetReleaseFlags] Input FLAGS arg overrides <LANG>FLAGS")
   endif()
 
   ##############################################################################
   # DEBUG flags
-  # If DEBUG_FLAGS is set (to non-empty string), append it to Fortran/C/CXX debug flags.
-  # Otherwise, for LANG=F,C,CXX, if DEBUG_<LANG>FLAGS is set (to non-empty string),
+  # If SDF_FLAGS is set (to non-empty string), append it to Fortran/C/CXX flags.
+  # Otherwise, for LANG=F,C,CXX, if SDF_<LANG>FLAGS is set (to non-empty string),
   # append it to <LANG> debug flags, otherwise set some defaults.
   ##############################################################################
-  if (DEBUG_FLAGS)
+
+  if (SDF_FLAGS)
     # Flags for Fortran C and CXX
-    target_compile_options(${targetName} PUBLIC ${DEBUG_FLAGS})
+    string(APPEND CMAKE_C_FLAGS_DEBUG " ${SDF_FLAGS}")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG " ${SDF_FLAGS}")
+    string(APPEND CMAKE_Fortran_FLAGS_DEBUG " ${SDF_FLAGS}")
   else ()
     # Fortran
-    if (DEBUG_FFLAGS)
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:${DEBUG_FFLAGS}>)
+    if (SDF_FFLAGS)
+      string(APPEND CMAKE_Fortran_FLAGS_DEBUG " ${SDF_FFLAGS}")
     else ()
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:-O0>)
+      string(APPEND CMAKE_Fortran_FLAGS_DEBUG " -g")
     endif ()
 
     # C
-    if (DEBUG_CFLAGS)
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:C>:${DEBUG_CFLAGS}>)
+    if (SDF_CFLAGS)
+      string(APPEND CMAKE_C_FLAGS_DEBUG " ${SDF_CFLAGS}")
     else ()
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:C>:-O0>)
+      string(APPEND CMAKE_C_FLAGS_DEBUG " -g")
     endif ()
 
     # CXX
-    if (DEBUG_CXXFLAGS)
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${DEBUG_CXXFLAGS}>)
+    if (SDF_CXXFLAGS)
+      string(APPEND CMAKE_CXX_FLAGS_DEBUG " ${SDF_FFLAGS}")
     else ()
-      target_compile_options(${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-O0>)
-      target_compile_options(${targetName} PUBLIC
-        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-fopenmp-simd>)
-      target_compile_options(${targetName} PUBLIC
-        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Intel>>:-qopenmp-simd>)
+      string(APPEND CMAKE_CXX_FLAGS_DEBUG " -g")
+
+      # The default flags for CXX include openmp-simd,
+      # which is different depending on the compiler
+      if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        string (APPEND CMAKE_CXX_FLAGS_DEBUG " -fopenmp-simd")
+      elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+        string (APPEND CMAKE_CXX_FLAGS_DEBUG " -qopenmp-simd")
+      endif()
     endif ()
   endif ()
 endmacro()
@@ -275,33 +332,43 @@ macro (SetCudaFlags targetName)
     # We must find CUDA
     find_package(CUDA REQUIRED)
 
-    # Still check if CUDA-NOTFOUDN is set, since find_package in Module mode
-    # need not to error out if package is not found
-    if (CUDA-NOTFOUND)
+    # Still check if CUDA_FOUND is true, since we don't know if the particular
+    # FindCUDA.cmake module being used is checking _FIND_REQUIRED
+    if (NOT CUDA_FOUND)
       message (FATAL_ERROR "Error! Unable to find CUDA.")
     endif()
 
-    IsDebugBuild (SCF_DEBUG)
-    if (SCF_DEBUG)
-      # Turn off fused multiply add for debug so we can stay BFB with host
-      target_compile_options (${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:--fmad=false>)
+    set(options)
+    set(args1v)
+    set(argsMv FLAGS)
+    cmake_parse_arguments(SCF "${options}" "${args1v}" "${argsMv}" ${ARGN})
+
+    if (SCF_FLAGS)
+      set (FLAGS ${SCF_FLAGS})
+    else ()
+      # We need host-device lambdas
+      set (FLAGS "--expt-extended-lambda")
+
+      IsDebugBuild (SCF_DEBUG)
+      if (SCF_DEBUG)
+        # Turn off fused multiply add for debug so we can stay BFB with host
+        string (APPEND FLAGS " --fmad=false")
+      endif()
     endif()
 
-    # We need host-device lambdas
-    target_compile_options (${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:--expt-extended-lambda>)
+    # Set the flags on the target
+    target_compile_options (${targetName} PUBLIC
+      "$<$<COMPILE_LANGUAGE:CXX>:${FLAGS}>")
   endif()
 endmacro()
 
 ##############################################################################
-# Call all the above function, without passing any optional argument
+# Convenience macro, to process all common flags setting all defaults
 ##############################################################################
-macro (SetCompilerFlags targetName)
-  SetBasicFlags(${targetName})
-  SetWarningFlags(${targetName})
-  SetFpModelFlags(${targetName})
-  SetDebugFlags(${targetName})
-  SetOptFlags(${targetName})
-  SetProfilingFlags(${targetName})
-  SetOmpFlags(${targetName})
-  SetCudaFlags(${targetName})
+macro (SetCommonFlags)
+  SetGeneralFlags()
+  SetFpModelFlags()
+  SetWarningFlags()
+  SetDebugFlags()
+  SetReleaseFlags()
 endmacro()
