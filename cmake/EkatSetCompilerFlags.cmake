@@ -282,10 +282,10 @@ macro (SetCudaFlags targetName)
     IsDebugBuild (SCF_DEBUG)
     if (SCF_DEBUG)
       # Turn off fused multiply add for debug so we can stay BFB with host
-      target_compile_options ($[targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:"--fmad=false">)
+      target_compile_options (${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:"--fmad=false">)
     endif()
 
     # We need host-device lambdas
-    target_compile_options ($[targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:"--expt-extended-lambda">)
+    target_compile_options (${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:"--expt-extended-lambda">)
   endif()
 endmacro()
