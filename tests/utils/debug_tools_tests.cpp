@@ -141,7 +141,7 @@ TEST_CASE ("fpes","") {
     disable_all_fpes();
   }
 
-  SECTION ("user-requested-fpes") {
+  SECTION ("user-enabled-fpes") {
     printf ("*) testing user-enabled fpes...\n");
     feclearexcept(FE_ALL_EXCEPT);
     disable_all_fpes();
@@ -159,7 +159,7 @@ TEST_CASE ("fpes","") {
     disable_all_fpes();
   }
 
-  SECTION ("user-requested-fpes") {
+  SECTION ("user-disabled-fpes") {
     printf ("*) testing user-disabled fpes...\n");
     feclearexcept(FE_ALL_EXCEPT);
     enable_fpes(FE_ALL_EXCEPT);
