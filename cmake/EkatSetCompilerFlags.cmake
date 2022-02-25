@@ -289,3 +289,17 @@ macro (SetCudaFlags targetName)
     target_compile_options (${targetName} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:--expt-extended-lambda>)
   endif()
 endmacro()
+
+##############################################################################
+# Call all the above function, without passing any optional argument
+##############################################################################
+macro (SetCompilerFlags targetName)
+  SetBasicFlags(${targetName})
+  SetWarningFlags(${targetName})
+  SetFpModelFlags(${targetName})
+  SetDebugFlags(${targetName})
+  SetOptFlags(${targetName})
+  SetProfilingFlags(${targetName})
+  SetOmpFlags(${targetName})
+  SetCudaFlags(${targetName})
+endmacro()
