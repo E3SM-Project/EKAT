@@ -290,6 +290,10 @@ macro (SetOmpFlags targetName)
     set(argsMv FLAGS FFLAGS CFLAGS CXXFLAGS)
     cmake_parse_arguments(OMP "${options}" "${args1v}" "${argsMv}" ${ARGN})
 
+    if (NOT OMP_C AND NOT OMP_CXX AND NOT_OMP_Fortran)
+      message (FATAL_ERROR "[SetOmpFlags] You need to specify at least one language")
+    endif()
+
     set (langReq)
     set (all_omp_targets TRUE)
     set (omp_targets)
