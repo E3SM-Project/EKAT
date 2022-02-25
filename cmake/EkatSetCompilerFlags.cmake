@@ -229,7 +229,7 @@ macro (SetDebugFlags)
   set(options)
   set(args1v)
   set(argsMv FLAGS FFLAGS CFLAGS CXXFLAGS)
-  cmake_parse_arguments(DEBUG "${options}" "${args1v}" "${argsMv}" ${ARGN})
+  cmake_parse_arguments(SDF "${options}" "${args1v}" "${argsMv}" ${ARGN})
 
   # TODO: should this be a warning instead?
   if (SDF_FLAGS AND (SDF_FFLAGS OR SDF_CFLAGS OR SDF_CXXFLAGS))
