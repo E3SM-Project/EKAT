@@ -126,7 +126,7 @@ macro (SetWarningFlags)
 
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
     set (FFLAGS "-warn all -diag-disable=remark -fpscomp logicals")
-    set (CXXFLAGS "-Wall -diag-disable-remark")
+    set (CXXFLAGS "-Wall -diag-disable=remark")
   else()
     set (FFLAGS -Wall)
     set (CXXFLAGS -Wall)
