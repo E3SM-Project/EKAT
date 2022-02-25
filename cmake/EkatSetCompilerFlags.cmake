@@ -37,7 +37,7 @@ macro (SetFpModelFlags targetName)
     if (fpmodel_string_lower STREQUAL "strict")
       set (${PROJECT_NAME}_STRICT_FP TRUE PARENT_SCOPE BOOL)
     endif()
-    target_compile_options (targetName PRIVATE ${FP_MODEL_FLAG})
+    target_compile_options (${targetName} PRIVATE ${FP_MODEL_FLAG})
   endif ()
 endmacro ()
 
