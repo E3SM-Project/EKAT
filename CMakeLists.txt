@@ -20,10 +20,17 @@ include(EkatBuildYamlCpp)
 include(EkatBuildSpdlog)
 
 # EKAT has mostly C++, but some Fortran too
-project (EKAT CXX Fortran)
+project (EKAT C CXX Fortran)
 
 # EKAT requires MPI.
-find_package(MPI REQUIRED)
+find_package(MPI REQUIRED COMPONENTS C)
+
+# NOTE: may be an overkill, but depending on which FindMPI module is called,
+#       if _FIND_REQUIRED is not checked, we may not get a fatal error
+#       if the required components are not found. So check the _FOUND var.
+if (NOT MPI_C_FOUND)
+  message (FATAL_ERROR "EKAT *requires* the C component of MPI to be found")
+endif()
 
 # We should avoid cxx bindings in mpi; they are already deprecated,
 # and can cause headaches at link time, cause they require -lmpi_cxx
@@ -40,6 +47,43 @@ set (EKAT_VERSION_PATCH 0)
 
 # Report the installation prefix.
 message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+
+############################
+###  EKAT CONFIG OPTIONS ###
+############################
+
+option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
+option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
+option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
+option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
+option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
+option (EKAT_TEST_LAUNCHER_BUFFER "Whether test-launcher should buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently" OFF)
+set (EKAT_PROFILING_TOOL "NONE" CACHE STRING "Profiling tool to be used")
+
+if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(FATAL_ERROR "Code coverage will only work with Debug build type")
+endif()
+
+############################################
+###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
+############################################
+
+# Initialize flags
+include (EkatSetCompilerFlags)
+ResetFlags()
+SetCommonFlags()
+SetProfilingFlags(PROFILER ${EKAT_PROFILING_TOOL} COVERAGE ${EKAT_ENABLE_COVERAGE})
+
+include(CheckCXXSymbolExists)
+# Most of the FPE stuff was defined in c++99, but gnu has some additional non-std
+# functions that are helpful (such as feeenableexcept) --- Apple stopped including these
+# in 2005, so we have to drop-in replacements for them.
+check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  #  GCC has already impl'd some c++14 features even in a c++11 build.  Apple's Clang
+  # (perhaps clang generally) doesn't like this and requires -std=c++14 for these features.
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
 ###########################
 ###      EKAT TPLS      ###
@@ -64,39 +108,6 @@ BuildSpdlog()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${SPDLOG_LIBRARIES})
 
 set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
-
-############################
-###  EKAT CONFIG OPTIONS ###
-############################
-
-option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
-option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
-option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
-option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
-option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
-option (EKAT_TEST_LAUNCHER_BUFFER "Whether test-launcher should buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently" OFF)
-
-if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-  message(FATAL_ERROR "Code coverage will only work with Debug build type")
-endif()
-
-############################################
-###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
-############################################
-
-include(CheckCXXSymbolExists)
-# Most of the FPE stuff was defined in c++99, but gnu has some additional non-std
-# functions that are helpful (such as feeenableexcept) --- Apple stopped including these
-# in 2005, so we have to drop-in replacements for them.
-check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-  #  GCC has already impl'd some c++14 features even in a c++11 build.  Apple's Clang
-  # (perhaps clang generally) doesn't like this and requires -std=c++14 for these features.
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-include(EkatSetCompilerFlags)
-SetCompilerFlags()
 
 ##################################
 ##    EKAT VALGRIND SUPPORT    ###

@@ -1,6 +1,13 @@
 # Detect the library that provides MPI
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
+  if (NOT MPIEXEC_EXECUTABLE)
+    string (CONCAT MSG
+            "MPIEXEC_EXECUTABLE is not set. You must call find_package(MPI ..),\n"
+            "*before* calling GetMpiDistributionName (and in the same scope)")
+    message ("${MSG}")
+    message (FATAL_ERROR "Aborting")
+  endif()
   execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
                   OUTPUT_VARIABLE OUT_VAR
                   RESULT_VARIABLE SUCCESS)
