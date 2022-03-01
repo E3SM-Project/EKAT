@@ -80,15 +80,6 @@ macro (BuildEkat)
       EkatDisableAllWarning(ekat)
       EkatDisableAllWarning(ekat_test_main)
       EkatDisableAllWarning(ekat_test_session)
-      target_include_directories(ekat SYSTEM PUBLIC
-        $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>
-      )
-    else()
-      target_include_directories(ekat PUBLIC
-        $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>
-      )
     endif ()
 
     # Make sure that future includes of this script don't rebuild ekat
