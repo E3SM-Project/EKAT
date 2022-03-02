@@ -54,13 +54,6 @@ macro (BuildSpdlog)
     if (EKAT_DISABLE_TPL_WARNINGS)
       include (EkatUtils)
       EkatDisableAllWarning(spdlog)
-      target_include_directories(spdlog SYSTEM PUBLIC
-         $<BUILD_INTERFACE:${SPDLOG_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/spdlog/include>)
-    else()
-      target_include_directories(spdlog PUBLIC
-         $<BUILD_INTERFACE:${SPDLOG_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/spdlog/include>)
     endif ()
 
     # Make sure it is processed only once

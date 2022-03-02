@@ -53,13 +53,6 @@ macro (BuildYamlcpp)
     if (EKAT_DISABLE_TPL_WARNINGS)
       include (EkatUtils)
       EkatDisableAllWarning(yaml-cpp)
-      target_include_directories(yaml-cpp SYSTEM PUBLIC
-         $<BUILD_INTERFACE:${YAMLCPP_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/yaml-cpp/include>)
-    else()
-      target_include_directories(yaml-cpp PUBLIC
-         $<BUILD_INTERFACE:${YAMLCPP_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/yaml-cpp/include>)
     endif ()
 
     # Make sure it is processed only once
