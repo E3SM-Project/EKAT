@@ -73,15 +73,6 @@ macro(BuildKokkos)
       include (EkatUtils)
       EkatDisableAllWarning(kokkoscore)
       EkatDisableAllWarning(kokkoscontainers)
-      target_include_directories(kokkos SYSTEM INTERFACE
-          "$<BUILD_INTERFACE:${Kokkos_INCLUDE_DIRS_BUILD_INTERFACE}>"
-          "$<INSTALL_INTERFACE:${Kokkos_INCLUDE_DIRS_INSTALL_INTERFACE}>"
-      )
-    else()
-      target_include_directories(kokkos INTERFACE
-          "$<BUILD_INTERFACE:${Kokkos_INCLUDE_DIRS_BUILD_INTERFACE}>"
-          "$<INSTALL_INTERFACE:${Kokkos_INCLUDE_DIRS_INSTALL_INTERFACE}>"
-      )
     endif ()
 
     # Make sure it is processed only once
