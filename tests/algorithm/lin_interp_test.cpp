@@ -57,6 +57,13 @@ void populate_li_input(int km1, int km2, Scalar* x1_i, Scalar* y1_i, Scalar* x2_
   populate_array(km2,x2_i,generator,x_dist,true);
 }
 
+// Helper function, to get scalarized subview
+template<typename ViewT>
+auto get_col (const ViewT& packed_view, int i) ->
+  decltype(ekat::scalarize(ekat::subview(packed_view,i))) {
+    return ekat::scalarize(ekat::subview(packed_view,i));
+};
+
 TEST_CASE("lin_interp_soak", "lin_interp") {
 
   std::default_random_engine generator;
@@ -334,12 +341,6 @@ TEST_CASE("lin_interp_identity", "lin_interp") {
   real_pdf x_dist(0.0,1.0);
   real_pdf y_dist(0.0,100.0);
 
-  // Mini lambda, to get scalarized subview
-  auto get_col = [](const packed_view_2d& pv, int i) ->
-    decltype(ekat::scalarize(ekat::subview(pv,i))) {
-      return ekat::scalarize(ekat::subview(pv,i));
-  };
-
   // increase iterations for a more-thorough testing
   for (int r = 0; r < 100; ++r) {
     const int km1 = k_dist(generator);
@@ -362,12 +363,16 @@ TEST_CASE("lin_interp_identity", "lin_interp") {
     auto y2_h = Kokkos::create_mirror_view(y2_d);
 
     for (int i = 0; i < ncol; ++i) {
-      populate_array (km1,get_col(x1_h,i).data(),generator,x_dist,true);
-      populate_array (km1,get_col(y1_h,i).data(),generator,y_dist,false);
+      auto x1s = get_col(x1_h,i);
+      auto y1s = get_col(y1_h,i);
+      populate_array (km1,x1s.data(),generator,x_dist,true);
+      populate_array (km1,y1s.data(),generator,y_dist,false);
     }
+    Kokkos::deep_copy(x2_h, x1_h); // Force x2==x1
+
     Kokkos::deep_copy(x1_d, x1_h);
     Kokkos::deep_copy(y1_d, y1_h);
-    Kokkos::deep_copy(x2_d, x1_d); // Force x2==x1
+    Kokkos::deep_copy(x2_d, x2_h);
 
     // Run LiVect TeamThreadRange
     Kokkos::parallel_for("lin-interp-ut-vect-ttr",
@@ -415,12 +420,6 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
   real_pdf dx_dist(0.1,1.0);
   real_pdf dy_dist(0.1,1.0);
 
-  // Mini lambda, to get scalarized subview
-  auto get_col = [](const packed_view_2d& pv, int i) ->
-    decltype(ekat::scalarize(ekat::subview(pv,i))) {
-      return ekat::scalarize(ekat::subview(pv,i));
-  };
-
   constexpr Real tol = std::numeric_limits<Real>::epsilon()*10;
   // increase iterations for a more-thorough testing
   for (int r = 0; r < 100; ++r) {
@@ -436,7 +435,6 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
       x2_d("x2", ncol, km2_pack),
       y1_d("y1", ncol, km1_pack),
       y2_d("y2", ncol, km2_pack);
-
 
     // Initialize kokkos packed inputs
     auto x1_h = Kokkos::create_mirror_view(x1_d);
@@ -510,12 +508,6 @@ TEST_CASE("lin_interp_down_sampling", "lin_interp") {
 
   real_pdf x_dist(0.0,1.0);
   real_pdf y_dist(0.0,100.0);
-
-  // Mini lambda, to get scalarized subview
-  auto get_col = [](const packed_view_2d& pv, int i) ->
-    decltype(ekat::scalarize(ekat::subview(pv,i))) {
-      return ekat::scalarize(ekat::subview(pv,i));
-  };
 
   // increase iterations for a more-thorough testing
   for (int r = 0; r < 100; ++r) {
@@ -595,15 +587,9 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
   real_pdf x_dist(0.0,1.0);
   real_pdf y_dist(0.0,100.0);
 
-  // Mini lambda, to get scalarized subview
-  auto get_col = [](const packed_view_2d& pv, int i) ->
-    decltype(ekat::scalarize(ekat::subview(pv,i))) {
-      return ekat::scalarize(ekat::subview(pv,i));
-  };
-
-  // Mini lambda, to get min-max of a scalarized subview
-  using col_type = decltype(get_col(std::declval<packed_view_2d::HostMirror>(),0));
-  auto minmax = [](const col_type& v) -> std::pair<Real,Real> {
+  // Generic lambda, to get min-max of a scalarized subview
+  // Must use with rank-1 scalar views only
+  auto minmax = [](const auto& v) -> std::pair<Real,Real> {
     std::pair<Real,Real> minmax {v[0],v[0]};
     for (int i=1; i<v.extent_int(0); ++i) {
       minmax.first = std::min(minmax.first,v[i]);
