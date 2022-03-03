@@ -67,7 +67,7 @@ struct LinInterp
   // ------ public API -------
   //
 
-  LinInterp(int ncol, int km1, int km2, Scalar minthresh);
+  LinInterp(int ncol, int km1, int km2);
 
   // Simple getters
   KOKKOS_INLINE_FUNCTION
@@ -153,7 +153,6 @@ struct LinInterp
   int m_km2;
   int m_km1_pack;
   int m_km2_pack;
-  Scalar m_minthresh;
   TeamPolicy m_policy;
   view_2d<IntPack> m_indx_map; // [x2_idx] -> x1_idx
 };
