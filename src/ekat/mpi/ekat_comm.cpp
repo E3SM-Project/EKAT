@@ -1,4 +1,5 @@
-#include "ekat_comm.hpp"
+#include "ekat/mpi/ekat_comm.hpp"
+#include "ekat/ekat_assert.hpp"
 
 #include <cassert>
 
@@ -19,6 +20,9 @@ Comm::Comm(MPI_Comm mpi_comm)
 
 void Comm::reset_mpi_comm (MPI_Comm new_mpi_comm)
 {
+  EKAT_REQUIRE_MSG (new_mpi_comm!=MPI_COMM_NULL,
+      "Error! ekat::Comm requires non-null MPI comm.");
+
   m_mpi_comm = new_mpi_comm;
 
   MPI_Comm_size(m_mpi_comm,&m_size);

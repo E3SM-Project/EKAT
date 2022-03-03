@@ -64,6 +64,10 @@ TEST_CASE ("ekat_comm","") {
   REQUIRE (comm.root_rank()==0);
   REQUIRE (comm.am_i_root() == (comm.root_rank()==comm.rank()));
 
+  SECTION ("null") {
+    REQUIRE_THROWS (Comm(MPI_COMM_NULL));
+  }
+
   SECTION ("scan") {
     test_scan<int>(comm);
     test_scan<float>(comm);
