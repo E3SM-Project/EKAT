@@ -2,22 +2,32 @@
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
   if (MPI_C_COMPILER)
-    set (COMPILER_NAME ${MPI_C_COMPILER})
+    set (INCLUDE_DIRS ${MPI_C_INCLUDE_DIRS})
+    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
   elseif (MPI_CXX_COMPILER)
-    set (COMPILER_NAME ${MPI_CXX_COMPILER})
+    set (INCLUDE_DIRS ${MPI_CXX_INCLUDE_DIRS})
+    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
   else ()
     string (CONCAT MSG
-      "MPI_C_COMPILER and MPI_CXX_COMPILER are not set.\b"
-      "CMake logic to determine the distribution name requires C/CXX mpi compilers.\n"
-      "Please call find_package(MPI COMPONENTS [C|CXX]) *before* calling GetMpiDistributionName (and in the same scope)")
+      "**************************************************************\n"
+      "  MPI_C_COMPILER and MPI_CXX_COMPILER are not set.\n"
+      "  CMake logic to determine the distribution name\n"
+      "  requires a valid C or CXX mpi compiler.\n"
+      "  Please call find_package(MPI [REQUIRED] COMPONENTS [C|CXX])\n"
+      "  *before* calling GetMpiDistributionName (in the same scope).\n"
+      "**************************************************************\n")
     message ("${MSG}")
     message (FATAL_ERROR "Aborting")
   endif()
-  execute_process(COMMAND ${COMPILER_NAME} -c ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx
-                  OUTPUT_VARIABLE OUT_VAR
-                  ERROR_VARIABLE OUT_VAR
-                  RESULT_VARIABLE SUCCESS
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  try_compile (RESULT
+               ${CMAKE_BINARY_DIR}/CMakeFiles
+               SOURCES ${SOURCE_FILE}
+               CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${INCLUDE_DIRS}"
+               OUTPUT_VARIABLE OUT_VAR)
+
+  if (RESULT)
+    message (FATAL_ERROR "Could not compile a simple MPI source file.")
+  endif()
 
   if (OUT_VAR MATCHES "OpenMPI")
     set (${DISTRO_NAME} "openmpi")
@@ -26,11 +36,6 @@ macro (GetMpiDistributionName DISTRO_NAME)
   else ()
     set (${DISTRO_NAME} "unknown")
   endif()
-
-  # Remove compiled file from src tree
-  execute_process(COMMAND rm -f ${CMAKE_BINARY_DIR}/TryCompileMPI.cxx.o
-                  OUTPUT_QUIET ERROR_QUIET
-                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endmacro ()
 
 # Disable MPI cxx binding
