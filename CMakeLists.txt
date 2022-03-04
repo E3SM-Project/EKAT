@@ -13,7 +13,6 @@ list(APPEND CMAKE_MODULE_PATH
      ${EKAT_CMAKE_PATH}/pkg_build
 )
 
-
 # Scripts containing macros needed to handle TPLs
 include(EkatBuildKokkos)
 include(EkatBuildYamlCpp)

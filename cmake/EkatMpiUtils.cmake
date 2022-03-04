@@ -1,24 +1,37 @@
 # Detect the library that provides MPI
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  if (NOT MPIEXEC_EXECUTABLE)
+  if (MPI_C_COMPILER)
+    set (INCLUDE_DIRS ${MPI_C_INCLUDE_DIRS})
+    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
+  elseif (MPI_CXX_COMPILER)
+    set (INCLUDE_DIRS ${MPI_CXX_INCLUDE_DIRS})
+    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
+  else ()
     string (CONCAT MSG
-            "MPIEXEC_EXECUTABLE is not set. You must call find_package(MPI ..),\n"
-            "*before* calling GetMpiDistributionName (and in the same scope)")
+      "**************************************************************\n"
+      "  MPI_C_COMPILER and MPI_CXX_COMPILER are not set.\n"
+      "  CMake logic to determine the distribution name\n"
+      "  requires a valid C or CXX mpi compiler.\n"
+      "  Please call find_package(MPI [REQUIRED] COMPONENTS [C|CXX])\n"
+      "  *before* calling GetMpiDistributionName (in the same scope).\n"
+      "**************************************************************\n")
     message ("${MSG}")
     message (FATAL_ERROR "Aborting")
   endif()
-  execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
-                  OUTPUT_VARIABLE OUT_VAR
-                  RESULT_VARIABLE SUCCESS)
-  if (NOT SUCCESS EQUAL 0)
-    message (FATAL_ERROR
-      "Error! Could not run '${MPIEXEC_EXECUTABLE} --version'")
+  try_compile (RESULT
+               ${CMAKE_BINARY_DIR}/CMakeFiles
+               SOURCES ${SOURCE_FILE}
+               CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${INCLUDE_DIRS}"
+               OUTPUT_VARIABLE OUT_VAR)
+
+  if (RESULT)
+    message (FATAL_ERROR "Could not compile a simple MPI source file.")
   endif()
 
-  if (OUT_VAR MATCHES "open-mpi|OpenMPI|Open MPI|OpenRTE")
+  if (OUT_VAR MATCHES "OpenMPI")
     set (${DISTRO_NAME} "openmpi")
-  elseif (OUT_VAR MATCHES "mpich|MPICH")
+  elseif (OUT_VAR MATCHES "MPICH")
     set (${DISTRO_NAME} "mpich")
   else ()
     set (${DISTRO_NAME} "unknown")
