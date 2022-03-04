@@ -7,12 +7,11 @@ namespace ekat {
 // Never include this header directly, only ekat_lin_interp.hpp should include it
 
 template <typename ScalarT, int PackSize, typename DeviceT>
-LinInterp<ScalarT, PackSize, DeviceT>::LinInterp(int ncol, int km1, int km2, Scalar minthresh) :
+LinInterp<ScalarT, PackSize, DeviceT>::LinInterp(int ncol, int km1, int km2) :
   m_km1(km1),
   m_km2(km2),
   m_km1_pack(ekat::npack<Pack>(km1)),
   m_km2_pack(ekat::npack<Pack>(km2)),
-  m_minthresh(minthresh),
   m_policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ncol, m_km2_pack)),
   m_indx_map("m_indx_map", ncol, ekat::npack<IntPack>(km2))
 {}
@@ -121,8 +120,6 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
 
       y2(k2) = y1p + (y1p1-y1p)*(x2p-x1p)/(x1p1-x1p);
     }
-
-    y2(k2).set(y2(k2) < m_minthresh, m_minthresh);
   });
 }
 

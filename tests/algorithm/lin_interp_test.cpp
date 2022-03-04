@@ -12,7 +12,7 @@
 extern "C" {
 
 // This will link to the fortran reference implementation
-void linear_interp_c(const Real* x1, const Real* x2, const Real* y1, Real* y2, int km1, int km2, int ncol, Real minthresh);
+void linear_interp_c(const Real* x1, const Real* x2, const Real* y1, Real* y2, int km1, int km2, int ncol);
 
 }
 
@@ -68,7 +68,6 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
 
   std::default_random_engine generator;
   std::uniform_int_distribution<int> k_dist(10,100);
-  const Real minthresh = 0.000001;
   const int ncol = 10;
 
   // increase iterations for a more-thorough soak
@@ -88,7 +87,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
     // Views for testing TeamThreadRange
     using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
     using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
-    LIV vect(ncol, km1, km2, minthresh);
+    LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
     typename LIV::template view_2d<Pack>
@@ -98,7 +97,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       y2kv("y2kv", ncol, km2_pack);
 
     // Views for testing ThreadVectorRange
-    LIV vect1(ncol, km1, km2, minthresh);
+    LIV vect1(ncol, km1, km2);
     const int outer_dim = 2;
     const int inner_dim = ncol/outer_dim;
     typename LIV::KT::view_3d<Pack>
@@ -168,7 +167,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
 
     // Run fortran and store results in y2_f90
     {
-      linear_interp_c(x1f.data(), x2f.data(), y1f.data(), y2f.data(), km1, km2, ncol, minthresh);
+      linear_interp_c(x1f.data(), x2f.data(), y1f.data(), y2f.data(), km1, km2, ncol);
 
       std::vector<Real> y2c(ncol*km2);
       ekat::transpose<ekat::TransposeDirection::f2c>(y2f.data(), y2c.data(), ncol, km2);
@@ -291,7 +290,7 @@ TEST_CASE("lin_interp_api", "lin_interp")
 
   using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
   using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
-  LIV vect(ncol, km1, km2, 0);
+  LIV vect(ncol, km1, km2);
   const int km1_pack = ekat::npack<Pack>(km1);
   const int km2_pack = ekat::npack<Pack>(km2);
 
@@ -335,7 +334,6 @@ TEST_CASE("lin_interp_identity", "lin_interp") {
 
   std::default_random_engine generator;
   std::uniform_int_distribution<int> k_dist(10,100);
-  const Real minthresh = 0.000001;
   const int ncol = 10;
 
   real_pdf x_dist(0.0,1.0);
@@ -347,7 +345,7 @@ TEST_CASE("lin_interp_identity", "lin_interp") {
     const int km2 = km1;
 
     // Views for testing TeamThreadRange
-    LIV vect(ncol, km1, km2, minthresh);
+    LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
     packed_view_2d
@@ -410,7 +408,6 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
 
   std::default_random_engine generator;
   std::uniform_int_distribution<int> k_dist(10,100);
-  const Real minthresh = 0.000001;
   const int ncol = 10;
 
   // Generate increments for x1/y1, so that we get fairly
@@ -427,7 +424,7 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
     const int km2 = km1-1;
 
     // Views for testing TeamThreadRange
-    LIV vect(ncol, km1, km2, minthresh);
+    LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
     packed_view_2d
@@ -503,7 +500,6 @@ TEST_CASE("lin_interp_down_sampling", "lin_interp") {
 
   std::default_random_engine generator;
   std::uniform_int_distribution<int> k_dist(10,100);
-  const Real minthresh = 0.000001;
   const int ncol = 10;
 
   real_pdf x_dist(0.0,1.0);
@@ -515,7 +511,7 @@ TEST_CASE("lin_interp_down_sampling", "lin_interp") {
     const int km1 = km2*2;
 
     // Views for testing TeamThreadRange
-    LIV vect(ncol, km1, km2, minthresh);
+    LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
     packed_view_2d
@@ -581,7 +577,6 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
 
   std::default_random_engine generator;
   std::uniform_int_distribution<int> k_dist(10,100);
-  const Real minthresh = 0.000001;
   const int ncol = 10;
 
   real_pdf x_dist(0.0,1.0);
@@ -604,7 +599,7 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
     const int km2 = k_dist(generator);
 
     // Views for testing TeamThreadRange
-    LIV vect(ncol, km1, km2, minthresh);
+    LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
     packed_view_2d
