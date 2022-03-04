@@ -1,28 +1,36 @@
 # Detect the library that provides MPI
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  if (NOT MPIEXEC_EXECUTABLE)
+  if (MPI_C_COMPILER)
+    set (COMPILER_NAME ${MPI_C_COMPILER})
+  elseif (MPI_CXX_COMPILER)
+    set (COMPILER_NAME ${MPI_CXX_COMPILER})
+  else ()
     string (CONCAT MSG
-            "MPIEXEC_EXECUTABLE is not set. You must call find_package(MPI ..),\n"
-            "*before* calling GetMpiDistributionName (and in the same scope)")
+      "MPI_C_COMPILER and MPI_CXX_COMPILER are not set.\b"
+      "CMake logic to determine the distribution name requires C/CXX mpi compilers.\n"
+      "Please call find_package(MPI COMPONENTS [C|CXX]) *before* calling GetMpiDistributionName (and in the same scope)")
     message ("${MSG}")
     message (FATAL_ERROR "Aborting")
   endif()
-  execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
+  execute_process(COMMAND ${COMPILER_NAME} -c ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx
                   OUTPUT_VARIABLE OUT_VAR
-                  RESULT_VARIABLE SUCCESS)
-  if (NOT SUCCESS EQUAL 0)
-    message (FATAL_ERROR
-      "Error! Could not run '${MPIEXEC_EXECUTABLE} --version'")
-  endif()
+                  ERROR_VARIABLE OUT_VAR
+                  RESULT_VARIABLE SUCCESS
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
-  if (OUT_VAR MATCHES "open-mpi|OpenMPI|Open MPI|OpenRTE")
+  if (OUT_VAR MATCHES "OpenMPI")
     set (${DISTRO_NAME} "openmpi")
-  elseif (OUT_VAR MATCHES "mpich|MPICH")
+  elseif (OUT_VAR MATCHES "MPICH")
     set (${DISTRO_NAME} "mpich")
   else ()
     set (${DISTRO_NAME} "unknown")
   endif()
+
+  # Remove compiled file from src tree
+  execute_process(COMMAND rm -f ${CMAKE_BINARY_DIR}/TryCompileMPI.cxx.o
+                  OUTPUT_QUIET ERROR_QUIET
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endmacro ()
 
 # Disable MPI cxx binding
