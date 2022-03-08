@@ -81,3 +81,5 @@ Here are some of EKAT's cmake config options:
 - EKAT_ENABLE_COVERAGE: whether to enable code coverage in the compiler.
 
 Once CMake configuration has completed, you can build and test EKAT with the usual `make` and `ctest` commands.
+
+ASKAJSHDALKSJDHASKLFDHAKFL
