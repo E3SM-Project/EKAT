@@ -122,7 +122,9 @@ def run_test(buffer_output,print_omp_affinity,exec_args):
         print ("HAS RESOURCE SPECS")
         # Total number of resources for this test (for all ranks/threads)
         res_count = int(env["CTEST_RESOURCE_GROUP_COUNT"])
+        print ("res_count: {}".format(res_count))
         my_res_id = myrank % res_count
+        print ("my_res_id: {}".format(my_res_id))
 
         # Get the list of devices ids in my resource group
         key = "CTEST_RESOURCE_GROUP_" + str(my_res_id)
@@ -132,6 +134,7 @@ def run_test(buffer_output,print_omp_affinity,exec_args):
         key += "_DEVICES"
         expect(key in env, "Error! CTEST_RESOURCE_GROUP_{} found in the env, but can't find {}".format(my_res_id,key))
         my_res_str = env[key]
+        print ("my_res_str: {}".format(my_res_str))
 
         # Split the CTEST_RESOURCE_GROUP_[N]_DEVICE string into tokens, and get the slots ids
         my_res = my_res_str.split(';')
