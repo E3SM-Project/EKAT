@@ -1,7 +1,7 @@
 #include <mpi.h>
 #include <stdio.h>
 
-int main (int, char**)
+int main (int argc, char** argv)
 {
 #if defined(OMPI_MAJOR_VERSION)
 #pragma message("OpenMPI found")
