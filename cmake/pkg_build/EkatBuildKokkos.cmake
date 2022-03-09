@@ -1,3 +1,5 @@
+include(EkatSetCompilerFlags)
+
 # Where ekat's tpls live
 set (EKAT_KOKKOS_SUBMODULE_PATH "" CACHE INTERNAL "")
 get_filename_component(EKAT_KOKKOS_SUBMODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../../extern/kokkos ABSOLUTE)
@@ -68,6 +70,8 @@ macro(BuildKokkos)
        ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/kokkos
     )
     set(Kokkos_LIBRARIES kokkos)
+    SetCudaFlags(kokkoscore)
+    SetOmpFlags(kokkoscore)
 
     if (EKAT_DISABLE_TPL_WARNINGS)
       include (EkatUtils)
