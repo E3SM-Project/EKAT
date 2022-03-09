@@ -360,12 +360,12 @@ macro (SetCudaFlags targetName)
       set (FLAGS ${SCF_FLAGS})
     else ()
       # We need host-device lambdas
-      set (FLAGS "--expt-extended-lambda")
+      set (FLAGS --expt-extended-lambda)
 
       IsDebugBuild (SCF_DEBUG)
       if (SCF_DEBUG)
         # Turn off fused multiply add for debug so we can stay BFB with host
-        string (APPEND FLAGS " --fmad=false")
+        list (APPEND FLAGS --fmad=false)
       endif()
     endif()
 

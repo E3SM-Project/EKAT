@@ -73,10 +73,6 @@ add_library(ekat ${EKAT_SOURCES})
 # Link MPI
 target_link_libraries (ekat PUBLIC MPI::MPI_C)
 
-# Set all sorts of flags on the ekat library
-SetOmpFlags(ekat CXX)
-SetCudaFlags(ekat)
-
 target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${EKAT_BINARY_DIR}/src>
