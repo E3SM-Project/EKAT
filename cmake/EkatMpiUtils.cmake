@@ -1,12 +1,14 @@
 # Detect the library that provides MPI
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  if (MPI_C_COMPILER)
-    set (INCLUDE_DIRS ${MPI_C_INCLUDE_DIRS})
-    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
-  elseif (MPI_CXX_COMPILER)
+  if (MPI_CXX_COMPILER)
+    message ("MPI_CXX_COMPILER: ${MPI_CXX_COMPILER}")
     set (INCLUDE_DIRS ${MPI_CXX_INCLUDE_DIRS})
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
+  elseif (MPI_C_COMPILER)
+    message ("MPI_C_COMPILER: ${MPI_C_COMPILER}")
+    set (INCLUDE_DIRS ${MPI_C_INCLUDE_DIRS})
+    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
   else ()
     string (CONCAT MSG
       "**************************************************************\n"
