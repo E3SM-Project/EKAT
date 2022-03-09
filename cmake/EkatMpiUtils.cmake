@@ -25,7 +25,7 @@ macro (GetMpiDistributionName DISTRO_NAME)
                CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${INCLUDE_DIRS}"
                OUTPUT_VARIABLE OUT_VAR)
 
-  if (RESULT)
+  if (NOT RESULT)
     message (FATAL_ERROR "Could not compile a simple MPI source file.")
   endif()
 
