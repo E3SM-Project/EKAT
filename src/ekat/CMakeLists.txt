@@ -81,11 +81,6 @@ target_include_directories(ekat PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat_f90_modules>)
 
-# TODO: The current version of kokkos we are using in e3sm has a nvcc_wrapper
-#       which breaks the cmake toolchain features detection mechanisms.
-#       If we update kokkos to, say, current develop (as of 06/2020),
-#       the following line would work fine.
-# target_compile_features(ekat PUBLIC cxx_std_11)
 
 # Enable C Pre-Processor for Fortran.
 # No reason to pollute C/C++ flags (CPP always runs), so add the flag only for Fortran files.
