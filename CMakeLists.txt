@@ -21,6 +21,16 @@ include(EkatBuildSpdlog)
 # EKAT has mostly C++, but some Fortran too
 project (EKAT C CXX Fortran)
 
+if (Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE)
+  if(CMAKE_VERSION VERSION_LESS "3.18.0")
+    string (CONCAT
+          "Kokkos_ENALBE_CUDA_RELOCATABLE_DEVICE_CODE=ON, but CMake version < 3.18\n"
+          "To avoid issues at link time, we need the DEVICE_LINK CMake generator,\n"
+          "which is a 3.18 feature. Disabling RELOCATABLE DEVICE CODE" MSG)
+    message ("${MSG}")
+  endif()
+endif()
+
 # EKAT requires MPI.
 find_package(MPI REQUIRED COMPONENTS C)
 
