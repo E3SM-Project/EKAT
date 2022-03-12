@@ -38,3 +38,16 @@ EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
   PROPERTIES WILL_FAIL true
   LABELS "MustFail"
 )
+
+# Test RDC link correctness when main EXE is in F(0
+add_executable(cuda_rdc cuda_rdc.F90 cuda_rdc.cpp)
+add_library(cuda_kernel cuda_rdc_kernel.cpp)
+target_link_libraries(cuda_kernel PUBLIC ekat)
+target_link_libraries(cuda_rdc PUBLIC ekat cuda_kernel)
+
+target_link_options(cuda_kernel PUBLIC $<DEVICE_LINK:--device-link>)
+set_target_properties (cuda_kernel PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
+target_link_options(cuda_rdc PUBLIC $<DEVICE_LINK:--device-link>)
+set_target_properties (cuda_rdc PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+

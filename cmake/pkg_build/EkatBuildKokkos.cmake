@@ -72,6 +72,8 @@ macro(BuildKokkos)
     set(Kokkos_LIBRARIES kokkos)
     SetCudaFlags(kokkoscore)
     SetOmpFlags(kokkoscore)
+target_link_options(kokkoscore PUBLIC $<DEVICE_LINK:--device-link>)
+set_target_properties (kokkoscore PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
     if (EKAT_DISABLE_TPL_WARNINGS)
       include (EkatUtils)
