@@ -280,8 +280,15 @@ static void unittest_workspace()
             ws.take_many_and_reset(names, ptrs);
           }
 
-          for (int w = 0; w < n_slots_per_team; ++w) {
-            wssub[w] = *ptrs[w];
+          if (r % 5 ==2) {
+            wssub[0] = ws1;
+            wssub[1] = ws2;
+            wssub[2] = ws3;
+            wssub[3] = ws4;
+          } else {
+            for (int w = 0; w < n_slots_per_team; ++w) {
+              wssub[w] = *ptrs[w];
+            }
           }
         }
 
@@ -328,8 +335,11 @@ static void unittest_workspace()
           ws.release_macro_block(wsmacro1d,n_slots_per_team);
         }
         else if (r % 5 == 2) {
-          Kokkos::Array<Unmanaged<view_1d<int> >*, n_slots_per_team> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
-          ws.release_many_contiguous(ptrs);
+          for (int w=0; w<n_slots_per_team; ++w) {// - 1; w >= 0; --w) {
+            ws.release(wssub[w]); // release individually
+          }
+          // Kokkos::Array<Unmanaged<view_1d<int> >*, n_slots_per_team> ptrs = { {&wssub[0], &wssub[1], &wssub[2], &wssub[3]} };
+          // ws.release_many_contiguous(ptrs);
         }
         else if (r % 5 == 3) {
           // let take_and_reset next loop do the reset

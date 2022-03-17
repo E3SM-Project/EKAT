@@ -412,12 +412,35 @@ void WorkspaceManager<T, D>::Workspace::take_many_refs(
   using V = typename SameType<Vs...>::type;
 
   Kokkos::Array<V*,N> ptrs;
-  ArrFiller<N,Vs...>::set_ith(ptrs,0,views...);
+  ArrFiller<Vs...>::fill(ptrs,views...);
   // Kokkos::Array<const char*,N> names;
 
   // for (size_t i=0; i<N; ++i) {
   //   names[i] = unnamed();
   // }
+  take_many(names,ptrs);
+}
+
+template <typename T, typename D>
+template <typename... Vs>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if<SameType<Vs...>::value>::type
+WorkspaceManager<T, D>::Workspace::take_many_refs(
+  Vs&... views) const
+{
+  static_assert(sizeof...(Vs)>0, "Error! Cannot use 'take_many' with empty parameter pack.\n");
+
+  constexpr size_t N = sizeof...(Vs);
+
+  using V = typename SameType<Vs...>::type;
+
+  Kokkos::Array<V*,N> ptrs;
+  ArrFiller<Vs...>::fill(ptrs,views...);
+  Kokkos::Array<const char*,N> names;
+
+  for (size_t i=0; i<N; ++i) {
+    names[i] = unnamed();
+  }
   take_many(names,ptrs);
 }
 

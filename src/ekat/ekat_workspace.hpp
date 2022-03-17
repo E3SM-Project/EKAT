@@ -157,21 +157,37 @@ class WorkspaceManager
     }
    public:
 
-    template<int N, typename... Vs>
-    struct ArrFiller;
+    template<typename... Vs>
+    struct ArrFiller {
 
-    template<int N, typename V, typename... Vs>
-    struct ArrFiller<N,V,Vs...> {
-      static void set_ith (Kokkos::Array<V*,N>& arr, int i, V& v, Vs&... vs) {
-        arr[i] = &v;
-        ArrFiller<N,Vs...>::set_ith(arr,i+1,vs...);
-      }
-    };
+      template<typename... Ts>
+      struct ArrAssign;
 
-    template<int N, typename V>
-    struct ArrFiller<N,V> {
-      static void set_ith (Kokkos::Array<V*,N>& arr, int i, V& v) {
-        arr[i] = &v;
+      template<typename H, typename... Tail>
+      struct ArrAssign<H,Tail...> {
+        static_assert (SameType<H,Tail...>::value, "Input Vs have different type\n");
+
+        template<int Start, int N>
+        static void set_tail (Kokkos::Array<H*,N>& arr, H& h, Tail&... tail) {
+          arr[Start] = &h;
+          ArrAssign<Tail...>::template set_tail<Start+1,N>(arr,tail...);
+        }
+      };
+
+      template<typename V>
+      struct ArrAssign<V> {
+        template<int Start, int N>
+        static void set_tail (Kokkos::Array<V*,N>& arr, V& v) {
+          arr[Start] = &v;
+        }
+      };
+
+      static_assert (SameType<Vs...>::value, "Input Vs have different type\n");
+      using V = typename SameType<Vs...>::type;
+      static constexpr int N = sizeof...(Vs);
+
+      static void fill (Kokkos::Array<V*,sizeof...(Vs)>& arr, Vs&... vs) {
+        ArrAssign<Vs...>::template set_tail<0,N>(arr,vs...);
       }
     };
 
@@ -192,6 +208,12 @@ class WorkspaceManager
     KOKKOS_INLINE_FUNCTION
     void take_many_refs(
         const Kokkos::Array<const char*, sizeof...(Vs)>& names,
+        Vs&... views) const;
+
+    template <typename... Vs>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<SameType<Vs...>::value>::type
+    take_many_refs(
         Vs&... views) const;
 
     // Similar to take_many except assumes that there is enough contiguous
