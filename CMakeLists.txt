@@ -21,6 +21,9 @@ include(EkatBuildSpdlog)
 # EKAT has mostly C++, but some Fortran too
 project (EKAT C CXX Fortran)
 
+# We need C++14 in order to use the `auto` keyword in lambda functions.
+set(CMAKE_CXX_STANDARD 14)
+
 # EKAT requires MPI.
 find_package(MPI REQUIRED COMPONENTS C)
 
@@ -78,11 +81,6 @@ include(CheckCXXSymbolExists)
 # functions that are helpful (such as feeenableexcept) --- Apple stopped including these
 # in 2005, so we have to drop-in replacements for them.
 check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-  #  GCC has already impl'd some c++14 features even in a c++11 build.  Apple's Clang
-  # (perhaps clang generally) doesn't like this and requires -std=c++14 for these features.
-  set(CMAKE_CXX_STANDARD 14)
-endif()
 
 ###########################
 ###      EKAT TPLS      ###
