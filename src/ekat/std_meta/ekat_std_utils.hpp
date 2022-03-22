@@ -3,11 +3,34 @@
 
 #include <algorithm>
 #include <memory>
+#include <type_traits>
 #include <vector>
 #include <string>
 #include <set>
 
 namespace ekat {
+
+// Check that a list of template args are all of the same type
+// NOTE: the 'type' type that specializations expose really only
+//       matters if 'SameType<Ts...>::value' is true.
+template<typename...Ts>
+struct SameType;
+
+template<typename T>
+struct SameType<T> : std::true_type {
+  using type = T;
+};
+
+template<typename T, typename...Ts>
+struct SameType<T,Ts...> :
+  std::conditional<SameType<Ts...>::value &&
+                   std::is_same<T,typename SameType<Ts...>::type>::value,
+                   std::true_type,
+                   std::false_type
+                  >::type
+{
+  using type = T;
+};
 
 // This function returns an iterator which is of the same type of c.begin()
 template<typename ContainerType, typename T>

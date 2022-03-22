@@ -4,6 +4,7 @@
 #include "ekat/util/ekat_arch.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
+#include "ekat/std_meta/ekat_std_utils.hpp"
 
 namespace unit_test {
 struct UnitWrap;
@@ -149,7 +150,31 @@ class WorkspaceManager
   void release_workspace(const MemberType& team, const Workspace& ws) const;
 
   class Workspace {
+    KOKKOS_INLINE_FUNCTION
+    const char* unnamed () const {
+      static const char* s = "unused";
+      return s;
+    }
    public:
+
+    template<int N, typename... Vs>
+    struct ArrFiller;
+
+    template<int N, typename V, typename... Vs>
+    struct ArrFiller<N,V,Vs...> {
+      static void set_ith (Kokkos::Array<V*,N>& arr, int i, V& v, Vs&... vs) {
+        arr[i] = &v;
+        ArrFiller<N,Vs...>::set_ith(arr,i+1,vs...);
+      }
+    };
+
+    template<int N, typename V>
+    struct ArrFiller<N,V> {
+      static void set_ith (Kokkos::Array<V*,N>& arr, int i, V& v) {
+        arr[i] = &v;
+      }
+    };
+
 
     // Take an individual sub-block
     template <typename S=T>
@@ -162,6 +187,12 @@ class WorkspaceManager
     KOKKOS_INLINE_FUNCTION
     void take_many(const Kokkos::Array<const char*, N>& names,
                    const view_1d_ptr_array<S, N>& ptrs) const;
+
+    template <typename... Vs>
+    KOKKOS_INLINE_FUNCTION
+    void take_many_refs(
+        const Kokkos::Array<const char*, sizeof...(Vs)>& names,
+        Vs&... views) const;
 
     // Similar to take_many except assumes that there is enough contiguous
     // memory avaiable in the Workspace for N sub-blocks. This method is higher-performing
