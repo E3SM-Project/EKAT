@@ -7,31 +7,17 @@
 
 #include <fstream>
 
-using namespace ekat;
-using namespace ekat::logger;
-
 TEST_CASE("log tests", "[logging]") {
+  using namespace ekat;
+  using namespace ekat::logger;
 
   ekat::Comm comm;
 
-  SECTION("console only, no mpi") {
-    // setup a console-only logger
-    Logger<LogNoFile,LogAllRanks,NameWithoutRank> mylog("log_one", LogLevel::debug, comm);
-
-    mylog.info("This is a console-only 'info' message");
-    mylog.error("Here is an 'error' message.");
-
-    // check that this log did not produce a file
-    const std::string logfilename = "log_one.log";
-    std::ifstream lf(logfilename);
-    REQUIRE( !lf.is_open() );
-  }
-
-  SECTION("console and file logging, with mpi rank info") {
+  SECTION("log_to_file") {
 
     std::string dbg_line = "here is a debug message that will also show up in this rank's log file.";
     {
-      Logger<LogBasicFile,LogAllRanks>
+      Logger<LogBasicFile,LogRootRank>
         mylog("log_two", LogLevel::debug, comm);
       mylog.set_file_level(LogLevel::trace);
       mylog.set_no_format();
@@ -62,8 +48,8 @@ TEST_CASE("log tests", "[logging]") {
     REQUIRE (content==dbg_line);
   }
 
-  SECTION("share_sinks") {
-    using logger_t = Logger<LogBasicFile,LogRank0,NameWithoutRank>;
+  SECTION("two_loggers_sinks_sharing") {
+    using logger_t = Logger<LogBasicFile,LogRootRank>;
     std::string info_line_1 = "info line 1";
     std::string info_line_2 = "info line 2";
     std::string warn_line = "warn line";
