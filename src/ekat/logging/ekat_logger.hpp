@@ -63,10 +63,10 @@ using LogLevel = spdlog::level::level_enum;
 */
 
 template<typename LogFilePolicy   = LogNoFile,
-         typename MpiOutputPolicy = LogRank0,
-         typename LogNamePolicy   = NameWithoutRank>
+         typename MpiOutputPolicy = LogRootRank>
 class Logger : public spdlog::logger {
 private:
+
   using sink_t = spdlog::sinks::sink;
 
   std::shared_ptr<sink_t> csink;
@@ -81,7 +81,7 @@ public:
           const std::string& suffix = ".log") :
     spdlog::logger(log_name)
   {
-    auto logfile_name = (LogNamePolicy::get_name(log_name, comm) + suffix);
+    auto logfile_name = (MpiOutputPolicy::get_log_name(log_name, comm) + suffix);
 
     // make the console sink; default console level = log level
     csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -108,7 +108,7 @@ public:
   Logger(const std::string& log_name,
          const LogLevel log_level,
          const ekat::Comm& comm,
-         Logger<LogFilePolicy,MOP,LogNamePolicy>& src) :
+         Logger<LogFilePolicy,MOP>& src) :
     spdlog::logger(log_name)
   {
     csink = src.get_console_sink();

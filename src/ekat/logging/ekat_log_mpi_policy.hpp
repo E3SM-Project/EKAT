@@ -9,36 +9,24 @@
 namespace ekat {
 namespace logger {
 
-// =========== Log Name Policies =========== //
-
-// Append ".$Size.$Rank" to input string
-struct NameWithRank {
-  static std::string get_name (const std::string& prefix, const Comm& comm) {
-    return prefix + "." + std::to_string(comm.size())
-                  + "." + std::to_string(comm.rank());
-  }
-};
-
-// Returns input string
-struct NameWithoutRank {
-  static std::string get_name (const std::string& prefix, const Comm& /* comm */) {
-    return prefix;
-  }
-};
-
-// =========== Output Policies =========== //
-
 // All ranks have output
 struct LogAllRanks {
   static bool should_log (const Comm& /* comm */) {
     return true;
   }
+  static std::string get_log_name (const std::string& prefix, const Comm& comm) {
+    return prefix + "." + std::to_string(comm.size())
+                  + "." + std::to_string(comm.rank());
+  }
 };
 
 // Only root rank has output
-struct LogRank0 {
+struct LogRootRank {
   static bool should_log (const Comm& comm) {
     return comm.am_i_root();
+  }
+  static std::string get_log_name (const std::string& prefix, const Comm& /* comm */) {
+    return prefix;
   }
 };
 
