@@ -3,24 +3,10 @@
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/mpi/ekat_comm.hpp"
 
-#if defined(HAS_EXP_FILESYSTEM)
 #include <experimental/filesystem>
-namespace filesystem = std::experimental::filesystem;
-#elif defined(HAS_FILESYSTEM)
-#include <filesystem>
-namespace filesystem = std::filesystem;
-#else
-#error "Niether HAS_EXP_FILESYSTEM nor HAS_FILESYSTEM was defined!"
-#endif
-
-// When multiple copies of the test are run (one per MPI_COMM_WORLD size),
-// we need to make sure each test uses different names for the log files,
-// even if the Logger does not append comm rank/size information.
-std::string add_comm_size (const std::string& s, const ekat::Comm& comm) {
-  return s + std::to_string(comm.size());
-}
 
 TEST_CASE("console_only", "[logging]") {
+  namespace filesystem = std::experimental::filesystem;
 
   using namespace ekat;
   using namespace ekat::logger;
