@@ -1,33 +1,36 @@
 #ifndef EKAT_LOGGER_HPP
 #define EKAT_LOGGER_HPP
 
-#include "spdlog/spdlog.h"
-#include "ekat/ekat_assert.hpp"
-#include "ekat/logging/ekat_log_file.hpp"
+#include "ekat/logging/ekat_log_file_policy.hpp"
+#include "ekat/logging/ekat_log_mpi_policy.hpp"
 #include "ekat/mpi/ekat_comm.hpp"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/sinks/null_sink.h"
-#include <iostream>
-#include <cstdio>
+#include "ekat/ekat_assert.hpp"
+
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/null_sink.h>
 
 namespace ekat {
 namespace logger {
 
-// expose the default logger; this is the easiest one to use
-namespace Log = spdlog; // capitalized to avoid conflict with logarithm
+// Some common types from spdlog
+using LogLevel = spdlog::level::level_enum;
 
 /* A Logger class customized for console and file output.
 
-  Each log has two "sinks" for output, the first is for the console, the second
-  is for files.  Either sink can be null (to suppress output), but they both always exist.
+  Each log has two "sinks" for output: one for the console, and one for file(s).
+  Either sink can be null (to suppress output), but they both always exist.
 
-  The default Logger<> sets up colored output to the console only (no log files),
-  for all mpi ranks. The LogFilePolicy template parameter determines whether or not the
-  log will also write output to a file. Files and console can have different logging levels.
+  The Logger class is templated on three policies, that regulate how the two
+  sinks behave: LogFilePolicy, MpiOutputPolicy, and LogNamePolicy:
+   - LogFilePolicy: determines what kind of file sink to create
+   - MpiOutputPolicy: determines which ranks can produce output
+   - LogNamePolicy: determines if MPI rank info enters the file name
 
-  Logs have a logging level.  Messages with priorities below this level will
-  be ignored by all sinks.  Independently, each Log's sink has its own level, and messages
-  with priority below the sink's priority level will be ignored by that sink.
+  Logs have a logging level. Messages with priorities below this level will
+  be ignored by all sinks. Independently, each Log's sink has its own level,
+  and messages with priority below the sink's priority level will be ignored
+  by that sink.
 
   Logging levels (increasing priority):
   - off
@@ -39,129 +42,128 @@ namespace Log = spdlog; // capitalized to avoid conflict with logarithm
   - critical
 
   For example, the log level for the LogBasicFile policy could be "debug," while the
-  level of the console logger could be set to "info".  In this case, no debug
+  level of the console logger could be set to "info". In this case, no debug
   messages will show up on the console, but they will be in the log files.
 
-  The default priority for the spdlog library is "info."  For EKAT, we've set the
-  default to "debug."  Both are easy to change.
+  Once the logger is created, you can log information by calling the proper method:
+    logger.info("something here")
+    logger.debug("my debug stuff")
+    logger.warn("watch out!")
+  Depending on the logger level and the levels of the sinks, some info may not appear
+  in the log. E.g., if logger had level "info" the second call would not produce any
+  log. Furthermore, if one of the two sinks had level "warn", the first call would
+  also not produce any log *in that sink*.
 
   In principle, separate modules, classes, etc. could have their own logger.
-  These loggers can share output files; see multiple_log_example.cpp.
+  These loggers can share output files; see tests/logger/logger_tests.cpp.
 
-  The ekat::Logger class is a subclass of spdlog::logger class, to simplify the many
+  The ekat::Logger class inherits from spdlog::logger, to simplify the many
   features of that library to the ones EKAT is most likely to use, while retaining all
   of its functionality.
 */
-template <typename LogFilePolicy = LogNoFile> // see ekat_log_file.hpp
+
+template<typename LogFilePolicy   = LogNoFile,
+         typename MpiOutputPolicy = LogRootRank>
 class Logger : public spdlog::logger {
-  private:
-    std::string logfile_name_;
+private:
 
-    std::string name_with_rank(const std::string& name, const ekat::Comm& comm) const {
-      return name + "_rank" + std::to_string(comm.rank());
-    }
+  using sink_t = spdlog::sinks::sink;
 
-    Logger() = default;
+  std::shared_ptr<sink_t> csink;
+  std::shared_ptr<sink_t> fsink;
 
-  public:
+public:
 
   // primary constructor
-  Logger(const std::string& log_name, const Log::level::level_enum lev,
-    const ekat::Comm& comm) :
-    spdlog::logger(name_with_rank(log_name, comm)),
-    logfile_name_( (LogFilePolicy::has_filename ?
-      name_with_rank(log_name, comm) + "_logfile.txt" : "null") )
+  Logger (const std::string& log_name,
+          const LogLevel log_level,
+          const ekat::Comm& comm,
+          const std::string& suffix = ".log") :
+    spdlog::logger(log_name)
   {
+    auto logfile_name = (MpiOutputPolicy::get_log_name(log_name, comm) + suffix);
+
     // make the console sink; default console level = log level
-    auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    csink->set_level(lev);
-    // make the file sink; its level is set by the file policy
-    auto fsink = LogFilePolicy::get_file_sink(logfile_name_);
-    // the console sink is always sink [0]
+    csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    if (MpiOutputPolicy::should_log(comm)) {
+      fsink = LogFilePolicy::get_file_sink(logfile_name);
+    } else {
+      fsink = LogNoFile::get_file_sink(logfile_name);
+    }
     this->sinks().push_back(csink);
-    // the file sink is always sink [1]
     this->sinks().push_back(fsink);
-    // set the log level
-    this->set_level(lev);
+
+    // Set the log level of logger as well as the sinks
+    if (not MpiOutputPolicy::should_log(comm)) {
+      this->set_level(LogLevel::off);
+    } else {
+      this->set_level(log_level);
+      csink->set_level(log_level);
+      fsink->set_level(log_level);
+    }
   }
 
-  // shared file sink constructor
-  template <typename FP>
-  Logger(const std::string& log_name, const Log::level::level_enum lev,
-    Logger<FP>& other_log, const ekat::Comm& comm) :
-    spdlog::logger(name_with_rank(log_name, comm)),
-    logfile_name_( (LogFilePolicy::has_filename ?
-      name_with_rank(log_name, comm) + "_logfile.txt" : "null") )
+  // Shared sinks constructor
+  template <typename MOP>
+  Logger(const std::string& log_name,
+         const LogLevel log_level,
+         const ekat::Comm& comm,
+         Logger<LogFilePolicy,MOP>& src) :
+    spdlog::logger(log_name)
   {
-    // make a new console sink for this log; default console level = log level
-    auto csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    csink->set_level(lev);
+    csink = src.get_console_sink();
+    fsink = src.get_file_sink();
     this->sinks().push_back(csink);
-    // this log shares the other's file sink
-    this->sinks().push_back(other_log.get_file_sink());
-    // it needs to share its logfile name, too
-    logfile_name_ = other_log.logfile_name_;
-    // set the log level
-    this->set_level(lev);
-  }
+    this->sinks().push_back(fsink);
 
-  // Constructor for externally created sinks
-  Logger(const std::string& log_name, const Log::level::level_enum lev,
-    spdlog::sink_ptr csink, spdlog::sink_ptr fsink, const ekat::Comm& comm) :
-    spdlog::logger(name_with_rank(log_name, comm), {csink, fsink}),
-    logfile_name_( (LogFilePolicy::has_filename ?
-      name_with_rank(log_name, comm) + "_logfile.txt" : "null") ) {}
+    // Only set the level of the logger. Do *not* alter the sinks levels,
+    // since you are "borrowing" them from another logger
+    if (not MpiOutputPolicy::should_log(comm)) {
+      this->set_level(LogLevel::off);
+    } else {
+      this->set_level(log_level);
+    }
+  }
 
   // accessors
   spdlog::sink_ptr get_console_sink() const {
-    return this->sinks()[0];
+    return csink;
   }
-
   spdlog::sink_ptr get_file_sink() const {
-    return this->sinks()[1];
+    return fsink;
   }
 
-  std::string logfile_name() const {return logfile_name_;}
+  LogLevel log_level() const {
+    return this->level();
+  }
+  LogLevel console_level() const {
+    return this->get_console_sink()->level();
+  }
+  LogLevel file_level() const {
+    return this->get_file_sink()->level();
+  }
 
-  Log::level::level_enum log_level() const {return this->level();}
-
-  Log::level::level_enum console_level() const {return this->get_console_sink()->level();}
-
-  Log::level::level_enum file_level() const {return this->get_file_sink()->level();}
-
-  void set_log_level(const Log::level::level_enum lev) {
+  void set_log_level(const LogLevel lev) {
     this->set_level(lev);
   }
-
-  void set_console_level(const Log::level::level_enum lev) {
+  void set_console_level(const LogLevel lev) {
     this->get_console_sink()->set_level(lev);
   }
-
-  void set_file_level(const Log::level::level_enum lev) {
+  void set_file_level(const LogLevel lev) {
     this->get_file_sink()->set_level(lev);
   }
 
-  // nullify console output from ranks != 0
-  void console_output_rank0_only(const ekat::Comm& comm) {
-    if (!comm.am_i_root()) {
-      this->sinks()[0] = std::make_shared<spdlog::sinks::null_sink_mt>();
-      EKAT_ASSERT( dynamic_cast<spdlog::sinks::null_sink_mt*>(this->get_console_sink().get()) );
-    }
+  // Use this to change the format of logged messages.
+  // The default is "[date time] [log name] [log level] <msg>".
+  void set_format (const std::string& s = "%v") {
+    this->set_pattern(s);
   }
 
-  // nullify file output from ranks != 0
-  void file_output_rank0_only(const ekat::Comm& comm) {
-    if (!comm.am_i_root()) {
-      this->sinks()[1] = std::make_shared<spdlog::sinks::null_sink_mt>();
-      std::remove(logfile_name_.c_str());
-      this->logfile_name_ = "null";
-      EKAT_ASSERT( dynamic_cast<spdlog::sinks::null_sink_mt*>(this->get_file_sink().get()));
-    }
-  }
+  // The string "%v" is corresponds to "<msg>" only.
+  void set_no_format () { set_format("%v"); }
 };
-
-
 
 } // namespace logger
 } // namespace ekat
-#endif
+
+#endif // EKAT_LOGGER_HPP
