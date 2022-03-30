@@ -25,7 +25,7 @@ foreach(RANK RANGE 1 ${EKAT_TEST_MAX_RANKS})
 endforeach()
 
 EkatCreateUnitTest(console_only_log console_only_log_tests.cpp
-  LIBS ekat stdc++fs
+  LIBS ekat
   MPI_EXEC_NAME ${EKAT_TEST_MPI_EXEC_NAME}
   MPI_RANKS ${EKAT_TEST_MAX_RANKS}
   MPI_NP_FLAG ${EKAT_TEST_MPI_NP_FLAG}
