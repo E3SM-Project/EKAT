@@ -149,5 +149,80 @@ TEST_CASE("string","string") {
   }
 }
 
+TEST_CASE("parse_nested_list") {
+  std::string valid_1 = "[a]";
+  std::string valid_2 = "[a,b]";
+  std::string valid_3 = "[a,[b,c]]";
+  std::string valid_4 = "[[a,b],c]";
+  std::string valid_5 = "[[a]]";
+  std::string valid_6 = "[[a,[b,c]],d]";
+
+  std::string invalid_1 = "[]";
+  std::string invalid_2 = "[,b]";
+  std::string invalid_3 = "[a[b,c]]";
+  std::string invalid_4 = "[,,c]";
+  std::string invalid_5 = "[a,]";
+
+  using namespace ekat;
+
+  // Ensure we can tell valid from unvalid strings
+  REQUIRE (validNestedListFormat(valid_1));
+  REQUIRE (validNestedListFormat(valid_2));
+  REQUIRE (validNestedListFormat(valid_3));
+  REQUIRE (validNestedListFormat(valid_4));
+  REQUIRE (validNestedListFormat(valid_5));
+  REQUIRE (validNestedListFormat(valid_6));
+
+  REQUIRE (not validNestedListFormat(invalid_1));
+  REQUIRE (not validNestedListFormat(invalid_2));
+  REQUIRE (not validNestedListFormat(invalid_3));
+  REQUIRE (not validNestedListFormat(invalid_4));
+  REQUIRE (not validNestedListFormat(invalid_5));
+
+  // Parse strings into lists
+  auto pl_1 = parseNestedList(valid_1);
+  auto pl_2 = parseNestedList(valid_2);
+  auto pl_3 = parseNestedList(valid_3);
+  auto pl_4 = parseNestedList(valid_4);
+  auto pl_5 = parseNestedList(valid_5);
+  auto pl_6 = parseNestedList(valid_6);
+
+  // Test counters
+  REQUIRE (pl_1.get<int>("Num Entries")==1);
+  REQUIRE (pl_2.get<int>("Num Entries")==2);
+  REQUIRE (pl_3.get<int>("Num Entries")==2);
+  REQUIRE (pl_4.get<int>("Num Entries")==2);
+  REQUIRE (pl_5.get<int>("Num Entries")==1);
+  REQUIRE (pl_6.get<int>("Num Entries")==2);
+
+  REQUIRE (pl_1.get<int>("Depth")==1);
+  REQUIRE (pl_2.get<int>("Depth")==1);
+  REQUIRE (pl_3.get<int>("Depth")==2);
+  REQUIRE (pl_4.get<int>("Depth")==2);
+  REQUIRE (pl_5.get<int>("Depth")==2);
+  REQUIRE (pl_6.get<int>("Depth")==3);
+
+  // For entries, only test valid_6 = "[[a,[b,c]],d]";
+  REQUIRE (pl_6.get<std::string>("Type 0")=="List");
+  REQUIRE (pl_6.get<std::string>("Type 1")=="Value");
+  REQUIRE (pl_6.get<std::string>("Entry 1")=="d");
+
+  const auto& sub = pl_6.sublist("Entry 0");
+
+  REQUIRE (sub.get<int>("Num Entries")==2);
+  REQUIRE (sub.get<int>("Depth")==2);
+  REQUIRE (sub.get<std::string>("Type 0")=="Value");
+  REQUIRE (sub.get<std::string>("Type 1")=="List");
+  REQUIRE (sub.get<std::string>("Entry 0")=="a");
+
+  const auto& subsub = sub.sublist("Entry 1");
+  REQUIRE (subsub.get<int>("Num Entries")==2);
+  REQUIRE (subsub.get<int>("Depth")==1);
+  REQUIRE (subsub.get<std::string>("Type 0")=="Value");
+  REQUIRE (subsub.get<std::string>("Type 1")=="Value");
+  REQUIRE (subsub.get<std::string>("Entry 0")=="b");
+  REQUIRE (subsub.get<std::string>("Entry 1")=="c");
+}
+
 } // empty namespace
 

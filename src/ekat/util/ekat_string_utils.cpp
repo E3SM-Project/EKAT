@@ -60,6 +60,157 @@ std::string upper_case (const std::string& s) {
   return s_up;
 }
 
+bool validNestedListFormat (const std::string& str)
+{
+  constexpr auto npos = std::string::npos;
+  std::string separators = "[],";
+
+  std::string lower   = "abcdefghijklmnopqrstuvwxyz";
+  std::string upper   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  std::string number  = "0123456789";
+  std::string special = "_";
+  std::string valid = lower+upper+number+special+separators;
+
+  // Check that string contains only valid characters
+  if (str.find_first_not_of(valid)!=npos) {
+    return false;
+  }
+
+  // The string must start with '[' and end with ']'
+  if (str.size()<2 || str.front()!='[' || str.back()!=']') {
+    return false;
+  }
+
+  // We verified the string starts with '['.
+  size_t start = 1;
+  char last_match = '[';
+  size_t num_open = 1;
+  size_t pos = str.find_first_of(separators,start);
+
+  while (pos!=npos) {
+    if (last_match=='[' && str[pos]==',' && pos==start) {
+      return false;
+    }
+
+    // After ',' we need a name or a new list, not a ',' or ']'
+    if (last_match==',' && str[pos]==',' && pos==start) {
+      return false;
+    }
+
+    if (last_match==',' && str[pos]==']' && pos==start) {
+      return false;
+    }
+
+    // No empty lists
+    if (last_match=='[' && str[pos]==']' && pos==start) {
+      return false;
+    }
+
+    // We can open a sublist if a) at the beginning of a list,
+    // or after a comma. No '][' allowed.
+    // if (str[pos]=='[' && last_match!=',' && last_match!='[' && last_match!='\0') {
+    if (str[pos]=='[' && str[pos-1]!=',' && str[pos-1]!='[') {
+      return false;
+    }
+
+    // Keep track of nesting level
+    if (str[pos]=='[') {
+      ++num_open;
+    } else if (str[pos]==']') {
+      --num_open;
+    }
+
+    // Cannot close more than you open
+    if (num_open<0) {
+      return false;
+    }
+
+    // Update current status, and continue
+    last_match = str[pos];
+    start = pos+1;
+    pos = str.find_first_of(separators,start);
+  }
+
+  return num_open==0;
+}
+
+ParameterList parseNestedList (std::string str)
+{
+  constexpr auto npos = std::string::npos;
+
+  // 1. Strip spaces
+  strip(str,' ');
+
+  // 2. Verify input is valid
+  EKAT_REQUIRE_MSG (validNestedListFormat(str),
+      "Error! Input std::string '" + str + "' is not a valid (nested) list.\n");
+
+  // Find the closing bracket matching the open one at open_pos
+  auto find_closing = [] (const std::string& s, size_t open_pos) ->size_t {
+    int num_open = 0;
+    std::string brackets = "[]";
+    auto pos = open_pos;
+    auto prev = npos;
+    do {
+      prev = pos;
+      if (s[prev]==']') {
+        --num_open;
+      } else {
+        ++num_open;
+      }
+      pos = s.find_first_of(brackets,prev+1);
+    } while (num_open>0 && pos!=npos);
+
+    return prev;
+  };
+
+  // 3. Loop through each entry, recursing when finding a nested list
+  int num_entries = 0;
+  int depth_max = 1;
+
+  std::string separators = "[],";
+  size_t start = 1; // We know str[0] = '['
+  size_t pos = str.find_first_of(separators,start);
+
+  ParameterList list (str);
+  while (pos!=npos) {
+    if (str[pos]=='[') {
+      // A sublist. Find the closing bracket, and recurse on substring.
+      // NOTE: we *know* close!=npos, cause we already validated str.
+      auto close = find_closing(str,pos);
+      auto substr = str.substr(pos,close-pos+1);
+      auto sublist = parseNestedList(substr);
+
+      list.set<std::string>(strint("Type",num_entries),"List");
+      list.sublist(strint("Entry",num_entries)) = sublist;
+      depth_max = std::max(depth_max,1+sublist.get<int>("Depth"));
+      
+      // After a list closes, we always have either ',' or ']' afterwards.
+      // So we expect str[pos+1] to be a special char, but there is no
+      // item between ']' and ','/']', so we might as well start the
+      // next search 2 chars ahead.
+      start = close+2;
+    } else {
+      // A normal entry.
+      auto substr = str.substr(start,pos-start);
+      list.set<std::string>(strint("Type",num_entries),"Value");
+      list.set(strint("Entry",num_entries),substr);
+      
+      // Make next search start from the next char
+      start = pos+1;
+    }
+
+    // Update current status, and continue
+    ++num_entries;
+    pos = str.find_first_of(separators,start);
+  }
+
+  list.set("Num Entries",num_entries);
+  list.set("Depth",depth_max);
+
+  return list;
+}
+
 double jaro_similarity (const std::string& s1, const std::string& s2) {
   // Two equal strings always have similarity of 1, regardless of whether they are empty or not
   if (s1==s2) {
