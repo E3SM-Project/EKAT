@@ -180,6 +180,7 @@ ParameterList parseNestedList (std::string str)
       auto close = find_closing(str,pos);
       auto substr = str.substr(pos,close-pos+1);
       auto sublist = parseNestedList(substr);
+      sublist.rename(strint("Entry",num_entries));
 
       list.set<std::string>(strint("Type",num_entries),"List");
       list.sublist(strint("Entry",num_entries)) = sublist;
