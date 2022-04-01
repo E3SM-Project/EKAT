@@ -41,6 +41,9 @@ public:
   // The name of the list
   const std::string& name () const { return m_name; }
 
+  // Change the name of the list
+  void rename (const std::string& name) { m_name = name; }
+
   // Parameters getters and setters
   template<typename T>
   T& get (const std::string& name);
