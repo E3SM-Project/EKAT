@@ -166,26 +166,26 @@ TEST_CASE("parse_nested_list") {
   using namespace ekat;
 
   // Ensure we can tell valid from unvalid strings
-  REQUIRE (validNestedListFormat(valid_1));
-  REQUIRE (validNestedListFormat(valid_2));
-  REQUIRE (validNestedListFormat(valid_3));
-  REQUIRE (validNestedListFormat(valid_4));
-  REQUIRE (validNestedListFormat(valid_5));
-  REQUIRE (validNestedListFormat(valid_6));
+  REQUIRE (valid_nested_list_format(valid_1));
+  REQUIRE (valid_nested_list_format(valid_2));
+  REQUIRE (valid_nested_list_format(valid_3));
+  REQUIRE (valid_nested_list_format(valid_4));
+  REQUIRE (valid_nested_list_format(valid_5));
+  REQUIRE (valid_nested_list_format(valid_6));
 
-  REQUIRE (not validNestedListFormat(invalid_1));
-  REQUIRE (not validNestedListFormat(invalid_2));
-  REQUIRE (not validNestedListFormat(invalid_3));
-  REQUIRE (not validNestedListFormat(invalid_4));
-  REQUIRE (not validNestedListFormat(invalid_5));
+  REQUIRE (not valid_nested_list_format(invalid_1));
+  REQUIRE (not valid_nested_list_format(invalid_2));
+  REQUIRE (not valid_nested_list_format(invalid_3));
+  REQUIRE (not valid_nested_list_format(invalid_4));
+  REQUIRE (not valid_nested_list_format(invalid_5));
 
   // Parse strings into lists
-  auto pl_1 = parseNestedList(valid_1);
-  auto pl_2 = parseNestedList(valid_2);
-  auto pl_3 = parseNestedList(valid_3);
-  auto pl_4 = parseNestedList(valid_4);
-  auto pl_5 = parseNestedList(valid_5);
-  auto pl_6 = parseNestedList(valid_6);
+  auto pl_1 = parse_nested_list(valid_1);
+  auto pl_2 = parse_nested_list(valid_2);
+  auto pl_3 = parse_nested_list(valid_3);
+  auto pl_4 = parse_nested_list(valid_4);
+  auto pl_5 = parse_nested_list(valid_5);
+  auto pl_6 = parse_nested_list(valid_6);
 
   // Test counters
   REQUIRE (pl_1.get<int>("Num Entries")==1);

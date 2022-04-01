@@ -60,7 +60,7 @@ std::string upper_case (const std::string& s) {
   return s_up;
 }
 
-bool validNestedListFormat (const std::string& str)
+bool valid_nested_list_format (const std::string& str)
 {
   constexpr auto npos = std::string::npos;
   std::string separators = "[],";
@@ -134,7 +134,7 @@ bool validNestedListFormat (const std::string& str)
   return num_open==0;
 }
 
-ParameterList parseNestedList (std::string str)
+ParameterList parse_nested_list (std::string str)
 {
   constexpr auto npos = std::string::npos;
 
@@ -142,7 +142,7 @@ ParameterList parseNestedList (std::string str)
   strip(str,' ');
 
   // 2. Verify input is valid
-  EKAT_REQUIRE_MSG (validNestedListFormat(str),
+  EKAT_REQUIRE_MSG (valid_nested_list_format(str),
       "Error! Input std::string '" + str + "' is not a valid (nested) list.\n");
 
   // Find the closing bracket matching the open one at open_pos
@@ -179,7 +179,7 @@ ParameterList parseNestedList (std::string str)
       // NOTE: we *know* close!=npos, cause we already validated str.
       auto close = find_closing(str,pos);
       auto substr = str.substr(pos,close-pos+1);
-      auto sublist = parseNestedList(substr);
+      auto sublist = parse_nested_list(substr);
       sublist.rename(strint("Entry",num_entries));
 
       list.set<std::string>(strint("Type",num_entries),"List");
