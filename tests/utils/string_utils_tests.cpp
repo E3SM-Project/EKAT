@@ -151,17 +151,20 @@ TEST_CASE("string","string") {
 
 TEST_CASE("parse_nested_list") {
   std::string valid_1 = "[a]";
-  std::string valid_2 = "[a,b]";
+  std::string valid_2 = "{a,b}";
   std::string valid_3 = "[a,[b,c]]";
-  std::string valid_4 = "[[a,b],c]";
-  std::string valid_5 = "[[a]]";
+  std::string valid_4 = "((a,b),c)";
+  std::string valid_5 = "<<a>>";
   std::string valid_6 = "[[a,[b,c]],d]";
 
   std::string invalid_1 = "[]";
   std::string invalid_2 = "[,b]";
-  std::string invalid_3 = "[a[b,c]]";
+  std::string invalid_3 = "(a(b,c))";
   std::string invalid_4 = "[,,c]";
   std::string invalid_5 = "[a,]";
+  std::string invalid_6 = "[a)";
+  std::string invalid_7 = "{a)";
+  std::string invalid_8 = "<a}";
 
   using namespace ekat;
 
@@ -178,6 +181,9 @@ TEST_CASE("parse_nested_list") {
   REQUIRE (not valid_nested_list_format(invalid_3));
   REQUIRE (not valid_nested_list_format(invalid_4));
   REQUIRE (not valid_nested_list_format(invalid_5));
+  REQUIRE (not valid_nested_list_format(invalid_6));
+  REQUIRE (not valid_nested_list_format(invalid_7));
+  REQUIRE (not valid_nested_list_format(invalid_8));
 
   // Parse strings into lists
   auto pl_1 = parse_nested_list(valid_1);
