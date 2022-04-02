@@ -6,6 +6,9 @@
 #include <sstream>
 #include <list>
 
+// Uncomment this to print some debug info in parse_nested_list
+// #define DEBUG_OUTPUT
+
 namespace ekat {
 
 void strip (std::string& str, const char c) {
@@ -63,65 +66,120 @@ std::string upper_case (const std::string& s) {
 bool valid_nested_list_format (const std::string& str)
 {
   constexpr auto npos = std::string::npos;
-  std::string separators = "[],";
+
+  std::string parens   = "()";
+  std::string brackets = "[]";
+  std::string braces   = "{}";
+  std::string angles   = "<>";
+
+  // Check if we use parentheses or brackets as delimiters.
+  // We don't allow mixing them.
+  const int use_parens   = str.find_last_of(parens)!=npos;
+  const int use_brackets = str.find_last_of(brackets)!=npos;
+  const int use_braces   = str.find_last_of(braces)!=npos;
+  const int use_angles   = str.find_last_of(angles)!=npos;
+
+  if ( (use_parens+use_brackets+use_braces+use_angles)>1 ) {
+#ifdef DEBUG_OUTPUT
+    std::cout << "Input string '" << str << "' contains multiple kind of brackets.\n";
+#endif
+    return false;
+  }
+
+  std::string separators;
+  if (use_parens) {
+    separators += parens;
+  } else if (use_brackets) {
+    separators += brackets;
+  } else if (use_braces) {
+    separators += braces;
+  } else {
+    separators += angles;
+  }
+  separators += ",";
+
+  const char open  = separators[0];
+  const char close = separators[1];
 
   std::string lower   = "abcdefghijklmnopqrstuvwxyz";
   std::string upper   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   std::string number  = "0123456789";
-  std::string special = "_";
+  std::string special = "_.-!@#$%^&*+=?";
   std::string valid = lower+upper+number+special+separators;
 
   // Check that string contains only valid characters
   if (str.find_first_not_of(valid)!=npos) {
+#ifdef DEBUG_OUTPUT
+    std::cout << "Input string '" << str << "' contains an invalid character: "
+              << str[str.find_last_not_of(valid)] << "\n";
+#endif
     return false;
   }
 
   // The string must start with '[' and end with ']'
-  if (str.size()<2 || str.front()!='[' || str.back()!=']') {
+  if (str.size()<2 || str.front()!=open || str.back()!=close) {
     return false;
   }
 
   // We verified the string starts with '['.
   size_t start = 1;
-  char last_match = '[';
+  char last_match = open;
   size_t num_open = 1;
   size_t pos = str.find_first_of(separators,start);
 
   while (pos!=npos) {
-    if (last_match=='[' && str[pos]==',' && pos==start) {
+    if (last_match==open && str[pos]==',' && pos==start) {
+#ifdef DEBUG_OUTPUT
+      std::cout << "Input string '" << str << "' contains a comma right after an open.\n";
+#endif
+
       return false;
     }
 
     // After ',' we need a name or a new list, not a ',' or ']'
     if (last_match==',' && str[pos]==',' && pos==start) {
+#ifdef DEBUG_OUTPUT
+      std::cout << "Input string '" << str << "' contains two commas in a row.\n";
+#endif
       return false;
     }
 
-    if (last_match==',' && str[pos]==']' && pos==start) {
+    if (last_match==',' && str[pos]==close && pos==start) {
+#ifdef DEBUG_OUTPUT
+      std::cout << "Input string '" << str << "' contains a close right after a comma.\n";
+#endif
       return false;
     }
 
     // No empty lists
-    if (last_match=='[' && str[pos]==']' && pos==start) {
+    if (last_match==open && str[pos]==close && pos==start) {
+#ifdef DEBUG_OUTPUT
+      std::cout << "Input string '" << str << "' contains an empty list.\n";
+#endif
       return false;
     }
 
     // We can open a sublist if a) at the beginning of a list,
     // or after a comma. No '][' allowed.
-    // if (str[pos]=='[' && last_match!=',' && last_match!='[' && last_match!='\0') {
-    if (str[pos]=='[' && str[pos-1]!=',' && str[pos-1]!='[') {
+    if (str[pos]==open && str[pos-1]!=',' && str[pos-1]!=open) {
+#ifdef DEBUG_OUTPUT
+      std::cout << "Input string '" << str << "' contains " << open << " after an entry. Did you forget a comma?\n";
+#endif
       return false;
     }
 
     // Keep track of nesting level
-    if (str[pos]=='[') {
+    if (str[pos]==open) {
       ++num_open;
-    } else if (str[pos]==']') {
+    } else if (str[pos]==close) {
       --num_open;
     }
 
     // Cannot close more than you open
     if (num_open<0) {
+#ifdef DEBUG_OUTPUT
+      std::cout << "Input string '" << str << "' open/closed brackets don't balance.\n";
+#endif
       return false;
     }
 
@@ -130,6 +188,12 @@ bool valid_nested_list_format (const std::string& str)
     start = pos+1;
     pos = str.find_first_of(separators,start);
   }
+
+#ifdef DEBUG_OUTPUT
+  if (num_open>0) {
+    std::cout << "Input string '" << str << "' open/closed brackets don't balance.\n";
+  }
+#endif
 
   return num_open==0;
 }
@@ -145,15 +209,20 @@ ParameterList parse_nested_list (std::string str)
   EKAT_REQUIRE_MSG (valid_nested_list_format(str),
       "Error! Input std::string '" + str + "' is not a valid (nested) list.\n");
 
+  const char open_char  = str.front();
+  const char close_char = str.back();
+  std::string brackets;
+  brackets += open_char;
+  brackets += close_char;
+
   // Find the closing bracket matching the open one at open_pos
-  auto find_closing = [] (const std::string& s, size_t open_pos) ->size_t {
+  auto find_closing = [&] (const std::string& s, size_t open_pos) ->size_t {
     int num_open = 0;
-    std::string brackets = "[]";
     auto pos = open_pos;
     auto prev = npos;
     do {
       prev = pos;
-      if (s[prev]==']') {
+      if (s[prev]==close_char) {
         --num_open;
       } else {
         ++num_open;
@@ -168,13 +237,13 @@ ParameterList parse_nested_list (std::string str)
   int num_entries = 0;
   int depth_max = 1;
 
-  std::string separators = "[],";
-  size_t start = 1; // We know str[0] = '['
+  std::string separators = brackets + ",";
+  size_t start = 1; // We know str[0] = $open
   size_t pos = str.find_first_of(separators,start);
 
   ParameterList list (str);
   while (pos!=npos) {
-    if (str[pos]=='[') {
+    if (str[pos]==open_char) {
       // A sublist. Find the closing bracket, and recurse on substring.
       // NOTE: we *know* close!=npos, cause we already validated str.
       auto close = find_closing(str,pos);
