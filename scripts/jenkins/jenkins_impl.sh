@@ -65,7 +65,7 @@ if [ $? -ne 0 ]; then
     echo "Something went wrong while configuring the SP case."
     RET_SP=1
 else
-    make -j ${COMP_J}
+    ${BATCHP} make -j ${COMP_J}
     if [ $? -ne 0 ]; then
         echo "Something went wrong while building the SP case."
         RET_SP=1
@@ -105,7 +105,7 @@ if [ $? -ne 0 ]; then
     echo "Something went wrong while configuring the DP case."
     RET_DP=1
 else
-    make -j ${COMP_J}
+    ${BATCHP} make -j ${COMP_J}
     if [ $? -ne 0 ]; then
         echo "Something went wrong while building the DP case."
         RET_DP=1
