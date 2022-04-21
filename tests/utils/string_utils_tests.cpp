@@ -212,11 +212,13 @@ TEST_CASE("parse_nested_list") {
   REQUIRE (pl_6.get<std::string>("Type 0")=="List");
   REQUIRE (pl_6.get<std::string>("Type 1")=="Value");
   REQUIRE (pl_6.get<std::string>("Entry 1")=="d");
+  REQUIRE (pl_6.get<std::string>("String")=="[[a,[b,c]],d]");
 
   const auto& sub = pl_6.sublist("Entry 0");
 
   REQUIRE (sub.get<int>("Num Entries")==2);
   REQUIRE (sub.get<int>("Depth")==2);
+  REQUIRE (sub.get<std::string>("String")=="[a,[b,c]]");
   REQUIRE (sub.get<std::string>("Type 0")=="Value");
   REQUIRE (sub.get<std::string>("Type 1")=="List");
   REQUIRE (sub.get<std::string>("Entry 0")=="a");
@@ -224,6 +226,7 @@ TEST_CASE("parse_nested_list") {
   const auto& subsub = sub.sublist("Entry 1");
   REQUIRE (subsub.get<int>("Num Entries")==2);
   REQUIRE (subsub.get<int>("Depth")==1);
+  REQUIRE (subsub.get<std::string>("String")=="[b,c]");
   REQUIRE (subsub.get<std::string>("Type 0")=="Value");
   REQUIRE (subsub.get<std::string>("Type 1")=="Value");
   REQUIRE (subsub.get<std::string>("Entry 0")=="b");

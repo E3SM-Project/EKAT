@@ -277,6 +277,7 @@ ParameterList parse_nested_list (std::string str)
 
   list.set("Num Entries",num_entries);
   list.set("Depth",depth_max);
+  list.set("String",str);
 
   return list;
 }
