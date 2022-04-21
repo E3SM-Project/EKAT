@@ -102,6 +102,7 @@ TEST_CASE ("ekat_comm","") {
     test_gather<bool>(comm);
 #endif
     test_gather<int>(comm);
+    test_gather<long long>(comm);
     test_gather<float>(comm);
     test_gather<double>(comm);
   }

@@ -72,6 +72,7 @@ private:
         std::is_same<T,bool>::value ||
 #endif
         std::is_same<T,int>::value ||
+        std::is_same<T,long long>::value ||
         std::is_same<T,float>::value ||
         std::is_same<T,double>::value,
         "Error! Type not supported for MPI operations.\n");
@@ -81,7 +82,8 @@ private:
           (std::is_same<T,bool>::value ? MPI_CXX_BOOL :
 #endif
           (std::is_same<T,int>::value ? MPI_INT :
-          (std::is_same<T,float>::value ? MPI_FLOAT : MPI_DOUBLE)));
+          (std::is_same<T,long long>::value ? MPI_LONG_LONG :
+          (std::is_same<T,float>::value ? MPI_FLOAT : MPI_DOUBLE))));
   }
 
   // Checks (with an assert) that MPI is already init-ed.
