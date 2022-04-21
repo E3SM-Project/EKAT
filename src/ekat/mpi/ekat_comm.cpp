@@ -58,5 +58,39 @@ void Comm::check_mpi_inited () const
   assert (flag!=0);
 }
 
+template<>
+MPI_Datatype get_mpi_type <char> () {
+  return MPI_CHAR;
+}
+template<>
+MPI_Datatype get_mpi_type <short> () {
+  return MPI_SHORT;
+}
+template<>
+MPI_Datatype get_mpi_type <int> () {
+  return MPI_INT;
+}
+template<>
+MPI_Datatype get_mpi_type <long> () {
+  return MPI_LONG;
+}
+template<>
+MPI_Datatype get_mpi_type <long long> () {
+  return MPI_LONG_LONG;
+}
+template<>
+MPI_Datatype get_mpi_type <float> () {
+  return MPI_FLOAT;
+}
+template<>
+MPI_Datatype get_mpi_type <double> () {
+  return MPI_DOUBLE;
+}
+#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
+template<>
+MPI_Datatype get_mpi_type <bool> () {
+  return MPI_CXX_BOOL;
+}
+#endif
 
 } // namespace ekat

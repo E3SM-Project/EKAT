@@ -1,6 +1,35 @@
 #include <catch2/catch.hpp>
 #include "ekat/mpi/ekat_comm.hpp"
 
+// Instantiate get_mpi_type for a user defined type
+// to check that the user can extend comm functionalities
+// to new types
+struct TwoInts {
+  int i;
+  int j;
+  TwoInts () = default;
+  TwoInts (const int val) {
+    i = val;
+    j = -val;
+  }
+  TwoInts& operator= (const int val) {
+    i = val;
+    j = -val;
+    return *this;
+  }
+};
+
+bool operator== (const TwoInts& lhs, const TwoInts& rhs) {
+  return lhs.i==rhs.i && lhs.j==rhs.j;
+}
+
+namespace ekat {
+  template<>
+  MPI_Datatype get_mpi_type<TwoInts> () {
+    return MPI_2INT;
+  }
+}
+
 namespace {
 
 template<typename T>
@@ -101,10 +130,13 @@ TEST_CASE ("ekat_comm","") {
 #if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
     test_gather<bool>(comm);
 #endif
+    test_gather<short>(comm);
     test_gather<int>(comm);
+    test_gather<long>(comm);
     test_gather<long long>(comm);
     test_gather<float>(comm);
     test_gather<double>(comm);
+    test_gather<TwoInts>(comm);
   }
 
   SECTION ("split") {

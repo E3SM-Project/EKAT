@@ -62,30 +62,6 @@ public:
   Comm split (const int color) const;
 private:
 
-  template<typename T>
-  static MPI_Datatype get_mpi_type () {
-    // Sanity check
-    static_assert (
-        std::is_same<T,char>::value ||
-#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
-        // MPI started supporting C++ bool type only "recently"
-        std::is_same<T,bool>::value ||
-#endif
-        std::is_same<T,int>::value ||
-        std::is_same<T,long long>::value ||
-        std::is_same<T,float>::value ||
-        std::is_same<T,double>::value,
-        "Error! Type not supported for MPI operations.\n");
-
-    return std::is_same<T,char>::value ? MPI_CHAR :
-#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
-          (std::is_same<T,bool>::value ? MPI_CXX_BOOL :
-#endif
-          (std::is_same<T,int>::value ? MPI_INT :
-          (std::is_same<T,long long>::value ? MPI_LONG_LONG :
-          (std::is_same<T,float>::value ? MPI_FLOAT : MPI_DOUBLE))));
-  }
-
   // Checks (with an assert) that MPI is already init-ed.
   void check_mpi_inited () const;
 
@@ -94,6 +70,9 @@ private:
   int       m_size;
   int       m_rank;
 };
+
+template<typename T>
+MPI_Datatype get_mpi_type ();
 
 // ========================= IMPLEMENTATION =========================== //
 
