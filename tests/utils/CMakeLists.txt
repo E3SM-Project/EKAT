@@ -4,7 +4,7 @@ include(EkatCreateUnitTest)
 EkatCreateUnitTest(debug_tools debug_tools_tests.cpp
   LIBS ekat)
 
-# Test utilities (c++)
+# Test meta utilities
 EkatCreateUnitTest(meta_utils meta_utils.cpp
   LIBS ekat)
 
@@ -12,12 +12,16 @@ EkatCreateUnitTest(meta_utils meta_utils.cpp
 EkatCreateUnitTest(util_cxx util_tests.cpp
   LIBS ekat)
 
-# Test utilities (c++)
+# Test string utilities
 EkatCreateUnitTest(string_utils string_utils_tests.cpp
   LIBS ekat)
 
 # Test upper_bound
 EkatCreateUnitTest(upper_bound upper_bound_test.cpp
+  LIBS ekat)
+
+# Test factory
+EkatCreateUnitTest(factory factory.cpp
   LIBS ekat)
 
 # Test math utils

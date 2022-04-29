@@ -55,6 +55,9 @@ public:
   // Creates a concrete object using the proper creator
   obj_ptr_type create (const key_type& label, ConstructorArgs&& ...args);
 
+  bool has_product (const key_type& key) const {
+    return m_register.find(key)!=m_register.end();
+  }
 
   // Cleans up the factory
   // This can be useful during unit tests, where several tests in the same
