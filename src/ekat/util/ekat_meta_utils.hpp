@@ -62,8 +62,8 @@ template<typename TL, int N>
 using type_list_get = typename std::tuple_element<N,TL>::type;
 
 // Iterate over a TypeList
-// Requires a generic lambda that only accept an instance of the
-// type list types. Can only use input to deduce its type.
+// Requires the op() of the functor to be templated on the input argument type.
+// A generic lambda works. Note: can only use input to deduce its type.
 //  auto l = [&](auto t) {
 //    using T = decltype(t);
 //    call_some_func<T>(...);
@@ -195,20 +195,32 @@ public:
 
 private:
 
+  template<typename V>
+  struct has_v_impl_lambda {
+    bool found = false;
+    const V& v;
+    const self& map;
+    has_v_impl_lambda (const V& v_in, const self& map_in):
+      v(v_in), map(map_in)
+    {}
+
+    template<typename T>
+    bool operator() (const T& t) const {
+      const auto& value = map.template at<T>();
+      if (check_eq(v,value)) {
+        found = true;
+        return true;
+      }
+      return false;
+    }
+  };
+
   template<bool has_V_type, typename V>
   typename std::enable_if<has_V_type,bool>::type
   has_v_impl (const V& v, const self& map) const {
-    bool found = false;
-    TypeListFor<keys>([&](auto t){
-      using key_t = decltype(t);
-
-      const auto& value = map.template at<key_t>();
-      if (check_eq(v,value)) {
-        found = true;
-        return;
-      }
-    });
-    return found;
+    has_v_impl_lambda<V> my_lambda(v,map);
+    TypeListFor<keys> my_for(my_lambda);
+    return my_lambda.found;
   }
 
   template<bool has_V_type, typename V>
