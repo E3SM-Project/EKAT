@@ -287,21 +287,49 @@ struct ExeSpaceUtils {
 template <>
 struct ExeSpaceUtils<Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+  using HostTeamPolicy = Kokkos::TeamPolicy<Kokkos::Serial>;
+
+  // Enable policy on Host only if UVM is enabled.
+  template<bool OnHost>
+  struct PolicyOnHostHelper {
+    static constexpr bool UseUVM = std::is_same<Kokkos::Cuda::memory_space,Kokkos::CudaUVMSpace>::value;
+    static_assert (!OnHost  || UseUVM, "Error! Cannot get a policy on Host unless Cuda UVM is enabled in Kokkos.");
+    using type = typename std::conditional<OnHost,HostTeamPolicy,TeamPolicy>::type;
+  };
+
+  template<bool OnHost>
+  using policy_t = typename PolicyOnHostHelper<OnHost>::type;
+
+  template<bool OnHost>
+  static policy_t<OnHost>
+  get_policy_internal (const Int ni, const Int nk) {
+    if (OnHost) {
+      return policy_t<OnHost>(ni,1);
+    } else {
+      return policy_t<OnHost>(ni,nk);
+    }
+  }
 
   static int num_warps (const int i) {
     return (i+31)/32;
   }
 
-  static TeamPolicy get_default_team_policy (Int ni, Int nk) {
-    return TeamPolicy(ni, std::min(128, 32*((nk + 31)/32)));
+  template<bool OnHost = false>
+  static policy_t<OnHost>
+  get_default_team_policy (Int ni, Int  nk ) {
+    return get_policy_internal<OnHost>(ni, std::min(128, 32*((nk + 31)/32)));
   }
 
-  static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
-    return TeamPolicy(ni, team_size);
+  template<bool OnHost = false>
+  static policy_t<OnHost>
+  get_team_policy_force_team_size (Int ni, Int team_size) {
+    return get_policy_internal<OnHost>(ni, team_size);
   }
 
   // On GPU, the team-level ||scan in column_ops only works for team sizes that are a power of 2.
-  static TeamPolicy get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
+  template<bool OnHost = false>
+  static policy_t<OnHost>
+  get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
     auto prev_pow_2 = [](const int i) -> int {
       // Multiply by 2 until pp2>i, then divide by 2 once.
       int pp2 = 1;
@@ -311,7 +339,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 
     const int pp2 = prev_pow_2(team_size_request);
     const int team_size = 32*num_warps(pp2);
-    return TeamPolicy(league_size, std::min(128, team_size));
+    return get_policy_internal<OnHost>(league_size, std::min(128, team_size));
   }
 
   // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
