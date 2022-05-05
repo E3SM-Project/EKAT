@@ -29,6 +29,9 @@ void run (const Policy& p,
       a(i,k) = value;
     });
   });
+
+  // We will check on host, so we need to make sure writes have finished when pages are migrated
+  Kokkos::fence();
 }
 
 void check (const Kokkos::View<int**,MemSpace>& a,const int expected) {
