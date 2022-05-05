@@ -119,7 +119,7 @@ else
             make install
             if [ $? -ne 0 ]; then
                 echo "Something went wrong while installing the DP case."
-                RET_SP=1
+                RET_DP=1
             fi
         fi
     fi
