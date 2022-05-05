@@ -6,13 +6,12 @@
 namespace {
 
 using namespace ekat;
-using Device = DefaultDevice;
-using ExeSpace = typename KokkosTypes<Device>::ExeSpace;
-using MemSpace = typename KokkosTypes<Device>::MemSpace;
+using ExeSpace = typename KokkosTypes<DefaultDevice>::ExeSpace;
+using MemSpace = typename KokkosTypes<DefaultDevice>::MemSpace;
 
 enum : int {
-  OnDev = 1,
-  OnHost = -1
+  ValueDev = 1,
+  ValueHost = -1
 };
 
 template<typename Policy>
@@ -22,7 +21,7 @@ void run (const Policy& p,
   const int ni = a.extent(0);
   const int nk = a.extent(1);
 
-  int value = std::is_same<typename Policy::traits::execution_space,Kokkos::Serial>::value ? OnHost : OnDev;
+  int value = std::is_same<typename Policy::traits::execution_space,Kokkos::Serial>::value ? ValueHost : ValueDev;
   Kokkos::parallel_for(p,KOKKOS_LAMBDA(const typename Policy::member_type& team_member) {
     const int i = team_member.league_rank();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member,nk),
@@ -53,21 +52,21 @@ TEST_CASE("kernel_on_host") {
   Kokkos::deep_copy(a,0);
 
   SECTION("on_host") {
-    const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy<true>(ni, nk);
+    const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy<Host>(ni, nk);
     run(p,a);
-    check(a,OnHost);
+    check(a,ValueHost);
   }
 
   SECTION("on_dev") {
-    const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy<false>(ni, nk);
+    const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy<Device>(ni, nk);
     run(p,a);
-    check(a,OnDev);
+    check(a,ValueDev);
   }
 
   SECTION("default") {
     const auto p = ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk);
     run(p,a);
-    check(a,OnDev);
+    check(a,ValueDev);
   }
 }
 
