@@ -162,6 +162,7 @@ class WorkspaceManager
 
     template<int N, typename V, typename... Vs>
     struct ArrFiller<N,V,Vs...> {
+      KOKKOS_INLINE_FUNCTION
       static void set_ith (Kokkos::Array<V*,N>& arr, int i, V& v, Vs&... vs) {
         arr[i] = &v;
         ArrFiller<N,Vs...>::set_ith(arr,i+1,vs...);
@@ -170,6 +171,7 @@ class WorkspaceManager
 
     template<int N, typename V>
     struct ArrFiller<N,V> {
+      KOKKOS_INLINE_FUNCTION
       static void set_ith (Kokkos::Array<V*,N>& arr, int i, V& v) {
         arr[i] = &v;
       }
