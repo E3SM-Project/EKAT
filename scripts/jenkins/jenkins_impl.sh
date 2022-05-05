@@ -126,6 +126,50 @@ else
 fi
 cd ${WORK_DIR}
 
+RET_UVM=0
+if [[ "$ISCUDA" == "True" ]]; then
+  # Build and test Cuda UVM
+  mkdir -p ekat-build/ekat-uvm && cd ekat-build/ekat-uvm && rm -rf *
+
+  cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
+      -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-uvm   \
+      -DCMAKE_BUILD_TYPE=DEBUG                                   \
+      -DCMAKE_CXX_COMPILER=${MPICXX}                             \
+      -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
+      -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
+      -DEKAT_ENABLE_TESTS=ON                                     \
+      -DEKAT_TEST_DOUBLE_PRECISION=ON                            \
+      -DEKAT_TEST_SINGLE_PRECISION=OFF                           \
+      -DKokkos_ENABLE_CUDA_UVM=ON                                \
+      ${EKAT_THREAD_SETTINGS}                                    \
+      ${WORK_DIR}/ekat-src
+
+  if [ $? -ne 0 ]; then
+      echo "Something went wrong while configuring the UVM case."
+      RET_UVM=1
+  else
+      ${BATCHP} make -j ${COMP_J}
+      if [ $? -ne 0 ]; then
+          echo "Something went wrong while building the UVM case."
+          RET_UVM=1
+      else
+          ${BATCHP} ctest --output-on-failure
+          if [ $? -ne 0 ]; then
+              echo "Something went wrong while testing the UVM case."
+              RET_UVM=1
+              FAILED_UVM=$(cat Testing/Temporary/LastTestsFailed.log)
+          else
+              make install
+              if [ $? -ne 0 ]; then
+                  echo "Something went wrong while installing the UVM case."
+                  RET_UVM=1
+              fi
+          fi
+      fi
+  fi
+  cd ${WORK_DIR}
+fi
+
 # Print list of failed tests
 if [[ $RET_SP -ne 0 && "$FAILED_SP" != "" ]]; then
     echo "List of failed SP tests:"
@@ -137,8 +181,13 @@ if [[ $RET_DP -ne 0 && "$FAILED_DP" != "" ]]; then
     echo "$FAILED_DP"
 fi
 
-# Check if both builds succeded, and establish success/fail
-if [[ $RET_SP -ne 0 || $RET_DP -ne 0 ]]; then
+if [[ $RET_UVM -ne 0 && "$FAILED_UVM" != "" ]]; then
+    echo "List of failed DP tests:"
+    echo "$FAILED_UVM"
+fi
+
+# Check if all builds succeded, and establish success/fail
+if [[ $RET_SP -ne 0 || $RET_DP -ne 0  || $RET_UVM -ne 0 ]]; then
     exit 1;
 fi
 
