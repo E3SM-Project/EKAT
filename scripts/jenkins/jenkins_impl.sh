@@ -26,7 +26,7 @@ fi
 
 # Query scream for machine info
 MPICXX=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE cxx_compiler)
-MPICOM=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE c_compiler)
+MPICC=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE c_compiler)
 MPIF90=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE f90_compiler)
 BATCHP=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE batch)
 COMP_J=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE comp_j)
@@ -52,6 +52,7 @@ mkdir -p ekat-build/ekat-sp && cd ekat-build/ekat-sp && rm -rf *
 cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-sp    \
     -DCMAKE_BUILD_TYPE=DEBUG                                   \
+    -DCMAKE_C_COMPILER=${MPICC}                                \
     -DCMAKE_CXX_COMPILER=${MPICXX}                             \
     -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
     -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
@@ -92,6 +93,7 @@ mkdir -p ekat-build/ekat-dp && cd ekat-build/ekat-dp && rm -rf *
 cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-dp    \
     -DCMAKE_BUILD_TYPE=DEBUG                                   \
+    -DCMAKE_C_COMPILER=${MPICC}                                \
     -DCMAKE_CXX_COMPILER=${MPICXX}                             \
     -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
     -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
@@ -134,6 +136,7 @@ if [[ "$ISCUDA" == "True" ]]; then
   cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
       -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-uvm   \
       -DCMAKE_BUILD_TYPE=DEBUG                                   \
+      -DCMAKE_C_COMPILER=${MPICC}                                \
       -DCMAKE_CXX_COMPILER=${MPICXX}                             \
       -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
       -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
