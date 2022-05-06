@@ -40,6 +40,11 @@ struct reduction_identity<ekat::Pack<S,N>> {
 
 namespace ekat {
 
+enum HostOrDevice {
+  Host,
+  Device
+};
+
 namespace impl {
 
 /*
@@ -207,6 +212,8 @@ template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
   using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
+  // Note: for non-Cuda exec spaces, the template arg does nothing.
+  template<HostOrDevice HD = Device>
   static TeamPolicy get_default_team_policy (Int ni, Int /* nk */) {
 #ifdef EKAT_MIMIC_GPU
     const int max_threads = ExeSpace::concurrency();
@@ -217,10 +224,12 @@ struct ExeSpaceUtils {
 #endif
   }
 
+  template<HostOrDevice HD = Device>
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
     return TeamPolicy(ni, team_size);
   }
 
+  template<HostOrDevice HD = Device>
   static TeamPolicy get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
     return get_default_team_policy(league_size, team_size_request);
   }
@@ -287,21 +296,46 @@ struct ExeSpaceUtils {
 template <>
 struct ExeSpaceUtils<Kokkos::Cuda> {
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+  using HostTeamPolicy = Kokkos::TeamPolicy<Kokkos::Serial>;
+
+  // Enable policy on Host only if UVM is enabled.
+  template<HostOrDevice HD>
+  struct PolicyOnHostHelper {
+    static constexpr bool UseUVM = std::is_same<Kokkos::Cuda::memory_space,Kokkos::CudaUVMSpace>::value;
+    static_assert (HD==Device  || UseUVM, "Error! Cannot get a policy on Host unless Cuda UVM is enabled in Kokkos.");
+    using type = typename std::conditional<HD==Host,HostTeamPolicy,TeamPolicy>::type;
+  };
+
+  template<HostOrDevice HD>
+  using policy_t = typename PolicyOnHostHelper<HD>::type;
+
+  template<HostOrDevice HD = Device>
+  static policy_t<HD>
+  get_policy_internal (const Int ni, const Int nk) {
+    auto nk_impl = HD==Host ? 1 : nk;
+    return policy_t<HD>(ni,nk_impl);
+  }
 
   static int num_warps (const int i) {
     return (i+31)/32;
   }
 
-  static TeamPolicy get_default_team_policy (Int ni, Int nk) {
-    return TeamPolicy(ni, std::min(128, 32*((nk + 31)/32)));
+  template<HostOrDevice HD = Device>
+  static policy_t<HD>
+  get_default_team_policy (Int ni, Int  nk ) {
+    return get_policy_internal<HD>(ni, std::min(128, 32*((nk + 31)/32)));
   }
 
-  static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
-    return TeamPolicy(ni, team_size);
+  template<HostOrDevice HD = Device>
+  static policy_t<HD>
+  get_team_policy_force_team_size (Int ni, Int team_size) {
+    return get_policy_internal<HD>(ni, team_size);
   }
 
   // On GPU, the team-level ||scan in column_ops only works for team sizes that are a power of 2.
-  static TeamPolicy get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
+  template<HostOrDevice HD = Device>
+  static policy_t<HD>
+  get_thread_range_parallel_scan_team_policy (Int league_size, Int team_size_request) {
     auto prev_pow_2 = [](const int i) -> int {
       // Multiply by 2 until pp2>i, then divide by 2 once.
       int pp2 = 1;
@@ -311,7 +345,7 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
 
     const int pp2 = prev_pow_2(team_size_request);
     const int team_size = 32*num_warps(pp2);
-    return TeamPolicy(league_size, std::min(128, team_size));
+    return get_policy_internal<HD>(league_size, std::min(128, team_size));
   }
 
   // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.

@@ -35,3 +35,9 @@ if (EKAT_TEST_SINGLE_PRECISION)
     THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC}
   )
 endif ()
+
+if (Kokkos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA_UVM)
+  # Test ability to move a kernel to host
+  EkatCreateUnitTest (kernel_on_host kernel_on_host.cpp
+    LIBS ekat)
+endif()
