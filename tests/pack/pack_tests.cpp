@@ -471,8 +471,9 @@ TEST_CASE("isnan", "ekat::pack") {
   using pt = Pack<Real, EKAT_TEST_PACK_SIZE>;
   using mt = Mask<EKAT_TEST_PACK_SIZE>;
 
-  using pvt = typename KokkosTypes<ekat::DefaultDevice>::template view_1d<pt>;
-  using mvt = typename KokkosTypes<ekat::DefaultDevice>::template view_1d<mt>;
+  using MemSpace = ekat::DefaultDevice::memory_space;
+  using pvt = typename ViewTypes<MemSpace>::template view_1d<pt>;
+  using mvt = typename ViewTypes<MemSpace>::template view_1d<mt>;
 
   pvt zero("",1), nan("",1);
   mvt mzero("",1), mnan("",1);

@@ -15,16 +15,18 @@ template <typename DeviceType>
 struct UnitTest {
 
 using Device     = DeviceType;
-using MemberType = typename KokkosTypes<Device>::MemberType;
-using TeamPolicy = typename KokkosTypes<Device>::TeamPolicy;
-using ExeSpace   = typename KokkosTypes<Device>::ExeSpace;
+using ExeSpace   = typename Device::execution_space;
+using MemSpace   = typename Device::memory_space;
+
+using MemberType = typename PolicyTypes<ExeSpace>::MemberType;
+using TeamPolicy = typename PolicyTypes<ExeSpace>::TeamPolicy;
 
 template <typename S>
-using view_1d = typename KokkosTypes<Device>::template view_1d<S>;
+using view_1d = typename ViewTypes<MemSpace>::template view_1d<S>;
 template <typename S>
-using view_2d = typename KokkosTypes<Device>::template view_2d<S>;
+using view_2d = typename ViewTypes<MemSpace>::template view_2d<S>;
 template <typename S>
-using view_3d = typename KokkosTypes<Device>::template view_3d<S>;
+using view_3d = typename ViewTypes<MemSpace>::template view_3d<S>;
 
 static void unittest_workspace_overprovision()
 {
@@ -211,7 +213,8 @@ static void unittest_workspace()
   // Test host-explicit WorkspaceMgr
   {
     using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
-    typename KokkosTypes<HostDevice>::TeamPolicy policy_host(ExeSpaceUtils<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk));
+    using HostExeSpace = typename HostDevice::execution_space;
+    typename PolicyTypes<HostExeSpace>::TeamPolicy policy_host(ExeSpaceUtils<HostExeSpace>::get_default_team_policy(ni, nk));
     WorkspaceManager<short, HostDevice> wsmh(16, n_slots_per_team, policy_host);
     wsmh.m_data(0, 0) = 0; // check on cuda machine
   }

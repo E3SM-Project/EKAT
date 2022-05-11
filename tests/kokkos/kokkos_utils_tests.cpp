@@ -28,7 +28,7 @@ TEST_CASE("team_policy", "[kokkos_utils]") {
   using namespace ekat;
 
   using Device = DefaultDevice;
-  using ExeSpace = typename KokkosTypes<Device>::ExeSpace;
+  using ExeSpace = typename Device::execution_space;
 
   for (int nk: {128, 122, 255, 42}) {
     const int ni = 1000;
@@ -55,8 +55,9 @@ TEST_CASE("team_utils_omp", "[kokkos_utils]")
   using namespace ekat;
 
   using Device = DefaultDevice;
-  using ExeSpace = typename KokkosTypes<Device>::ExeSpace;
-  using MemberType = typename KokkosTypes<Device>::MemberType;
+  using ExeSpace = typename Device::execution_space;
+  using MemSpace = typename Device::memory_space;
+  using MemberType = typename PolicyTypes<ExeSpace>::MemberType;
   const int n = omp_get_max_threads();
   // test will not work with more than 16 threads
   if (n > 16) {
@@ -69,7 +70,7 @@ TEST_CASE("team_utils_omp", "[kokkos_utils]")
     const auto p = ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(ni, s);
     TeamUtils<ExeSpace> tu(p);
     const int c = tu.get_num_concurrent_teams();
-    typename KokkosTypes<Device>::template view_2d<int> ws_idxs("ws_idxs", ni, s);
+    typename ViewTypes<MemSpace>::template view_2d<int> ws_idxs("ws_idxs", ni, s);
 #if 0
     const int real_ts = omp_get_max_threads() / c;
     std::cout << "thrds " << n << " teamsizeV " << s << " teamsizeR " << real_ts << " ni " << ni << " conc " << c <<  std::endl;
@@ -138,8 +139,9 @@ void test_utils_large_ni(const double saturation_multiplier)
   using namespace ekat;
 
   using Device = DefaultDevice;
-  using ExeSpace = typename KokkosTypes<Device>::ExeSpace;
-  using MemberType = typename KokkosTypes<Device>::MemberType;
+  using ExeSpace = typename Device::execution_space;
+  using MemSpace = typename Device::memory_space;
+  using MemberType = typename PolicyTypes<ExeSpace>::MemberType;
 
   const int nk = 128;
   const double overprov_factor = 1.5;
@@ -164,7 +166,7 @@ void test_utils_large_ni(const double saturation_multiplier)
   }
 
   int max_workspace_idx = 0;
-  typename KokkosTypes<Device>::template view_1d<int> test_data("test_data", tu.get_num_ws_slots());
+  typename ViewTypes<MemSpace>::template view_1d<int> test_data("test_data", tu.get_num_ws_slots());
   Kokkos::parallel_reduce("unique_token_check", p, KOKKOS_LAMBDA(MemberType team_member, int& max_ws_idx) {
     const int wi = tu.get_workspace_idx(team_member);
 
@@ -200,12 +202,15 @@ template<typename Scalar, int length, bool Serialize>
 void test_parallel_reduce()
 {
   using Device = ekat::DefaultDevice;
-  using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
-  using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
+  using ExeSpace = typename Device::execution_space;
+  using MemSpace = typename Device::memory_space;
+  using MemberType = typename PolicyTypes<ExeSpace>::MemberType;
+  template<typename T>;
+  using view_1d = typename ViewTypes<MemSpace>::template view_1d<T>;
 
   // Each entry is given by data(k) = 1/(k+1)
   Scalar serial_result = Scalar();
-  Kokkos::View<Scalar*, ExeSpace> data("data", length);
+  view_1d<Scalar> data("data", length);
   const auto data_h = Kokkos::create_mirror_view(data);
   auto raw = data_h.data();
   for (int i = 0; i < length; ++i) {
@@ -215,7 +220,7 @@ void test_parallel_reduce()
   }
   Kokkos::deep_copy(data, data_h);
 
-  Kokkos::View<Scalar*> results ("results", 1);
+  view_1d<Scalar> results ("results", 1);
   const auto results_h = Kokkos::create_mirror_view(results);
 
   // parallel_for over 1 team, i.e. call parallel_reduce once
@@ -255,7 +260,7 @@ template<typename Scalar, bool Serialize, bool UseLambda, int TotalSize, int Vec
 void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize)
 {
   using Device = ekat::DefaultDevice;
-  using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
+  using MemberType = typename PolicyTypes<ExeSpace>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
   
   using PackType = ekat::Pack<Scalar, VectorSize>;

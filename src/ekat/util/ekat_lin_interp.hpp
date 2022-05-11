@@ -49,16 +49,18 @@ struct LinInterp
   static constexpr int LI_PACKN = PackSize;
 
   // Other utility types
-  using KT = KokkosTypes<Device>;
+  using ExeSpace = typename Device::execution_space;
+  using MemSpace = typename Device::memory_space;
+  using VT = ViewTypes<MemSpace>;
+  using PT = PolicyTypes<ExeSpace>;
 
   template <typename S>
-  using view_1d = typename KT::template view_1d<S>;
+  using view_1d = typename VT::template view_1d<S>;
   template <typename S>
-  using view_2d = typename KT::template view_2d<S>;
+  using view_2d = typename VT::template view_2d<S>;
 
-  using ExeSpace    = typename KT::ExeSpace;
-  using MemberType  = typename KT::MemberType;
-  using TeamPolicy  = typename KT::TeamPolicy;
+  using MemberType  = typename PT::MemberType;
+  using TeamPolicy  = typename PT::TeamPolicy;
 
   using Pack    = ekat::Pack<Scalar, LI_PACKN>;
   using IntPack = ekat::Pack<int, LI_PACKN>;

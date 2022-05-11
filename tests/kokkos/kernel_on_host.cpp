@@ -3,11 +3,12 @@
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_DetectionIdiom.hpp>
+
 namespace {
 
 using namespace ekat;
-using ExeSpace = typename KokkosTypes<DefaultDevice>::ExeSpace;
-using MemSpace = typename KokkosTypes<DefaultDevice>::MemSpace;
+using ExeSpace = DefaultDevice::execution_space;
+using MemSpace = DefaultDevice::memory_space;
 
 enum : int {
   ValueDev = 1,

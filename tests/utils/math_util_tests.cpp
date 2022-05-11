@@ -13,9 +13,9 @@ namespace {
 
 TEST_CASE("transpose_2d", "math_util")
 {
-  using KT       = KokkosTypes<HostDevice>;
-  using CViewT   = Unmanaged<typename KT::view<Int**> >;
-  using F90ViewT = Unmanaged<typename KT::lview<Int**> >;
+  using MT       = ViewTypes<Kokkos::HostSpace>;
+  using CViewT   = Unmanaged<typename VT::view<Int**> >;
+  using F90ViewT = Unmanaged<typename VT::lview<Int**> >;
 
   const Int rows = 17;
   const Int cols = 27;
@@ -48,9 +48,9 @@ TEST_CASE("transpose_2d", "math_util")
 
 TEST_CASE("transpose_3d", "math_util")
 {
-  using KT       = KokkosTypes<HostDevice>;
-  using CViewT   = Unmanaged<typename KT::view<Int***> >;
-  using F90ViewT = Unmanaged<typename KT::lview<Int***> >;
+  using VT       = ViewTypes<HostSpace>;
+  using CViewT   = Unmanaged<typename VT::view<Int***> >;
+  using F90ViewT = Unmanaged<typename VT::lview<Int***> >;
 
   const Int rows   = 17;
   const Int cols   = 27;

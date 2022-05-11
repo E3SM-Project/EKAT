@@ -54,20 +54,23 @@ class WorkspaceManager
   //
 
   using Device = DeviceT;
+  using ExeSpace = typename Device::execution_space;
+  using MemSpace = typename Device::memory_space;
 
-  using TeamPolicy = typename KokkosTypes<Device>::TeamPolicy;
-  using MemberType = typename KokkosTypes<Device>::MemberType;
-  using ExeSpace   = typename KokkosTypes<Device>::ExeSpace;
+  using VT = ViewTypes<MemSpace>;
+  using PT = PolicyTypes<ExeSpace>;
+  using TeamPolicy = typename PT::TeamPolicy;
+  using MemberType = typename PT::MemberType;
 
   template <typename S>
-  using view_1d = typename KokkosTypes<Device>::template view_1d<S>;
+  using view_1d = typename VT::template view_1d<S>;
   template <typename S>
-  using view_2d = typename KokkosTypes<Device>::template view_2d<S>;
+  using view_2d = typename VT::template view_2d<S>;
   template <typename S>
-  using view_3d = typename KokkosTypes<Device>::template view_3d<S>;
+  using view_3d = typename VT::template view_3d<S>;
 
   template <typename S, int N>
-  using view_1d_ptr_array = typename KokkosTypes<Device>::template view_1d_ptr_array<S, N>;
+  using view_1d_ptr_array = typename VT::template view_1d_ptr_array<S, N>;
 
   //
   // -------- Contants --------

@@ -210,7 +210,7 @@ reshape (Kokkos::View<DataTypeIn,Props...> view_in,
  */
 template <typename ExeSpace = Kokkos::DefaultExecutionSpace>
 struct ExeSpaceUtils {
-  using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
+  using TeamPolicy = typename PolicyTypes<ExeSpace>::TeamPolicy;
 
   // Note: for non-Cuda exec spaces, the template arg does nothing.
   template<HostOrDevice HD = Device>
@@ -295,8 +295,8 @@ struct ExeSpaceUtils {
 #ifdef KOKKOS_ENABLE_CUDA
 template <>
 struct ExeSpaceUtils<Kokkos::Cuda> {
-  using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-  using HostTeamPolicy = Kokkos::TeamPolicy<Kokkos::Serial>;
+  using TeamPolicy = typename PolicyTypes<Kokkos::Cuda>::TeamPolicy;
+  using HostTeamPolicy = typename PolicyTypes<Kokkos::Serial>::TeamPolicy;
 
   // Enable policy on Host only if UVM is enabled.
   template<HostOrDevice HD>
@@ -525,9 +525,9 @@ class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueTyp
 template <typename ValueType>
 class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,Kokkos::Cuda>
 {
-  using Device = Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>;
+  using mem_space = typename Kokkos::Cuda::memory_space;
   using flag_type = int; // this appears to be the smallest type that correctly handles atomic operations
-  using view_1d = typename KokkosTypes<Device>::view_1d<flag_type>;
+  using view_1d = typename ViewTypes<mem_space>::view_1d<flag_type>;
   using RandomGenerator = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>;
   using rnd_type = typename RandomGenerator::generator_type;
 

@@ -265,7 +265,8 @@ WorkspaceManager<T, D>::Workspace::~Workspace()
 template <typename T, typename D>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> > WorkspaceManager<T, D>::Workspace::take(
+Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
+WorkspaceManager<T, D>::Workspace::take(
   const char* name) const
 {
 #ifndef NDEBUG

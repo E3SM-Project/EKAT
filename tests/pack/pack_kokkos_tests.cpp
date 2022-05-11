@@ -224,13 +224,15 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
 
   using TestBigPack = Pack<Real, 16>;
 
-  using ExeSpace = typename KokkosTypes<DefaultDevice>::ExeSpace;
-  using MemberType = typename KokkosTypes<DefaultDevice>::MemberType;
+  using ExeSpace = typename DefaultDevice::execution_space;
+  using MemSpace = typename DefaultDevice::memory_space;
+
+  using MemberType = typename PolicyTypes<ExeSpace>::MemberType;
 
   int nerr = 0;
   const int num_bigs = 17;
 
-  typename KokkosTypes<DefaultDevice>::template view_1d<TestBigPack> test_k_array("test_k_array", num_bigs);
+  typename ViewTypes<MemSpace>::template view_1d<TestBigPack> test_k_array("test_k_array", num_bigs);
   Kokkos::parallel_reduce("unittest_pack",
                           ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, 1),
                           KOKKOS_LAMBDA(const MemberType& team, int& total_errs) {
@@ -307,27 +309,28 @@ template <typename T, typename SizeT=int>
 void host_device_packs_1d()
 {
   using VTS = VectorT<T>;
-  using VT = typename VTS::type;
+  using VTT = typename VTS::type;
 
   static constexpr int num_pksizes_to_test = 4;
   static constexpr int num_views_per_pksize = 3;
   static constexpr int fixed_view_size = 67;
 
-  using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
+  using MemSpace = ekat::DefaultDevice::memory_space;
+  using VT       = ekat::ViewTypes<MemSpace>;
 
   using Pack1T = ekat::Pack<T, 1>;
   using Pack2T = ekat::Pack<T, 2>;
   using Pack4T = ekat::Pack<T, 4>;
   using Pack8T = ekat::Pack<T, 8>; // we will use this to test fixed-sized view sugar
 
-  using view_p1_t = typename KT::template view_1d<Pack1T>;
-  using view_p2_t = typename KT::template view_1d<Pack2T>;
-  using view_p4_t = typename KT::template view_1d<Pack4T>;
-  using view_p8_t = typename KT::template view_1d<Pack8T>;
+  using view_p1_t = typename VT::template view_1d<Pack1T>;
+  using view_p2_t = typename VT::template view_1d<Pack2T>;
+  using view_p4_t = typename VT::template view_1d<Pack4T>;
+  using view_p8_t = typename VT::template view_1d<Pack8T>;
 
   const std::vector<SizeT> sizes        = {13, 37, 59}; // num scalars per view
   const Kokkos::Array<SizeT, 3> sizes_d = {13, 37, 59}; // num scalars per view
-  std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
+  std::vector<std::vector<VTT> > raw_data(num_pksizes_to_test, std::vector<VTT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
   // of data spread across 3 (num_views_per_pksize) views
@@ -450,24 +453,25 @@ template <typename T, typename SizeT=int>
 void host_device_packs_2d(bool transpose)
 {
   using VTS = VectorT<T>;
-  using VT = typename VTS::type;
+  using VTT = typename VTS::type;
 
   static constexpr int num_pksizes_to_test = 4;
   static constexpr int num_views_per_pksize = 3;
   static constexpr int fixed_view_dim1 = 5;
   static constexpr int fixed_view_dim2 = 67;
 
-  using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
+  using MemSpace = ekat::DefaultDevice::memory_space;
+  using VT       = ekat::ViewTypes<MemSpace>;
 
   using Pack1T = ekat::Pack<T, 1>;
   using Pack2T = ekat::Pack<T, 2>;
   using Pack4T = ekat::Pack<T, 4>;
   using Pack8T = ekat::Pack<T, 8>; // we will use this to test fixed-sized view sugar
 
-  using view_p1_t = typename KT::template view_2d<Pack1T>;
-  using view_p2_t = typename KT::template view_2d<Pack2T>;
-  using view_p4_t = typename KT::template view_2d<Pack4T>;
-  using view_p8_t = typename KT::template view_2d<Pack8T>;
+  using view_p1_t = typename VT::template view_2d<Pack1T>;
+  using view_p2_t = typename VT::template view_2d<Pack2T>;
+  using view_p4_t = typename VT::template view_2d<Pack4T>;
+  using view_p8_t = typename VT::template view_2d<Pack8T>;
 
   // dimensions of flex views
   const std::vector<SizeT> dim1_sizes = {3, 4, 5};
@@ -481,7 +485,7 @@ void host_device_packs_2d(bool transpose)
   }
 
   // place to store raw data
-  std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
+  std::vector<std::vector<VTT> > raw_data(num_pksizes_to_test, std::vector<VTT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
   // of data spread across 3 (num_views_per_pksize) views
@@ -617,7 +621,7 @@ template <typename T, typename SizeT=int>
 void host_device_packs_3d(bool transpose)
 {
   using VTS = VectorT<T>;
-  using VT = typename VTS::type;
+  using VTT = typename VTS::type;
 
   static constexpr int num_pksizes_to_test = 4;
   static constexpr int num_views_per_pksize = 3;
@@ -625,17 +629,18 @@ void host_device_packs_3d(bool transpose)
   static constexpr int fixed_view_dim2 = 4;
   static constexpr int fixed_view_dim3 = 25;
 
-  using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
+  using MemSpace = ekat::DefaultDevice::memory_space;
+  using VT       = ekat::ViewTypes<MemSpace>;
 
   using Pack1T = ekat::Pack<T, 1>;
   using Pack2T = ekat::Pack<T, 2>;
   using Pack4T = ekat::Pack<T, 4>;
   using Pack8T = ekat::Pack<T, 8>; // we will use this to test fixed-sized view sugar
 
-  using view_p1_t = typename KT::template view_3d<Pack1T>;
-  using view_p2_t = typename KT::template view_3d<Pack2T>;
-  using view_p4_t = typename KT::template view_3d<Pack4T>;
-  using view_p8_t = typename KT::template view_3d<Pack8T>;
+  using view_p1_t = typename VT::template view_3d<Pack1T>;
+  using view_p2_t = typename VT::template view_3d<Pack2T>;
+  using view_p4_t = typename VT::template view_3d<Pack4T>;
+  using view_p8_t = typename VT::template view_3d<Pack8T>;
 
   // dimensions of flex views
   const std::vector<SizeT> dim1_sizes = {3, 4, 5};
@@ -650,7 +655,7 @@ void host_device_packs_3d(bool transpose)
   }
 
   // place to store raw data
-  std::vector<std::vector<VT> > raw_data(num_pksizes_to_test, std::vector<VT>());
+  std::vector<std::vector<VTT> > raw_data(num_pksizes_to_test, std::vector<VTT>());
 
   // each pksize test (except for the one used to test fixed-size views (Pack8)) has total_flex_scalars
   // of data spread across 3 (num_views_per_pksize) views

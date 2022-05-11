@@ -1,6 +1,9 @@
 #ifndef EKAT_CONFIG_H
 #define EKAT_CONFIG_H
 
+// If defined, some deprecated code in EKAT is still available
+#cmakedefine EKAT_ENABLE_DEPRECATED_CODE
+
 // If defined, ekat::pack objects check indices against bounds.
 #cmakedefine EKAT_PACK_CHECK_BOUNDS
 

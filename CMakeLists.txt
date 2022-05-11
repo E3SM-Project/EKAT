@@ -51,7 +51,8 @@ message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 ###  EKAT CONFIG OPTIONS ###
 ############################
 
-option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
+option (EKAT_ENABLE_DEPRECATED_CODE "Whether deprecated code should be compiled." ON)
+option (EKAT_MPI_ERRORS_ARE_FATAL "Whether EKAT should crash when MPI errors happen." ON)
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
