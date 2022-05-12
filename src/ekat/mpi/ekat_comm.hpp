@@ -45,6 +45,10 @@ public:
   // Convenience functions wrapping MPI analogues.
   // NOTE: the methods are templated on the values types, but so far the only
   // supporterd types are: int, float, double
+
+  template<typename T>
+  void broadcast (T* vals, const int count, const int root) const;
+
   template<typename T>
   void scan (const T* my_vals, T* result, const int count, const MPI_Op op) const;
 
@@ -52,10 +56,17 @@ public:
   void all_reduce (const T* my_vals, T* result, const int count, const MPI_Op op) const;
 
   template<typename T>
-  void broadcast (T* vals, const int count, const int root) const;
+  void all_gather (const T* my_vals, T* all_vals, const int count) const;
+
+  // In place version of the above
+  template<typename T>
+  void scan (T* result, const int count, const MPI_Op op) const;
 
   template<typename T>
-  void all_gather (const T* my_vals, T* all_vals, const int count) const;
+  void all_reduce (T* inout_vals, const int count, const MPI_Op op) const;
+
+  template<typename T>
+  void all_gather (T* all_vals, const int count) const;
 
   void barrier () const;
 
@@ -77,6 +88,13 @@ MPI_Datatype get_mpi_type ();
 // ========================= IMPLEMENTATION =========================== //
 
 template<typename T>
+void Comm::broadcast (T* vals, const int count, const int root) const
+{
+  check_mpi_inited();
+  MPI_Bcast(vals,count,get_mpi_type<T>(),root,m_mpi_comm);
+}
+
+template<typename T>
 void Comm::scan (const T* my_vals, T* result, const int count, const MPI_Op op) const
 {
   check_mpi_inited();
@@ -91,13 +109,6 @@ void Comm::all_reduce (const T* my_vals, T* result, const int count, const MPI_O
 }
 
 template<typename T>
-void Comm::broadcast (T* vals, const int count, const int root) const
-{
-  check_mpi_inited();
-  MPI_Bcast(vals,count,get_mpi_type<T>(),root,m_mpi_comm);
-}
-
-template<typename T>
 void Comm::all_gather (const T* my_vals, T* all_vals, const int count) const
 {
   check_mpi_inited();
@@ -107,6 +118,29 @@ void Comm::all_gather (const T* my_vals, T* all_vals, const int count) const
                 m_mpi_comm);
 }
 
+template<typename T>
+void Comm::scan (T* inout_vals, const int count, const MPI_Op op) const
+{
+  check_mpi_inited();
+  MPI_Scan(MPI_IN_PLACE,inout_vals,count,get_mpi_type<T>(),op,m_mpi_comm);
+}
+
+template<typename T>
+void Comm::all_reduce (T* inout_vals, const int count, const MPI_Op op) const
+{
+  check_mpi_inited();
+  MPI_Allreduce(MPI_IN_PLACE,inout_vals,count,get_mpi_type<T>(),op,m_mpi_comm);
+}
+
+template<typename T>
+void Comm::all_gather (T* inout_vals, const int count) const
+{
+  check_mpi_inited();
+  auto mpi_type = get_mpi_type<T>();
+  MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                inout_vals,count,mpi_type,
+                m_mpi_comm);
+}
 
 } // namespace ekat
 
