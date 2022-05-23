@@ -74,7 +74,7 @@ set(EKAT_HEADERS
   logging/ekat_log_file.hpp
   logging/ekat_log_mpi.hpp
   mpi/ekat_comm.hpp
-#  physics/physics_constants.hpp
+  physics/constants.hpp
 #  physics/physics_functions.hpp
 #  physics/physics_saturation_impl.hpp
 #  physics/physics_share.hpp

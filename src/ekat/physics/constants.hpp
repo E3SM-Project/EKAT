@@ -59,7 +59,7 @@ struct Constants
   static constexpr Scalar calendar_day = 86400;
   /// earth's angular rotation rate
   static constexpr Scalar earth_omega = 2*pi/sidereal_day;
-  /// stefan-boltzmann constant
+  /// stefan-boltzmann constant [W/(m2 K4)]
   static constexpr Scalar stefan_boltzmann = 5.67e-8;
 
   /**
@@ -106,9 +106,9 @@ struct Constants
   /// density of freshwater ice
   static constexpr Scalar density_h2o_ice = 917;
   /// freeze/melt point
-  static constexpr Scalar freezing_pt_h20 = 273.15;
+  static constexpr Scalar freezing_pt_h2o = 273.15;
   /// freeze/melt point
-  static constexpr Scalar melting_pt_h20 = freezing_pt_h20;
+  static constexpr Scalar melting_pt_h2o = freezing_pt_h2o;
   /// latent heat
   static constexpr Scalar latent_heat_evap = 2.501e6;
   /// latent heat
