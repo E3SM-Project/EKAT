@@ -1,11 +1,34 @@
 include(GNUInstallDirs)
 include(EkatSetCompilerFlags)
 include (EkatUtils)
+#include(EkatSIConstants)
 
 # Generate configuration file
 EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
                 ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
                 F90_FILE ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f)
+
+set(EKAT_CONSTS_PRECISION double)
+# Generate physics constants files
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.cpp
+                   COMMAND ${CMAKE_COMMAND}
+                   -DCONSTS_HEADER=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
+                   -DCONSTS_PRECISION=${EKAT_CONSTS_PRECISION}
+                   -DCONSTS_OUTPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.cpp
+                   -P ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
+                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
+                           ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
+                   COMMENT "  generating cpp physical constants...")
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.f90
+                   COMMAND ${CMAKE_COMMAND}
+                   -DCONSTS_HEADER=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
+                   -DCONSTS_PRECISION=${EKAT_CONSTS_PRECISION}
+                   -DCONSTS_OUTPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.f90
+                   -P ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
+                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
+                           ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
+                   COMMENT "  generating F90 physical constants...")
+
 
 set(EKAT_SOURCES
   ekat_assert.cpp
@@ -15,6 +38,11 @@ set(EKAT_SOURCES
   io/ekat_array_io.cpp
   io/ekat_array_io_mod.f90
   mpi/ekat_comm.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.f90
+#  physics/physics_share.cpp
+#  physics/physics_test_data.cpp
+#  physics/physics_saturation.cpp
   util/ekat_arch.cpp
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
@@ -46,6 +74,11 @@ set(EKAT_HEADERS
   logging/ekat_log_file.hpp
   logging/ekat_log_mpi.hpp
   mpi/ekat_comm.hpp
+#  physics/physics_constants.hpp
+#  physics/physics_functions.hpp
+#  physics/physics_saturation_impl.hpp
+#  physics/physics_share.hpp
+#  physics/physics_test_data.hpp
   std_meta/ekat_std_any.hpp
   std_meta/ekat_std_enable_shared_from_this.hpp
   std_meta/ekat_std_type_traits.hpp
