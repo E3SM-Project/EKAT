@@ -63,7 +63,6 @@ function(gen_consts_file cxx_header precision output_file)
         # retrieve the comment
         math(EXPR begin "${pos} + 3")
         string(SUBSTRING ${line} ${begin} -1 comment)
-#        message("found flag ${comment}")
       else()
       # not a new constant; is it an assignment?
         string(FIND ${line} "=" equals)
@@ -83,8 +82,6 @@ function(gen_consts_file cxx_header precision output_file)
           string(SUBSTRING ${line} ${begin} -1 value)
           string(REPLACE ";" "" value ${value})
           string(STRIP ${value} value)
-
-#          message("found constant: ${name}, ${value}")
 
           # check if we've retrieved a number
           set(is_numeric FALSE)
@@ -114,7 +111,7 @@ function(gen_consts_file cxx_header precision output_file)
     endif()
   endforeach()
 
-  message(STATUS "  writing constants to file ${output_file}")
+  message(STATUS "  writing physical constants to file ${output_file}")
   if (is_fortran)
     # write the fortran file
     string(REPLACE ";" "\n" fortran_source "${fortran_lines}")
