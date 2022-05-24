@@ -24,8 +24,10 @@ namespace physics {
 
    Each constant below must be preceded by a comment line beginning with ///
    to enable the CMake parser to use the same numeric values for the
-   auto-generated Fortran constants module.
+   auto-generated .cpp file and Fortran constants module.
 
+  All constants must be placed between the lines containing
+  EKAT_CONSTANTS_START_PARSE and EKAT_CONSTANTS_END_PARSE.
  */
 
 template <typename Scalar>

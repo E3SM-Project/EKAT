@@ -40,9 +40,6 @@ set(EKAT_SOURCES
   mpi/ekat_comm.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.f90
-#  physics/physics_share.cpp
-#  physics/physics_test_data.cpp
-#  physics/physics_saturation.cpp
   util/ekat_arch.cpp
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
@@ -75,10 +72,6 @@ set(EKAT_HEADERS
   logging/ekat_log_mpi.hpp
   mpi/ekat_comm.hpp
   physics/constants.hpp
-#  physics/physics_functions.hpp
-#  physics/physics_saturation_impl.hpp
-#  physics/physics_share.hpp
-#  physics/physics_test_data.hpp
   std_meta/ekat_std_any.hpp
   std_meta/ekat_std_enable_shared_from_this.hpp
   std_meta/ekat_std_type_traits.hpp
