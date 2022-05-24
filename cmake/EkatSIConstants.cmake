@@ -36,9 +36,9 @@ function(gen_consts_file cxx_header precision output_file)
   list(APPEND fortran_lines "  implicit none")
   list(APPEND fortran_lines "  public")
   if (${precision} MATCHES "double")
-    list(APPEND fortran_lines "  integer, private, parameter :: c_real = c_double")
+    list(APPEND fortran_lines "  integer, parameter :: c_real = c_double")
   else()
-    list(APPEND fortran_lines "  integer, private, parameter :: c_real = c_float")
+    list(APPEND fortran_lines "  integer, parameter :: c_real = c_float")
   endif()
 
   # parse file into list of strings with newlines removed
