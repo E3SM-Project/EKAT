@@ -1,0 +1,3 @@
+# exclude auto-generated source files
+constants.cpp
+constants.f90
