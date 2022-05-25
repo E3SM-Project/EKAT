@@ -10,9 +10,9 @@ TEST_CASE("physics_constants", "[physics]") {
   using constants = Constants<double>;
 
   REQUIRE(4*std::atan(1) == Approx(constants::pi));
-  REQUIRE(constants::avogadro == Approx(6.022e23).epsilon(0.01));
-  REQUIRE(constants::boltzmann == Approx(1.38e-23).epsilon(0.01));
-  REQUIRE(constants::r_gas == Approx(8.31446).epsilon(0.01));
+  REQUIRE(constants::avogadro == Approx(6.022e23).epsilon(0.0001));
+  REQUIRE(constants::boltzmann == Approx(1.380649e-23));
+  REQUIRE(constants::r_gas == Approx(8.314563841815325));
   REQUIRE(constants::gravity == 9.80616);
   REQUIRE(constants::earth_radius == 6.37122e6);
   REQUIRE(constants::std_pressure == 101325);
@@ -80,6 +80,7 @@ TEST_CASE("physics_constants", "[physics]") {
   REQUIRE(constants::freezing_pt_h2o_zerop == 273.2122);
   REQUIRE(constants::dfreeze_zerop_dp == -7.43e-8);
   REQUIRE(constants::dfreeze_zerop_ds == -5.63e-2);
+  REQUIRE(constants::dfreeze_zerop_dpds == Approx(-1.74e-10));
   REQUIRE(constants::thermal_conductivity_ice == 2.1);
 
   REQUIRE(constants::rgas_dry_air == Approx(287.0420493).epsilon(0.001));

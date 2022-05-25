@@ -1,7 +1,6 @@
 include(GNUInstallDirs)
 include(EkatSetCompilerFlags)
 include (EkatUtils)
-#include(EkatSIConstants)
 
 # Generate configuration file
 EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in

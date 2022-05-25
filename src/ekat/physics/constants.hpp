@@ -178,6 +178,8 @@ struct Constants
   static constexpr Scalar dfreeze_zerop_dp = -7.43e-8;
   /// linear coefficient sub-shelf freezing pt change vs salinity [K/psu]
   static constexpr Scalar dfreeze_zerop_ds = -5.63e-2;
+  /// linear coefficient sub-shelf freezing pt change vs salinity and pressure [K/ (Pa psu)]
+  static constexpr Scalar dfreeze_zerop_dpds = -1.74e-10;
   /// thermal conductivity of land ice [W/m/K]
   static constexpr Scalar thermal_conductivity_ice = 2.1;
   /// thermal diffusivity of land ice (denoted kappa)
