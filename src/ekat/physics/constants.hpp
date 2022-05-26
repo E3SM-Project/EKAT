@@ -1,9 +1,6 @@
 #ifndef PHYSICS_CONSTANTS_HPP
 #define PHYSICS_CONSTANTS_HPP
 
-#include "ekat/util/ekat_string_utils.hpp"
-#include "ekat/ekat_scalar_traits.hpp"
-
 #include <vector>
 
 namespace ekat {
