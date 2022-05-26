@@ -33,6 +33,7 @@ namespace physics {
 template <typename Scalar>
 struct Constants
 {
+  static_assert(std::is_floating_point<Scalar>::value, "floating point type required.");
   /**
 
       General and Earth-related constants
