@@ -126,7 +126,7 @@ void parse_node<YAML::NodeType::Sequence> (
   EKAT_REQUIRE_MSG (node.Type()==YAML::NodeType::Sequence,
                       "Error! Actual node type incompatible with template parameter.\n");
 
-  // The following fancy typemap/typelist code defaults the nvcc compiler(s)
+  // The following fancy typemap/typelist code defeats the nvcc compiler(s)
   // available on Summit, so we're backpedaling for now. The code below this
   // block comment does the same thing. -JNJ, 5/27/2022
   /*
@@ -151,9 +151,9 @@ void parse_node<YAML::NodeType::Sequence> (
   });
   */
   // Yes, I know. The C preprocessor! Too bad the fancy C++ template stuff
-  // isn't up to the task. Here we encode the typemap and the typelist in the
-  // first type arguments in this macro, which we call on all types in the
-  // typelist.
+  // isn't up to the task. Here we encode a value type and its related sequence
+  // type in the first two arguments in this macro, which we then call on all
+  // types in the typelist.
 #define TRY_TYPE_ON_NODE(vtype, seq_val_t, node) \
   if (is_seq<vtype>(node)) { \
     std::vector<seq_val_t> vec(n); \
