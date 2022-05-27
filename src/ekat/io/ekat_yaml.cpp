@@ -126,6 +126,10 @@ void parse_node<YAML::NodeType::Sequence> (
   EKAT_REQUIRE_MSG (node.Type()==YAML::NodeType::Sequence,
                       "Error! Actual node type incompatible with template parameter.\n");
 
+  // The following fancy typemap/typelist code defaults the nvcc compiler(s)
+  // available on Summit, so we're backpedaling for now. The code below this
+  // block comment does the same thing. -JNJ, 5/27/2022
+  /*
   // Loop over the value types, just to find the one corresponding to seq_type
   using val_to_seq_val = TypeMap<values_t,seq_values_t>;
   int n = node.size();
@@ -133,7 +137,7 @@ void parse_node<YAML::NodeType::Sequence> (
     using vtype = decltype(t);
     if (is_seq<vtype>(node)) {
       // Once we know the value type, create the proper std::vector, fill it, and set it in the list
-      using seq_val_t = val_to_seq_val::at_t<vtype>; 
+      using seq_val_t = val_to_seq_val::at_t<vtype>;
       std::vector<seq_val_t> vec(n);
       for (int i=0; i<n; ++i) {
         std::string str = node[i].as<std::string>();
@@ -145,6 +149,27 @@ void parse_node<YAML::NodeType::Sequence> (
     }
     return false;
   });
+  */
+  // Yes, I know. The C preprocessor! Too bad the fancy C++ template stuff
+  // isn't up to the task. Here we encode the typemap and the typelist in the
+  // first type arguments in this macro, which we call on all types in the
+  // typelist.
+#define TRY_TYPE_ON_NODE(vtype, seq_val_t, node) \
+  if (is_seq<vtype>(node)) { \
+    std::vector<seq_val_t> vec(n); \
+    for (int i=0; i<n; ++i) { \
+      std::string str = node[i].as<std::string>(); \
+        vec[i] = str2type<seq_val_t>(str); \
+    } \
+    list.set(key,vec); \
+    return; \
+  }
+  int n = node.size();
+  TRY_TYPE_ON_NODE(bool, char, node);
+  TRY_TYPE_ON_NODE(int, int, node);
+  TRY_TYPE_ON_NODE(double, double, node);
+  TRY_TYPE_ON_NODE(std::string, std::string, node);
+#undef TRY_TYPE_ON_NODE
 }
 
 template<>
