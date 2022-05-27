@@ -156,6 +156,7 @@ void parse_node<YAML::NodeType::Sequence> (
   // types in the typelist.
 #define TRY_TYPE_ON_NODE(vtype, seq_val_t, node) \
   if (is_seq<vtype>(node)) { \
+    int n = node.size(); \
     std::vector<seq_val_t> vec(n); \
     for (int i=0; i<n; ++i) { \
       std::string str = node[i].as<std::string>(); \
@@ -164,7 +165,6 @@ void parse_node<YAML::NodeType::Sequence> (
     list.set(key,vec); \
     return; \
   }
-  int n = node.size();
   TRY_TYPE_ON_NODE(bool, char, node);
   TRY_TYPE_ON_NODE(int, int, node);
   TRY_TYPE_ON_NODE(double, double, node);
