@@ -1,0 +1,240 @@
+Pi:
+  software_name: pi
+  value: 3.141592653589793238462643383279502884197169399375105820974944592
+  units: "n/a"
+  source:
+    name: "Mathematica 12.0.0"
+    command: "N[Pi, 64]"
+
+Avogadro:
+ software_name: avogadro
+ value: 6.02214076e23
+ units: "#/mol"
+ source:
+  name: "NIST CODATA 2018"
+  url: https://physics.nist.gov/cuu/Constants/index.html
+  citation: "E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, 2021, CODATA recommended values of the fundamental physical constants: 2018, Rev. Modern Phys. 93."
+
+
+Boltzmann:
+ software_name: boltzmann
+ value: 1.380649e-23
+ units: "J/K"
+ source:
+  name: "NIST CODATA 2018"
+  url: https://physics.nist.gov/cuu/Constants/index.html
+  citation: "E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, 2021, CODATA recommended values of the fundamental physical constants: 2018, Rev. Modern Phys. 93."
+
+Stefan_Boltzmann:
+ software_name: stefan_boltzmann
+ value: 5.670374419e-8
+ units: "W/m2/K4"
+ source:
+  name: "NIST CODATA 2018"
+  url: https://physics.nist.gov/cuu/Constants/index.html
+  citation: "E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, 2021, CODATA recommended values of the fundamental physical constants: 2018, Rev. Modern Phys. 93."
+
+Universal_gas_constant:
+  software_name: r_gas
+  value: 8.314462618
+  units: "J/mol/K"
+  source:
+    name: "NIST CODATA 2018"
+    url: https://physics.nist.gov/cuu/Constants/index.html
+    citation: "E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, 2021, CODATA recommended values of the fundamental physical constants: 2018, Rev. Modern Phys. 93."
+
+Standard_acceleration_gravity:
+  software_name: gravity
+  value: 9.80665
+  units: "m/s2"
+  source:
+    name: "NIST CODATA 2018"
+    url: https://physics.nist.gov/cuu/Constants/index.html
+    citation: "E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, 2021, CODATA recommended values of the fundamental physical constants: 2018, Rev. Modern Phys. 93."
+
+Earth_mean_radius:
+  software_name: earth_radius
+  value: 6371e3
+  units: "m"
+  source:
+    name: "NASA Space Science Data Coordinated Archive"
+    url: https://nssdc.gsfc.nasa.gov/planetary/planets/earthpage.html
+    comment: "volumetric mean radius"
+
+Standard_atmospheric_pressure:
+  software_name: standard_pressure
+  value: 100000
+  units: "Pa"
+  source:
+    name: "NIST CODATA 2018"
+    url: https://physics.nist.gov/cuu/Constants/index.html
+    citation: "E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, 2021, CODATA recommended values of the fundamental physical constants: 2018, Rev. Modern Phys. 93."
+
+
+Sidereal_day:
+  software_name: sidereal_day
+  value: 86164.2
+  units: "s"
+  source:
+    name: "NASA Space Science Data Coordinated Archive"
+    url: https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html
+    comment: "Sidereal rotation period * 3600 (convert hours to seconds)"
+
+Calendar_day:
+  software_name: calendar_day
+  value: 86400
+  units: "s"
+  source:
+    name: "24 * 60 * 60"
+
+Karman:
+  software_name: karman
+  value: 0.4
+  units: "n/a"
+  source:
+    name: "Journal of Fluid Mechanics"
+    citation: "S. C. C. Bailey, M. Vallikivi, M. Hultmark, and A. J. Smits, 2014, Estimating the value of von Karman's constant in turbulent pipe flow, J. Fluid Mech. 749."
+
+Carbon_atom:
+  software_name: molec_weight_c
+  value: 0.0120107
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Methane:
+  software_name: molec_weight_ch4
+  value: 0.0160425
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Carbon_monoxide:
+  software_name: molec_weight_co
+  value: 0.0280101
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Carbon_dioxide:
+  software_name: molec_weight_co2
+  value: 0.0440095
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Water_molecule:
+  software_name: molec_weight_h2o
+  value: 0.0180153
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Sulfuric_acid:
+  software_name: molec_weight_h2so4
+  value: 0.098078
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Nitrogen:
+  software_name: molec_weight_n2
+  value: 0.0280134
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Ammonia:
+  software_name: molec_weight_nh3
+  value: 0.0170305
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Ammonium:
+  software_name: molec_weight_nh4
+  value: 0.0180390
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Nitrogen_dioxide:
+  software_name: molec_weight_no2
+  value: 0.0460055
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Oxygen_atom:
+  software_name: molec_weight_o
+  value: 0.0159994
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Oxygen:
+  software_name: molec_weight_o2
+  value: 0.0319988
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Ozone:
+  software_name: molec_weight_o3
+  value: 0.0479982
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+Sulfate:
+  software_name: molec_weight_so4
+  value: 0.096064
+  units: "kg/mol"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    url: https://webbook.nist.gov/chemistry/
+    doi: https://doi.org/10.18434/T4D303
+
+
+Delta_C13:
+  software_name: carbon_13_to_12_ratio
+  value: 0.011179
+  units: "n/a"
+  standard: PDB
+  source:
+    citation: "Z. Sharp, 2017, Principles of Stable Isotope Geochemistry, University of New Mexico."
+    doi: https://doi.org/10.25844/h9q1-0p82
+
+Water_density:
+  software_name: density_h20_liq_0c
+  value: 999.8428
+  units: "kg/m3"
+  source:
+    citation: "M. Tanaka, G. Girard, R. Davis, A. Peuto, and N. Bignell, 2001, Recommended table for the density of water between OC and 40C based on recent experimental reports, Metrologia 38, 301."
+    doi: https://doi.org/10.1088/0026-1394/38/4/3
