@@ -232,9 +232,115 @@ Delta_C13:
     doi: https://doi.org/10.25844/h9q1-0p82
 
 Water_density:
-  software_name: density_h20_liq_0c
+  software_name: density_h2o_liq_0c
   value: 999.8428
   units: "kg/m3"
   source:
     citation: "M. Tanaka, G. Girard, R. Davis, A. Peuto, and N. Bignell, 2001, Recommended table for the density of water between OC and 40C based on recent experimental reports, Metrologia 38, 301."
     doi: https://doi.org/10.1088/0026-1394/38/4/3
+
+Ice_density:
+  software_name: density_h2o_ice_0c
+  value: 916.7
+  units: "kg/mol"
+  source:
+    citation: "Harvey, A. (2019), Properties of Ice and Supercooled Water, CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, [online] (Accessed May 31, 2022)"
+    url: "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=926353"
+
+Water_freeze_temperature:
+  software_name: freezing_pt_h2o
+  value: 273.15
+  units: "K"
+  source:
+    citation: "Journal of Physical and Chemical Reference Data 20, 1023 (1991)."
+    url: https://doi.org/10.1063/1.555894
+
+Water_triple_pt_temperature:
+  software_name: triple_point_h2o
+  value: 273.16
+  units: "K"
+  source:
+    citation: "Journal of Physical and Chemical Reference Data 20, 1023 (1991)."
+    url: https://doi.org/10.1063/1.555894
+
+Water_critical_pt_temperature:
+  software_name: critical_temp_h2o
+  value: 647.096
+  units: "K"
+  source:
+    citation: "A. Mulero, I. Cachadi\~na and M. I. Parra, 2012, Recommended correlations for the surface tension of common fluids, Journal of Chemical Reference Data, 41, 043105"
+    doi: https://doi.org/10.1063/1.4768782
+
+Latent_heat_water_evaporation:
+  software_name: latent_heat_evap_0c
+  value: 2501000
+  units: "J/kg"
+  source:
+    citation: "R. R. Rogers and M. K. Yau, 1989, A Short Course in Cloud Physics, 3rd ed., Butterworth-Heinemann."
+    note: "Table 2.1"
+  note: "A linear dependence on temperature is defined in Bolton, 1980, The computation of equivalent potential temperature, Monthly Weather Review 108, 1046."
+
+Latent_heat_water_fusion:
+  software_name: latent_heat_fusion
+  value: 333700
+  units: "J/kg"
+  source:
+    citation: "D. R. Legates, 2005, Latent Heat, in J. E. Oliver, Encyclopedia of World Climatology, Springer."
+    doi: https://doi.org/10.1007/1-4020-3266-8_124
+
+
+Latent_heat_water_sublimation:
+  software_name: latent_heat_sublimation
+  value: 2834700
+  units: "J/kg"
+  source:
+    citation: "R. R. Rogers and M. K. Yau, 1989, A Short Course in Cloud Physics, 3rd ed., Butterworth-Heinemann."
+    note: "Table 2.1"
+
+Surface_tension_h2o_air:
+  software_name: surface_tension_h2o_air_0c
+  value: 0.07570689080553497
+  units: "N/m"
+  source:
+    citation: "A. Mulero, I. Cachadi\~na and M. I. Parra, 2012, Recommended correlations for the surface tension of common fluids, Journal of Chemical Reference Data, 41, 043105"
+    doi: https://doi.org/10.1063/1.4768782
+  note: "Dependence on temperature is not included in e3sm v1"
+
+Specific_heat_water:
+  software_name: cp_h2o_liq_0c
+  value: 4219.4
+  units: "J/kg/K"
+  source:
+    name: "NIST Chemistry WebBook SRD 69"
+    citation: "E. W. Lemmon, I. H. Bell, M. L. Huber, M. O. McLinden, Thermophysical properties of fluid systems in NIST Chemistry WebBook NIST Standard Database Number 69, P. J. Linstrom and W. G. Mallard, eds."
+    doi: https://doi.org/10.18434/T4D303
+  note: "Dependence on temperature is not included in e3sm v1"
+
+Specific_heat_ice:
+  software_name: cp_h2o_ice
+  value: 2110
+  units: "J/kg/K"
+  source:
+    citation: "Harvey, A. (2019), Properties of Ice and Supercooled Water, CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, [online] (Accessed May 31, 2022)"
+    url: "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=926353"
+
+Specific_heat_water_vapor_const_pressure:
+  software_name: cp_h2o_vapor
+  value: 1846
+  units: "J/kg/K"
+  source:
+    citation: "C. A. Riegel and A. F. C. Bridger, 1992, Fundamentals of Atmospheric Dynamics and Thermodynamics, World Scientific."
+
+Specific_heat_dry_air_const_pressure:
+  software_name: cp_dry_air
+  value: 1004.64
+  units: "J/kg/K"
+  source:
+    citation: "C. A. Riegel and A. F. C. Bridger, 1992, Fundamentals of Atmospheric Dynamics and Thermodynamics, World Scientific."
+
+Specific_heat_dry_air_const_volume:
+  software_name: cv_dry_air
+  value: 717.6
+  units: "J/kg/K"
+  source:
+    citation: "C. A. Riegel and A. F. C. Bridger, 1992, Fundamentals of Atmospheric Dynamics and Thermodynamics, World Scientific."
