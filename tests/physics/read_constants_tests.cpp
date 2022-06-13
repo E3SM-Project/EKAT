@@ -156,7 +156,7 @@ TEST_CASE("read constants", "") {
     {
       std::ofstream dum_file(dfname);
       dum_file << concat_lines(flines, 37);
-      dum_file << "    definition: two + one\n";
+      dum_file << "    definition: two + one\n"; // correct spelling of "two"
       dum_file.close();
 
       REQUIRE_NOTHROW(ConstantsGenerator(dfname));
@@ -167,16 +167,4 @@ TEST_CASE("read constants", "") {
     std::string dfname = "./constants.yaml";
     ConstantsGenerator gen(dfname);
   }
-
-
-//  auto consts = read_yaml_constants("./constants.yaml");
-//
-//  for (const auto& pc : consts) {
-//   std::cout << pc;
-//  }
-//
-//  const auto hpp = constants_hpp_source(consts);
-//
-//  std::cout << hpp;
-
 }
