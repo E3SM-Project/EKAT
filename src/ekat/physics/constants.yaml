@@ -1,3 +1,42 @@
+# Base physical constants and their metadata are defined here.
+#
+# EKAT will auto-generate base_constants.* files (where * stands for .hpp, .cpp
+# or .f90) using these values.
+#
+#               ALL CONSTANTS ARE DEFINED IN SI UNITS
+#
+#              time:                seconds   [s]
+#              length:              meters    [m]
+#              mass:                kilograms [kg]
+#              temperature          Kelvin    [K]
+#              pressure             Pascals   [Pa]
+#              force                Newtons   [N]
+#              amount of substance  Moles     [mol]
+#              work                 Joules    [J]
+#
+# Each constant has four required fields:
+#   - software_name: This will be the name of the constant in code (both c++ and f90)
+#   - value: The floating point value (even integers are treated as floating point)
+#   - units: A string containing the units of the constant (must be SI, see above)
+#   - source:  contains the metadata
+#       about the speficic constant's provenance, e.g., where that specific value
+#       to these significant digits is defined.  Allowable fields for source
+#       metadata are:
+#         - name: the name of a recognizable data set, such as NIST CODATA 2018
+#         - citation: a full citation of a reference book or journal article
+#         - url: an internet address (this one MUST be accompanied by additional metadata)
+#         - doi: the DOI of the document that defines the constant
+#         - command: The command used in a software package to output a
+#             constant's numerical value
+#         - definition: Used for a constant whose definition depends on others;
+#             see earth_omega for an example
+#         - note: additional miscellaneous metadata
+#
+#   To change a constant, for example, if NIST updates CODATA 2018 at some point,
+#   the value and the metadata must be changed here.  The updated values
+#   will propagate through the rest of EKAT via its auto-generated constants
+#   modules.
+#
 base_constants:
   Pi:
     software_name: pi
@@ -310,7 +349,7 @@ base_constants:
     source:
       citation: "A. Mulero, I. Cachadi\\~na and M. I. Parra, 2012, Recommended correlations for the surface tension of common fluids, Journal of Chemical Reference Data, 41, 043105"
       doi: https://doi.org/10.1063/1.4768782
-    note: "Dependence on temperature is not included in e3sm v1"
+      note: "Dependence on temperature is not included in e3sm v1"
 
   Specific_heat_water:
     software_name: cp_h2o_liq_0c
@@ -320,7 +359,7 @@ base_constants:
       name: "NIST Chemistry WebBook SRD 69"
       citation: "E. W. Lemmon, I. H. Bell, M. L. Huber, M. O. McLinden, Thermophysical properties of fluid systems in NIST Chemistry WebBook NIST Standard Database Number 69, P. J. Linstrom and W. G. Mallard, eds."
       doi: https://doi.org/10.18434/T4D303
-    note: "Dependence on temperature is not included in e3sm v1"
+      note: "Dependence on temperature is not included in e3sm v1"
 
   Specific_heat_ice:
     software_name: cp_h2o_ice
