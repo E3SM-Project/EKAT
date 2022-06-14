@@ -4,12 +4,12 @@
 //TODO
 // - bounds checking define
 
+#include "ekat/ekat.hpp"
 #include "ekat/util/ekat_math_utils.hpp"
 #include "ekat/ekat_macros.hpp"
 #include "ekat/ekat_scalar_traits.hpp"
 #include "ekat/ekat_type_traits.hpp"
 
-#include <Kokkos_Core.hpp>
 #include "spdlog/fmt/ostr.h"
 #include <iostream>
 #include <type_traits>

@@ -285,9 +285,9 @@ struct VectorT
 {
   using type = T;
 
-  static T get_value(int arg) { return static_cast<T>(arg); }
+  KOKKOS_INLINE_FUNCTION static T get_value(int arg) { return static_cast<T>(arg); }
 
-  static void modify_value(T& value, int arg) { value += static_cast<T>(arg); }
+  KOKKOS_INLINE_FUNCTION static void modify_value(T& value, int arg) { value += static_cast<T>(arg); }
 };
 
 template<>
@@ -295,9 +295,9 @@ struct VectorT<bool>
 {
   using type = char;
 
-  static bool get_value(int arg) { return arg%2 == 0; }
+  KOKKOS_INLINE_FUNCTION static bool get_value(int arg) { return arg%2 == 0; }
 
-  static void modify_value(bool& value, int arg) {
+  KOKKOS_INLINE_FUNCTION static void modify_value(bool& value, int arg) {
     bool arg_value = get_value(arg);
     value = (value == arg_value);
   }

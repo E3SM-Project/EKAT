@@ -1,9 +1,8 @@
 #ifndef EKAT_SCALAR_TRAITS_HPP
 #define EKAT_SCALAR_TRAITS_HPP
 
+#include "ekat/ekat.hpp"
 #include "ekat/ekat_assert.hpp"
-
-#include <Kokkos_Core.hpp>
 
 #include <limits>
 #include <climits>

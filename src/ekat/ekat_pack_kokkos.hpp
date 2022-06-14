@@ -1,11 +1,9 @@
 #ifndef EKAT_PACK_KOKKOS_HPP
 #define EKAT_PACK_KOKKOS_HPP
 
+#include "ekat/ekat.hpp"
 #include "ekat/ekat_pack.hpp"
 #include "ekat/kokkos/ekat_kokkos_utils.hpp"
-#include "ekat/ekat.hpp"
-
-#include <Kokkos_Core.hpp>
 
 #include <vector>
 #include <type_traits>

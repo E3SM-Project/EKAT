@@ -1,9 +1,9 @@
 #ifndef EKAT_UPPER_BOUND_HPP
 #define EKAT_UPPER_BOUND_HPP
 
-#include <Kokkos_Core.hpp>
+#include "ekat/ekat.hpp"
 
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef EKAT_ENABLE_GPU
 # include <algorithm>
 #endif
 
@@ -47,7 +47,7 @@ const T* upper_bound_impl(const T* first, const T* last, const T& value)
   return first;
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
 template<class T>
 KOKKOS_FORCEINLINE_FUNCTION
 const T* upper_bound(const T* first, const T* last, const T& value)

@@ -98,6 +98,14 @@ set (EKAT_TPL_LIBRARIES_INTERNAL)
 BuildKokkos()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
+set (EKAT_ENABLE_GPU False)
+if (Kokkos_ENABLE_CUDA)
+  set (EKAT_ENABLE_GPU True)
+endif ()
+if (Kokkos_ENABLE_HIP)
+  set (EKAT_ENABLE_GPU True)
+endif ()
+
 # EKAT also has some yaml parsing utility
 BuildYamlcpp()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
@@ -128,7 +136,7 @@ add_subdirectory(src/ekat)
 
 # Set some vars needed to configure test-launcher
 SetMpiRuntimeEnvVars()
-if (Kokkos_ENABLE_CUDA)
+if (EKAT_ENABLE_GPU)
   set (TEST_LAUNCHER_ON_GPU True)
 else()
   set (TEST_LAUNCHER_ON_GPU False)

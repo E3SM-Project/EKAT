@@ -1,8 +1,8 @@
 #ifndef EKAT_ARCH_HPP
 #define EKAT_ARCH_HPP
 
+#include "ekat/ekat.hpp"
 #include <string>
-#include <Kokkos_Core.hpp>
 
 /*
  * Architecture-related calls
@@ -16,8 +16,8 @@ std::string ekat_config_string();
 
 template <typename ExeSpace>
 struct OnGpu { enum : bool { value = false }; };
-#ifdef KOKKOS_ENABLE_CUDA
-template <> struct OnGpu<Kokkos::Cuda> { enum : bool { value = true }; };
+#ifdef EKAT_ENABLE_GPU
+template <> struct OnGpu<EkatGpuSpace> { enum : bool { value = true }; };
 #endif
 
 } // namespace ekat

@@ -1,8 +1,7 @@
+#include "ekat/ekat.hpp"
 #include "ekat/ekat_session.hpp"
 #include "ekat/ekat_assert.hpp"
 #include "ekat/util/ekat_arch.hpp"
-
-#include <Kokkos_Core.hpp>
 
 #include <vector>
 
@@ -25,10 +24,16 @@ void initialize_kokkos () {
   //   If for some reason we're running on a GPU platform, have Cuda enabled,
   // but are using a different execution space, this initialization is still
   // OK. The rank gets a GPU assigned and simply will ignore it.
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
   int nd;
+# if KOKKOS_ENABLE_CUDA
   const auto ret = cudaGetDeviceCount(&nd);
-  if (ret != cudaSuccess) {
+  const bool ok = ret == cudaSuccess;
+# else
+  const auto ret = hipGetDeviceCount(&nd);
+  const bool ok = ret == hipSuccess;
+# endif  
+  if (not ok) {
     // It isn't a big deal if we can't get the device count.
     nd = 1;
   }

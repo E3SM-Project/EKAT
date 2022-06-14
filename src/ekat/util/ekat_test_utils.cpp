@@ -1,8 +1,7 @@
+#include "ekat/ekat.hpp"
 #include "ekat/util/ekat_test_utils.hpp"
 #include "ekat/ekat_assert.hpp"
 #include "ekat/util/ekat_string_utils.hpp"
-
-#include <Kokkos_Core.hpp>
 
 #include <cstdlib>
 
@@ -17,7 +16,7 @@ int get_test_device (const int mpi_rank)
   // Set to -1 by default, which leaves kokkos in full control
   int dev_id = -1;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
   auto count_str = getenv("CTEST_RESOURCE_GROUP_COUNT");
   if (count_str!=nullptr) {
     // If CTest is setting the CTEST_RESOURCE_GROUP_COUNT variable,

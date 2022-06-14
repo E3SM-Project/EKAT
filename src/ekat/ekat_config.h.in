@@ -22,4 +22,7 @@
 // Decide whether ekat defaults to BFB behavior when possible/appropriate
 #cmakedefine EKAT_FPE
 
+// A GPU space has been enabled in Kokkos, e.g., CUDA or HIP.
+#cmakedefine EKAT_ENABLE_GPU
+
 #endif // EKAT_CONFIG_H

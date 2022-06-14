@@ -3,6 +3,8 @@
 
 #include "ekat/ekat_config.h"
 
+#include <Kokkos_Core.hpp>
+
 /*
  * This header doesn't do much as of now. It includes ekat_config.h,
  * and declares an alias for int.
@@ -16,6 +18,16 @@ using Int = int;
 static constexpr bool ekatBFB = true;
 #else
 static constexpr bool ekatBFB = false;
+#endif
+
+#ifdef EKAT_ENABLE_GPU
+# if defined KOKKOS_ENABLE_CUDA
+typedef Kokkos::Cuda EkatGpuSpace;
+# elif defined KOKKOS_ENABLE_HIP
+typedef Kokkos::Experimental::HIP EkatGpuSpace;
+# else
+error "EKAT does not recognize a GPU space other than Cuda and HIP."
+# endif
 #endif
 
 } // namespace ekat
