@@ -379,7 +379,7 @@ struct BaseConstants {
 		url: https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=926353
 		citation: Harvey, A. (2019), Properties of Ice and Supercooled Water, CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, [online] (Accessed May 31, 2022)
 	*/
-	static constexpr Scalar thermal_conductivity_h2o_ice_0c = 2.16;
+	static constexpr Scalar thermal_conductivity_h2o_ice_0c = 2.1;
 
 	/*
 	US_standard_atmospheric_pressure

@@ -173,7 +173,7 @@ std::string ConstantsGenerator::f90_source() const {
        << "!\t units: " << pc.second.units << "\n"
        << "!\t source info:\n";
     for (const auto& s : pc.second.src_info) {
-      ss << "!\t\t " << s << "\n";
+      ss << "!\t\t " << s << "\n\n";
     }
     ss << "real(c_real), parameter :: " << pc.second.software_name << " = ";
     ss << std::setprecision(std::numeric_limits<ConstantsRealType>::digits10 + 1);

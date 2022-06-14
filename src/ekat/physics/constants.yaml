@@ -407,7 +407,7 @@ base_constants:
 
   Thermal_conductivity_ice:
     software_name: thermal_conductivity_h2o_ice_0c
-    value: 2.16
+    value: 2.10
     units: "W/m/K"
     source:
       citation: "Harvey, A. (2019), Properties of Ice and Supercooled Water, CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, [online] (Accessed May 31, 2022)"

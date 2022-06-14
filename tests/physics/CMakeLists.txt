@@ -9,8 +9,8 @@ EkatCreateUnitTest(read_constants read_constants_tests.cpp
 EkatCreateUnitTest(base_constants constants_tests.cpp
 LIBS ekat)
 
-#EkatCreateUnitTest(base_constants_f90 constants_tests.f90
-#LIBS ekat)
+EkatCreateUnitTest(base_constants_f90 constants_tests.f90
+LIBS ekat)
 
 
 
