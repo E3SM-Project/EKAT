@@ -1,3 +1,4 @@
 # exclude auto-generated source files
-constants.cpp
-constants.f90
+base_constants.cpp
+base_constants.f90
+generate_constants_main.cpp
