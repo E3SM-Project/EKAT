@@ -3,7 +3,7 @@ include(EkatCreateUnitTest)
 # Test utilities (f90)
 set (ARRAY_IO_SRCS
   array_io_tests.cpp
-  array_io_tests.f90
+  array_io_tests.F90
 )
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(array_io${DP_POSTFIX} "${ARRAY_IO_SRCS}"
