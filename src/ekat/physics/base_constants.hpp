@@ -123,6 +123,14 @@ struct BaseConstants {
 	static constexpr Scalar molec_weight_dry_air = 0.028963;
 
 	/*
+	Dry_air_gas
+	units: J/kg/K
+	source info:
+		definition: r_gas / molec_weight_dry_air
+	*/
+	static constexpr Scalar rgas_dry_air = 287.072;
+
+	/*
 	Earth_mean_radius
 	units: m
 	source info:
@@ -130,6 +138,14 @@ struct BaseConstants {
 		url: https://nssdc.gsfc.nasa.gov/planetary/planets/earthpage.html
 	*/
 	static constexpr Scalar earth_radius = 6371000;
+
+	/*
+	Earth_rotation
+	units: 1/s
+	source info:
+		definition: 2*pi/sidereal_day
+	*/
+	static constexpr Scalar earth_omega = 7.29211e-05;
 
 	/*
 	Ice_density
@@ -154,6 +170,7 @@ struct BaseConstants {
 	units: J/kg
 	source info:
 		citation: R. R. Rogers and M. K. Yau, 1989, A Short Course in Cloud Physics, 3rd ed., Butterworth-Heinemann.
+		note: Table 2.1
 	*/
 	static constexpr Scalar latent_heat_evap_0c = 2501000;
 
@@ -171,6 +188,7 @@ struct BaseConstants {
 	units: J/kg
 	source info:
 		citation: R. R. Rogers and M. K. Yau, 1989, A Short Course in Cloud Physics, 3rd ed., Butterworth-Heinemann.
+		note: Table 2.1
 	*/
 	static constexpr Scalar latent_heat_sublimation = 2834700;
 
@@ -355,6 +373,25 @@ struct BaseConstants {
 	static constexpr Scalar surface_tension_h2o_air_0c = 0.07570689080553497;
 
 	/*
+	Thermal_conductivity_ice
+	units: W/m/K
+	source info:
+		url: https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=926353
+		citation: Harvey, A. (2019), Properties of Ice and Supercooled Water, CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, [online] (Accessed May 31, 2022)
+	*/
+	static constexpr Scalar thermal_conductivity_h2o_ice_0c = 2.16;
+
+	/*
+	US_standard_atmospheric_pressure
+	units: Pa
+	source info:
+		name: CRC Handbook of Physics and Chemistry Online
+		url: https://hbcp.chemnetbase.com/faces/documents/14_12/14_12_0001.xhtml
+		note: 1976 US Standard Atmosphere
+	*/
+	static constexpr Scalar std_pressure = 101325;
+
+	/*
 	Universal_gas_constant
 	units: J/mol/K
 	source info:
@@ -436,6 +473,14 @@ struct BaseConstants {
 		citation: Journal of Physical and Chemical Reference Data 20, 1023 (1991).
 	*/
 	static constexpr Scalar triple_point_h2o = 273.16;
+
+	/*
+	Water_vapor_gas
+	units: J/kg/K
+	source info:
+		definition: r_gas / molec_weight_h2o
+	*/
+	static constexpr Scalar rgas_h2o_vapor = 461.522;
 
 }; // end struct
 } // namespace physics

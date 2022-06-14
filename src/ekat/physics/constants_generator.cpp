@@ -68,7 +68,10 @@ void ConstantsGenerator::read_yaml_base_constants() {
           src_info.push_back("citation: " + srcnode["citation"].as<std::string>());
         }
         if (srcnode["definition"]) {
-          src_info.push_back("definition: " + srcnode["citation"].as<std::string>());
+          src_info.push_back("definition: " + srcnode["definition"].as<std::string>());
+        }
+        if (srcnode["note"]) {
+          src_info.push_back("note: " + srcnode["note"].as<std::string>());
         }
 
         base_consts.emplace(name,

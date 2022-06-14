@@ -79,12 +79,22 @@ real(c_real), parameter :: carbon_13_to_12_ratio = 0.011179_c_real
 !		 url: https://nvlpubs.nist.gov/nistpubs/jres/83/jresv83n5p419_a1b.pdf
 !		 citation: F. E. Jones, 1978, The air density equation and the transfer of the mass unit, J. Res. National Bur. Standards 83(5).
 real(c_real), parameter :: molec_weight_dry_air = 0.028963_c_real
+! Dry_air_gas
+!	 units: J/kg/K
+!	 source info:
+!		 definition: r_gas / molec_weight_dry_air
+real(c_real), parameter :: rgas_dry_air = 287.072_c_real
 ! Earth_mean_radius
 !	 units: m
 !	 source info:
 !		 name: NASA Space Science Data Coordinated Archive
 !		 url: https://nssdc.gsfc.nasa.gov/planetary/planets/earthpage.html
 real(c_real), parameter :: earth_radius = 6371000_c_real
+! Earth_rotation
+!	 units: 1/s
+!	 source info:
+!		 definition: 2*pi/sidereal_day
+real(c_real), parameter :: earth_omega = 7.29211e-05_c_real
 ! Ice_density
 !	 units: kg/mol
 !	 source info:
@@ -101,6 +111,7 @@ real(c_real), parameter :: karman = 0.4_c_real
 !	 units: J/kg
 !	 source info:
 !		 citation: R. R. Rogers and M. K. Yau, 1989, A Short Course in Cloud Physics, 3rd ed., Butterworth-Heinemann.
+!		 note: Table 2.1
 real(c_real), parameter :: latent_heat_evap_0c = 2501000_c_real
 ! Latent_heat_water_fusion
 !	 units: J/kg
@@ -112,6 +123,7 @@ real(c_real), parameter :: latent_heat_fusion = 333700_c_real
 !	 units: J/kg
 !	 source info:
 !		 citation: R. R. Rogers and M. K. Yau, 1989, A Short Course in Cloud Physics, 3rd ed., Butterworth-Heinemann.
+!		 note: Table 2.1
 real(c_real), parameter :: latent_heat_sublimation = 2834700_c_real
 ! Methane
 !	 units: kg/mol
@@ -236,6 +248,19 @@ real(c_real), parameter :: molec_weight_h2so4 = 0.098078_c_real
 !		 doi: https://doi.org/10.1063/1.4768782
 !		 citation: A. Mulero, I. Cachadi\~na and M. I. Parra, 2012, Recommended correlations for the surface tension of common fluids, Journal of Chemical Reference Data, 41, 043105
 real(c_real), parameter :: surface_tension_h2o_air_0c = 0.07570689080553497_c_real
+! Thermal_conductivity_ice
+!	 units: W/m/K
+!	 source info:
+!		 url: https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=926353
+!		 citation: Harvey, A. (2019), Properties of Ice and Supercooled Water, CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, [online] (Accessed May 31, 2022)
+real(c_real), parameter :: thermal_conductivity_h2o_ice_0c = 2.16_c_real
+! US_standard_atmospheric_pressure
+!	 units: Pa
+!	 source info:
+!		 name: CRC Handbook of Physics and Chemistry Online
+!		 url: https://hbcp.chemnetbase.com/faces/documents/14_12/14_12_0001.xhtml
+!		 note: 1976 US Standard Atmosphere
+real(c_real), parameter :: std_pressure = 101325_c_real
 ! Universal_gas_constant
 !	 units: J/mol/K
 !	 source info:
@@ -292,4 +317,9 @@ real(c_real), parameter :: molec_weight_h2o = 0.0180153_c_real
 !		 url: https://doi.org/10.1063/1.555894
 !		 citation: Journal of Physical and Chemical Reference Data 20, 1023 (1991).
 real(c_real), parameter :: triple_point_h2o = 273.16_c_real
+! Water_vapor_gas
+!	 units: J/kg/K
+!	 source info:
+!		 definition: r_gas / molec_weight_h2o
+real(c_real), parameter :: rgas_h2o_vapor = 461.522_c_real
 end module

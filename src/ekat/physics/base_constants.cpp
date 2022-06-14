@@ -30,7 +30,11 @@ namespace physics {
   template <typename Scalar>
   Scalar constexpr BaseConstants<Scalar>::molec_weight_dry_air;
   template <typename Scalar>
+  Scalar constexpr BaseConstants<Scalar>::rgas_dry_air;
+  template <typename Scalar>
   Scalar constexpr BaseConstants<Scalar>::earth_radius;
+  template <typename Scalar>
+  Scalar constexpr BaseConstants<Scalar>::earth_omega;
   template <typename Scalar>
   Scalar constexpr BaseConstants<Scalar>::density_h2o_ice_0c;
   template <typename Scalar>
@@ -80,6 +84,10 @@ namespace physics {
   template <typename Scalar>
   Scalar constexpr BaseConstants<Scalar>::surface_tension_h2o_air_0c;
   template <typename Scalar>
+  Scalar constexpr BaseConstants<Scalar>::thermal_conductivity_h2o_ice_0c;
+  template <typename Scalar>
+  Scalar constexpr BaseConstants<Scalar>::std_pressure;
+  template <typename Scalar>
   Scalar constexpr BaseConstants<Scalar>::r_gas;
   template <typename Scalar>
   Scalar constexpr BaseConstants<Scalar>::vsmow_ratio_2h_h;
@@ -97,6 +105,8 @@ namespace physics {
   Scalar constexpr BaseConstants<Scalar>::molec_weight_h2o;
   template <typename Scalar>
   Scalar constexpr BaseConstants<Scalar>::triple_point_h2o;
+  template <typename Scalar>
+  Scalar constexpr BaseConstants<Scalar>::rgas_h2o_vapor;
 // ETI
 template struct BaseConstants<float>;
 template struct BaseConstants<double>;

@@ -380,19 +380,35 @@ base_constants:
     value: 287.072
     units: "J/kg/K"
     source:
-      definition: r_gas / molec_weight_dry_air
+      definition: "r_gas / molec_weight_dry_air"
 
   Water_vapor_gas:
-    software_name: rgas_water_vapor
+    software_name: rgas_h2o_vapor
     value: 461.522
     units: "J/kg/K"
     source:
-      definition: r_gas / molec_weight_h2o
+      definition: "r_gas / molec_weight_h2o"
 
   Earth_rotation:
     software_name: earth_omega
     value: 0.0000729211
     units: "1/s"
-    definition: 2*pi/sidereal_day
+    source:
+      definition: "2*pi/sidereal_day"
 
+  US_standard_atmospheric_pressure:
+    software_name: std_pressure
+    value: 101325
+    units: "Pa"
+    source:
+      name: CRC Handbook of Physics and Chemistry Online
+      url: https://hbcp.chemnetbase.com/faces/documents/14_12/14_12_0001.xhtml
+      note: "1976 US Standard Atmosphere"
 
+  Thermal_conductivity_ice:
+    software_name: thermal_conductivity_h2o_ice_0c
+    value: 2.16
+    units: "W/m/K"
+    source:
+      citation: "Harvey, A. (2019), Properties of Ice and Supercooled Water, CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, [online] (Accessed May 31, 2022)"
+      url: "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=926353"

@@ -7,27 +7,14 @@ EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
                 ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
                 F90_FILE ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f)
 
-set(EKAT_CONSTS_PRECISION double)
-# Generate physics constants files
-add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.cpp
-                   COMMAND ${CMAKE_COMMAND}
-                   -DCONSTS_HEADER=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
-                   -DCONSTS_PRECISION=${EKAT_CONSTS_PRECISION}
-                   -DCONSTS_OUTPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.cpp
-                   -P ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
-                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
-                           ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
-                   COMMENT "  generating cpp physical constants...")
-add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.f90
-                   COMMAND ${CMAKE_COMMAND}
-                   -DCONSTS_HEADER=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
-                   -DCONSTS_PRECISION=${EKAT_CONSTS_PRECISION}
-                   -DCONSTS_OUTPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.f90
-                   -P ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
-                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.hpp
-                           ${PROJECT_SOURCE_DIR}/cmake/EkatSIConstants.cmake
-                   COMMENT "  generating F90 physical constants...")
 
+# Generate the program that generates the physics constants files
+set(EKAT_SRC_ROOT ${PROJECT_SOURCE_DIR})
+set(CONSTS_INPUT_FILE ${PROJECT_SOURCE_DIR}/src/ekat/physics/generate_constants_main.cpp.in)
+set(CONSTS_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/generate_constants_main.cpp)
+configure_file(${CONSTS_INPUT_FILE} ${CONSTS_OUTPUT_FILE} @ONLY)
+
+# TO DO: Build and run that program to generate the constants source files (.hpp, .cpp, .f90)
 
 set(EKAT_SOURCES
   ekat_assert.cpp
@@ -37,8 +24,10 @@ set(EKAT_SOURCES
   io/ekat_array_io.cpp
   io/ekat_array_io_mod.f90
   mpi/ekat_comm.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/physics/constants.f90
+physics/base_constants.cpp
+physics/base_constants.f90
+  ${CMAKE_CURRENT_BINARY_DIR}/generate_constants_main.cpp
+  physics/constants_generator.cpp
   util/ekat_arch.cpp
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
@@ -70,7 +59,7 @@ set(EKAT_HEADERS
   logging/ekat_log_file.hpp
   logging/ekat_log_mpi.hpp
   mpi/ekat_comm.hpp
-  physics/constants.hpp
+  physics/constants_generator.hpp
   std_meta/ekat_std_any.hpp
   std_meta/ekat_std_enable_shared_from_this.hpp
   std_meta/ekat_std_type_traits.hpp
