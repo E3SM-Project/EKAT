@@ -375,22 +375,24 @@ base_constants:
       name: "NIST Reference Material 8535, 2022, VSMOW Vienna Standard Mean Ocean Water"
       url: https://www-s.nist.gov/m-srmors/certificates/8535.pdf
 
-derived_constants:
   Dry_air_gas:
-    depends: [Universal_gas_constant, Dry_air]
     software_name: rgas_dry_air
-    definition: r_gas / molec_weight_dry_air
+    value: 287.072
     units: "J/kg/K"
+    source:
+      definition: r_gas / molec_weight_dry_air
 
   Water_vapor_gas:
-    depends: [Universal_gas_constant, Water_molecule]
     software_name: rgas_water_vapor
-    definition: r_gas / molec_weight_h2o
+    value: 461.522
     units: "J/kg/K"
+    source:
+      definition: r_gas / molec_weight_h2o
 
   Earth_rotation:
-    depends: [Pi, Sidereal_day]
     software_name: earth_omega
-    definition: 2*pi/sidereal_day
+    value: 0.0000729211
     units: "1/s"
+    definition: 2*pi/sidereal_day
+
 

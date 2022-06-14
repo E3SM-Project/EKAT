@@ -1,5 +1,5 @@
 #include <catch2/catch.hpp>
-#include "ekat/physics/generate_constants.hpp"
+#include "ekat/physics/constants_generator.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -41,12 +41,6 @@ std::vector<std::string> dummy_file_lines() {
   result.push_back("    source:\n");
   result.push_back("      name: \"2\"\n");
   result.push_back("\n");
-  result.push_back("derived_constants:\n");
-  result.push_back("  Three:\n");
-  result.push_back("    depends: [One, Two]\n");
-  result.push_back("    software_name: three\n");
-  result.push_back("    units: \"n/a\"\n");
-  result.push_back("    definition: tow + one\n"); // purposeful mispelling of "two"
   return result;
 }
 
@@ -108,50 +102,6 @@ TEST_CASE("read constants", "") {
       std::ofstream dum_file(dfname);
       dum_file << concat_lines(flines, 32, -1);
       dum_file.close();
-
-      REQUIRE_THROWS_WITH(ConstantsGenerator(dfname), Contains("dummy_consts.yaml: No derived_constants section found."));
-    }
-    {
-      std::ofstream dum_file(dfname);
-      dum_file << concat_lines(flines, 34);
-      dum_file.close();
-
-      REQUIRE_THROWS_WITH(ConstantsGenerator(dfname), Contains("Three: derived dependencies not found."));
-    }
-    {
-      std::ofstream dum_file(dfname);
-      dum_file << concat_lines(flines, 35);
-      dum_file.close();
-
-      REQUIRE_THROWS_WITH(ConstantsGenerator(dfname), Contains("Three: software_name not found."));
-    }
-    {
-      std::ofstream dum_file(dfname);
-      dum_file << concat_lines(flines, 36);
-      dum_file.close();
-
-      REQUIRE_THROWS_WITH(ConstantsGenerator(dfname), Contains("Three: units not found."));
-    }
-    {
-      std::ofstream dum_file(dfname);
-      dum_file << concat_lines(flines, 37);
-      dum_file.close();
-
-      REQUIRE_THROWS_WITH(ConstantsGenerator(dfname), Contains("Three: derived definition not found."));
-    }
-    {
-      std::ofstream dum_file(dfname);
-      dum_file << concat_lines(flines, 25, 7);
-      dum_file.close();
-
-      REQUIRE_THROWS_WITH(ConstantsGenerator(dfname), Contains("Three: derived constant dependency Two not found."));
-    }
-    {
-      std::ofstream dum_file(dfname);
-      dum_file << concat_lines(flines);
-      dum_file.close();
-
-      REQUIRE_THROWS_WITH(ConstantsGenerator(dfname), Contains("Three: derived dependency software_name not found."));
     }
     {
       std::ofstream dum_file(dfname);
@@ -160,11 +110,37 @@ TEST_CASE("read constants", "") {
       dum_file.close();
 
       REQUIRE_NOTHROW(ConstantsGenerator(dfname));
+
+      ConstantsGenerator gen(dfname);
+
+      std::ofstream hpp_file("dummy_consts.hpp");
+      hpp_file << gen.hpp_source();
+      hpp_file.close();
+
+      std::ofstream cpp_file("dummy_consts.cpp");
+      cpp_file << gen.cpp_source();
+      cpp_file.close();
+
+      std::ofstream f90_file("dummy_consts.f90");
+      f90_file << gen.f90_source();
+      f90_file.close();
     }
   }
 
   SECTION("main file") {
     std::string dfname = "./constants.yaml";
     ConstantsGenerator gen(dfname);
+
+    std::ofstream hpp_file("base_constants.hpp");
+    hpp_file << gen.hpp_source();
+    hpp_file.close();
+
+    std::ofstream cpp_file("base_constants.cpp");
+    cpp_file << gen.cpp_source();
+    cpp_file.close();
+
+    std::ofstream f90_file("base_constants.f90");
+    f90_file << gen.f90_source();
+    f90_file.close();
   }
 }

@@ -1,0 +1,61 @@
+#include "@EKAT_SRC_ROOT@/src/ekat/physics/constants_generator.hpp"
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <string>
+
+using namespace ekat;
+using namespace ekat::physics;
+
+static void show_usage(const std::string prog_name) {
+  std::cerr << "Usage: " << prog_name << "<option>\n"
+            << "  Options:\n"
+            << "     -h, --help   Show this message and exit\n"
+            << "     -hpp generate c++ header file\n"
+            << "     -cpp generate c++ source file\n"
+            << "     -f90 generate f90 source file"
+            << std::endl;
+}
+
+int main(int argc, char* argv[]) {
+
+  if (argc != 2) {
+    show_usage(argv[0]);
+    return 1;
+  }
+
+  std::string arg = argv[1];
+
+  const std::string hpp_filename = "@EKAT_SRC_ROOT@/src/ekat/physics/base_constants.hpp";
+  const std::string cpp_filename = "@EKAT_SRC_ROOT@/src/ekat/physics/base_constants.cpp";
+  const std::string f90_filename = "@EKAT_SRC_ROOT@/src/ekat/physics/base_constants.f90";
+
+  const std::string constants_yaml_filename = "@EKAT_SRC_ROOT@/src/ekat/physics/constants.yaml";
+
+  ConstantsGenerator gen(constants_yaml_filename);
+
+  if (arg == "-h" or arg == "--help") {
+    show_usage(argv[0]);
+  }
+  else if (arg == "-hpp") {
+    std::ofstream hpp_file(hpp_filename);
+    hpp_file << gen.hpp_source();
+    hpp_file.close();
+  }
+  else if (arg == "-cpp") {
+    std::ofstream cpp_file(cpp_filename);
+    cpp_file << gen.cpp_source();
+    cpp_file.close();
+  }
+  else if (arg == "-f90") {
+    std::ofstream f90_file(f90_filename);
+    f90_file << gen.f90_source();
+    f90_file.close();
+  }
+  else {
+    show_usage(argv[0]);
+    return 1;
+  }
+
+  return 0;
+}
