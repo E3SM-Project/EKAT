@@ -26,12 +26,14 @@ void initialize_kokkos () {
   // OK. The rank gets a GPU assigned and simply will ignore it.
 #ifdef EKAT_ENABLE_GPU
   int nd;
-# if KOKKOS_ENABLE_CUDA
+# if defined KOKKOS_ENABLE_CUDA
   const auto ret = cudaGetDeviceCount(&nd);
   const bool ok = ret == cudaSuccess;
-# else
+# elif defined KOKKOS_ENABLE_HIP
   const auto ret = hipGetDeviceCount(&nd);
   const bool ok = ret == hipSuccess;
+# else
+  error "No valid GPU space, yet EKAT_ENABLE_GPU is defined."
 # endif  
   if (not ok) {
     // It isn't a big deal if we can't get the device count.
