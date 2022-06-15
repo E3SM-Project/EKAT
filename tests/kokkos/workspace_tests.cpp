@@ -492,8 +492,8 @@ TEST_CASE("workspace_manager", "[utils]") {
   unit_test::UnitWrap::UnitTest<ekat::DefaultDevice>::unittest_workspace();
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
-// Force host testing on CUDA
+#ifdef EKAT_ENABLE_GPU
+// Force host testing when the exe space is a GPU space.
 TEST_CASE("workspace_manager_host", "[utils]") {
   unit_test::UnitWrap::UnitTest<ekat::HostDevice>::unittest_workspace();
 }
