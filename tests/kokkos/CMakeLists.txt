@@ -36,7 +36,7 @@ if (EKAT_TEST_SINGLE_PRECISION)
   )
 endif ()
 
-if (Kokkos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA_UVM)
+if (Kokkos_ENABLE_CUDA)
   # Test ability to move a kernel to host
   EkatCreateUnitTest (kernel_on_host kernel_on_host.cpp
     LIBS ekat)

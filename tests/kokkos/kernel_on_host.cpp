@@ -51,7 +51,7 @@ TEST_CASE("kernel_on_host") {
   // Note: TEST_CASE is run N times, each running a single SECTION;
   //       code outside SECTION is executed every time. So don't worry about
   //       resetting a and b after each section.
-  Kokkos::View<int**,Kokkos::CudaUVMSpace> a("",ni,nk);
+  Kokkos::View<int**,Kokkos::CudaHostPinnedSpace> a("",ni,nk);
   Kokkos::deep_copy(a,0);
 
   SECTION("on_host") {

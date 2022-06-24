@@ -301,8 +301,8 @@ struct ExeSpaceUtils<Kokkos::Cuda> {
   // Enable policy on Host only if UVM is enabled.
   template<HostOrDevice HD>
   struct PolicyOnHostHelper {
-    static constexpr bool UseUVM = std::is_same<Kokkos::Cuda::memory_space,Kokkos::CudaUVMSpace>::value;
-    static_assert (HD==Device  || UseUVM, "Error! Cannot get a policy on Host unless Cuda UVM is enabled in Kokkos.");
+    static constexpr bool UseUVM = std::is_same<Kokkos::Cuda::memory_space,Kokkos::CudaHostPinnedSpace>::value;
+    static_assert (HD==Device  || UseUVM, "Error! Cannot get a policy on Host unless CudaHostPinned is enabled in Kokkos.");
     using type = typename std::conditional<HD==Host,HostTeamPolicy,TeamPolicy>::type;
   };
 
