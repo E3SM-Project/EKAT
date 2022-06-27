@@ -570,7 +570,9 @@ TEST_CASE("property", "tridiag") {
 }
 
 TEST_CASE("bfb", "tridiag") {
+#ifdef EKAT_DEFAULT_BFB
   ekat::test::correct::run_bfb_test<1,1>();
   if (EKAT_TEST_PACK_SIZE > 1)
     ekat::test::correct::run_bfb_test<EKAT_TEST_PACK_SIZE, EKAT_TEST_PACK_SIZE>();
+#endif
 }

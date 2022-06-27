@@ -290,7 +290,7 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   const auto results_h = Kokkos::create_mirror_view(results);
 
   int team_size = ExeSpace::concurrency();
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
   ExeSpace temp_space;
   auto num_sm = temp_space.impl_internal_space_instance()->m_multiProcCount;
   team_size /= (ekat::is_single_precision<Real>::value ? num_sm*64 : num_sm*32);

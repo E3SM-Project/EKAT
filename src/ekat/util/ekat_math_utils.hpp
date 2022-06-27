@@ -4,9 +4,7 @@
 #include "ekat/ekat_scalar_traits.hpp"
 #include "ekat/ekat.hpp"
 
-#include <Kokkos_Core.hpp>
-
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef EKAT_ENABLE_GPU
 # include <cmath>
 # include <algorithm>
 #endif
@@ -15,7 +13,7 @@ namespace ekat {
 
 namespace impl {
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
 // Replacements for namespace std functions that don't run on the GPU.
 template <typename T>
 KOKKOS_FORCEINLINE_FUNCTION

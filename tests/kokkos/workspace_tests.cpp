@@ -122,8 +122,8 @@ static void unittest_workspace()
         {&ws1, &ws2, &ws3, &ws4});
 
       // Assert the memory access has not exceeded the allocation
-      const int dist = data_end - (ws4.data()+ws4.size());
-      EKAT_KERNEL_ASSERT_MSG(dist >= 0, "Error! Local view extended past allocation");
+      EKAT_KERNEL_ASSERT_MSG((data_end - (ws4.data()+ws4.size())) >= 0,
+                             "Error! Local view extended past allocation");
 
       ws.template release_many_contiguous<4>(
         {&ws1, &ws2, &ws3, &ws4});
@@ -176,8 +176,8 @@ static void unittest_workspace()
           {&v21, &v22, &v23, &v24});
 
         // Assert the memory access has not exceeded the allocation
-        const int dist = data_end - (v14.data()+v14.size());
-        EKAT_KERNEL_ASSERT_MSG(dist >= 0, "Error! Local view extended past allocation");
+        EKAT_KERNEL_ASSERT_MSG((data_end - (v14.data()+v14.size())) >= 0,
+                               "Error! Local view extended past allocation");
 
         ws1.template release_many_contiguous<4>(
           {&v11, &v12, &v13, &v14});
@@ -343,7 +343,7 @@ static void unittest_workspace()
         team.team_barrier();
       }
 
-  #ifndef KOKKOS_ENABLE_CUDA
+  #ifndef EKAT_ENABLE_GPU
   #ifdef WS_EXPENSIVE_TEST
       if (true)
   #else
@@ -492,8 +492,8 @@ TEST_CASE("workspace_manager", "[utils]") {
   unit_test::UnitWrap::UnitTest<ekat::DefaultDevice>::unittest_workspace();
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
-// Force host testing on CUDA
+#ifdef EKAT_ENABLE_GPU
+// Force host testing when the exe space is a GPU space.
 TEST_CASE("workspace_manager_host", "[utils]") {
   unit_test::UnitWrap::UnitTest<ekat::HostDevice>::unittest_workspace();
 }

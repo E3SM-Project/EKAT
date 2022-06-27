@@ -85,10 +85,10 @@ void parallel_reduce (const TeamMember& team,
         }
       });
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
     // Broadcast result to all threads by doing sum of one thread's
     // non-0 value and the rest of the 0s.
-    Kokkos::Impl::CudaTeamMember::vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
+    TeamMember::vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
 #endif
 
    result = local_tmp;
@@ -292,16 +292,22 @@ struct ExeSpaceUtils {
  * parallelism by having many threads per team.  This is due to having more
  * threads than the main kernel loop has indices.
  */
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
 template <>
-struct ExeSpaceUtils<Kokkos::Cuda> {
-  using TeamPolicy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+struct ExeSpaceUtils<EkatGpuSpace> {
+  using TeamPolicy = Kokkos::TeamPolicy<EkatGpuSpace>;
   using HostTeamPolicy = Kokkos::TeamPolicy<Kokkos::Serial>;
 
   // Enable policy on Host only if UVM is enabled.
   template<HostOrDevice HD>
   struct PolicyOnHostHelper {
-    static constexpr bool UseUVM = std::is_same<Kokkos::Cuda::memory_space,Kokkos::CudaUVMSpace>::value;
+    static constexpr bool UseUVM =
+#ifdef KOKKOS_ENABLE_CUDA
+      std::is_same<Kokkos::Cuda::memory_space,Kokkos::CudaUVMSpace>::value
+#else
+      false
+#endif
+      ;
     static_assert (HD==Device  || UseUVM, "Error! Cannot get a policy on Host unless Cuda UVM is enabled in Kokkos.");
     using type = typename std::conditional<HD==Host,HostTeamPolicy,TeamPolicy>::type;
   };
@@ -521,14 +527,14 @@ class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueTyp
 /*
  * Specialization for Cuda execution space.
  */
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
 template <typename ValueType>
-class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,Kokkos::Cuda>
+class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,EkatGpuSpace>
 {
-  using Device = Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>;
+  using Device = Kokkos::Device<EkatGpuSpace, typename EkatGpuSpace::memory_space>;
   using flag_type = int; // this appears to be the smallest type that correctly handles atomic operations
   using view_1d = typename KokkosTypes<Device>::view_1d<flag_type>;
-  using RandomGenerator = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>;
+  using RandomGenerator = Kokkos::Random_XorShift64_Pool<EkatGpuSpace>;
   using rnd_type = typename RandomGenerator::generator_type;
 
   int             _num_ws_slots;    // how many workspace slots (potentially more than the num of concurrent teams due to overprovision factor)
@@ -541,7 +547,7 @@ class TeamUtils<ValueType,Kokkos::Cuda> : public TeamUtilsCommonBase<ValueType,K
 
   template <typename TeamPolicy>
   TeamUtils(const TeamPolicy& policy, const double& overprov_factor = 1.0) :
-    TeamUtilsCommonBase<ValueType,Kokkos::Cuda>(policy),
+    TeamUtilsCommonBase<ValueType,EkatGpuSpace>(policy),
     _num_ws_slots(this->_league_size > this->_num_teams
                   ? (overprov_factor * this->_num_teams > this->_league_size ? this->_league_size : overprov_factor * this->_num_teams)
                   : this->_num_teams),
@@ -643,7 +649,7 @@ int strcmp(const char* first, const char* second)
 using std::strlen;
 using std::strcpy;
 using std::strcmp;
-#endif // KOKKOS_ENABLE_CUDA
+#endif // EKAT_ENABLE_GPU
 
 } // namespace impl
 

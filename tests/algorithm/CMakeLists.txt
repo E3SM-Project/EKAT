@@ -6,7 +6,7 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.f.in
 # Test lin interp processes
 set (LIN_INTERP_SRCS
   lin_interp_test.cpp
-  lin_interp_ref.f90
+  lin_interp_ref.F90
 )
 
 if (EKAT_TEST_DOUBLE_PRECISION)
