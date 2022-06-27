@@ -525,7 +525,7 @@ class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueTyp
 #endif
 
 /*
- * Specialization for Cuda execution space.
+ * Specialization for CUDA, HIP and SYCL execution space.
  */
 #ifdef EKAT_ENABLE_GPU
 template <typename ValueType>

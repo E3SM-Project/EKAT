@@ -99,10 +99,7 @@ BuildKokkos()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 set (EKAT_ENABLE_GPU False)
-if (Kokkos_ENABLE_CUDA)
-  set (EKAT_ENABLE_GPU True)
-endif ()
-if (Kokkos_ENABLE_HIP)
+if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
   set (EKAT_ENABLE_GPU True)
 endif ()
 

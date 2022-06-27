@@ -25,8 +25,10 @@ static constexpr bool ekatBFB = false;
 typedef Kokkos::Cuda EkatGpuSpace;
 # elif defined KOKKOS_ENABLE_HIP
 typedef Kokkos::Experimental::HIP EkatGpuSpace;
+# elif defined KOKKOS_ENABLE_SYCL
+typedef Kokkos::Experimental::SYCL EkatGpuSpace;
 # else
-error "EKAT does not recognize a GPU space other than Cuda and HIP."
+error "EKAT does not recognize a GPU space other than Cuda, HIP and SYCL".
 # endif
 #endif
 
