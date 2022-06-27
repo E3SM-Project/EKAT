@@ -37,6 +37,10 @@ std::string ekat_config_string () {
      << " compiler id: " <<
 #if defined __INTEL_COMPILER
     "Intel\n"
+#elif defined __INTEL_LLVM_COMPILER
+    "IntelLLVM\n"
+#elif defined __HIPCC__
+    "AMD Clang\n"
 #elif defined __GNUG__
     "GCC\n"
 #else
