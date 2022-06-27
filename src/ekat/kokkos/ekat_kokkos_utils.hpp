@@ -57,7 +57,11 @@ namespace impl {
  *       detail, and, normally, should not be used by customer apps
  */
 template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
+#ifdef KOKKOS_ENABLE_SYCL
+KOKKOS_INLINE_FUNCTION SYCL_EXTERNAL
+#else
 static KOKKOS_INLINE_FUNCTION
+#endif
 void parallel_reduce (const TeamMember& team,
                       const int& begin, // pack index
                       const int& end, // pack index
@@ -88,7 +92,7 @@ void parallel_reduce (const TeamMember& team,
 #ifdef EKAT_ENABLE_GPU
     // Broadcast result to all threads by doing sum of one thread's
     // non-0 value and the rest of the 0s.
-    TeamMember::vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
+    team.vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
 #endif
 
    result = local_tmp;

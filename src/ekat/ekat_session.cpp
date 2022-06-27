@@ -43,6 +43,7 @@ void initialize_kokkos () {
       nd++;
     }
   }
+  const bool ok = true;
 # else
   error "No valid GPU space, yet EKAT_ENABLE_GPU is defined."
 # endif  

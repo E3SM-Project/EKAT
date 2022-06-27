@@ -257,7 +257,7 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   using Device = ekat::DefaultDevice;
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
-  
+
   using PackType = ekat::Pack<Scalar, VectorSize>;
   using ViewType = Kokkos::View<PackType*,ExeSpace>;
 
@@ -267,7 +267,7 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   Scalar serial_result = Scalar(a);
   ViewType data("data", view_length);
   const auto data_h = Kokkos::create_mirror_view(data);
-  auto raw = data_h.data(); 
+  auto raw = data_h.data();
   for (int k = 0; k < view_length; ++k) {
     for (int p = 0; p < VectorSize; ++p) {
       const int scalar_index = k*VectorSize+p;
@@ -292,7 +292,11 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   int team_size = ExeSpace::concurrency();
 #ifdef EKAT_ENABLE_GPU
   ExeSpace temp_space;
+  #ifdef KOKKOS_ENABLE_SYCL
+  auto num_sm = temp_space.impl_internal_space_instance()->m_queue->get_device().get_info<sycl::info::device::max_compute_units>();
+  #else
   auto num_sm = temp_space.impl_internal_space_instance()->m_multiProcCount;
+  #endif
   team_size /= (ekat::is_single_precision<Real>::value ? num_sm*64 : num_sm*32);
 #endif
 
