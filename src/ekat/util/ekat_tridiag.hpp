@@ -124,7 +124,9 @@ int get_thread_id_within_team_gpu (const TeamMember& team) {
   // threads but TeamMember types don't expose that information.
   return blockDim.x * threadIdx.y + threadIdx.x;
 #elif defined(__SYCL_DEVICE_ONLY__)
-  return static_cast<int>(team.item().get_global_linear_id());
+  auto item = team.item();
+  return static_cast<int>(item.get_local_range(1) * item.get_local_id(0)
+			  + item.get_local_id(1));
 #else
   assert(0);
   return -1;
@@ -136,7 +138,8 @@ int get_team_nthr_gpu (const TeamMember& team) {
 #if defined __CUDA_ARCH__ || defined __HIP_DEVICE_COMPILE__
   return blockDim.x * blockDim.y;
 #elif defined __SYCL_DEVICE_ONLY__
-  return static_cast<int>(team.item().get_local_range().size());
+  auto item = team.item();
+  return static_cast<int>(item.get_local_range(0) * item.get_local_range(1));
 #else
   assert(0);
   return -1;
