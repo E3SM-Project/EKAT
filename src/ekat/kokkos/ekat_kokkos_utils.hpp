@@ -57,12 +57,7 @@ namespace impl {
  *       detail, and, normally, should not be used by customer apps
  */
 template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
-#ifdef KOKKOS_ENABLE_SYCL
-SYCL_EXTERNAL
-#else
-static
-#endif
-KOKKOS_INLINE_FUNCTION
+static KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
                       const int& begin, // pack index
                       const int& end, // pack index
