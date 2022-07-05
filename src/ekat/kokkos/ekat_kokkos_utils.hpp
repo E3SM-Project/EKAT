@@ -58,10 +58,11 @@ namespace impl {
  */
 template <bool Serialize, typename TeamMember, typename Lambda, typename ValueType>
 #ifdef KOKKOS_ENABLE_SYCL
-KOKKOS_INLINE_FUNCTION SYCL_EXTERNAL
+SYCL_EXTERNAL
 #else
-static KOKKOS_INLINE_FUNCTION
+static
 #endif
+KOKKOS_INLINE_FUNCTION
 void parallel_reduce (const TeamMember& team,
                       const int& begin, // pack index
                       const int& end, // pack index
@@ -637,7 +638,7 @@ KOKKOS_INLINE_FUNCTION
 void strcpy(char* dst, const char* src)
 {
   EKAT_KERNEL_ASSERT(dst != NULL && src != NULL);
-  while(*dst++ = *src++);
+  while(*dst++ == *src++);
 }
 KOKKOS_INLINE_FUNCTION
 int strcmp(const char* first, const char* second)

@@ -71,12 +71,7 @@ set(EKAT_HEADERS
 add_library(ekat ${EKAT_SOURCES})
 
 # Link MPI
-if (Kokkos_ROOT)
-  # Link Kokkos in-addition if not using the submodule
-  target_link_libraries (ekat PUBLIC Kokkos::kokkos MPI::MPI_C)
-else ()
-  target_link_libraries (ekat PUBLIC MPI::MPI_C)
-endif ()
+target_link_libraries (ekat PUBLIC MPI::MPI_C)
 
 target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>

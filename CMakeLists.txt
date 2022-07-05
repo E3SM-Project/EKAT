@@ -99,10 +99,11 @@ set (EKAT_TPL_LIBRARIES_INTERNAL)
 # Kokkos_ROOT can point to custom installation directory
 if (Kokkos_ROOT)
   find_package(Kokkos REQUIRED)
+  set(Kokkos_LIBRARIES Kokkos::kokkos)
 else()
   BuildKokkos()
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 endif()
+  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 set (EKAT_ENABLE_GPU False)
 if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)

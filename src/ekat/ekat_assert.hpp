@@ -32,8 +32,8 @@
 #define IMPL_KERNEL_THROW(condition, msg)				\
   do {									\
     if ( ! (condition) ) {						\
-      const __attribute__((opencl_constant)) char format[] = "KERNEL CHECK FAILED:\n   %s\n"; \
-      sycl::ext::oneapi::experimental::printf(format,msg);		\
+      const __attribute__((opencl_constant)) char format[] = "KERNEL CHECK FAILED:\n   %s %s\n"; \
+      sycl::ext::oneapi::experimental::printf(format,#condition,msg);	\
       Kokkos::abort("");						\
     }									\
   } while (0)
