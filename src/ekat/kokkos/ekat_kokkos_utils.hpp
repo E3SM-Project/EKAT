@@ -633,7 +633,7 @@ KOKKOS_INLINE_FUNCTION
 void strcpy(char* dst, const char* src)
 {
   EKAT_KERNEL_ASSERT(dst != NULL && src != NULL);
-  while(*dst++ == *src++);
+  while(*dst++ = *src++);
 }
 KOKKOS_INLINE_FUNCTION
 int strcmp(const char* first, const char* second)
