@@ -1,0 +1,5 @@
+include (${CMAKE_CURRENT_LIST_DIR}/generic.cmake)
+
+option(Kokkos_ARCH_INTEL_XEHP "" ON)
+set(Kokkos_ENABLE_SYCL TRUE CACHE BOOL "")
+set(Kokkos_ENABLE_DEPRECATED_CODE_3 FALSE CACHE BOOL "")

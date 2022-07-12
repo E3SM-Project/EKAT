@@ -88,7 +88,7 @@ void parallel_reduce (const TeamMember& team,
 #ifdef EKAT_ENABLE_GPU
     // Broadcast result to all threads by doing sum of one thread's
     // non-0 value and the rest of the 0s.
-    TeamMember::vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
+    team.vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
 #endif
 
    result = local_tmp;
@@ -525,7 +525,7 @@ class TeamUtils<ValueType, Kokkos::OpenMP> : public TeamUtilsCommonBase<ValueTyp
 #endif
 
 /*
- * Specialization for Cuda execution space.
+ * Specialization for CUDA, HIP and SYCL execution space.
  */
 #ifdef EKAT_ENABLE_GPU
 template <typename ValueType>

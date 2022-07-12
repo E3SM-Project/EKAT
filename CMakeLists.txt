@@ -95,14 +95,18 @@ option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when comp
 set (EKAT_TPL_LIBRARIES_INTERNAL)
 
 # A good chunk of EKAT is a utility layer over kokkos
-BuildKokkos()
-list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
+# Note: for SYCL/HIP backend, bleeding edge of kokkos/develop might be needed to test some functionality
+# Kokkos_ROOT can point to custom installation directory
+if (Kokkos_ROOT)
+  find_package(Kokkos REQUIRED)
+  set(Kokkos_LIBRARIES Kokkos::kokkos)
+else()
+  BuildKokkos()
+endif()
+  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
 
 set (EKAT_ENABLE_GPU False)
-if (Kokkos_ENABLE_CUDA)
-  set (EKAT_ENABLE_GPU True)
-endif ()
-if (Kokkos_ENABLE_HIP)
+if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
   set (EKAT_ENABLE_GPU True)
 endif ()
 

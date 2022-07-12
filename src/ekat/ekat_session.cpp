@@ -32,6 +32,18 @@ void initialize_kokkos () {
 # elif defined KOKKOS_ENABLE_HIP
   const auto ret = hipGetDeviceCount(&nd);
   const bool ok = ret == hipSuccess;
+# elif defined KOKKOS_ENABLE_SYCL
+  nd = 0;
+  auto gpu_devs = sycl::device::get_devices(sycl::info::device_type::gpu);
+  for (auto &dev : gpu_devs) {
+    if (dev.get_info<sycl::info::device::partition_max_sub_devices>() > 0) {
+      auto subDevs = dev.create_sub_devices<sycl::info::partition_property::partition_by_affinity_domain>(sycl::info::partition_affinity_domain::numa);
+      nd += subDevs.size();
+    } else {
+      nd++;
+    }
+  }
+  const bool ok = true;
 # else
   error "No valid GPU space, yet EKAT_ENABLE_GPU is defined."
 # endif  
