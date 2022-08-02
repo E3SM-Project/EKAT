@@ -78,11 +78,6 @@ include(CheckCXXSymbolExists)
 # functions that are helpful (such as feeenableexcept) --- Apple stopped including these
 # in 2005, so we have to drop-in replacements for them.
 check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-  #  GCC has already impl'd some c++14 features even in a c++11 build.  Apple's Clang
-  # (perhaps clang generally) doesn't like this and requires -std=c++14 for these features.
-  set(CMAKE_CXX_STANDARD 14)
-endif()
 
 ###########################
 ###      EKAT TPLS      ###
