@@ -502,4 +502,87 @@ TEST_CASE("isnan", "ekat::pack") {
   }
 }
 
+TEST_CASE ("masked_assignment") {
+#ifdef EKAT_DOUBLE_PRECISION
+  using Real = double;
+#else
+  using Real = float;
+#endif
+
+  using namespace ekat;
+  using engine_t = std::mt19937_64;
+  using pt = Pack<Real, EKAT_TEST_PACK_SIZE>;
+
+  const auto& test_name = Catch::getResultCapture().getCurrentTestName();
+
+  std::random_device rdev;
+  const unsigned int catchRngSeed = Catch::rngSeed();
+  const unsigned int seed = catchRngSeed==0 ? rdev() : catchRngSeed;
+
+  // Print seed to screen to trace tests that fail.
+  std::cout << " For test " << test_name << ", random number generator seed: " << seed << "\n";
+  if (catchRngSeed==0) {
+    std::cout << "    Note: catch rng seed was 0 (default). We interpret that as a request to pick a random seed.\n"
+      "    To reproduce a previous run, use --rng-seed N to provide the rng seed.\n\n";
+  }
+  engine_t engine(seed);
+  using RPDF = std::uniform_real_distribution<Real>;
+  RPDF pdf(0.0,1.0);
+
+  constexpr int ntests = 10;
+  for (int itest=0; itest<ntests; ++itest) {
+
+    pt p1;
+    for (int i=0; i<pt::n; ++i) {
+      p1[i] = pdf(engine);
+    }
+
+    auto m = p1 > 0.5;
+
+    for (std::string op : {"=", "*=", "+=", "-=", "/="}) {
+      pt p2 = p1;
+      pt p3 = p1;
+      if (op=="=") {
+        p2(m) = -p1;
+        p3(m) = -1.0;
+      } else if (op=="*=") {
+        p2(m) *= -p1;
+        p3(m) *= -1.0;
+      } else if (op=="+=") {
+        p2(m) += -p1;
+        p3(m) += -1.0;
+      } else if (op=="-=") {
+        p2(m) -= p1;
+        p3(m) -= 1.0;
+      } else {
+        p2(m) /= p1;
+        p3(m) /= -1.0;
+      }
+      for (int i=0; i<pt::n; ++i) {
+        if (p1[i]<=0.5) {
+          REQUIRE (p2[i]==p1[i]);
+          REQUIRE (p3[i]==p1[i]);
+        } else {
+          if (op=="=") {
+            REQUIRE (p2[i]==-p1[i]);
+            REQUIRE (p3[i]==-1.0);
+          } else if (op=="*=") {
+            REQUIRE (p2[i]==-p1[i]*p1[i]);
+            REQUIRE (p3[i]==-p1[i]);
+          } else if (op=="+=") {
+            REQUIRE (p2[i]==0.0);
+            REQUIRE (p3[i]==p1[i]-1.0);
+          } else if (op=="-=") {
+            REQUIRE (p2[i]==0.0);
+            REQUIRE (p3[i]==p1[i]-1.0);
+          } else {
+            REQUIRE (p2[i]==1.0);
+            REQUIRE (p3[i]==-p1[i]);
+          }
+        }
+      }
+    }
+  }
+}
+
 } // namespace

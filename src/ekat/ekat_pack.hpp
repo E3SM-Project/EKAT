@@ -163,6 +163,26 @@ Mask<n> operator ! (const Mask<n>& m) {
   ekat_pack_gen_assign_op_p(op)               \
   ekat_pack_gen_assign_op_s(op)
 
+// Masked packs
+#define ekat_masked_pack_gen_assign_op_s(op)    \
+  KOKKOS_FORCEINLINE_FUNCTION                   \
+  Pack& operator op (const scalar& a) {         \
+    ekat_masked_loop(m, s)                      \
+      p[s] op a;                                \
+    return p;                                   \
+  }
+#define ekat_masked_pack_gen_assign_op_p(op)    \
+  KOKKOS_FORCEINLINE_FUNCTION                   \
+  Pack& operator op (const Pack& rhs) {         \
+    ekat_masked_loop(m, s)                      \
+      p[s] op rhs[s];                           \
+    return p;                                   \
+  }
+
+#define ekat_masked_pack_gen_assign_op_all(op)  \
+  ekat_masked_pack_gen_assign_op_p(op)          \
+  ekat_masked_pack_gen_assign_op_s(op)
+
 // The Pack type. Mask was defined first since it's used in Pack.
 template <typename ScalarType, int PackSize>
 struct Pack {
@@ -301,6 +321,25 @@ struct Pack {
 
     return *this;
   }
+
+private:
+
+  struct MaskedPack {
+    MaskedPack (Pack& p_, const Mask<n>& m_)
+     : p(p_), m(m_) {}
+
+    ekat_masked_pack_gen_assign_op_all(=);
+    ekat_masked_pack_gen_assign_op_all(+=);
+    ekat_masked_pack_gen_assign_op_all(-=);
+    ekat_masked_pack_gen_assign_op_all(*=);
+    ekat_masked_pack_gen_assign_op_all(/=);
+
+    Pack& p;
+    const Mask<n>& m;
+  };
+public:
+
+  MaskedPack operator() (const Mask<n>& m) { return MaskedPack(*this,m); }
 
 private:
   scalar d[n];
