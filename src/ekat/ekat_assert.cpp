@@ -38,13 +38,9 @@ void runtime_abort(const std::string& message, int code) {
 
 int get_default_fpes () {
 #ifdef EKAT_ENABLE_FPE
-#ifdef EKAT_FPE
   return (FE_DIVBYZERO |
           FE_INVALID   |
           FE_OVERFLOW);
-#else
-  return 0;
-#endif
 #else
   return 0;
 #endif
