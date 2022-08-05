@@ -53,6 +53,7 @@ message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 
 option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
+option (EKAT_ENABLE_FPE "Whether to enable floating point exceptions" ON)
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
 option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
@@ -74,7 +75,7 @@ SetCommonFlags()
 SetProfilingFlags(PROFILER ${EKAT_PROFILING_TOOL} COVERAGE ${EKAT_ENABLE_COVERAGE})
 
 include(CheckCXXSymbolExists)
-# Most of the FPE stuff was defined in c++99, but gnu has some additional non-std
+# Most of the FPE stuff was defined in C99, but gnu has some additional non-std
 # functions that are helpful (such as feeenableexcept) --- Apple stopped including these
 # in 2005, so we have to drop-in replacements for them.
 check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)

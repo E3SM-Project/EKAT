@@ -13,6 +13,9 @@
 // Mimic GPU to correctness-test inter-column parallelism on non-GPU platform
 #cmakedefine EKAT_MIMIC_GPU
 
+// Whether we trap floating point exceptions
+#cmakedefine EKAT_ENABLE_FPE
+
 // Add a substitute for GNU feenableexcept if necessary
 #cmakedefine EKAT_HAVE_FEENABLEEXCEPT
 

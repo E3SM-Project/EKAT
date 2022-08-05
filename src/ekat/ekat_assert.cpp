@@ -4,7 +4,10 @@
 
 #include "ekat_assert.hpp"
 #include "ekat_session.hpp"
+
+#ifdef EKAT_ENABLE_FPE
 #include "util/ekat_feutils.hpp"
+#endif
 
 namespace ekat {
 namespace error {
@@ -34,6 +37,7 @@ void runtime_abort(const std::string& message, int code) {
 } // namespace ekat
 
 int get_default_fpes () {
+#ifdef EKAT_ENABLE_FPE
 #ifdef EKAT_FPE
   return (FE_DIVBYZERO |
           FE_INVALID   |
@@ -41,26 +45,39 @@ int get_default_fpes () {
 #else
   return 0;
 #endif
+#else
+  return 0;
+#endif
 }
 
 void enable_fpes (const int mask) {
+#ifdef EKAT_ENABLE_FPE
   // Make sure we don't throw because one of those exceptions
   // was already set, due to previous calculations
   feclearexcept(mask);
 
   feenableexcept(mask);
+#endif
 }
 
 void disable_fpes (const int mask) {
+#ifdef EKAT_ENABLE_FPE
   fedisableexcept(mask);
+#endif
 }
 
 int get_enabled_fpes () {
+#ifdef EKAT_ENABLE_FPE
   return fegetexcept();
+#else
+  return 0;
+#endif
 }
 
 void disable_all_fpes () {
+#ifdef EKAT_ENABLE_FPE
   disable_fpes(FE_ALL_EXCEPT);
+#endif
 }
 
 } // namespace error
