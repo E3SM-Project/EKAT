@@ -13,14 +13,14 @@
 // Mimic GPU to correctness-test inter-column parallelism on non-GPU platform
 #cmakedefine EKAT_MIMIC_GPU
 
+// Whether we trap floating point exceptions
+#cmakedefine EKAT_ENABLE_FPE
+
 // Add a substitute for GNU feenableexcept if necessary
 #cmakedefine EKAT_HAVE_FEENABLEEXCEPT
 
 // Decide whether ekat defaults to BFB behavior when possible/appropriate
 #cmakedefine EKAT_DEFAULT_BFB
-
-// Decide whether ekat defaults to BFB behavior when possible/appropriate
-#cmakedefine EKAT_FPE
 
 // A GPU space has been enabled in Kokkos, e.g., CUDA or HIP OR SYCL.
 #cmakedefine EKAT_ENABLE_GPU
