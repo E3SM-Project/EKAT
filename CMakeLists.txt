@@ -64,6 +64,10 @@ if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   message(FATAL_ERROR "Code coverage will only work with Debug build type")
 endif()
 
+if (EKAT_DEFAULT_BFB AND NOT EKAT_IS_DEBUG_BUILD)
+  message("WARNING: Setting EKAT_DEFAULT_BFB in an optimized build may invalidate BFBness.")
+endif()
+
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
 ############################################
