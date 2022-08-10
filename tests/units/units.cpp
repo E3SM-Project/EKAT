@@ -58,10 +58,9 @@ TEST_CASE("units_framework", "") {
     const auto km = kilo*m;
     const auto kPa = kilo*Pa;
 
-    Units nondim (ScalingFactor(1));
-    Units milliJ = milli*N*m;
-    Units mix_ratio = kg/kg;
-    mix_ratio.set_string("kg/kg");
+    constexpr Units nondim (ScalingFactor(1));
+    constexpr Units milliJ = milli*N*m;
+    constexpr Units mix_ratio (kg/kg,"kg/kg");
 
     // Verify operations
     REQUIRE (milliJ == kPa*pow(m,3)/mega);
