@@ -72,20 +72,22 @@ private:
   std::shared_ptr<sink_t> csink;
   std::shared_ptr<sink_t> fsink;
 
+  std::string logfile_name;
+
 public:
 
   // primary constructor
   Logger (const std::string& log_name,
           const LogLevel log_level,
           const ekat::Comm& comm,
-          const std::string& suffix = ".log") :
-    spdlog::logger(log_name)
+          const std::string& suffix = ".log")
+   : spdlog::logger(log_name)
+   , logfile_name  ("")
   {
-    auto logfile_name = (MpiOutputPolicy::get_log_name(log_name, comm) + suffix);
-
     // make the console sink; default console level = log level
     csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     if (MpiOutputPolicy::should_log(comm)) {
+      logfile_name = (MpiOutputPolicy::get_log_name(log_name, comm) + suffix);
       fsink = LogFilePolicy::get_file_sink(logfile_name);
     } else {
       fsink = LogNoFile::get_file_sink(logfile_name);
@@ -161,6 +163,10 @@ public:
 
   // The string "%v" is corresponds to "<msg>" only.
   void set_no_format () { set_format("%v"); }
+
+
+  // Get the log file name (if any)
+  std::string get_logfile_name () const { return logfile_name; }
 };
 
 } // namespace logger
