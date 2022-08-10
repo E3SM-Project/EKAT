@@ -618,7 +618,7 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
 
 namespace impl {
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef EKAT_ENABLE_GPU
 // Replacements for namespace std functions that don't run on the GPU.
 KOKKOS_INLINE_FUNCTION
 size_t strlen(const char* str)
@@ -633,7 +633,7 @@ KOKKOS_INLINE_FUNCTION
 void strcpy(char* dst, const char* src)
 {
   EKAT_KERNEL_ASSERT(dst != NULL && src != NULL);
-  while(*dst++ = *src++);
+  while((*dst++ = *src++));
 }
 KOKKOS_INLINE_FUNCTION
 int strcmp(const char* first, const char* second)
