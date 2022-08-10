@@ -436,14 +436,17 @@ void run_property_test_on_config (const TestConfig& tc) {
   using APack = ekat::Pack<Real, A_pack_size>;
   using DataPack = ekat::Pack<Real, data_pack_size>;
 
-#if 1
-  const int nrows[] = {1,2,3,4,5, 8,10,16, 32,43, 63,64,65, 111,128,129, 2048};
+  const int nrows[] = {1,2,3,4,5, 8,10,16, 32,43, 63,64,65, 111,128,129,
+#ifdef NDEBUG
+    2048
+#endif
+  };
+#ifdef NDEBUG
   const int nrhs_max = 60;
   const int nrhs_inc = 11;
 #else
-  const int nrows[] = {10};
-  const int nrhs_max = 6;
-  const int nrhs_inc = 5;
+  const int nrhs_max = 13;
+  const int nrhs_inc = 4;
 #endif
 
   for (const int nrow : nrows) {
@@ -513,6 +516,8 @@ void run_bfb_test_on_config (TestConfig& tc) {
   const int nrhs_max = 60;
   const int nrhs_inc = 11;
 
+  int nerr = 0;
+  Real max_re = 0;
   for (const int nrow : nrows) {
     for (int nrhs = 1; nrhs <= nrhs_max; nrhs += nrhs_inc) {
       for (const bool A_many : {false}) {
@@ -542,14 +547,25 @@ void run_bfb_test_on_config (TestConfig& tc) {
         deep_copy(X1, X1s);
         deep_copy(X2, X2s);
 
-        int nerr = 0; // don't blow up the assertion count
+        Real max_err = -1, max_X = -1;
         for (int i = 0; i < X1.extent_int(0); ++i)
-          for (int j = 0; j < X1.extent_int(1); ++j)
-            if (X1(i,j) != X2(i,j)) ++nerr;
-        REQUIRE(nerr == 0);
+          for (int j = 0; j < X1.extent_int(1); ++j) {
+            max_X = std::max(max_X, std::abs(X1(i,j)));
+            if (X1(i,j) != X2(i,j)) {
+              ++nerr;
+              max_err = std::max(max_err, std::abs(X1(i,j) - X2(i,j)));
+            }
+          }
+        max_re = std::max(max_re, max_err/max_X);
       }
     }
   }
+  if (nerr)
+    printf("In this build, the BFB tridiag solver doesn't return BFB results\n"
+           "  on the GPU and on the CPU; max relative error in this test is\n"
+           "  %1.2e\n",
+           max_re);
+  REQUIRE(nerr == 0);
 }
 
 template <int A_pack_size, int data_pack_size>
