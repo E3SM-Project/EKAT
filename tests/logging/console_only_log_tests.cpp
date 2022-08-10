@@ -25,6 +25,7 @@ TEST_CASE("console_only", "[logging]") {
       Logger<LogNoFile,LogAllRanks> mylog("all_ranks_console_only", LogLevel::debug, comm);
       mylog.set_no_format();
       mylog.warn(msg);
+      REQUIRE (mylog.get_logfile_name()=="");
     }
 
     // Verify no file was generated.

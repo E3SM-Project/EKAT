@@ -25,6 +25,8 @@ TEST_CASE("log tests", "[logging]") {
       // Although the file level is trace, the logger level is debug
       REQUIRE( !mylog.should_log(LogLevel::trace) );
 
+      REQUIRE (mylog.get_logfile_name()=="log_two.log");
+
       mylog.debug(dbg_line);
 
       // the file level is trace, but the log level is debug (debug > trace),
