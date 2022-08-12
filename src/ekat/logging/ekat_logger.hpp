@@ -57,15 +57,19 @@ using LogLevel = spdlog::level::level_enum;
   In principle, separate modules, classes, etc. could have their own logger.
   These loggers can share output files; see tests/logger/logger_tests.cpp.
 
-  The ekat::Logger class inherits from spdlog::logger, to simplify the many
-  features of that library to the ones EKAT is most likely to use, while retaining all
-  of its functionality.
+  There are two classes: LoggerBase and Logger. The former inherits from spdlog::logger,
+  and has all the interfaces we need, but cannot be constructed. The latter inherits
+  from the former, is templated on file/mpi policies, and simply implements the constructors.
+  The reason for having LoggerBase rather than simply using spdlog::logger is to expose
+  some convenient getters/setters in a non-templated class. Without a non-templated
+  base class, the user need to know in advance the exact type of policy used, in order
+  to cast down to the correct type.
+  Note: we could easily replace the derived class with a free function, templated on
+  the policies, but we would have to make it a friend of the class.
 */
 
-template<typename LogFilePolicy   = LogNoFile,
-         typename MpiOutputPolicy = LogRootRank>
-class Logger : public spdlog::logger {
-private:
+class LoggerBase : public spdlog::logger {
+protected:
 
   using sink_t = spdlog::sinks::sink;
 
@@ -74,6 +78,59 @@ private:
 
   std::string logfile_name;
 
+  LoggerBase (const std::string& log_name)
+   : spdlog::logger(log_name)
+   , logfile_name  ("")
+  {
+    // Nothing to do here
+  }
+
+public:
+
+  // accessors
+  spdlog::sink_ptr get_console_sink() const {
+    return csink;
+  }
+  spdlog::sink_ptr get_file_sink() const {
+    return fsink;
+  }
+
+  LogLevel log_level() const {
+    return this->level();
+  }
+  LogLevel console_level() const {
+    return this->get_console_sink()->level();
+  }
+  LogLevel file_level() const {
+    return this->get_file_sink()->level();
+  }
+
+  const std::string& get_logfile_name () const { return logfile_name; }
+
+  void set_log_level(const LogLevel lev) {
+    this->set_level(lev);
+  }
+  void set_console_level(const LogLevel lev) {
+    this->get_console_sink()->set_level(lev);
+  }
+  void set_file_level(const LogLevel lev) {
+    this->get_file_sink()->set_level(lev);
+  }
+
+  // Use this to change the format of logged messages.
+  // The default is "[date time] [log name] [log level] <msg>".
+  void set_format (const std::string& s = "%v") {
+    this->set_pattern(s);
+  }
+
+  // The string "%v" is corresponds to "<msg>" only.
+  void set_no_format () { set_format("%v"); }
+};
+
+// Concrete class, based on file and mpi policies
+template<typename LogFilePolicy   = LogNoFile,
+         typename MpiOutputPolicy = LogRootRank>
+class Logger : public LoggerBase {
 public:
 
   // primary constructor
@@ -81,8 +138,7 @@ public:
           const LogLevel log_level,
           const ekat::Comm& comm,
           const std::string& suffix = ".log")
-   : spdlog::logger(log_name)
-   , logfile_name  ("")
+   : LoggerBase(log_name)
   {
     // make the console sink; default console level = log level
     csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -91,6 +147,10 @@ public:
       fsink = LogFilePolicy::get_file_sink(logfile_name);
     } else {
       fsink = LogNoFile::get_file_sink(logfile_name);
+      // Even if the null sink does not log, setting its level to off
+      // allows us to detect from outside if fsink is null. Otherwise,
+      // we'd have to cast fsink to LogNoFile::file_sink_t every time.
+      fsink->set_level(LogLevel::off);
     }
     this->sinks().push_back(csink);
     this->sinks().push_back(fsink);
@@ -111,7 +171,7 @@ public:
          const LogLevel log_level,
          const ekat::Comm& comm,
          Logger<LogFilePolicy,MOP>& src) :
-    spdlog::logger(log_name)
+    LoggerBase(log_name)
   {
     csink = src.get_console_sink();
     fsink = src.get_file_sink();
@@ -126,47 +186,6 @@ public:
       this->set_level(log_level);
     }
   }
-
-  // accessors
-  spdlog::sink_ptr get_console_sink() const {
-    return csink;
-  }
-  spdlog::sink_ptr get_file_sink() const {
-    return fsink;
-  }
-
-  LogLevel log_level() const {
-    return this->level();
-  }
-  LogLevel console_level() const {
-    return this->get_console_sink()->level();
-  }
-  LogLevel file_level() const {
-    return this->get_file_sink()->level();
-  }
-
-  void set_log_level(const LogLevel lev) {
-    this->set_level(lev);
-  }
-  void set_console_level(const LogLevel lev) {
-    this->get_console_sink()->set_level(lev);
-  }
-  void set_file_level(const LogLevel lev) {
-    this->get_file_sink()->set_level(lev);
-  }
-
-  // Use this to change the format of logged messages.
-  // The default is "[date time] [log name] [log level] <msg>".
-  void set_format (const std::string& s = "%v") {
-    this->set_pattern(s);
-  }
-
-  // The string "%v" is corresponds to "<msg>" only.
-  void set_no_format () { set_format("%v"); }
-
-
-  // Get the log file name (if any)
-  std::string get_logfile_name () const { return logfile_name; }
 };
 
 } // namespace logger
