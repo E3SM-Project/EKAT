@@ -94,6 +94,10 @@ public:
     return m_name==nullptr ? to_string(*this) : m_name;
   }
 
+  void set_string (const std::string& s) {
+    m_name = s.c_str();
+  }
+
   bool is_dimensionless () const {
     return m_units[0].num==0 &&
            m_units[1].num==0 &&

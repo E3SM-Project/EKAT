@@ -75,6 +75,11 @@ TEST_CASE("units_framework", "") {
     REQUIRE (mix_ratio==nondim);
     REQUIRE (to_string(mix_ratio)=="1");
     REQUIRE (mix_ratio.get_string()=="kg/kg");
+
+    Units my_J = N*m;
+    my_J.set_string("J");
+    REQUIRE (my_J.get_string()==std::string("J"));
+
   }
 
   SECTION ("issue-52") {
