@@ -5,6 +5,8 @@
 #include "ekat/util/ekat_scaling_factor.hpp"
 #include "ekat/util/ekat_string_utils.hpp"
 
+#include <array>
+
 namespace ekat
 {
 
@@ -69,10 +71,11 @@ public:
          const RationalConstant& currentExp,
          const RationalConstant& amountExp,
          const RationalConstant& luminousIntensityExp,
-         const ScalingFactor& scalingFactor = RationalConstant::one())
+         const ScalingFactor& scalingFactor = ScalingFactor::one(),
+         const char* name = nullptr)
    : m_scaling {scalingFactor}
    , m_units {lengthExp,timeExp,massExp,temperatureExp,currentExp,amountExp,luminousIntensityExp}
-   , m_name {nullptr}
+   , m_name {name}
   {
     // Nothing to do here
   }
@@ -98,7 +101,7 @@ public:
     m_name = s.c_str();
   }
 
-  bool is_dimensionless () const {
+  constexpr bool is_dimensionless () const {
     return m_units[0].num==0 &&
            m_units[1].num==0 &&
            m_units[2].num==0 &&
@@ -123,8 +126,8 @@ private:
 
   friend std::string to_string(const Units&);
 
-  const ScalingFactor     m_scaling;
-  const RationalConstant  m_units[7];
+  const ScalingFactor                   m_scaling;
+  const std::array<RationalConstant,7>  m_units;
 
   const char*             m_name;
 };
@@ -286,13 +289,13 @@ inline std::ostream& operator<< (std::ostream& out, const Units& x) {
 
 // Note: no need to pass a string for these, since the default
 //       string construction would return the same thing.
-const Units m   = Units(1,0,0,0,0,0,0);
-const Units s   = Units(0,1,0,0,0,0,0);
-const Units kg  = Units(0,0,1,0,0,0,0);
-const Units K   = Units(0,0,0,1,0,0,0);
-const Units A   = Units(0,0,0,0,1,0,0);
-const Units mol = Units(0,0,0,0,0,1,0);
-const Units cd  = Units(0,0,0,0,0,0,1);
+const Units m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[0]);
+const Units s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[1]);
+const Units kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[2]);
+const Units K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[3]);
+const Units A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[4]);
+const Units mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
+const Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
 
 // === DERIVED === //
 
