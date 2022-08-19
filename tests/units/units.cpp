@@ -58,10 +58,9 @@ TEST_CASE("units_framework", "") {
     const auto km = kilo*m;
     const auto kPa = kilo*Pa;
 
-    Units nondim (ScalingFactor(1));
-    Units milliJ = milli*N*m;
-    Units mix_ratio = kg/kg;
-    mix_ratio.set_string("kg/kg");
+    constexpr Units nondim (ScalingFactor(1));
+    constexpr Units milliJ = milli*N*m;
+    constexpr Units mix_ratio (kg/kg,"kg/kg");
 
     // Verify operations
     REQUIRE (milliJ == kPa*pow(m,3)/mega);
@@ -76,6 +75,11 @@ TEST_CASE("units_framework", "") {
     REQUIRE (mix_ratio==nondim);
     REQUIRE (to_string(mix_ratio)=="1");
     REQUIRE (mix_ratio.get_string()=="kg/kg");
+
+    Units my_J = N*m;
+    my_J.set_string("J");
+    REQUIRE (my_J.get_string()==std::string("J"));
+
   }
 
   SECTION ("issue-52") {

@@ -120,7 +120,7 @@ constexpr RationalConstant operator/ (const RationalConstant& lhs, const Rationa
 
 // WARNING! If exp>>1, this generates a huge recursion. Use carefully!!
 template<typename IntType>
-inline constexpr
+constexpr
 typename std::enable_if<std::is_integral<IntType>::value,RationalConstant>::type
 pow (const RationalConstant& x, const IntType p) {
   // Three main cases:
