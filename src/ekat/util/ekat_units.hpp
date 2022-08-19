@@ -89,16 +89,18 @@ public:
 
   constexpr Units (const Units&) = default;
 
+  constexpr Units& operator= (const Units&) = default;
+
   static Units nondimensional () {
-    return Units(RationalConstant::one());
+    return Units(ScalingFactor::one());
+  }
+
+  void set_string (const char* name) {
+    m_name = name;
   }
 
   std::string get_string () const {
     return m_name==nullptr ? to_string(*this) : m_name;
-  }
-
-  void set_string (const std::string& s) {
-    m_name = s.c_str();
   }
 
   constexpr bool is_dimensionless () const {
@@ -129,7 +131,7 @@ private:
   const ScalingFactor                   m_scaling;
   const std::array<RationalConstant,7>  m_units;
 
-  const char*             m_name;
+  const char*                           m_name;
 };
 
 // === Operators/functions overload === //
@@ -140,7 +142,7 @@ private:
 
 // --- Comparison --- //
 
-constexpr inline bool operator==(const Units& lhs, const Units& rhs) {
+constexpr bool operator==(const Units& lhs, const Units& rhs) {
   // Do not compare names, since N == kg*m/(s*s)
   return lhs.m_scaling==rhs.m_scaling &&
          lhs.m_units[0]==rhs.m_units[0] &&
@@ -152,12 +154,12 @@ constexpr inline bool operator==(const Units& lhs, const Units& rhs) {
          lhs.m_units[6]==rhs.m_units[6];
 }
 
-constexpr inline bool operator!=(const Units& lhs, const Units& rhs) {
+constexpr bool operator!=(const Units& lhs, const Units& rhs) {
   return !(lhs==rhs);
 }
 
 // --- Multiplicaiton --- //
-constexpr inline Units operator*(const Units& lhs, const Units& rhs) {
+constexpr Units operator*(const Units& lhs, const Units& rhs) {
   return Units(lhs.m_units[0]+rhs.m_units[0],
                lhs.m_units[1]+rhs.m_units[1],
                lhs.m_units[2]+rhs.m_units[2],
@@ -167,7 +169,7 @@ constexpr inline Units operator*(const Units& lhs, const Units& rhs) {
                lhs.m_units[6]+rhs.m_units[6],
                lhs.m_scaling*rhs.m_scaling);
 }
-constexpr inline Units operator*(const ScalingFactor& lhs, const Units& rhs) {
+constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
   return Units(rhs.m_units[0],
                rhs.m_units[1],
                rhs.m_units[2],
@@ -177,18 +179,18 @@ constexpr inline Units operator*(const ScalingFactor& lhs, const Units& rhs) {
                rhs.m_units[6],
                lhs*rhs.m_scaling);
 }
-constexpr inline Units operator*(const Units& lhs, const ScalingFactor& rhs) {
+constexpr Units operator*(const Units& lhs, const ScalingFactor& rhs) {
   return rhs*lhs;
 }
-constexpr inline Units operator*(const RationalConstant& lhs, const Units& rhs) {
+constexpr Units operator*(const RationalConstant& lhs, const Units& rhs) {
   return ScalingFactor(lhs)*rhs;
 }
-constexpr inline Units operator*(const Units& lhs, const RationalConstant& rhs) {
+constexpr Units operator*(const Units& lhs, const RationalConstant& rhs) {
   return lhs*ScalingFactor(rhs);
 }
 
 // --- Division --- //
-constexpr inline Units operator/(const Units& lhs, const Units& rhs) {
+constexpr Units operator/(const Units& lhs, const Units& rhs) {
   return Units(lhs.m_units[0]-rhs.m_units[0],
                lhs.m_units[1]-rhs.m_units[1],
                lhs.m_units[2]-rhs.m_units[2],
@@ -198,7 +200,7 @@ constexpr inline Units operator/(const Units& lhs, const Units& rhs) {
                lhs.m_units[6]-rhs.m_units[6],
                lhs.m_scaling/rhs.m_scaling);
 }
-constexpr inline Units operator/(const Units& lhs, const ScalingFactor& rhs) {
+constexpr Units operator/(const Units& lhs, const ScalingFactor& rhs) {
   return Units(lhs.m_units[0],
                lhs.m_units[1],
                lhs.m_units[2],
@@ -208,7 +210,7 @@ constexpr inline Units operator/(const Units& lhs, const ScalingFactor& rhs) {
                lhs.m_units[6],
                lhs.m_scaling/rhs);
 }
-constexpr inline Units operator/(const ScalingFactor& lhs, const Units& rhs) {
+constexpr Units operator/(const ScalingFactor& lhs, const Units& rhs) {
   return Units(-rhs.m_units[0],
                -rhs.m_units[1],
                -rhs.m_units[2],
@@ -218,16 +220,16 @@ constexpr inline Units operator/(const ScalingFactor& lhs, const Units& rhs) {
                -rhs.m_units[6],
                lhs/rhs.m_scaling);
 }
-constexpr inline Units operator/(const RationalConstant& lhs, const Units& rhs) {
+constexpr Units operator/(const RationalConstant& lhs, const Units& rhs) {
   return ScalingFactor(lhs)/rhs;
 }
-constexpr inline Units operator/(const Units& lhs, const RationalConstant& rhs) {
+constexpr Units operator/(const Units& lhs, const RationalConstant& rhs) {
   return lhs/ScalingFactor(rhs);
 }
 
 // --- Powers and roots --- //
 
-constexpr inline Units pow(const Units& x, const RationalConstant& p) {
+constexpr Units pow(const Units& x, const RationalConstant& p) {
   return Units(x.m_units[0]*p,
                x.m_units[1]*p,
                x.m_units[2]*p,
@@ -238,7 +240,7 @@ constexpr inline Units pow(const Units& x, const RationalConstant& p) {
                pow(x.m_scaling,p));
 }
 
-constexpr inline Units sqrt(const Units& x) {
+constexpr Units sqrt(const Units& x) {
   return Units(x.m_units[0] / 2,
                x.m_units[1] / 2,
                x.m_units[2] / 2,
@@ -289,38 +291,38 @@ inline std::ostream& operator<< (std::ostream& out, const Units& x) {
 
 // Note: no need to pass a string for these, since the default
 //       string construction would return the same thing.
-const Units m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[0]);
-const Units s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[1]);
-const Units kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[2]);
-const Units K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[3]);
-const Units A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[4]);
-const Units mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
-const Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
+constexpr Units m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[0]);
+constexpr Units s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[1]);
+constexpr Units kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[2]);
+constexpr Units K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[3]);
+constexpr Units A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[4]);
+constexpr Units mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
+constexpr Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
 
 // === DERIVED === //
 
 // Thermomechanics
-const Units day  = 86400*s;                   // day          (time)
-const Units year = 365*day;                   // year         (time)
-const Units g    = Units(kg/1000,"g");        // gram         (mass)
-const Units N    = Units(kg*m/(s*s),"N");     // newton       (force)
-const Units dyn  = N/(10000);                 // dyne         (force)
-const Units Pa   = Units(N/(m*m),"Pa");       // pascal       (pressure)
-const Units bar  = Units(100000*Pa,"bar");    // bar          (pressure)
-const Units atm  = Units(101325*Pa,"atm");    // atmosphere   (pressure)
-const Units J    = Units(N*m,"J");            // joule        (energy)
-const Units W    = Units(J/s,"W");            // watt         (power)
+constexpr Units day  = 86400*s;                   // day          (time)
+constexpr Units year = 365*day;                   // year         (time)
+constexpr Units g    = Units(kg/1000,"g");        // gram         (mass)
+constexpr Units N    = Units(kg*m/(s*s),"N");     // newton       (force)
+constexpr Units dyn  = N/(10000);                 // dyne         (force)
+constexpr Units Pa   = Units(N/(m*m),"Pa");       // pascal       (pressure)
+constexpr Units bar  = Units(100000*Pa,"bar");    // bar          (pressure)
+constexpr Units atm  = Units(101325*Pa,"atm");    // atmosphere   (pressure)
+constexpr Units J    = Units(N*m,"J");            // joule        (energy)
+constexpr Units W    = Units(J/s,"W");            // watt         (power)
 
 // Electro-magnetism
-const Units C    = Units(A*s,"C");            // coulomb      (charge)
-const Units V    = Units(J/C,"V");            // volt         (voltage)
-const Units T    = Units(N/(A*m),"T");        // tesla        (magnetic field)
-const Units F    = Units(C/V,"F");            // farad        (capacitance)
-const Units Wb   = Units(V*s,"Wb");           // weber        (magnetic flux)
-const Units H    = Units(Wb/A,"H");           // henri        (inductance)
-const Units Sv   = Units(J/kg,"Sv");          // sievert      (radiation dose)
-const Units rem  = Units(Sv/100,"rem");       // rem          (radiation dose)
-const Units Hz   = Units(1/s,"Hz");           // hertz        (frequency)
+constexpr Units C    = Units(A*s,"C");            // coulomb      (charge)
+constexpr Units V    = Units(J/C,"V");            // volt         (voltage)
+constexpr Units T    = Units(N/(A*m),"T");        // tesla        (magnetic field)
+constexpr Units F    = Units(C/V,"F");            // farad        (capacitance)
+constexpr Units Wb   = Units(V*s,"Wb");           // weber        (magnetic flux)
+constexpr Units H    = Units(Wb/A,"H");           // henri        (inductance)
+constexpr Units Sv   = Units(J/kg,"Sv");          // sievert      (radiation dose)
+constexpr Units rem  = Units(Sv/100,"rem");       // rem          (radiation dose)
+constexpr Units Hz   = Units(1/s,"Hz");           // hertz        (frequency)
 
 } // namespace units
 
