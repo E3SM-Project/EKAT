@@ -29,6 +29,18 @@ TEST_CASE("string","string") {
     REQUIRE (upper==upper_case(lower));
   }
 
+  SECTION ("join") {
+    std::vector<std::string> v = {"hello","world"};
+    std::list<std::string> l = {"hello","world"};
+    std::string a[4] = {"hello", " ", "world", "!"};
+    REQUIRE (join(v,",")=="hello,world");
+    REQUIRE (join(l,", o beautiful ")=="hello, o beautiful world");
+    REQUIRE (join(a,"")=="hello world!");
+
+    std::vector<int> i = {1,2,3};
+    REQUIRE (join(i,",")=="1,2,3");
+  }
+
   SECTION ("case_insensitive_string") {
     CaseInsensitiveString cis1 = "field_1";
     CaseInsensitiveString cis2 = "fIeLd_1";

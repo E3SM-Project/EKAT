@@ -3,6 +3,7 @@
 
 #include <ekat/ekat_parameter_list.hpp>
 
+#include <sstream>
 #include <string>
 #include <vector>
 #include <list>
@@ -38,6 +39,27 @@ std::string strint (const std::string& s, const int i);
 
 // Conver the string to all upper case
 std::string upper_case (const std::string& s);
+
+// Join string-like version of iterable containers entries, using given separator.
+// E.g., if v is a vector of strings, out = v[0]+sep+v[1]+sep+...
+template<typename Iterable>
+std::string join (const Iterable& v, const std::string& sep) {
+  auto it = std::cbegin(v);
+  auto end = std::cend(v);
+  if (it==end) {
+    return "";
+  }
+
+  std::stringstream ss;
+  ss << *it;
+  ++it;
+  for (; it!=end; ++it) {
+    ss << sep;
+    ss << *it;
+  }
+
+  return ss.str();
+}
 
 // Split a string into tokens, according to any of the provided delimiters.
 // If atomic!="", substrings matching atomic will not be split with
