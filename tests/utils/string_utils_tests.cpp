@@ -36,6 +36,9 @@ TEST_CASE("string","string") {
     REQUIRE (join(v,",")=="hello,world");
     REQUIRE (join(l,", o beautiful ")=="hello, o beautiful world");
     REQUIRE (join(a,"")=="hello world!");
+
+    std::vector<int> i = {1,2,3};
+    REQUIRE (join(i,",")=="1,2,3");
   }
 
   SECTION ("case_insensitive_string") {
