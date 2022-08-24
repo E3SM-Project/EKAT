@@ -119,7 +119,7 @@ endmacro ()
 #############################
 # Warnings
 #############################
-macro (SetWarningFlags)
+function (SetWarningFlags)
   # enable all warning but disable Intel vectorization remarks like
   #    "remark: simd loop has only one iteration"
   # since we would get hit with 1000's of those anytime we use Packs with packsize=1.
@@ -133,7 +133,7 @@ macro (SetWarningFlags)
   endif()
 
   SetFlags(FFLAGS ${FFLAGS} CFLAGS -Wall CXXFLAGS ${CXXFLAGS})
-endmacro()
+endfunction()
 
 #############################
 # Profiling/coverage flags
