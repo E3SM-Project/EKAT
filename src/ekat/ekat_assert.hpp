@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <stdexcept>  // For std::logic_error
 
+#include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE
+
 /*
  * Asserts and error checking macros/functions.
  *
