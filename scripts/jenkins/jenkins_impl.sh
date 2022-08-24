@@ -33,13 +33,19 @@ COMP_J=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE comp_j)
 TEST_J=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE test_j)
 ISCUDA=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE cuda)
 
-# Build both SP and DP. We build both, even if the first fails,
-# so that we can catch issues of both builds in just one run.
+# We create separate builds for single precision (SP), double precision (DP),
+# DP with floating point exceptions enabled (FPE), and, on CUDA, DP with
+# Cuda Unified Virtual Memory (UVM) as memory space.
 
 FAILED_SP=""
 FAILED_DP=""
+FAILED_FPE=""
+FAILED_UVM=""
 RET_SP=0
 RET_DP=0
+RET_FPE=0
+RET_UVM=0
+
 export CTEST_PARALLEL_LEVEL=${TEST_J}
 EKAT_THREAD_SETTINGS=""
 if [[ "$ISCUDA" == "False" ]]; then
@@ -56,6 +62,7 @@ cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_CXX_COMPILER=${MPICXX}                             \
     -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
     -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
+    -DEKAT_ENABLE_FPE=OFF                                      \
     -DEKAT_ENABLE_TESTS=ON                                     \
     -DEKAT_TEST_DOUBLE_PRECISION=OFF                           \
     -DEKAT_TEST_SINGLE_PRECISION=ON                            \
@@ -98,6 +105,7 @@ cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
     -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
     -DEKAT_ENABLE_TESTS=ON                                     \
+    -DEKAT_ENABLE_FPE=OFF                                      \
     -DEKAT_TEST_DOUBLE_PRECISION=ON                            \
     -DEKAT_TEST_SINGLE_PRECISION=OFF                           \
     ${EKAT_THREAD_SETTINGS}                                    \
@@ -128,7 +136,51 @@ else
 fi
 cd ${WORK_DIR}
 
-RET_UVM=0
+if [[ "$ISCUDA" == "False" ]]; then
+  # Build and test double precision with FPE on, and packsize=1
+  mkdir -p ekat-build/ekat-fpe && cd ekat-build/ekat-fpe && rm -rf *
+
+  cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
+      -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-fpe   \
+      -DCMAKE_BUILD_TYPE=DEBUG                                   \
+      -DCMAKE_C_COMPILER=${MPICC}                                \
+      -DCMAKE_CXX_COMPILER=${MPICXX}                             \
+      -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
+      -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
+      -DEKAT_ENABLE_TESTS=ON                                     \
+      -DEKAT_ENABLE_FPE=ON                                       \
+      -DEKAT_TEST_PACK_SIZE=1                                    \
+      -DEKAT_TEST_DOUBLE_PRECISION=ON                            \
+      -DEKAT_TEST_SINGLE_PRECISION=OFF                           \
+      ${EKAT_THREAD_SETTINGS}                                    \
+      ${WORK_DIR}/ekat-src
+
+  if [ $? -ne 0 ]; then
+      echo "Something went wrong while configuring the FPE case."
+      RET_FPE=1
+  else
+      ${BATCHP} make -j ${COMP_J}
+      if [ $? -ne 0 ]; then
+          echo "Something went wrong while building the FPE case."
+          RET_FPE=1
+      else
+          ${BATCHP} ctest --output-on-failure
+          if [ $? -ne 0 ]; then
+              echo "Something went wrong while testing the FPE case."
+              RET_FPE=1
+              FAILED_FPE=$(cat Testing/Temporary/LastTestsFailed.log)
+          else
+              make install
+              if [ $? -ne 0 ]; then
+                  echo "Something went wrong while installing the FPE case."
+                  RET_FPE=1
+              fi
+          fi
+      fi
+  fi
+  cd ${WORK_DIR}
+fi
+
 if [[ "$ISCUDA" == "True" ]]; then
   # Build and test Cuda UVM
   mkdir -p ekat-build/ekat-uvm && cd ekat-build/ekat-uvm && rm -rf *
@@ -184,13 +236,18 @@ if [[ $RET_DP -ne 0 && "$FAILED_DP" != "" ]]; then
     echo "$FAILED_DP"
 fi
 
+if [[ $RET_FPE -ne 0 && "$FAILED_FPE" != "" ]]; then
+    echo "List of failed FPE tests:"
+    echo "$FAILED_FPE"
+fi
+
 if [[ $RET_UVM -ne 0 && "$FAILED_UVM" != "" ]]; then
     echo "List of failed DP tests:"
     echo "$FAILED_UVM"
 fi
 
 # Check if all builds succeded, and establish success/fail
-if [[ $RET_SP -ne 0 || $RET_DP -ne 0  || $RET_UVM -ne 0 ]]; then
+if [[ $RET_SP -ne 0 || $RET_DP -ne 0 || $RET_FPE -ne 0 || $RET_UVM -ne 0 ]]; then
     exit 1;
 fi
 
