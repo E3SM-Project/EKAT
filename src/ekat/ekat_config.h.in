@@ -1,9 +1,6 @@
 #ifndef EKAT_CONFIG_H
 #define EKAT_CONFIG_H
 
-// If defined, ekat::pack objects check indices against bounds.
-#cmakedefine EKAT_PACK_CHECK_BOUNDS
-
 // Whether MPI errors should abort
 #cmakedefine EKAT_MPI_ERRORS_ARE_FATAL
 
