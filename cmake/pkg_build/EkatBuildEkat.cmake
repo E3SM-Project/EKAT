@@ -47,32 +47,52 @@ macro (BuildEkat)
   # Process EKAT only if not already done
   if (NOT IS_EKAT_BUILT)
 
+    # Parse optional inputs. Notice that we put boolean options as single-value args,
+    # since we want the user to be able to explicitly set them to OFF, rather than
+    # let EKAT pick. Besides, it's much easier to do
+    #   BuildEkat(arg1 value1 arg7 value2 ...)
+    # rather than building the string "arg1 arg7 ..." based on host project config
     set(options)
-    set(oneValueArgs
-      PREFIX
+    set(boolArgs
+      ENABLE_VALGRIND
+      ENABLE_CUDA_MEMCHECK
+      ENABLE_COVERAGE
+      ENABLE_FPE
       MPI_ERRORS_ARE_FATAL
       CONSTEXPR_ASSERT
+      DISABLE_TPL_WARNINGS
+      DEFAULT_BFB
       MIMIC_GPU
-      # The following are only for testing
+      # The following are only for EKAT's testing
       ENABLE_TESTS
+      TEST_STRICT_FP
+      TEST_POSSIBLY_NO_PACK
+    )
+    set(strArgs
+      # The following are only for EKAT's testing
       TEST_MAX_THREADS
       TEST_THREADS_INC
       TEST_PACK_SIZE
       TEST_SMALL_PACK_SIZE
-      TEST_POSSIBLY_NO_PACK
       TEST_POSSIBLY_NO_PACK_SIZE
-      TEST_STRICT_FP
     )
     set(multiValueArgs)
-    cmake_parse_arguments(BUILD_EKAT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+    cmake_parse_arguments(be "${options}" "${boolArgs} ${strArgs}" "${multiValueArgs}" ${ARGN} )
 
-    # First, set EKAT_BLAH to ${${PREFIX}_BLAH}. If not set, DO set defaults
-    setVars("${BUILD_EKAT_PREFIX}" TRUE)
+    # Parse the optional arguments. If set, use them to set cache vars.
+    foreach (opt IN ITEMS ${boolArgs})
+      if (DEFINED be_${opt})
+        set (EKAT_${opt} ${be_${opt}} CACHE BOOL "")
+      endif()
+    endforeach()
+    foreach (arg IN ITEMS ${strArgs})
+      if (DEFINED be_${arg})
+        set (EKAT_${arg} ${be_${arg}} CACHE STRING "")
+      endif()
+    endforeach()
 
-    # Then parse the optional input, and if set, override the existing value.
-    # DO NOT set defaults, or you may override something
-    setVars("BUILD_EKAT" FALSE)
-
+    # Now that all user-requested ekat options are set, process ekat subdir.
+    # NOTE: ekat's CMakeLists.txt will pick defaults for all unset ekat config options
     add_subdirectory (${EKAT_CMAKE_PATH}/../ ${CMAKE_BINARY_DIR}/externals/ekat)
 
     if (EKAT_DISABLE_TPL_WARNINGS)
@@ -88,107 +108,3 @@ macro (BuildEkat)
     message ("Using Ekat previously configured in this project.\n")
   endif()
 endmacro(BuildEkat)
-
-# Set EKAT_BLAH variables from ${PREFIX}_BLAH variables. If the latter are not
-# defined, use some defaults
-# Note: all the EKAT variables MUST be cache variables, or EKAT will overwrite them
-#       when calling set (EKAT_BLAH value TYPE CACHE "")
-macro (setVars PREFIX SET_DEFAULTS)
-
-  # Determine if this is a debug build
-  string(TOLOWER "${CMAKE_BUILD_TYPE}" setVars_CMAKE_BUILD_TYPE_ci)
-  if ("${setVars_CMAKE_BUILD_TYPE_ci}" STREQUAL "debug")
-    set (setVars_DEBUG_BUILD TRUE)
-  else ()
-    set (setVars_DEBUG_BUILD FALSE)
-  endif ()
-
-  ### Needed to configure ekat ###
-
-  if (DEFINED ${PREFIX}_MIMIC_GPU)
-    set (EKAT_MIMIC_GPU ${${PREFIX}_MIMIC_GPU} CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_MPI_ERRORS_ARE_FATAL)
-    set (EKAT_MPI_ERRORS_ARE_FATAL ${${PREFIX}_MPI_ERRORS_ARE_FATAL} CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_FPMODEL)
-    set (EKAT_FPMODEL ${${PREFIX}_FPMODEL} CACHE STRING "")
-  elseif (setVars_DEBUG_BUILD AND SET_DEFAULTS)
-    set (EKAT_FPMODEL "strict" CACHE STRING "")
-  endif()
-
-  if (DEFINED ${PREFIX}_PACK_CHECK_BOUNDS)
-    set (EKAT_PACK_CHECK_BOUNDS ${${PREFIX}_PACK_CHECK_BOUNDS} CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_DISABLE_TPL_WARNINGS)
-    set (EKAT_DISABLE_TPL_WARNINGS ${${PREFIX}_DISABLE_TPL_WARNINGS} CACHE BOOL "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_DISABLE_TPL_WARNINGS OFF CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_ENABLE_FPE)
-    set (EKAT_ENABLE_FPE ${${PREFIX}_ENABLE_FPE} CACHE BOOL "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_ENABLE_FPE OFF CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_ENABLE_TESTS)
-    set (EKAT_ENABLE_TESTS ${${PREFIX}_ENABLE_TESTS} CACHE BOOL "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_ENABLE_TESTS ON CACHE BOOL "")
-  endif()
-
-  ### Needed only if EKAT_ENABLE_TESTS=ON ###
-
-  if (DEFINED ${PREFIX}_TEST_MAX_THREADS)
-    set (EKAT_TEST_MAX_THREADS ${${PREFIX}_TEST_MAX_THREADS} CACHE STRING "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_TEST_MAX_THREADS 1 CACHE STRING "")
-  endif()
-
-  if (DEFINED ${PREFIX}_TEST_THREAD_INC)
-    set (EKAT_TEST_THREAD_INC ${${PREFIX}_TEST_THREAD_INC} CACHE STRING "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_TEST_THREAD_INC 1 CACHE STRING "")
-  endif()
-
-  if (DEFINED ${PREFIX}_TEST_STRICT_FP)
-    set (EKAT_TEST_STRICT_FP ${${PREFIX}_TEST_STRICT_FP} CACHE STRING "")
-  elseif (setVars_DEBUG_BUILD AND SET_DEFAULTS)
-    set (EKAT_TEST_STRICT_FP ON CACHE BOOL "")
-  endif()
-
-  if (DEFINED ${PREFIX}_TEST_PACK_SIZE)
-    set (EKAT_TEST_PACK_SIZE ${${PREFIX}_TEST_PACK_SIZE} CACHE STRING "")
-  elseif (SET_DEFAULTS)
-    if (EKAT_ENABLE_GPU)
-      set (EKAT_TEST_PACK_SIZE 1 CACHE STRING "")
-    else ()
-      set (EKAT_TEST_PACK_SIZE 16 CACHE STRING "")
-    endif()
-  endif()
-
-  if (DEFINED ${PREFIX}_TEST_SMALL_PACK_SIZE)
-    set (EKAT_TEST_SMALL_PACK_SIZE ${${PREFIX}_TEST_SMALL_PACK_SIZE} CACHE STRING "")
-  elseif (SET_DEFAULTS)
-    set (EKAT_TEST_SMALL_PACK_SIZE ${EKAT_TEST_PACK_SIZE} CACHE STRING "")
-  endif()
-
-  if (DEFINED ${PREFIX}_TEST_POSSIBLY_NO_PACK)
-    set (EKAT_TEST_POSSIBLY_TEST_NO_PACK ${${PREFIX}_TEST_POSSIBLY_NO_PACK} CACHE STRING "")
-  elseif (SET_DEFAULTS)
-    if (Kokkos_ARCH_SKX)
-      set (EKAT_TEST_POSSIBLY_TEST_NO_PACK TRUE)
-    else ()
-      set (EKAT_TEST_POSSIBLY_NO_PACK FALSE)
-    endif ()
-  endif()
-
-  ### Cleanup ###
-
-  unset (setVars_CMAKE_BUILD_TYPE_ci)
-  unset (setVars_DEBUG_BUILD)
-endmacro (setVars)
