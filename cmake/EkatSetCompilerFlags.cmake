@@ -119,21 +119,21 @@ endmacro ()
 #############################
 # Warnings
 #############################
-function (SetWarningFlags)
+macro (SetWarningFlags)
   # enable all warning but disable Intel vectorization remarks like
   #    "remark: simd loop has only one iteration"
   # since we would get hit with 1000's of those anytime we use Packs with packsize=1.
 
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
-    set (FFLAGS "-warn all -diag-disable=remark -fpscomp logicals")
-    set (CXXFLAGS "-Wall -diag-disable=remark")
+    set (SWF_FFLAGS "-warn all -diag-disable=remark -fpscomp logicals")
+    set (SWF_CXXFLAGS "-Wall -diag-disable=remark")
   else()
-    set (FFLAGS -Wall)
-    set (CXXFLAGS -Wall)
+    set (SWF_FFLAGS -Wall)
+    set (SWF_CXXFLAGS -Wall)
   endif()
 
-  SetFlags(FFLAGS ${FFLAGS} CFLAGS -Wall CXXFLAGS ${CXXFLAGS})
-endfunction()
+  SetFlags(FFLAGS ${SWF_FFLAGS} CFLAGS -Wall CXXFLAGS ${SWF_CXXFLAGS})
+endmacro()
 
 #############################
 # Profiling/coverage flags
