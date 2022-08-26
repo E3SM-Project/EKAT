@@ -38,9 +38,13 @@ void runtime_abort(const std::string& message, int code) {
 
 int get_default_fpes () {
 #ifdef EKAT_ENABLE_FPE
+#ifdef EKAT_ENABLE_DEFAULT_FPE
   return (FE_DIVBYZERO |
           FE_INVALID   |
           FE_OVERFLOW);
+#else
+  return 0;
+#endif
 #else
   fprintf(stderr, "ekat::error::get_default_fpes: EKAT floating point exception support is disabled!\n");
   fprintf(stderr, "ekat::error::get_default_fpes: Returning 0.\n");
