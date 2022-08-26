@@ -4,6 +4,7 @@
 #include "ekat/util/ekat_arch.hpp"
 
 #include <vector>
+#include <cfenv>
 
 namespace ekat_impl {
 
@@ -112,7 +113,7 @@ void initialize_ekat_session (int argc, char **argv, bool print_config) {
   }
 
 #ifdef EKAT_ENABLE_FPE_DEFAULT_MASK
-  enable_fpes(get_default_fpes());
+  enable_fpes(ekat_impl::get_default_fpes());
 #endif
 
   if (print_config) std::cout << ekat_config_string() << "\n";
