@@ -16,8 +16,6 @@
 // Whether we trap floating point exceptions
 #cmakedefine EKAT_ENABLE_FPE
 
-// Add a substitute for GNU feenableexcept if necessary
-#cmakedefine EKAT_HAVE_FEENABLEEXCEPT
 
 // Decide whether ekat defaults to BFB behavior when possible/appropriate
 #cmakedefine EKAT_DEFAULT_BFB

@@ -43,6 +43,10 @@ target_include_directories(ekat PUBLIC
 # Enable C Pre-Processor for Fortran.
 # No reason to pollute C/C++ flags (CPP always runs), so add the flag only for Fortran files.
 target_compile_options(ekat PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
+if (EKAT_HAVE_FEENABLEEXCEPT)
+  # This is needed internally by ekat, so let's keep it private
+  target_compile_definitions (ekat PRIVATE EKAT_HAVE_FEENABLEEXCEPT)
+endif()
 
 target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
 set_target_properties(ekat PROPERTIES
