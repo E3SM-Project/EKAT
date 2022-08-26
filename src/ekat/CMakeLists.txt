@@ -20,53 +20,6 @@ set(EKAT_SOURCES
   util/ekat_test_utils.cpp
 )
 
-# Make sure headers can be installed.
-set(EKAT_HEADERS
-  ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
-  ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f
-  ekat.hpp
-  ekat_assert.hpp
-  ekat_macros.hpp
-  ekat_pack.hpp
-  ekat_pack_kokkos.hpp
-  ekat_pack_utils.hpp
-  ekat_parameter_list.hpp
-  ekat_parse_yaml_file.hpp
-  ekat_scalar_traits.hpp
-  ekat_session.hpp
-  ekat_type_traits.hpp
-  ekat_workspace.hpp
-  ekat_workspace_impl.hpp
-  io/ekat_yaml.hpp
-  kokkos/ekat_kokkos_meta.hpp
-  kokkos/ekat_kokkos_types.hpp
-  kokkos/ekat_kokkos_utils.hpp
-  kokkos/ekat_subview_utils.hpp
-  logging/ekat_logger.hpp
-  logging/ekat_log_file.hpp
-  logging/ekat_log_mpi.hpp
-  mpi/ekat_comm.hpp
-  std_meta/ekat_std_any.hpp
-  std_meta/ekat_std_enable_shared_from_this.hpp
-  std_meta/ekat_std_type_traits.hpp
-  std_meta/ekat_std_utils.hpp
-  util/ekat_arch.hpp
-  util/ekat_factory.hpp
-  util/ekat_feutils.hpp
-  util/ekat_file_utils.hpp
-  util/ekat_lin_interp.hpp
-  util/ekat_lin_interp_impl.hpp
-  util/ekat_math_utils.hpp
-  util/ekat_md_array.hpp
-  util/ekat_rational_constant.hpp
-  util/ekat_scaling_factor.hpp
-  util/ekat_string_utils.hpp
-  util/ekat_test_utils.hpp
-  util/ekat_tridiag.hpp
-  util/ekat_units.hpp
-  util/ekat_upper_bound.hpp
-)
-
 # Create the library, and set all its properties
 add_library(ekat ${EKAT_SOURCES})
 
