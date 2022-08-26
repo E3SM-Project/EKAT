@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <stdexcept>  // For std::logic_error
 
-#include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE
+#include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE_SUPPORT
 
 /*
  * Asserts and error checking macros/functions.
@@ -104,7 +104,7 @@ void runtime_abort(const std::string& message, int code = -1);
 
 /*
  * Routines to activate/deactivate floating point exceptions.
- * These routines are only meaningful if EKAT_ENABLE_FPE is defined.
+ * These routines are only meaningful if EKAT_ENABLE_FPE_SUPPORT is defined.
  * The last two functions activate/deactivate a predefined set
  * of FPEs: FE_DIVBYZERO, FE_INVALID, and FE_OVERFLOW.
  * If you need to temporarily enable/disable a specific exception,
@@ -119,17 +119,8 @@ void runtime_abort(const std::string& message, int code = -1);
  *          to re-enable them after you're done.
  */
 
-int get_default_fpes ();
-
 void enable_fpes (const int mask);
 void disable_fpes (const int mask);
-
-inline void enable_default_fpes () {
-  enable_fpes(get_default_fpes());
-}
-inline void disable_default_fpes () {
-  disable_fpes(get_default_fpes());
-}
 
 int get_enabled_fpes ();
 void disable_all_fpes ();

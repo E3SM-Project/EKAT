@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "ekat/ekat_assert.hpp"
+#include "ekat/util/ekat_feutils.hpp"
 #include "ekat/util/ekat_arch.hpp"
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 
@@ -36,20 +37,41 @@ std::string ekat_config_string () {
      // << " packsize " << EKAT_PACK_SIZE
      << " compiler id: " <<
 #if defined __INTEL_COMPILER
-    "Intel\n"
+    "Intel\n";
 #elif defined __INTEL_LLVM_COMPILER
-    "IntelLLVM\n"
+    "IntelLLVM\n";
 #elif defined __HIPCC__
-    "AMD Clang\n"
+    "AMD Clang\n";
 #elif defined __GNUG__
-    "GCC\n"
+    "GCC\n";
 #else
-    "unknown\n"
+    "unknown\n";
 #endif
-     << " default FPE mask: " <<
-      ( get_default_fpes() == 0 ? "0 (NONE) \n" :
-        std::to_string(get_default_fpes()) + " (FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW) \n")
-     << " #host threads: " <<
+#ifdef EKAT_ENABLE_FPE_SUPPORT
+  auto mask = get_enabled_fpes();
+  ss << " FPE support is enabled, current FPE mask: " << mask;
+  if (mask==0) {
+    ss << " (NONE)";
+  } else {
+    std::string delim = "";
+    if (mask & FE_INVALID) {
+      ss << delim << " FE_INVALID";
+      delim = " |";
+    }
+    if (mask & FE_DIVBYZERO) {
+      ss << delim << " FE_DIVBYZERO";
+      delim = " |";
+    }
+    if (mask & FE_OVERFLOW) {
+      ss << delim << " FE_OVERFLOW";
+      delim = " |";
+    }
+  }
+  ss << "\n";
+#else
+  ss << " FPE support is disabled\n";
+#endif
+  ss << " #host threads: " <<
 #ifdef KOKKOS_ENABLE_OPENMP
          Kokkos::OpenMP::concurrency()
 #elif defined _OPENMP

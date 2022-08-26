@@ -5,7 +5,7 @@
 #include "ekat_assert.hpp"
 #include "ekat_session.hpp"
 
-#ifdef EKAT_ENABLE_FPE
+#ifdef EKAT_ENABLE_FPE_SUPPORT
 #include "util/ekat_feutils.hpp"
 #endif
 
@@ -36,20 +36,8 @@ void runtime_abort(const std::string& message, int code) {
 
 } // namespace ekat
 
-int get_default_fpes () {
-#ifdef EKAT_ENABLE_FPE
-  return (FE_DIVBYZERO |
-          FE_INVALID   |
-          FE_OVERFLOW);
-#else
-  fprintf(stderr, "ekat::error::get_default_fpes: EKAT floating point exception support is disabled!\n");
-  fprintf(stderr, "ekat::error::get_default_fpes: Returning 0.\n");
-  return 0;
-#endif
-}
-
 void enable_fpes (const int mask) {
-#ifdef EKAT_ENABLE_FPE
+#ifdef EKAT_ENABLE_FPE_SUPPORT
   // Make sure we don't throw because one of those exceptions
   // was already set, due to previous calculations
   feclearexcept(mask);
@@ -57,37 +45,41 @@ void enable_fpes (const int mask) {
   feenableexcept(mask);
 #else
   (void)mask;
-  fprintf(stderr, "ekat::error::enable_fpes: EKAT floating point exception support is disabled!\n");
-  fprintf(stderr, "ekat::error::enable_fpes: This call has no effect.\n");
+  fprintf(stderr,
+      "WARNING! EKAT floating point exception support is disabled!\n"
+      "         This call to ekat::enable_fpes has no effect.\n");
 #endif
 }
 
 void disable_fpes (const int mask) {
-#ifdef EKAT_ENABLE_FPE
+#ifdef EKAT_ENABLE_FPE_SUPPORT
   fedisableexcept(mask);
 #else
   (void)mask;
-  fprintf(stderr, "ekat::error::disable_fpes: EKAT floating point exception support is disabled!\n");
-  fprintf(stderr, "ekat::error::disable_fpes: This call has no effect.\n");
+  fprintf(stderr,
+      "WARNING! EKAT floating point exception support is disabled!\n"
+      "         This call to ekat::disable_fpes has no effect.\n");
 #endif
 }
 
 int get_enabled_fpes () {
-#ifdef EKAT_ENABLE_FPE
+#ifdef EKAT_ENABLE_FPE_SUPPORT
   return fegetexcept();
 #else
-  fprintf(stderr, "ekat::error::get_enabled_fpes: EKAT floating point exception support is disabled!\n");
-  fprintf(stderr, "ekat::error::get_enabled_fpes: Returning 0.\n");
+  fprintf(stderr,
+      "WARNING! EKAT floating point exception support is disabled!\n"
+      "         This call to ekat::get_enabled_fpes returns 0.\n");
   return 0;
 #endif
 }
 
 void disable_all_fpes () {
-#ifdef EKAT_ENABLE_FPE
+#ifdef EKAT_ENABLE_FPE_SUPPORT
   disable_fpes(FE_ALL_EXCEPT);
 #else
-  fprintf(stderr, "ekat::error::disable_all_fpes: EKAT floating point exception support is disabled!\n");
-  fprintf(stderr, "ekat::error::disable_all_fpes: This call has no effect.\n");
+  fprintf(stderr,
+      "WARNING! EKAT floating point exception support is disabled!\n"
+      "         This call to ekat::disable_all_fpes has no effect.\n");
 #endif
 }
 

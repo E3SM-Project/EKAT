@@ -77,7 +77,6 @@ void initialize_ekat_session (bool print_config) {
 }
 
 void initialize_ekat_session (int argc, char **argv, bool print_config) {
-  enable_default_fpes ();
 
   if (!Kokkos::is_initialized()) {
     // If user has not specified any args containing "--kokkos",
