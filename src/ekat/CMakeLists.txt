@@ -102,9 +102,6 @@ install (DIRECTORY ${EKAT_SOURCE_DIR}/extern/Catch2/single_include/catch2
 # unit test don't have to all pointlessly rebuild the same file.
 add_library(ekat_test_session util/ekat_test_session.cpp)
 target_link_libraries(ekat_test_session PUBLIC ekat)
-if (EKAT_ENABLE_DEFAULT_FPE)
-  target_compile_definitions(ekat_test_session PUBLIC EKAT_ENABLE_DEFAULT_FPE)
-endif()
 
 install (TARGETS ekat_test_session
          EXPORT EkatTargets

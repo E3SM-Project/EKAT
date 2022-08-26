@@ -62,7 +62,7 @@ cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_CXX_COMPILER=${MPICXX}                             \
     -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
     -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
-    -DEKAT_ENABLE_DEFAULT_FPE=OFF                              \
+    -DEKAT_ENABLE_FPE_DEFAULT_MASK=OFF                         \
     -DEKAT_ENABLE_TESTS=ON                                     \
     -DEKAT_TEST_DOUBLE_PRECISION=OFF                           \
     -DEKAT_TEST_SINGLE_PRECISION=ON                            \
@@ -105,7 +105,7 @@ cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
     -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
     -DEKAT_ENABLE_TESTS=ON                                     \
-    -DEKAT_ENABLE_DEFAULT_FPE=OFF                              \
+    -DEKAT_ENABLE_FPE_DEFAULT_MASK=OFF                         \
     -DEKAT_TEST_DOUBLE_PRECISION=ON                            \
     -DEKAT_TEST_SINGLE_PRECISION=OFF                           \
     ${EKAT_THREAD_SETTINGS}                                    \
@@ -148,7 +148,7 @@ if [[ "$ISCUDA" == "False" ]]; then
       -DCMAKE_Fortran_COMPILER=${MPIF90}                         \
       -DEKAT_DISABLE_TPL_WARNINGS=ON                             \
       -DEKAT_ENABLE_TESTS=ON                                     \
-      -DEKAT_ENABLE_DEFAULT_FPE=OFF                              \
+      -DEKAT_ENABLE_FPE_DEFAULT_MASK=OFF                         \
       -DEKAT_TEST_PACK_SIZE=1                                    \
       -DEKAT_TEST_DOUBLE_PRECISION=ON                            \
       -DEKAT_TEST_SINGLE_PRECISION=OFF                           \

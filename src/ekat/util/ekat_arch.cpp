@@ -47,7 +47,7 @@ std::string ekat_config_string () {
 #else
     "unknown\n";
 #endif
-#ifdef EKAT_ENABLE_FPE_SUPPORT
+#ifdef EKAT_ENABLE_FPE
   auto mask = get_enabled_fpes();
   ss << " FPE support is enabled, current FPE mask: " << mask;
   if (mask==0) {

@@ -14,7 +14,10 @@
 #cmakedefine EKAT_MIMIC_GPU
 
 // Whether floating point exceptions utilities support is provided
-#cmakedefine EKAT_ENABLE_FPE_SUPPORT
+#cmakedefine EKAT_ENABLE_FPE
+
+// Whether EKAT will set some "reasonable" fpe mask during ekat_initialize_sessin
+#cmakedefine EKAT_ENABLE_FPE_DEFAULT_MASK
 
 // Decide whether ekat defaults to BFB behavior when possible/appropriate
 #cmakedefine EKAT_DEFAULT_BFB

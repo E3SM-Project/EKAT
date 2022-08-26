@@ -5,7 +5,7 @@
 #include "ekat_assert.hpp"
 #include "ekat_session.hpp"
 
-#ifdef EKAT_ENABLE_FPE_SUPPORT
+#ifdef EKAT_ENABLE_FPE
 #include "util/ekat_feutils.hpp"
 #endif
 
@@ -37,7 +37,7 @@ void runtime_abort(const std::string& message, int code) {
 } // namespace ekat
 
 void enable_fpes (const int mask) {
-#ifdef EKAT_ENABLE_FPE_SUPPORT
+#ifdef EKAT_ENABLE_FPE
   // Make sure we don't throw because one of those exceptions
   // was already set, due to previous calculations
   feclearexcept(mask);
@@ -52,7 +52,7 @@ void enable_fpes (const int mask) {
 }
 
 void disable_fpes (const int mask) {
-#ifdef EKAT_ENABLE_FPE_SUPPORT
+#ifdef EKAT_ENABLE_FPE
   fedisableexcept(mask);
 #else
   (void)mask;
@@ -63,7 +63,7 @@ void disable_fpes (const int mask) {
 }
 
 int get_enabled_fpes () {
-#ifdef EKAT_ENABLE_FPE_SUPPORT
+#ifdef EKAT_ENABLE_FPE
   return fegetexcept();
 #else
   fprintf(stderr,
@@ -74,7 +74,7 @@ int get_enabled_fpes () {
 }
 
 void disable_all_fpes () {
-#ifdef EKAT_ENABLE_FPE_SUPPORT
+#ifdef EKAT_ENABLE_FPE
   disable_fpes(FE_ALL_EXCEPT);
 #else
   fprintf(stderr,
