@@ -16,6 +16,9 @@
 
 void ekat_initialize_test_session (int argc, char** argv, const bool print_config) {
   ekat::initialize_ekat_session (argc,argv,print_config);
+#ifdef EKAT_ENABLE_FPE
+  ekat::enable_fpes(get_default_fpes());
+#endif
 }
 
 void ekat_finalize_test_session () {

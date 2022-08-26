@@ -42,3 +42,13 @@ EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
   PROPERTIES WILL_FAIL true
   LABELS "MustFail"
 )
+
+# Ensure that FPE *do* throw when we expect them to
+EkatCreateUnitTestExec (fpe_check "fpe_check.cpp")
+if (EKAT_ENABLE_FPE_DEFAULT_MASK)
+  EkatCreateUnitTestFromExec (fpe_check fpe_check
+    PROPERTIES WILL_FAIL TRUE
+    LABELS "MustFail")
+else()
+  EkatCreateUnitTestFromExec (fpe_check fpe_check)
+endif()

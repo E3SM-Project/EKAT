@@ -4,8 +4,20 @@
 #include "ekat/util/ekat_arch.hpp"
 
 #include <vector>
+#include <cfenv>
 
 namespace ekat_impl {
+
+static int get_default_fpes () {
+#ifdef EKAT_ENABLE_FPE_DEFAULT_MASK
+  return (FE_DIVBYZERO |
+          FE_INVALID   |
+          FE_OVERFLOW);
+#else
+  return 0;
+#endif
+}
+
 // If we initialize from inside a Fortran code, we don't have access to
 // char** args to pass to Kokkos::initialize. In this case we need to do
 // some work on our own. As a side benefit, we'll end up running on GPU
@@ -77,7 +89,6 @@ void initialize_ekat_session (bool print_config) {
 }
 
 void initialize_ekat_session (int argc, char **argv, bool print_config) {
-  enable_default_fpes ();
 
   if (!Kokkos::is_initialized()) {
     // If user has not specified any args containing "--kokkos",
@@ -100,6 +111,10 @@ void initialize_ekat_session (int argc, char **argv, bool print_config) {
       Kokkos::initialize(argc, argv);
     }
   }
+
+#ifdef EKAT_ENABLE_FPE_DEFAULT_MASK
+  enable_fpes(ekat_impl::get_default_fpes());
+#endif
 
   if (print_config) std::cout << ekat_config_string() << "\n";
 }

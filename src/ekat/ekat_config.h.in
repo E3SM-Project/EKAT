@@ -1,9 +1,6 @@
 #ifndef EKAT_CONFIG_H
 #define EKAT_CONFIG_H
 
-// If defined, ekat::pack objects check indices against bounds.
-#cmakedefine EKAT_PACK_CHECK_BOUNDS
-
 // Whether MPI errors should abort
 #cmakedefine EKAT_MPI_ERRORS_ARE_FATAL
 
@@ -13,11 +10,11 @@
 // Mimic GPU to correctness-test inter-column parallelism on non-GPU platform
 #cmakedefine EKAT_MIMIC_GPU
 
-// Whether we trap floating point exceptions
+// Whether floating point exceptions utilities support is provided
 #cmakedefine EKAT_ENABLE_FPE
 
-// Add a substitute for GNU feenableexcept if necessary
-#cmakedefine EKAT_HAVE_FEENABLEEXCEPT
+// Whether EKAT will set some "reasonable" fpe mask during ekat_initialize_sessin
+#cmakedefine EKAT_ENABLE_FPE_DEFAULT_MASK
 
 // Decide whether ekat defaults to BFB behavior when possible/appropriate
 #cmakedefine EKAT_DEFAULT_BFB
