@@ -142,8 +142,15 @@ public:
   {
     // make the console sink; default console level = log level
     csink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    if (MpiOutputPolicy::should_log(comm)) {
+
+    // Retrieve log file name (if a file is generated at all) even if
+    // this rank should not log, since we might still need to know the
+    // name of the generated file.
+    if (not std::is_same<LogFilePolicy,LogNoFile>::value) {
       logfile_name = (MpiOutputPolicy::get_log_name(log_name, comm) + suffix);
+    }
+
+    if (MpiOutputPolicy::should_log(comm)) {
       fsink = LogFilePolicy::get_file_sink(logfile_name);
     } else {
       fsink = LogNoFile::get_file_sink(logfile_name);
