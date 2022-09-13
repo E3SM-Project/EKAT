@@ -91,7 +91,7 @@ public:
 
   constexpr Units& operator= (const Units&) = default;
 
-  static Units nondimensional () {
+  static constexpr Units nondimensional () {
     return Units(ScalingFactor::one());
   }
 
