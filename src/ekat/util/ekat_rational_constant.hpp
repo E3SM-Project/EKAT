@@ -51,7 +51,7 @@ struct RationalConstant {
   template<typename IntType,
            typename = typename std::enable_if<std::is_integral<IntType>::value>::type>
   constexpr RationalConstant (const IntType n)
-   : RationalConstant (n,1)
+   : RationalConstant (n,static_cast<IntType>(1))
   {
     // Nothing to do here
   }

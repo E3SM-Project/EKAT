@@ -6,6 +6,7 @@
 #include "ekat/util/ekat_string_utils.hpp"
 
 #include <array>
+#include <limits>
 
 namespace ekat
 {
@@ -91,8 +92,12 @@ public:
 
   constexpr Units& operator= (const Units&) = default;
 
-  static Units nondimensional () {
+  static constexpr Units nondimensional () {
     return Units(ScalingFactor::one());
+  }
+  static constexpr Units invalid () {
+    constexpr auto infty = std::numeric_limits<RationalConstant::iType>::max();
+    return ScalingFactor(-infty)*nondimensional();
   }
 
   void set_string (const char* name) {
