@@ -10,8 +10,8 @@ namespace ekat
 {
 
 struct ScalingFactor {
-  const RationalConstant base;
-  const RationalConstant exp;
+  RationalConstant base;
+  RationalConstant exp;
 
   ScalingFactor () = delete;
   constexpr ScalingFactor (const RationalConstant& s)
@@ -28,6 +28,8 @@ struct ScalingFactor {
   }
 
   constexpr ScalingFactor (const ScalingFactor&) = default;
+
+  constexpr ScalingFactor& operator= (const ScalingFactor&) = default;
 
   static constexpr ScalingFactor one () { return ScalingFactor(1); }
   static constexpr ScalingFactor zero () { return ScalingFactor(0); }

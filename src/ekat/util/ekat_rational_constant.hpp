@@ -36,8 +36,8 @@ struct RationalConstant {
 
   using iType = long long;
 
-  const iType num;
-  const iType den;
+  iType num;
+  iType den;
 
   // No default
   RationalConstant () = delete;
@@ -65,6 +65,7 @@ struct RationalConstant {
     // Nothing to do here
   }
   constexpr RationalConstant (const RationalConstant&) = default;
+  constexpr RationalConstant& operator= (const RationalConstant&) = default;
 
   constexpr RationalConstant operator- () const {
     return RationalConstant(-num,den);
