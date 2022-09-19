@@ -133,10 +133,10 @@ private:
 
   friend std::string to_string(const Units&);
 
-  const ScalingFactor                   m_scaling;
-  const std::array<RationalConstant,7>  m_units;
+  ScalingFactor                   m_scaling;
+  std::array<RationalConstant,7>  m_units;
 
-  const char*                           m_name;
+  const char*                     m_name;
 };
 
 // === Operators/functions overload === //
