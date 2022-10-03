@@ -44,8 +44,8 @@ std::string upper_case (const std::string& s);
 // E.g., if v is a vector of strings, out = v[0]+sep+v[1]+sep+...
 template<typename Iterable>
 std::string join (const Iterable& v, const std::string& sep) {
-  auto it = std::cbegin(v);
-  auto end = std::cend(v);
+  auto it = cbegin(v);
+  auto end = cend(v);
   if (it==end) {
     return "";
   }
