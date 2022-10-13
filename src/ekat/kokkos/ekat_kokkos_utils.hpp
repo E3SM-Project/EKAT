@@ -64,39 +64,39 @@ void parallel_reduce (const TeamMember& team,
                       const Lambda& lambda,
                       ValueType& result)
 {
+  // All threads init result.
+  // NOTE: we *need* an automatic temporary, since we do not know where 'result'
+  //       comes from. In particular, we don't know if result is already a
+  //       thread-local var (and automatic var itself) or shared across threads
+  //       (e.g., an entry from a view). In the former case, we would be fine
+  //       without the local var; in the latter, however, not using a local var
+  //       could lead to result being updated multiple times.
+  auto local_tmp = result;
+
   if (Serialize) {
     // We want to get C++ on GPU to match F90 on CPU. Thus, need to
     // serialize parallel reductions.
 
-    // All threads init result.
-    // NOTE: we *need* an automatic temporary, since we do not know
-    //       where 'result' comes from. If result itself is an automatic
-    //       variable, using it would be fine (only one vector lane would
-    //       actually have a nonzero value after the single). But if
-    //       result is taken from a view, then all vector lanes would
-    //       see the updated value before the vector_reduce call,
-    //       which will cause the final answer to be multiplied by the
-    //       size of the warp.
-    auto local_tmp = result;
+    // Ensure all threads are done reading from result, to avoid the possibility
+    // that some thread might update result (a few line below) before all other
+    // threads are done.
+    team.team_barrier();
 
     Kokkos::single(Kokkos::PerThread(team),[&] {
-        for (int k=begin; k<end; ++k) {
-          lambda(k, local_tmp);
-        }
-      });
+      for (int k=begin; k<end; ++k) {
+        lambda(k, local_tmp);
+      }
+    });
 
 #ifdef EKAT_ENABLE_GPU
     // Broadcast result to all threads by doing sum of one thread's
     // non-0 value and the rest of the 0s.
     team.vector_reduce(Kokkos::Sum<ValueType>(local_tmp));
 #endif
-
-   result = local_tmp;
   } else {
-    const ValueType initial(result);
-    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
-    result += initial;
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, local_tmp);
   }
+  result = local_tmp;
 }
 
 /*
