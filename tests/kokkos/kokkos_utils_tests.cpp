@@ -364,10 +364,10 @@ TEST_CASE("view_reduction", "[kokkos_utils]")
   test_view_reduction<Real,false,false,3,4> ();
 
   // Sum subset of entries, non-zero starting value
-  test_view_reduction<Real, true,true,16,3> (1.0/3.0,2,11);
-  test_view_reduction<Real,false,true,16,3> (1.0/3.0,2,11);
-  test_view_reduction<Real, true,false,16,3> (1.0/3.0,2,11);
-  test_view_reduction<Real,false,false,16,3> (1.0/3.0,2,11);
+  test_view_reduction<Real, true,true,18,4> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,true,18,4> (1.0/3.0,2,11);
+  test_view_reduction<Real, true,false,18,4> (1.0/3.0,2,11);
+  test_view_reduction<Real,false,false,18,4> (1.0/3.0,2,11);
 
 }
 
