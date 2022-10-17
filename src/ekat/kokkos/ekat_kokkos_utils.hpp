@@ -399,7 +399,7 @@ struct ExeSpaceUtils<EkatGpuSpace> {
                              const int& end,
                              const Lambda& lambda)
   {
-    return parallel_reduce<Serialize,ValueType>(team, begin, end, lambda, result);
+    return parallel_reduce<Serialize,ValueType>(team, begin, end, lambda);
   }
 
   // Requires user to specify whether to serialize or not
