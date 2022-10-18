@@ -60,33 +60,30 @@ ValueType parallel_reduce (const TeamMember& team,
                            const int& begin,
                            const int& end,
                            const Lambda& lambda,
-                           const ValueType& result)
+                           const ValueType& init)
 {
-  ValueType temp = result;
+  // Note the version of single(..) that takes the result as last arg is handy on Cuda,
+  // since it also implements a shuffle to ensure all threads in a warp have the same
+  // result as the one in vector lane 0.
+  ValueType result = init;
   if (Serialize) {
-    // We want to get C++ on GPU to match F90 on CPU. Thus, need to
-    // serialize parallel reductions.
-
-    // Note the version of single(..) that takes the result as last arg is handy on Cuda,
-    // since it also implements a shuffle to ensure all threads in a warp have the same
-    // result as the one in vector lane 0.
-    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& r) {
+    // Perform the reduction serially, with just one thread.
+    Kokkos::single(Kokkos::PerTeam(team),[&] (ValueType& r) {
       for (int k=begin; k<end; ++k) {
         lambda(k, r);
       }
-    },temp);
+    },result);
   } else {
-    // Kokkos::parallel_reduce inits var to 0, so we need to perform reduction on a temp,
-    // then add to result.
-    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, temp);
+    // Use the whole team of threads
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
 
-    // Only one vector lane should update the result
-    Kokkos::single(Kokkos::PerThread(team),[&](ValueType& r){
-      r += result;
-    },temp);
+    // Kokkos::parallel_reduce inits result to 0, so we have to add init back again
+    // Use single, so that, on GPU, only one thread updates the result
+    Kokkos::single(Kokkos::PerTeam(team),[&](ValueType& r){
+      r += init;
+    },result);
   }
-
-  return temp;
+  return result;
 }
 
 template <bool Serialize, typename ValueType, typename TeamMember, typename Lambda>
@@ -153,7 +150,7 @@ auto view_reduction (const TeamMember& team,
   if (has_garbage_begin) {
     const auto temp_input = input(pack_loop_begin-1);
     const int first_indx = begin % N;
-    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& r) {
+    Kokkos::single(Kokkos::PerTeam(team),[&] (ValueType& r) {
       for (int j=first_indx; j<N; ++j) {
         r += temp_input[j];
       }
@@ -188,7 +185,7 @@ auto view_reduction (const TeamMember& team,
     // The following is basically a const var, but there are issues with
     // gnu and std=c++14. The macro ConstExceptGnu is defined in ekat_kokkos_types.hpp.
     ConstExceptGnu int last_indx = end % N;
-    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& r) {
+    Kokkos::single(Kokkos::PerTeam(team),[&] (ValueType& r) {
       for (int j=0; j<last_indx; ++j) {
         r += temp_input[j];
       }
