@@ -53,9 +53,6 @@ namespace impl {
  * If Serialize=false, this function simply calls Kokkos::parallel_reduce().
  * If result contains a value, the output is result+reduction
  * For typical application, begin and end are pack indices.
- * WARNING! This fcn should *not* be used outside this file. The implementation *relies*
- *          on the assumption that the result variable is an *automatic* variable,
- *          and therefore thread-local (as opposed, e.g., to an entry of a view).
  */
 template <bool Serialize, typename ValueType, typename TeamMember, typename Lambda>
 static KOKKOS_INLINE_FUNCTION
@@ -78,7 +75,15 @@ void parallel_reduce (const TeamMember& team,
       }
     },result);
   } else {
-    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
+    // Kokkos::parallel_reduce inits var to 0, so we need to perform reduction on a temp,
+    // then add to result.
+    ValueType temp;
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, temp);
+
+    // Only one vector lane should update the result
+    Kokkos::single(Kokkos::PerThread(team),[&](ValueType& r){
+      r += temp;
+    },result);
   }
 }
 
@@ -89,7 +94,7 @@ ValueType parallel_reduce (const TeamMember& team,
                            const int& end,
                            const Lambda& lambda)
 {
-  ValueType result = Kokkos::reduction_identity<ValueType>::sum();
+  ValueType result;
   ekat::impl::parallel_reduce<Serialize,ValueType>(team,begin,end,lambda,result);
   return result;
 }
