@@ -108,7 +108,7 @@ ValueType parallel_reduce (const TeamMember& team,
  * NOTE: for simd-type usage, the simd-type must a) have a specialization of ekat::ScalarTraits
  *       that sets is_simd=true, b) support operator[](int), and c) have a compile-time size
  *       equal to the length of the simd array times the size of the individual element type.
- *       Furtermore, a specialization of Kokkos::reduction_identity<T> must be available for
+ *       Furthermore, a specialization of Kokkos::reduction_identity<T> must be available for
  *       the simd type T.
  * NOTE: we do not provide an overload with Serialized defaulted, since this fcn is an impl
  *       detail, and, normally, should not be used by customer apps
