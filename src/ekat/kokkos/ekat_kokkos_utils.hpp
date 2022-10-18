@@ -56,12 +56,13 @@ namespace impl {
  */
 template <bool Serialize, typename ValueType, typename TeamMember, typename Lambda>
 static KOKKOS_INLINE_FUNCTION
-void parallel_reduce (const TeamMember& team,
-                      const int& begin,
-                      const int& end,
-                      const Lambda& lambda,
-                      ValueType& result)
+ValueType parallel_reduce (const TeamMember& team,
+                           const int& begin,
+                           const int& end,
+                           const Lambda& lambda,
+                           const ValueType& result)
 {
+  ValueType temp = result;
   if (Serialize) {
     // We want to get C++ on GPU to match F90 on CPU. Thus, need to
     // serialize parallel reductions.
@@ -69,22 +70,23 @@ void parallel_reduce (const TeamMember& team,
     // Note the version of single(..) that takes the result as last arg is handy on Cuda,
     // since it also implements a shuffle to ensure all threads in a warp have the same
     // result as the one in vector lane 0.
-    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& result) {
+    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& r) {
       for (int k=begin; k<end; ++k) {
-        lambda(k, result);
+        lambda(k, r);
       }
-    },result);
+    },temp);
   } else {
     // Kokkos::parallel_reduce inits var to 0, so we need to perform reduction on a temp,
     // then add to result.
-    ValueType temp;
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, temp);
 
     // Only one vector lane should update the result
     Kokkos::single(Kokkos::PerThread(team),[&](ValueType& r){
-      r += temp;
-    },result);
+      r += result;
+    },temp);
   }
+
+  return temp;
 }
 
 template <bool Serialize, typename ValueType, typename TeamMember, typename Lambda>
@@ -94,9 +96,8 @@ ValueType parallel_reduce (const TeamMember& team,
                            const int& end,
                            const Lambda& lambda)
 {
-  ValueType result;
-  ekat::impl::parallel_reduce<Serialize,ValueType>(team,begin,end,lambda,result);
-  return result;
+  ValueType result = Kokkos::reduction_identity<ValueType>::sum();
+  return ekat::impl::parallel_reduce<Serialize,ValueType>(team,begin,end,lambda,result);
 }
 
 /*
@@ -163,7 +164,7 @@ auto view_reduction (const TeamMember& team,
   // sum into result. Else, sum up packs, then reduce the packed sum into result.
   if (pack_loop_begin != pack_loop_end) {
     if (Serialize) {
-      impl::parallel_reduce<Serialize,ValueType>(
+      result = impl::parallel_reduce<Serialize,ValueType>(
           team, pack_loop_begin, pack_loop_end,
           [&](const int k, ValueType& local_sum) {
             // Sum over pack entries and add to local_sum
