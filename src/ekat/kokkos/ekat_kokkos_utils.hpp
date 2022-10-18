@@ -147,9 +147,9 @@ auto view_reduction (const TeamMember& team,
   if (has_garbage_begin) {
     const auto temp_input = input(pack_loop_begin-1);
     const int first_indx = begin % N;
-    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& result) {
+    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& r) {
       for (int j=first_indx; j<N; ++j) {
-        result += temp_input[j];
+        r += temp_input[j];
       }
     },result);
   }
@@ -182,9 +182,9 @@ auto view_reduction (const TeamMember& team,
     // The following is basically a const var, but there are issues with
     // gnu and std=c++14. The macro ConstExceptGnu is defined in ekat_kokkos_types.hpp.
     ConstExceptGnu int last_indx = end % N;
-    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& result) {
+    Kokkos::single(Kokkos::PerThread(team),[&] (ValueType& r) {
       for (int j=0; j<last_indx; ++j) {
-        result += temp_input[j];
+        r += temp_input[j];
       }
     },result);
   }
