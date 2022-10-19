@@ -12,6 +12,13 @@
 
 namespace {
 
+template<typename ViewT>
+typename ViewT::HostMirror cmvc(const ViewT& v) {
+  auto vh = Kokkos::create_mirror_view(v);
+  Kokkos::deep_copy(vh,v);
+  return vh;
+}
+
 TEST_CASE("data_type", "[kokkos_utils]") {
   using namespace ekat;
 
@@ -178,8 +185,7 @@ void test_utils_large_ni(const double saturation_multiplier)
     tu.release_workspace_idx(team_member, wi);
   }, Kokkos::Max<int>(max_workspace_idx));
 
-  const auto test_data_h = Kokkos::create_mirror_view(test_data);
-  Kokkos::deep_copy(test_data_h, test_data);
+  const auto test_data_h = cmvc(test_data);
 
   int sum = 0;
   for(int i = 0; i < tu.get_num_ws_slots(); ++i) {
@@ -202,6 +208,7 @@ void test_parallel_reduce()
   using Device = ekat::DefaultDevice;
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
+  using ExeSpaceUtils = ekat::ExeSpaceUtils<ExeSpace>;
 
   // Each entry is given by data(k) = 1/(k+1)
   Scalar serial_result = Scalar();
@@ -216,25 +223,20 @@ void test_parallel_reduce()
   Kokkos::deep_copy(data, data_h);
 
   Kokkos::View<Scalar*> results ("results", 1);
-  const auto results_h = Kokkos::create_mirror_view(results);
 
   // parallel_for over 1 team, i.e. call parallel_reduce once
-  const auto policy =
-    ekat::ExeSpaceUtils<ExeSpace>::get_default_team_policy(1, length);
+  const auto policy = ExeSpaceUtils::get_default_team_policy(1, length);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
-    Scalar team_result = Scalar();
 
     const int begin = 0;
     const int end = length;
-    ekat::ExeSpaceUtils<ExeSpace>::parallel_reduce<Serialize>(team, begin, end,
-        [&] (const int k, Scalar& reduction_value) {
-              reduction_value += data[k];
-        }, team_result);
+    results(0) = ExeSpaceUtils::parallel_reduce<Serialize,Scalar>(team, begin, end,
+      [&] (const int k, Scalar& reduction_value) {
+            reduction_value += data[k];
+      });
+  });
 
-      results(0) = team_result;
-    });
-
-  Kokkos::deep_copy(results_h, results);
+  const auto results_h = cmvc(results);
 
   // If serial computation, check bfb vs serial_result, else check to a tolerance
   if (Serialize) {
@@ -246,17 +248,17 @@ void test_parallel_reduce()
 
 TEST_CASE("parallel_reduce", "[kokkos_utils]")
 {
-  test_parallel_reduce<Real,15,true> ();
-  test_parallel_reduce<Real,15,false> ();
+  test_parallel_reduce<Real,48,true> ();
+  test_parallel_reduce<Real,48,false> ();
 }
 
-
 template<typename Scalar, bool Serialize, bool UseLambda, int TotalSize, int VectorSize>
-void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const int end=TotalSize)
+void test_view_reduction(const int begin=0, const int end=TotalSize)
 {
   using Device = ekat::DefaultDevice;
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
+  using ExeSpaceUtils = ekat::ExeSpaceUtils<ExeSpace>;
 
   using PackType = ekat::Pack<Scalar, VectorSize>;
   using ViewType = Kokkos::View<PackType*,ExeSpace>;
@@ -264,7 +266,7 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   const int view_length = ekat::npack<PackType>(TotalSize);
 
   // Each entry is given by data(k)[p] = 1/(k*Pack::n+p+1)
-  Scalar serial_result = Scalar(a);
+  Scalar serial_result = Kokkos::reduction_identity<Scalar>::sum();
   ViewType data("data", view_length);
   const auto data_h = Kokkos::create_mirror_view(data);
   auto raw = data_h.data();
@@ -287,7 +289,6 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
   Kokkos::deep_copy(data, data_h);
 
   Kokkos::View<Scalar*> results ("results", 1);
-  const auto results_h = Kokkos::create_mirror_view(results);
 
   int team_size = ExeSpace::concurrency();
 #ifdef EKAT_ENABLE_GPU
@@ -301,30 +302,30 @@ void test_view_reduction(const Scalar a=Scalar(0.0), const int begin=0, const in
 #endif
 
   // parallel_for over 1 team, i.e. call view_reduction once
-  const auto policy =
-    ekat::ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, team_size);
+  const auto policy = ExeSpaceUtils::get_team_policy_force_team_size(1, team_size);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
-    Scalar team_result = Scalar(a);
-
     if (UseLambda) {
-      ekat::ExeSpaceUtils<ExeSpace>::view_reduction<Serialize>(team, begin, end,
-                                                               [&] (const int k) -> PackType {
-                                                                 return data(k);
-                                                               }, team_result);
+      auto lambda = [&] (const int k) -> PackType {
+        return data(k);
+      };
+      results(0) = ExeSpaceUtils::view_reduction<Serialize>(team, begin, end, lambda);
     } else {
-      ekat::ExeSpaceUtils<ExeSpace>::view_reduction<Serialize>(team, begin, end, data, team_result);
+      results(0) = ExeSpaceUtils::view_reduction<Serialize>(team, begin, end, data);
     }
-
-    results(0) = team_result;
   });
 
-  Kokkos::deep_copy(results_h, results);
+  const auto results_h = cmvc(results);
   // If serial computation, check bfb vs serial_result, else check to a tolerance
   if (Serialize) {
     REQUIRE(results_h(0)== serial_result);
   } else {
     REQUIRE(std::abs(results_h(0) - serial_result) <= 10*std::numeric_limits<Scalar>::epsilon());
   }
+
+  // // Ensure there are no race conditions
+  // Kokkos::TeamPolicy<ExeSpace> policy2(1,
+  // Kokkos::parallel_for (policy, KOKKOS_LAMBDA(const MemberType& team) {
+  // });
 }
 
 TEST_CASE("view_reduction", "[kokkos_utils]")
@@ -332,50 +333,42 @@ TEST_CASE("view_reduction", "[kokkos_utils]")
   // VectorSize = 1
 
   // Sum all entries
-  test_view_reduction<Real, true,true,8,1> ();
-  test_view_reduction<Real,false,true,8,1> ();
+  test_view_reduction<Real, true, true,8,1> ();
+  test_view_reduction<Real,false, true,8,1> ();
   test_view_reduction<Real, true,false,8,1> ();
   test_view_reduction<Real,false,false,8,1> ();
 
-  // Sum subset of entries, non-zero starting value, lambda data representation
-  test_view_reduction<Real, true,true,8,1> (1.0/3.0,2,5);
-  test_view_reduction<Real,false,true,8,1> (1.0/3.0,2,5);
-  test_view_reduction<Real, true,false,8,1> (1.0/3.0,2,5);
-  test_view_reduction<Real,false,false,8,1> (1.0/3.0,2,5);
+  // Sum subset of entries, lambda data representation
+  test_view_reduction<Real, true, true,8,1> (2,5);
+  test_view_reduction<Real,false, true,8,1> (2,5);
+  test_view_reduction<Real, true,false,8,1> (2,5);
+  test_view_reduction<Real,false,false,8,1> (2,5);
 
   // VectorSize > 1
 
   // Full packs, sum all entries
-  test_view_reduction<Real, true,true,8,4> ();
-  test_view_reduction<Real,false,true,8,4> ();
+  test_view_reduction<Real, true, true,8,4> ();
+  test_view_reduction<Real,false, true,8,4> ();
   test_view_reduction<Real, true,false,8,4> ();
   test_view_reduction<Real,false,false,8,4> ();
 
   // Last pack not full, sum all entries
-  test_view_reduction<Real, true,true,7,4> ();
-  test_view_reduction<Real,false,true,7,4> ();
+  test_view_reduction<Real, true, true,7,4> ();
+  test_view_reduction<Real,false, true,7,4> ();
   test_view_reduction<Real, true,false,7,4> ();
   test_view_reduction<Real,false,false,7,4> ();
 
   // Only pack not full, sum all entries
-  test_view_reduction<Real, true,true,3,4> ();
-  test_view_reduction<Real,false,true,3,4> ();
+  test_view_reduction<Real, true, true,3,4> ();
+  test_view_reduction<Real,false, true,3,4> ();
   test_view_reduction<Real, true,false,3,4> ();
   test_view_reduction<Real,false,false,3,4> ();
 
-  // Sum subset of entries, non-zero starting value
-  test_view_reduction<Real, true,true,18,4> (1.0/3.0,2,11);
-  test_view_reduction<Real,false,true,18,4> (1.0/3.0,2,11);
-  test_view_reduction<Real, true,false,18,4> (1.0/3.0,2,11);
-  test_view_reduction<Real,false,false,18,4> (1.0/3.0,2,11);
-
-}
-
-template<typename ViewT>
-typename ViewT::HostMirror cmvc(const ViewT& v) {
-  auto vh = Kokkos::create_mirror_view(v);
-  Kokkos::deep_copy(vh,v);
-  return vh;
+  // Sum subset of entries
+  test_view_reduction<Real, true, true,16,4> (4,11);
+  test_view_reduction<Real,false, true,16,4> (4,11);
+  test_view_reduction<Real, true,false,16,4> (4,11);
+  test_view_reduction<Real,false,false,16,4> (4,11);
 }
 
 TEST_CASE("subviews") {
