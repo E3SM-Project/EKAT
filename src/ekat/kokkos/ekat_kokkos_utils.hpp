@@ -51,41 +51,7 @@ namespace impl {
  * Computes a general parallel reduction. If Serialize=true, this reduction is computed
  * one element in order, useful for BFB testing with serial routines.
  * If Serialize=false, this function simply calls Kokkos::parallel_reduce().
- * If result contains a value, the output is result+reduction
- * For typical application, begin and end are pack indices.
  */
-template <bool Serialize, typename ValueType, typename TeamMember, typename Lambda>
-static KOKKOS_INLINE_FUNCTION
-ValueType parallel_reduce (const TeamMember& team,
-                           const int& begin,
-                           const int& end,
-                           const Lambda& lambda,
-                           const ValueType& init)
-{
-  // Note the version of single(..) that takes the result as last arg is handy on Cuda,
-  // since it also implements a shuffle to ensure all threads in a warp have the same
-  // result as the one in vector lane 0.
-  ValueType result = init;
-  if (Serialize) {
-    // Perform the reduction serially, with just one thread.
-    Kokkos::single(Kokkos::PerTeam(team),[&] (ValueType& r) {
-      for (int k=begin; k<end; ++k) {
-        lambda(k, r);
-      }
-    },result);
-  } else {
-    // Use the whole team of threads
-    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
-
-    // Kokkos::parallel_reduce inits result to 0, so we have to add init back again
-    // Use single, so that, on GPU, only one thread updates the result
-    Kokkos::single(Kokkos::PerTeam(team),[&](ValueType& r){
-      r += init;
-    },result);
-  }
-  return result;
-}
-
 template <bool Serialize, typename ValueType, typename TeamMember, typename Lambda>
 static KOKKOS_INLINE_FUNCTION
 ValueType parallel_reduce (const TeamMember& team,
@@ -93,8 +59,19 @@ ValueType parallel_reduce (const TeamMember& team,
                            const int& end,
                            const Lambda& lambda)
 {
+  // NOTE: initialization only necessary for the Serialize=true case.
   ValueType result = Kokkos::reduction_identity<ValueType>::sum();
-  return ekat::impl::parallel_reduce<Serialize,ValueType>(team,begin,end,lambda,result);
+  if (Serialize) {
+    // Perform the reduction serially. All threads perform the same calculation,
+    // (ok, since the result var is a thread-private automatic variable).
+    for (int k=begin; k<end; ++k) {
+      lambda(k, result);
+    }
+  } else {
+    // Use the whole team of threads
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, begin, end), lambda, result);
+  }
+  return result;
 }
 
 /*
@@ -134,12 +111,17 @@ auto view_reduction (const TeamMember& team,
   using ValueType = typename ekat::impl::ResultTraits<InputProvider>::scalar_type;
   constexpr int N = sizeof(PackType) / sizeof(ValueType);
 
-  // We need to use a temporary, since we don't know whether result refers to a thread-local
-  // variable (e.g., automatic variable) or to shared-memory (e.g., an entry of a view).
-  // Hence, perform calculations on a local var, then copy back into the output result.
+  // For the serialized case, "unpack" the input provider result, and call the scalar version
+  if (Serialize) {
+    auto scalar_input = [&](const int k) {
+      return input(k/N)[k%N];
+    };
+    return view_reduction<true>(team,begin,end,scalar_input);
+  }
+
+  // For packed case, check if we need to treat first/last packs separately
   ValueType result = Kokkos::reduction_identity<ValueType>::sum();
 
-  // Perform a packed reduction over scalar indices
   const bool has_garbage_begin = begin % N != 0;
   const bool has_garbage_end   =   end % N != 0;
   const int  pack_loop_begin   = (has_garbage_begin ? begin/N + 1 : begin/N);
@@ -150,49 +132,35 @@ auto view_reduction (const TeamMember& team,
   if (has_garbage_begin) {
     const auto temp_input = input(pack_loop_begin-1);
     const int first_indx = begin % N;
-    Kokkos::single(Kokkos::PerTeam(team),[&] (ValueType& r) {
-      for (int j=first_indx; j<N; ++j) {
-        r += temp_input[j];
-      }
-    },result);
+    for (int j=first_indx; j<N; ++j) {
+      result += temp_input[j];
+    }
   }
 
   // Complete packs to be reduced. If Serialize, reduce each pack first, then
   // sum into result. Else, sum up packs, then reduce the packed sum into result.
   if (pack_loop_begin != pack_loop_end) {
-    if (Serialize) {
-      result = impl::parallel_reduce<Serialize,ValueType>(
-          team, pack_loop_begin, pack_loop_end,
-          [&](const int k, ValueType& local_sum) {
-            // Sum over pack entries and add to local_sum
-            ekat::reduce_sum<Serialize>(input(k),local_sum);
-      },result);
-    } else {
-      auto packed_result = impl::parallel_reduce<Serialize,PackType>(
-          team, pack_loop_begin, pack_loop_end,
-          [&](const int k, PackType& local_packed_sum) {
-            // Sum packs
-            local_packed_sum += input(k);
-      });
-      result += ekat::reduce_sum<Serialize>(packed_result);
-    }
+    auto temp = impl::parallel_reduce<false,PackType>(
+        team, pack_loop_begin, pack_loop_end,
+        [&](const int k, PackType& local_packed_sum) {
+          // Sum packs
+          local_packed_sum += input(k);
+    });
+    result += ekat::reduce_sum<false>(temp);
   }
 
   // If last pack has garbage, we did not include it in the main reduction,
   // so manually add the last pack (only the non-garbage part)
   if (has_garbage_end) {
     const PackType temp_input = input(pack_loop_end);
-    // The following is basically a const var, but there are issues with
-    // gnu and std=c++14. The macro ConstExceptGnu is defined in ekat_kokkos_types.hpp.
-    ConstExceptGnu int last_indx = end % N;
-    Kokkos::single(Kokkos::PerTeam(team),[&] (ValueType& r) {
-      for (int j=0; j<last_indx; ++j) {
-        r += temp_input[j];
-      }
-    },result);
+    const int last_indx = end % N;
+    for (int j=0; j<last_indx; ++j) {
+      result += temp_input[j];
+    }
   }
   return result;
 }
+
 template <bool Serialize, typename TeamMember, typename InputProvider>
 static KOKKOS_INLINE_FUNCTION
 auto view_reduction (const TeamMember& team,
@@ -319,7 +287,7 @@ struct ExeSpaceUtils {
                        const InputProvider& input)
    -> typename ekat::impl::ResultTraits<InputProvider>::scalar_type
   {
-    return impl::view_reduction<Serialize,TeamMember,InputProvider>(team,begin,end,input);
+    return impl::view_reduction<Serialize>(team,begin,end,input);
   }
 };
 
@@ -413,7 +381,7 @@ struct ExeSpaceUtils<EkatGpuSpace> {
                         const int& end,
                         const Lambda& lambda)
   {
-    return impl::parallel_reduce<Serialize, ValueType, TeamMember, Lambda>(team, begin, end, lambda);
+    return impl::parallel_reduce<Serialize, ValueType>(team, begin, end, lambda);
   }
 
   // Uses ekatBFB as default for Serialize
@@ -437,7 +405,7 @@ struct ExeSpaceUtils<EkatGpuSpace> {
                        const InputProvider& input)
     -> typename ekat::impl::ResultTraits<InputProvider>::scalar_type
   {
-    return  impl::view_reduction<Serialize,TeamMember,InputProvider>(team,begin,end,input);
+    return  impl::view_reduction<Serialize>(team,begin,end,input);
   }
 };
 #endif
