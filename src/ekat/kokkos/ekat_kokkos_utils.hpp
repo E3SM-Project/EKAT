@@ -104,69 +104,6 @@ auto view_reduction (const TeamMember& team,
                      const int begin, // scalar index
                      const int end, // scalar index
                      const InputProvider& input)
- -> typename std::enable_if<ekat::impl::ResultTraits<InputProvider>::is_simd,
-                            typename ekat::impl::ResultTraits<InputProvider>::scalar_type>::type
-{
-  using PackType = ekat::impl::ResultType<InputProvider>;
-  using ValueType = typename ekat::impl::ResultTraits<InputProvider>::scalar_type;
-  constexpr int N = sizeof(PackType) / sizeof(ValueType);
-
-  // For the serialized case, "unpack" the input provider result, and call the scalar version
-  if (Serialize) {
-    auto scalar_input = [&](const int k) {
-      return input(k/N)[k%N];
-    };
-    return view_reduction<true>(team,begin,end,scalar_input);
-  }
-
-  // For packed case, check if we need to treat first/last packs separately
-  ValueType result = Kokkos::reduction_identity<ValueType>::sum();
-
-  const bool has_garbage_begin = begin % N != 0;
-  const bool has_garbage_end   =   end % N != 0;
-  const int  pack_loop_begin   = (has_garbage_begin ? begin/N + 1 : begin/N);
-  const int  pack_loop_end     = end/N;
-
-  // If first pack has garbage, we will not include it in the below reduction,
-  // so manually add the first pack (only the non-garbage part)
-  if (has_garbage_begin) {
-    const auto temp_input = input(pack_loop_begin-1);
-    const int first_indx = begin % N;
-    for (int j=first_indx; j<N; ++j) {
-      result += temp_input[j];
-    }
-  }
-
-  // Complete packs to be reduced. If Serialize, reduce each pack first, then
-  // sum into result. Else, sum up packs, then reduce the packed sum into result.
-  if (pack_loop_begin != pack_loop_end) {
-    auto temp = impl::parallel_reduce<false,PackType>(
-        team, pack_loop_begin, pack_loop_end,
-        [&](const int k, PackType& local_packed_sum) {
-          // Sum packs
-          local_packed_sum += input(k);
-    });
-    result += ekat::reduce_sum<false>(temp);
-  }
-
-  // If last pack has garbage, we did not include it in the main reduction,
-  // so manually add the last pack (only the non-garbage part)
-  if (has_garbage_end) {
-    const PackType temp_input = input(pack_loop_end);
-    const int last_indx = end % N;
-    for (int j=0; j<last_indx; ++j) {
-      result += temp_input[j];
-    }
-  }
-  return result;
-}
-
-template <bool Serialize, typename TeamMember, typename InputProvider>
-static KOKKOS_INLINE_FUNCTION
-auto view_reduction (const TeamMember& team,
-                     const int begin, // scalar index
-                     const int end, // scalar index
-                     const InputProvider& input)
  -> typename std::enable_if<not ekat::impl::ResultTraits<InputProvider>::is_simd,
                             ekat::impl::ResultType<InputProvider>>::type
 {
@@ -175,6 +112,69 @@ auto view_reduction (const TeamMember& team,
     local_sum += input(k);
   };
   return impl::parallel_reduce<Serialize,ValueType>(team, begin, end, lambda);
+}
+
+template <bool Serialize, typename TeamMember, typename InputProvider>
+static KOKKOS_INLINE_FUNCTION
+auto view_reduction (const TeamMember& team,
+                     const int begin, // scalar index
+                     const int end, // scalar index
+                     const InputProvider& input)
+ -> typename std::enable_if<ekat::impl::ResultTraits<InputProvider>::is_simd,
+                            typename ekat::impl::ResultTraits<InputProvider>::scalar_type>::type
+{
+  using PackType = ekat::impl::ResultType<InputProvider>;
+  using ValueType = typename ekat::impl::ResultTraits<InputProvider>::scalar_type;
+  constexpr int N = sizeof(PackType) / sizeof(ValueType);
+
+  // For the serialized case, "unpack" the input provider result, and call the scalar version
+  ValueType result = Kokkos::reduction_identity<ValueType>::sum();
+  if (Serialize) {
+    auto scalar_input = [&](const int k) {
+      return input(k/N)[k%N];
+    };
+    result = view_reduction<true>(team,begin,end,scalar_input);
+  } else {
+    // For packed case, check if we need to treat first/last packs separately
+
+    const bool has_garbage_begin = begin % N != 0;
+    const bool has_garbage_end   =   end % N != 0;
+    const int  pack_loop_begin   = (has_garbage_begin ? begin/N + 1 : begin/N);
+    const int  pack_loop_end     = end/N;
+
+    // If first pack has garbage, we will not include it in the below reduction,
+    // so manually add the first pack (only the non-garbage part)
+    if (has_garbage_begin) {
+      const auto temp_input = input(pack_loop_begin-1);
+      const int first_indx = begin % N;
+      for (int j=first_indx; j<N; ++j) {
+        result += temp_input[j];
+      }
+    }
+
+    // Complete packs to be reduced. If Serialize, reduce each pack first, then
+    // sum into result. Else, sum up packs, then reduce the packed sum into result.
+    if (pack_loop_begin != pack_loop_end) {
+      auto temp = impl::parallel_reduce<false,PackType>(
+          team, pack_loop_begin, pack_loop_end,
+          [&](const int k, PackType& local_packed_sum) {
+            // Sum packs
+            local_packed_sum += input(k);
+      });
+      result += ekat::reduce_sum<false>(temp);
+    }
+
+    // If last pack has garbage, we did not include it in the main reduction,
+    // so manually add the last pack (only the non-garbage part)
+    if (has_garbage_end) {
+      const PackType temp_input = input(pack_loop_end);
+      const int last_indx = end % N;
+      for (int j=0; j<last_indx; ++j) {
+        result += temp_input[j];
+      }
+    }
+  }
+  return result;
 }
 
 } //namespace impl
