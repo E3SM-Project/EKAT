@@ -113,8 +113,10 @@ int main (int argc, char **argv) {
   // to not use it, and provide one instead.
   ekat_finalize_test_session ();
 
+#ifdef EKAT_ENABLE_MPI
   // Finalize MPI
   MPI_Finalize();
+#endif
 
   // Return test result
   return num_failed != 0 ? 1 : 0;
