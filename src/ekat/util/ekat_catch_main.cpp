@@ -98,10 +98,10 @@ int main (int argc, char **argv) {
 #ifndef NDEBUG
 #ifdef EKAT_ENABLE_MPI
   MPI_Barrier(comm.mpi_comm());
-#endif
   std::cout << "Starting catch session on rank " << comm.rank() << " out of " << comm.size() << "\n";
-#ifdef EKAT_ENABLE_MPI
   MPI_Barrier(comm.mpi_comm());
+#else
+  std::cout << "Starting catch session\n";
 #endif
 #endif
 
