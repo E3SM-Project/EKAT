@@ -1,8 +1,13 @@
 #ifndef EKAT_CONFIG_H
 #define EKAT_CONFIG_H
 
+// Whether MPI is enabled
+#cmakedefine EKAT_ENABLE_MPI
+
+#ifdef EKAT_ENABLE_MPI
 // Whether MPI errors should abort
 #cmakedefine EKAT_MPI_ERRORS_ARE_FATAL
+#endif
 
 // Whether we allow use of CONSTEXPR_ASSERT macro
 #cmakedefine EKAT_CONSTEXPR_ASSERT

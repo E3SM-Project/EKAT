@@ -1,6 +1,10 @@
 #ifndef EKAT_COMM_HPP
 #define EKAT_COMM_HPP
 
+#include <ekat_config.h>
+
+#ifdef EKAT_ENABLE_MPI
+
 #include <type_traits>
 
 #include <mpi.h>
@@ -143,5 +147,7 @@ void Comm::all_gather (T* inout_vals, const int count) const
 }
 
 } // namespace ekat
+
+#endif // EKAT_ENABLE_MPI
 
 #endif // EKAT_COMM_HPP
