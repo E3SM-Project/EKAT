@@ -1,11 +1,11 @@
 #include <iostream>
 
+#include "ekat_assert.hpp"
+#include "ekat_session.hpp"
+
 #ifdef EKAT_ENABLE_MPI
 #include <mpi.h>
 #endif
-
-#include "ekat_assert.hpp"
-#include "ekat_session.hpp"
 
 #ifdef EKAT_ENABLE_FPE
 #include "util/ekat_feutils.hpp"

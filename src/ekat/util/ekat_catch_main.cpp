@@ -2,12 +2,16 @@
 
 #include "catch2/catch.hpp"
 
+#include "ekat/ekat_config.h"
+
 #include "ekat/mpi/ekat_comm.hpp"
 #include "ekat/util/ekat_test_utils.hpp"
 #include "ekat/ekat_session.hpp"
 #include "ekat/ekat_assert.hpp"
 
+#ifdef EKAT_ENABLE_MPI
 #include <mpi.h>
+#endif
 
 void ekat_initialize_test_session (int argc, char** argv, const bool print_config);
 void ekat_finalize_test_session ();
