@@ -1,7 +1,7 @@
 #ifndef EKAT_COMM_HPP
 #define EKAT_COMM_HPP
 
-#include <ekat_config.h>
+#include <ekat/ekat_config.h>
 
 #ifdef EKAT_ENABLE_MPI
 
