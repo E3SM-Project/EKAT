@@ -8,15 +8,14 @@
 
 namespace ekat_impl {
 
-static int get_default_fpes () {
 #ifdef EKAT_ENABLE_FPE_DEFAULT_MASK
+static int get_default_fpes () {
   return (FE_DIVBYZERO |
           FE_INVALID   |
           FE_OVERFLOW);
-#else
   return 0;
-#endif
 }
+#endif
 
 // If we initialize from inside a Fortran code, we don't have access to
 // char** args to pass to Kokkos::initialize. In this case we need to do
