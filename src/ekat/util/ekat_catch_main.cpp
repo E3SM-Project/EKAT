@@ -18,8 +18,10 @@ void ekat_finalize_test_session ();
 
 int main (int argc, char **argv) {
 
+#ifdef EKAT_ENABLE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
+#endif
 
   auto is_int = [] (const std::string& s)->bool {
     std::istringstream is(s);
@@ -72,7 +74,13 @@ int main (int argc, char **argv) {
     args.push_back(argv[i]);
   }
 
+#ifdef EKAT_ENABLE_MPI
   ekat::Comm comm(MPI_COMM_WORLD);
+  bool am_i_root = comm.am_i_root();
+#else
+  bool am_i_root = true;
+#endif
+
   //int dev_id = ekat::get_test_device(comm.rank());
   // Create it outside the if, so its c_str pointer survives
   std::string new_arg;
@@ -84,12 +92,17 @@ int main (int argc, char **argv) {
   // Initialize test session (initializes kokkos and print config settings).
   // Ekat provides a default impl, but the user can choose
   // to not use it, and provide one instead.
-  ekat_initialize_test_session(args.size(),args.data(),comm.am_i_root());
+  ekat_initialize_test_session(args.size(),args.data(),am_i_root);
+
 
 #ifndef NDEBUG
+#ifdef EKAT_ENABLE_MPI
   MPI_Barrier(comm.mpi_comm());
+#endif
   std::cout << "Starting catch session on rank " << comm.rank() << " out of " << comm.size() << "\n";
+#ifdef EKAT_ENABLE_MPI
   MPI_Barrier(comm.mpi_comm());
+#endif
 #endif
 
   // Run tests
