@@ -1,6 +1,8 @@
 #include <iostream>
 
+#ifdef EKAT_ENABLE_MPI
 #include <mpi.h>
+#endif
 
 #include "ekat_assert.hpp"
 #include "ekat_session.hpp"
@@ -24,6 +26,7 @@ void runtime_abort(const std::string& message, int code) {
   // Finalize ekat (e.g., finalize kokkos);
   finalize_ekat_session();
 
+#ifdef EKAT_ENABLE_MPI
   // Check if mpi is active. If so, use MPI_Abort, otherwise, simply std::abort
   int flag;
   MPI_Initialized(&flag);
@@ -32,6 +35,9 @@ void runtime_abort(const std::string& message, int code) {
   } else {
     std::abort();
   }
+#else
+  std::abort();
+#endif
 }
 
 } // namespace ekat
