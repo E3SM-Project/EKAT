@@ -4,12 +4,12 @@
 
 #include "ekat/ekat_config.h"
 
-#include "ekat/mpi/ekat_comm.hpp"
 #include "ekat/util/ekat_test_utils.hpp"
 #include "ekat/ekat_session.hpp"
 #include "ekat/ekat_assert.hpp"
 
 #ifdef EKAT_ENABLE_MPI
+#include "ekat/mpi/ekat_comm.hpp"
 #include <mpi.h>
 #endif
 
