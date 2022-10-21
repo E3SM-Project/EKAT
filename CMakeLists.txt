@@ -21,8 +21,7 @@ include(EkatBuildSpdlog)
 # EKAT has mostly C++, but some Fortran too
 project (EKAT C CXX Fortran)
 
-# Here's an option for disabling MPI (because no, not everyone needs it
-# all the time).
+# MPI is enabled by default, but not needed.
 option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)
 
 if (EKAT_ENABLE_MPI)
