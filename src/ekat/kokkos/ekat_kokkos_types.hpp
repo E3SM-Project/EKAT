@@ -4,7 +4,6 @@
 #include "ekat/ekat_config.h"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 #include "ekat/std_meta/ekat_std_type_traits.hpp"
-#include <Kokkos_MemoryTraits.hpp>
 
 /*
  * Header contains globally useful kokkos-related types for ekat.
