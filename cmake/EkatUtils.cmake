@@ -112,7 +112,9 @@ macro (EkatDisableAllWarning targetName)
   endif()
 
   get_target_property (tgt_include_dirs ${targetName} INTERFACE_INCLUDE_DIRECTORIES)
-  target_include_directories(${targetName} SYSTEM BEFORE PUBLIC ${tgt_include_dirs})
+  if (tgt_include_dirs)
+    target_include_directories(${targetName} SYSTEM BEFORE PUBLIC ${tgt_include_dirs})
+  endif()
 
 endmacro (EkatDisableAllWarning)
 
