@@ -1,9 +1,49 @@
 #ifndef EKAT_COMM_HPP
 #define EKAT_COMM_HPP
 
+#include <ekat/ekat_config.h>
+
 #include <type_traits>
 
+#ifdef EKAT_ENABLE_MPI
 #include <mpi.h>
+#else
+#include <algorithm> // for std::copy
+// These are stand-ins for the MPI data types that appear in Comm's interface.
+enum MPI_Comm {
+  MPI_COMM_NULL,
+  MPI_COMM_WORLD,
+  MPI_COMM_SELF
+};
+enum MPI_Datatype {
+  MPI_CHAR,
+  MPI_SHORT,
+  MPI_INT,
+  MPI_LONG,
+  MPI_LONG_LONG,
+  MPI_FLOAT,
+  MPI_DOUBLE,
+#if MPI_VERSION>3 || (MPI_VERSION==3 && MPI_SUBVERSION>=1)
+  MPI_CXX_BOOL,
+#endif
+};
+enum MPI_Op {
+  MPI_OP_NULL,
+  MPI_MAX,
+  MPI_MIN,
+  MPI_SUM,
+  MPI_PROD,
+  MPI_LAND,
+  MPI_BAND,
+  MPI_LOR,
+  MPI_BOR,
+  MPI_LXOR,
+  MPI_BXOR,
+  MPI_MINLOC,
+  MPI_MAXLOC,
+  MPI_REPLACE,
+};
+#endif
 
 namespace ekat
 {
@@ -90,56 +130,76 @@ MPI_Datatype get_mpi_type ();
 template<typename T>
 void Comm::broadcast (T* vals, const int count, const int root) const
 {
+#ifdef EKAT_ENABLE_MPI
   check_mpi_inited();
   MPI_Bcast(vals,count,get_mpi_type<T>(),root,m_mpi_comm);
+#endif
 }
 
 template<typename T>
 void Comm::scan (const T* my_vals, T* result, const int count, const MPI_Op op) const
 {
+#ifdef EKAT_ENABLE_MPI
   check_mpi_inited();
   MPI_Scan(my_vals,result,count,get_mpi_type<T>(),op,m_mpi_comm);
+#else
+  std::copy(my_vals, my_vals + count, result);
+#endif
 }
 
 template<typename T>
 void Comm::all_reduce (const T* my_vals, T* result, const int count, const MPI_Op op) const
 {
+#ifdef EKAT_ENABLE_MPI
   check_mpi_inited();
   MPI_Allreduce(my_vals,result,count,get_mpi_type<T>(),op,m_mpi_comm);
+#else
+  std::copy(my_vals, my_vals + count, result);
+#endif
 }
 
 template<typename T>
 void Comm::all_gather (const T* my_vals, T* all_vals, const int count) const
 {
+#ifdef EKAT_ENABLE_MPI
   check_mpi_inited();
   auto mpi_type = get_mpi_type<T>();
   MPI_Allgather(my_vals, count,mpi_type,
                 all_vals,count,mpi_type,
                 m_mpi_comm);
+#else
+  std::copy(my_vals, my_vals + count, all_vals);
+#endif
 }
 
 template<typename T>
 void Comm::scan (T* inout_vals, const int count, const MPI_Op op) const
 {
+#ifdef EKAT_ENABLE_MPI
   check_mpi_inited();
   MPI_Scan(MPI_IN_PLACE,inout_vals,count,get_mpi_type<T>(),op,m_mpi_comm);
+#endif
 }
 
 template<typename T>
 void Comm::all_reduce (T* inout_vals, const int count, const MPI_Op op) const
 {
+#ifdef EKAT_ENABLE_MPI
   check_mpi_inited();
   MPI_Allreduce(MPI_IN_PLACE,inout_vals,count,get_mpi_type<T>(),op,m_mpi_comm);
+#endif
 }
 
 template<typename T>
 void Comm::all_gather (T* inout_vals, const int count) const
 {
+#ifdef EKAT_ENABLE_MPI
   check_mpi_inited();
   auto mpi_type = get_mpi_type<T>();
   MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                 inout_vals,count,mpi_type,
                 m_mpi_comm);
+#endif
 }
 
 } // namespace ekat

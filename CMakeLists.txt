@@ -21,21 +21,28 @@ include(EkatBuildSpdlog)
 # EKAT has mostly C++, but some Fortran too
 project (EKAT C CXX Fortran)
 
-# EKAT requires MPI.
-find_package(MPI REQUIRED COMPONENTS C)
+# MPI is enabled by default, but not needed.
+option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)
 
-# NOTE: may be an overkill, but depending on which FindMPI module is called,
-#       if _FIND_REQUIRED is not checked, we may not get a fatal error
-#       if the required components are not found. So check the _FOUND var.
-if (NOT MPI_C_FOUND)
-  message (FATAL_ERROR "EKAT *requires* the C component of MPI to be found")
+if (EKAT_ENABLE_MPI)
+  find_package(MPI REQUIRED COMPONENTS C)
+
+  # NOTE: may be an overkill, but depending on which FindMPI module is called,
+  #       if _FIND_REQUIRED is not checked, we may not get a fatal error
+  #       if the required components are not found. So check the _FOUND var.
+  if (NOT MPI_C_FOUND)
+    message (FATAL_ERROR "EKAT *requires* the C component of MPI to be found")
+  endif()
+
+  # We should avoid cxx bindings in mpi; they are already deprecated,
+  # and can cause headaches at link time, cause they require -lmpi_cxx
+  # (for openpmi; -lmpicxx for mpich) flag.
+  include(EkatMpiUtils)
+  DisableMpiCxxBindings()
+
+  # MPI-related options
+  option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 endif()
-
-# We should avoid cxx bindings in mpi; they are already deprecated,
-# and can cause headaches at link time, cause they require -lmpi_cxx
-# (for openpmi; -lmpicxx for mpich) flag.
-include(EkatMpiUtils)
-DisableMpiCxxBindings()
 
 include(EkatUtils)
 IsDebugBuild(EKAT_IS_DEBUG_BUILD)
@@ -51,7 +58,6 @@ message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 ###  EKAT CONFIG OPTIONS ###
 ############################
 
-option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
 option (EKAT_ENABLE_FPE "Whether to enable support for floating point exceptions" ON)
 if (EKAT_ENABLE_FPE)
@@ -142,7 +148,9 @@ add_subdirectory(src/ekat)
 ############################
 
 # Set some vars needed to configure test-launcher
-SetMpiRuntimeEnvVars()
+if (EKAT_ENABLE_MPI)
+  SetMpiRuntimeEnvVars()
+endif()
 if (EKAT_ENABLE_GPU)
   set (TEST_LAUNCHER_ON_GPU True)
 else()

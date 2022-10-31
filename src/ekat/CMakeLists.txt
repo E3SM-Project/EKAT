@@ -14,17 +14,24 @@ set(EKAT_SOURCES
   io/ekat_yaml.cpp
   io/ekat_array_io.cpp
   io/ekat_array_io_mod.f90
-  mpi/ekat_comm.cpp
   util/ekat_arch.cpp
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
 )
 
+if (EKAT_ENABLE_MPI)
+  set(EKAT_SOURCES ${EKAT_SOURCES} mpi/ekat_comm.cpp)
+else()
+  set(EKAT_SOURCES ${EKAT_SOURCES} mpi/ekat_comm_serial.cpp)
+endif()
+
 # Create the library, and set all its properties
 add_library(ekat ${EKAT_SOURCES})
 
-# Link MPI
-target_link_libraries (ekat PUBLIC MPI::MPI_C)
+if (EKAT_ENABLE_MPI)
+  # Link MPI
+  target_link_libraries (ekat PUBLIC MPI::MPI_C)
+endif()
 
 target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
