@@ -7,9 +7,9 @@
 #include "ekat/util/ekat_test_utils.hpp"
 #include "ekat/ekat_session.hpp"
 #include "ekat/ekat_assert.hpp"
+#include "ekat/mpi/ekat_comm.hpp"
 
 #ifdef EKAT_ENABLE_MPI
-#include "ekat/mpi/ekat_comm.hpp"
 #include <mpi.h>
 #endif
 
@@ -74,12 +74,8 @@ int main (int argc, char **argv) {
     args.push_back(argv[i]);
   }
 
-#ifdef EKAT_ENABLE_MPI
   ekat::Comm comm(MPI_COMM_WORLD);
   bool am_i_root = comm.am_i_root();
-#else
-  bool am_i_root = true;
-#endif
 
   //int dev_id = ekat::get_test_device(comm.rank());
   // Create it outside the if, so its c_str pointer survives
@@ -96,13 +92,9 @@ int main (int argc, char **argv) {
 
 
 #ifndef NDEBUG
-#ifdef EKAT_ENABLE_MPI
-  MPI_Barrier(comm.mpi_comm());
+  comm.barrier();
   std::cout << "Starting catch session on rank " << comm.rank() << " out of " << comm.size() << "\n";
-  MPI_Barrier(comm.mpi_comm());
-#else
-  std::cout << "Starting catch session\n";
-#endif
+  comm.barrier();
 #endif
 
   // Run tests

@@ -21,6 +21,8 @@ set(EKAT_SOURCES
 
 if (EKAT_ENABLE_MPI)
   set(EKAT_SOURCES ${EKAT_SOURCES} mpi/ekat_comm.cpp)
+else()
+  set(EKAT_SOURCES ${EKAT_SOURCES} mpi/ekat_comm_serial.cpp)
 endif()
 
 # Create the library, and set all its properties
