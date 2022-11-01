@@ -75,6 +75,11 @@ void initialize_kokkos () {
   args.push_back(const_cast<char*>(silence));
 
   int narg = args.size();
+  // Kokkos::Impl::parse_command_line_arguments in >= 3.7.00 expects argv to
+  // have one more entry than narg, as documented in a comment: "Note that argv
+  // has (argc + 1) arguments, the last one always being nullptr." This is safe
+  // to insert for < 3.7.00, as well, so no KOKKOS_VERSION switch is needed.
+  args.push_back(nullptr);
   Kokkos::initialize(narg, args.data());
 }
 
