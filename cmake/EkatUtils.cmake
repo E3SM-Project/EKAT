@@ -110,12 +110,6 @@ macro (EkatDisableAllWarning targetName)
     target_compile_options (${targetName} PRIVATE
       $<$<COMPILE_LANGUAGE:Fortran>:$<$<Fortran_COMPILER_ID:GNU>:-w> $<$<Fortran_COMPILER_ID:Intel>: -w>>)
   endif()
-
-  get_target_property (tgt_include_dirs ${targetName} INTERFACE_INCLUDE_DIRECTORIES)
-  if (tgt_include_dirs)
-    target_include_directories(${targetName} SYSTEM BEFORE PUBLIC ${tgt_include_dirs})
-  endif()
-
 endmacro (EkatDisableAllWarning)
 
 function(separate_cut_arguments prefix options oneValueArgs multiValueArgs return_varname)
