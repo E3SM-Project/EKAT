@@ -576,31 +576,23 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
   KOKKOS_INLINE_FUNCTION
   int get_workspace_idx(const MemberType& team_member) const
   {
-    EKAT_KERNEL_ASSERT_MSG (this->_num_teams>0, "Error! TeamUtils not yet inited.\n");
+    EKAT_KERNEL_ASSERT_MSG (this->_num_teams > 0, "Error! TeamUtils not yet inited.\n");
 
-    if (!_need_ws_sharing) {
+    if ( ! _need_ws_sharing) {
       return team_member.league_rank();
-    }
-    else {
-      int ws_idx = 0;
-      Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
+    } else {
+      int ws_idx_broadcast;
+      Kokkos::single(Kokkos::PerTeam(team_member), [&] (int& ws_idx) {
         ws_idx = team_member.league_rank() % _num_ws_slots;
-        if (!Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type)1)) {
+        if ( ! Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1)) {
           rnd_type rand_gen = _rand_pool.get_state(team_member.league_rank());
           ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
-          while (!Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type)1)) {
+          while ( ! Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1))
             ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
-          }
+          Kokkos::memory_fence();
         }
-      });
-
-      // broadcast the idx to the team with a simple reduce
-      int ws_idx_max_reduce;
-      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team_member, 1), [&] (int, int& ws_idx_max) {
-        ws_idx_max = ws_idx;
-      }, Kokkos::Max<int>(ws_idx_max_reduce));
-      team_member.team_barrier();
-      return ws_idx_max_reduce;
+      }, ws_idx_broadcast);
+      return ws_idx_broadcast;
     }
   }
 
@@ -612,7 +604,8 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
       team_member.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
         flag_type volatile* const e = &_open_ws_slots(ws_idx);
-        *e = (flag_type)0;
+        *e = (flag_type) 0;
+        Kokkos::memory_fence();
       });
     }
   }
