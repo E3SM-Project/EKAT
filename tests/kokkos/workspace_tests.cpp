@@ -79,11 +79,44 @@ static void unittest_workspace_overprovision()
   }
 }
 
+static void unittest_workspace_idx_lock()
+{
+  using namespace ekat;
+
+  static constexpr const int n_slots_per_team = 4;
+  // For a device having ~120 SMs with 32 32-thread cores/SM, there are ~1000
+  // physically placeable 4-core teams. Set up a test with league_size
+  // substantially larger than that.
+  const int ni = 100000;
+  const int nk = 128;
+
+  TeamPolicy policy(ExeSpaceUtils<ExeSpace>::get_default_team_policy(ni, nk));
+  WorkspaceManager<double, Device> wsm(nk, n_slots_per_team, policy);
+
+  const auto f = KOKKOS_LAMBDA(const MemberType& team, int& err) {
+    const auto i = team.league_rank();
+    auto workspace = wsm.get_workspace(team);
+    auto v = workspace.take("v");
+    const auto ttr = Kokkos::TeamThreadRange(team, 0, nk);
+    const auto g = [&] (const int k) { v(k) = i; };
+    Kokkos::parallel_for(ttr, g);
+    team.team_barrier();
+    // Write race, but doesn't matter. Any err > 0 is an error.
+    const auto h = [&] (const int k) { if (v(k) != i) ++err; };
+    Kokkos::parallel_for(ttr, h);
+    workspace.release(v);
+  };
+  int err;
+  Kokkos::parallel_reduce(policy, f, err);
+  REQUIRE(err == 0);
+}    
+
 static void unittest_workspace()
 {
   using namespace ekat;
 
   unittest_workspace_overprovision();
+  unittest_workspace_idx_lock();
 
   static constexpr const int n_slots_per_team = 4;
   const int ni = 128;
