@@ -11,7 +11,7 @@
 #include "ekat/ekat.hpp"
 #include "ekat/ekat_pack.hpp"
 
-#include "Kokkos_Random.hpp"
+#include <Kokkos_Random.hpp>
 
 #include <cassert>
 #include <cstring>
