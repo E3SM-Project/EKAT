@@ -4,7 +4,7 @@
 #include "ekat/ekat_pack.hpp"
 #include "ekat/ekat_assert.hpp"
 
-#include "Kokkos_Pair.hpp"
+#include <Kokkos_Core.hpp>
 
 namespace ekat {
 
