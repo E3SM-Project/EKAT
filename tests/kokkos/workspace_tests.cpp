@@ -106,9 +106,15 @@ static void unittest_workspace_idx_lock()
     Kokkos::parallel_for(ttr, h);
     workspace.release(v);
   };
-  int err;
-  Kokkos::parallel_reduce(policy, f, err);
-  REQUIRE(err == 0);
+  for (int trial = 0; trial < 10; ++trial) {
+    // Failures in the buggy case (missing memory_fence in
+    // release_workspace_idx) are nondeterministic, so run this loop multiple
+    // times to increase the strength of the test. In the buggy case on a V100,
+    // I find that this test fails nearly 100% of the time.
+    int err;
+    Kokkos::parallel_reduce(policy, f, err);
+    REQUIRE(err == 0);
+  }
 }    
 
 static void unittest_workspace()
