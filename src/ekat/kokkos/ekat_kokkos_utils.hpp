@@ -586,14 +586,15 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
           ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
           while ( ! Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1))
             ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
-          // The following memory fence could be used in situations where one
-          // thread is communicating with another via a global resource.
-          // However, since we are implementing workspace indices with this spin
-          // lock, the implication is that the values in the workspace at
-          // acquisition are not meaningful. Hence we do not need this memory
-          // fence.
-          // not needed for this use case: Kokkos::memory_fence();
         }
+        // The following memory fence is not strictly needed if the application
+        // code uses fences where it should for reads and writes to global
+        // resources. However, it's simplest to call it here so the app doesn't
+        // have to worry about it. The workspace debug code is an example of a
+        // caller that needs this. Without it, the test
+        // 'unittest_workspace_idx_lock' fails with an assertion in the
+        // debug-enabled workspace code due to out-of-sequence reads.
+        Kokkos::memory_fence();
       }, ws_idx_broadcast);
       return ws_idx_broadcast;
     }
