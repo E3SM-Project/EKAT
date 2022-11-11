@@ -589,8 +589,15 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
           ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
           while ( ! Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1))
             ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
-          Kokkos::memory_fence();
         }
+        // The following memory fence is not strictly needed if the application
+        // code uses fences where it should for reads and writes to global
+        // resources. However, it's simplest to call it here so the app doesn't
+        // have to worry about it. The workspace debug code is an example of a
+        // caller that needs this. Without it, the test
+        // 'unittest_workspace_idx_lock' fails with an assertion in the
+        // debug-enabled workspace code due to out-of-sequence reads.
+        Kokkos::memory_fence();
       }, ws_idx_broadcast);
       return ws_idx_broadcast;
     }
@@ -603,9 +610,21 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
     if (_need_ws_sharing) {
       team_member.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
+        // The 'volatile' declaration in atomic_compare_exchange_strong and in
+        // the following code means that all threads on the GPU will see the
+        // correct value of the lock when they access it. But the values in
+        // writes a thread makes to global memory are not necessarily seen by
+        // other threads as occurring in the same sequence. Without a memory
+        // fence, it's possible for thread B to release the lock, A to acquire
+        // the lock, A to start using the resource protected by the lock, and
+        // then get a delayed read of a write to that resource B made before B
+        // released the lock. With this memory fence, any writes B makes to the
+        // resource will be read by A as occurring before the write B makes to
+        // the lock, thus assuring the global resource is truly free from A's
+        // perspective when it acquires the lock.
+        Kokkos::memory_fence();                          
         flag_type volatile* const e = &_open_ws_slots(ws_idx);
         *e = (flag_type) 0;
-        Kokkos::memory_fence();
       });
     }
   }
