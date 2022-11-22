@@ -11,7 +11,7 @@ WORK_DIR=$(pwd)
 rm -rf ekat-build ekat-install
 
 # setup env, use SCREAM env
-SCREAM_SCRIPTS=${WORK_DIR}/scream/components/scream/scripts
+SCREAM_SCRIPTS=${WORK_DIR}/scream/components/eamxx/scripts
 source ${SCREAM_SCRIPTS}/jenkins/${NODE_NAME}_setup
 source ${SCREAM_SCRIPTS}/source_to_load_scream_env.sh
 
