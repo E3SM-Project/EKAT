@@ -46,8 +46,8 @@ struct DataND {
   using type = typename DataND<T,N-1>::type*;
 };
 template<typename T>
-struct DataND<T,1> {
-  using type = T*;
+struct DataND<T,0> {
+  using type = T;
 };
 
 } // namespace ekat

@@ -446,6 +446,10 @@ TEST_CASE("subviews") {
         if (v4_1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
         if (v3_1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
         if (v2_1(m)!=v6(i0,i1,i2,i3,i4,m)) ++ndiffs;
+
+        // Check rank0 subview
+        auto v0 = ekat::subview(v1,m);
+        if (v0()!=v1(m)) ++ndiffs;
       }
 
       // Make sure that our diffs counting strategy works
