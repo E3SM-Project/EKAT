@@ -11,6 +11,18 @@ namespace ekat {
 // Note: we template on scalar type ST to allow both builtin and Packs,
 //       as well as to allow const/non-const versions.
 
+// --- Rank1 --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLR<ST,Props...>>
+subview(const ViewLR<ST*,Props...>& v,
+        const int i0) {
+  assert(v.data() != nullptr);
+  assert(i0>=0 && i0 < v.extent_int(0));
+  return Unmanaged<ViewLR<ST,Props...>>(
+      &v.impl_map().reference(i0, 0));
+}
+
 // --- Rank2 --- //
 template <typename ST, typename... Props>
 KOKKOS_INLINE_FUNCTION
