@@ -355,7 +355,7 @@ macro (SetCudaFlags targetName)
       message (FATAL_ERROR "Error! Unable to find CUDA.")
     endif()
 
-    set(options)
+    set(options CUDA_LANG)
     set(args1v)
     set(argsMv FLAGS)
     cmake_parse_arguments(SCF "${options}" "${args1v}" "${argsMv}" ${ARGN})
@@ -374,8 +374,15 @@ macro (SetCudaFlags targetName)
     endif()
 
     # Set the flags on the target
-    target_compile_options (${targetName} PUBLIC
-      "$<$<COMPILE_LANGUAGE:CXX>:${FLAGS}>")
+    if (SCF_CUDA_LANG)
+      # User is setting the src files language to CUDA
+      target_compile_options (${targetName} PUBLIC
+        "$<$<COMPILE_LANGUAGE:CUDA>:${FLAGS}>")
+    else()
+      # We assume the user is setting the src files lang to CXX
+      target_compile_options (${targetName} PUBLIC
+        "$<$<COMPILE_LANGUAGE:CXX>:${FLAGS}>")
+    endif()
   endif()
 endmacro()
 
