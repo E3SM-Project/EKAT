@@ -78,7 +78,7 @@ struct LinInterp
   const TeamPolicy& policy() const { return m_policy; }
 
   // Setup the index map. This must be called before lin_interp. By default, will launch a
-  // TeamThreadRange kernel. By default, the column idx will be team.league_rank(); this can be
+  // TeamVectorRange kernel. By default, the column idx will be team.league_rank(); this can be
   // overridden by the col argument.
   template<typename V1, typename V2>
   KOKKOS_INLINE_FUNCTION
@@ -100,7 +100,7 @@ struct LinInterp
     const Int col=-1) const;
 
   // Linearly interpolate y(x1) onto coordinates x2. By default, will launch a
-  // TeamThreadRange kernel. The x1 and x2 should match what was given to setup.
+  // TeamVectorRange kernel. The x1 and x2 should match what was given to setup.
   // By default, the column idx will be team.league_rank(); this can be
   // overridden by the col argument.
   template <typename V1, typename V2, typename V3, typename V4>

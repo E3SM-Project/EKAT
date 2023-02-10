@@ -25,7 +25,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::setup(
   const V2& x2,
   const Int col) const
 {
-  setup_impl(team, Kokkos::TeamThreadRange(team, m_km2_pack),
+  setup_impl(team, Kokkos::TeamVectorRange(team, m_km2_pack),
              ekat::repack<Pack::n>(x1), ekat::repack<Pack::n>(x2), col);
 }
 
@@ -55,7 +55,7 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp(
   const Int col) const
 {
   lin_interp_impl(team,
-                  Kokkos::TeamThreadRange(team, m_km2_pack),
+                  Kokkos::TeamVectorRange(team, m_km2_pack),
                   ekat::repack<Pack::n>(x1),
                   ekat::repack<Pack::n>(x2),
                   ekat::repack<Pack::n>(y1),

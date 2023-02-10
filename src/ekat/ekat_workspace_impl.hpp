@@ -199,7 +199,7 @@ KOKKOS_INLINE_FUNCTION
 void WorkspaceManager<T, D>::operator() (const MemberType& team) const
 {
   Kokkos::parallel_for(
-    Kokkos::TeamThreadRange(team, m_max_used), [&] (int i) {
+    Kokkos::TeamVectorRange(team, m_max_used), [&] (int i) {
       init_slot_metadata(team.league_rank(), i);
   });
 }
@@ -439,7 +439,7 @@ void WorkspaceManager<T, D>::Workspace::take_many_and_reset(
 
   // We only need to reset the metadata for spaces that are being left free
   Kokkos::parallel_for(
-    Kokkos::TeamThreadRange(m_team, m_parent.m_max_used - N), [&] (int i) {
+    Kokkos::TeamVectorRange(m_team, m_parent.m_max_used - N), [&] (int i) {
       m_parent.init_slot_metadata(m_ws_idx, i+N);
     });
 
@@ -474,7 +474,7 @@ void WorkspaceManager<T, D>::Workspace::reset() const
 #endif
   m_next_slot = 0;
   Kokkos::parallel_for(
-    Kokkos::TeamThreadRange(m_team, m_parent.m_max_used), [&] (int i) {
+    Kokkos::TeamVectorRange(m_team, m_parent.m_max_used), [&] (int i) {
       m_parent.init_slot_metadata(m_ws_idx, i);
     });
 
@@ -653,7 +653,7 @@ void WorkspaceManager<T, D>::Workspace::release_macro_block(
   // Reset metadata
   m_team.team_barrier();
   Kokkos::parallel_for(
-    Kokkos::TeamThreadRange(m_team, n_sub_blocks), [&] (int i) {
+    Kokkos::TeamVectorRange(m_team, n_sub_blocks), [&] (int i) {
       m_parent.init_slot_metadata(m_ws_idx, i+m_next_slot);
   });
 
