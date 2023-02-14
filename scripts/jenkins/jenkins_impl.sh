@@ -55,7 +55,7 @@ fi
 # Build and test double precision
 mkdir -p ekat-build/ekat-sp && cd ekat-build/ekat-sp && rm -rf *
 
-cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
+${BATCHP} cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-sp    \
     -DCMAKE_BUILD_TYPE=DEBUG                                   \
     -DCMAKE_C_COMPILER=${MPICC}                                \
@@ -97,7 +97,7 @@ cd ${WORK_DIR}
 # Build and test single precision
 mkdir -p ekat-build/ekat-dp && cd ekat-build/ekat-dp && rm -rf *
 
-cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
+${BATCHP} cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
     -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-dp    \
     -DCMAKE_BUILD_TYPE=DEBUG                                   \
     -DCMAKE_C_COMPILER=${MPICC}                                \
@@ -140,7 +140,7 @@ if [[ "$ISCUDA" == "False" ]]; then
   # Build and test double precision with FPE on, and packsize=1
   mkdir -p ekat-build/ekat-fpe && cd ekat-build/ekat-fpe && rm -rf *
 
-  cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
+  ${BATCHP} cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
       -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-fpe   \
       -DCMAKE_BUILD_TYPE=DEBUG                                   \
       -DCMAKE_C_COMPILER=${MPICC}                                \
@@ -185,7 +185,7 @@ if [[ "$ISCUDA" == "True" ]]; then
   # Build and test Cuda UVM
   mkdir -p ekat-build/ekat-uvm && cd ekat-build/ekat-uvm && rm -rf *
 
-  cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
+  ${BATCHP} cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
       -DCMAKE_INSTALL_PREFIX=${WORK_DIR}/ekat-install/ekat-uvm   \
       -DCMAKE_BUILD_TYPE=DEBUG                                   \
       -DCMAKE_C_COMPILER=${MPICC}                                \
