@@ -38,7 +38,7 @@ if [[ "$ISCUDA" == "False" ]]; then
     EKAT_THREAD_SETTINGS="-DEKAT_TEST_THREAD_INC=2 -DEKAT_TEST_MAX_THREADS=14"
 fi
 
-# Build and test double precision
+# Build and test single precision
 mkdir -p ekat-build/ekat-sp && cd ekat-build/ekat-sp && rm -rf *
 
 cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
@@ -80,7 +80,7 @@ else
 fi
 cd ${WORK_DIR}
 
-# Build and test single precision
+# Build and test double precision
 mkdir -p ekat-build/ekat-dp && cd ekat-build/ekat-dp && rm -rf *
 
 cmake -C ${WORK_DIR}/ekat-src/cmake/machine-files/${NODE_NAME}.cmake \
