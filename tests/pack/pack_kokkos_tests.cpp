@@ -237,7 +237,7 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
 
     int nerrs_local = 0;
 
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, num_bigs), [&] (int i) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, num_bigs), [&] (int i) {
       test_k_array(i) = i;
     });
 
@@ -245,7 +245,7 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
     if (small.extent_int(0) != 4 * num_bigs) ++nerrs_local;
 
     team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, num_bigs*4), [&] (int i) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, num_bigs*4), [&] (int i) {
       for (int p = 0; p < 4; ++p) {
         if (small(i)[p] != i / 4) ++nerrs_local;
       }
@@ -254,13 +254,13 @@ TEST_CASE("kokkos_packs", "ekat::pack") {
     auto big = repack<16>(small);
     if (big.extent_int(0) != num_bigs) ++nerrs_local;
 
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, num_bigs*4), [&] (int i) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, num_bigs*4), [&] (int i) {
       for (int p = 0; p < 4; ++p) {
         small(i)[p] = p * i;
       }
     });
 
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, num_bigs*4), [&] (int i) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, num_bigs*4), [&] (int i) {
       auto mask = small(i) >= (2 * i);
       for (int p = 0; p < 4; ++p) {
         if (i == 0) {

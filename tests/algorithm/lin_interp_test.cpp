@@ -84,7 +84,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       populate_li_input(km1, km2, x1[i].data(), y1[i].data(), x2[i].data(), generator);
     }
 
-    // Views for testing TeamThreadRange
+    // Views for testing TeamVectorRange
     using LIV = ekat::LinInterp<Real,EKAT_TEST_POSSIBLY_NO_PACK_SIZE>;
     using Pack = ekat::Pack<Real,EKAT_TEST_PACK_SIZE>;
     LIV vect(ncol, km1, km2);
@@ -179,7 +179,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       }
     }
 
-    // Run LiVect TeamThreadRange
+    // Run LiVect TeamVectorRange
     {
       Kokkos::parallel_for("lin-interp-ut-vect-ttr",
                            vect.policy(),
@@ -200,7 +200,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
     // Run LiVect ThreadVectorRange, doing setup from main parallel for
     {
       LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, vect1.km2_pack());
-      Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
+      Kokkos::parallel_for("lin-interp-ut-vect-thvr", policy,
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
         const int i = team.league_rank();
         for (int j = 0; j < inner_dim; ++j) {
@@ -212,9 +212,9 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
         }
         team.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
-          const auto& tvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
+          const auto& thvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
           const int col = i*inner_dim + j;
-          vect1.lin_interp(team, tvr,
+          vect1.lin_interp(team, thvr,
                            ekat::subview(x1kv3, i, j),
                            ekat::subview(x2kv3, i, j),
                            ekat::subview(y1kv3, i, j),
@@ -243,18 +243,18 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
     // Run LiVect ThreadVectorRange, doing setup from inner TTR parallel for
     {
       LIV::TeamPolicy policy(outer_dim, ekat::OnGpu<LIV::ExeSpace>::value ? inner_dim : 1, vect1.km2_pack());
-      Kokkos::parallel_for("lin-interp-ut-vect-tvr", policy,
+      Kokkos::parallel_for("lin-interp-ut-vect-thvr", policy,
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team) {
         const int i = team.league_rank();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, inner_dim), [&] (int j) {
-          const auto& tvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
+          const auto& thvr = Kokkos::ThreadVectorRange(team, vect1.km2_pack());
           const int col = i*inner_dim + j;
-          vect1.setup(team, tvr,
+          vect1.setup(team, thvr,
                       ekat::subview(x1kv3, i, j),
                       ekat::subview(x2kv3, i, j),
                       col);
           team.team_barrier();
-          vect1.lin_interp(team, tvr,
+          vect1.lin_interp(team, thvr,
                            ekat::subview(x1kv3, i, j),
                            ekat::subview(x2kv3, i, j),
                            ekat::subview(y1kv3, i, j),
@@ -344,7 +344,7 @@ TEST_CASE("lin_interp_identity", "lin_interp") {
     const int km1 = k_dist(generator);
     const int km2 = km1;
 
-    // Views for testing TeamThreadRange
+    // Views for testing TeamVectorRange
     LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
@@ -372,7 +372,7 @@ TEST_CASE("lin_interp_identity", "lin_interp") {
     Kokkos::deep_copy(y1_d, y1_h);
     Kokkos::deep_copy(x2_d, x2_h);
 
-    // Run LiVect TeamThreadRange
+    // Run LiVect TeamVectorRange
     Kokkos::parallel_for("lin-interp-ut-vect-ttr",
                          vect.policy(),
                          KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
@@ -423,7 +423,7 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
     const int km1 = k_dist(generator);
     const int km2 = km1-1;
 
-    // Views for testing TeamThreadRange
+    // Views for testing TeamVectorRange
     LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
@@ -460,7 +460,7 @@ TEST_CASE("lin_interp_avg", "lin_interp") {
     Kokkos::deep_copy(y1_d, y1_h);
     Kokkos::deep_copy(x2_d, x2_h);
 
-    // Run LiVect TeamThreadRange
+    // Run LiVect TeamVectorRange
     Kokkos::parallel_for("lin-interp-ut-vect-ttr",
                          vect.policy(),
                          KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
@@ -510,7 +510,7 @@ TEST_CASE("lin_interp_down_sampling", "lin_interp") {
     const int km2 = k_dist(generator);
     const int km1 = km2*2;
 
-    // Views for testing TeamThreadRange
+    // Views for testing TeamVectorRange
     LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
@@ -541,7 +541,7 @@ TEST_CASE("lin_interp_down_sampling", "lin_interp") {
     Kokkos::deep_copy(y1_d, y1_h);
     Kokkos::deep_copy(x2_d, x2_h);
 
-    // Run LiVect TeamThreadRange
+    // Run LiVect TeamVectorRange
     Kokkos::parallel_for("lin-interp-ut-vect-ttr",
                          vect.policy(),
                          KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
@@ -598,7 +598,7 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
     const int km1 = k_dist(generator);
     const int km2 = k_dist(generator);
 
-    // Views for testing TeamThreadRange
+    // Views for testing TeamVectorRange
     LIV vect(ncol, km1, km2);
     const int km1_pack = ekat::npack<Pack>(km1);
     const int km2_pack = ekat::npack<Pack>(km2);
@@ -628,7 +628,7 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
     Kokkos::deep_copy(y1_d, y1_h);
     Kokkos::deep_copy(x2_d, x2_h);
 
-    // Run LiVect TeamThreadRange
+    // Run LiVect TeamVectorRange
     Kokkos::parallel_for("lin-interp-ut-vect-ttr",
                          vect.policy(),
                          KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {

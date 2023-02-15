@@ -24,7 +24,7 @@ void run (const Policy& p,
   int value = std::is_same<typename Policy::traits::execution_space,Kokkos::Serial>::value ? ValueHost : ValueDev;
   Kokkos::parallel_for(p,KOKKOS_LAMBDA(const typename Policy::member_type& team_member) {
     const int i = team_member.league_rank();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member,nk),
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member,nk),
                          [&](const int k) {
       a(i,k) = value;
     });

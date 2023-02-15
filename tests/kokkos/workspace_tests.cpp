@@ -97,13 +97,13 @@ static void unittest_workspace_idx_lock()
     const auto i = team.league_rank();
     auto workspace = wsm.get_workspace(team);
     auto v = workspace.take("v");
-    const auto ttr = Kokkos::TeamThreadRange(team, 0, nk);
+    const auto tevr = Kokkos::TeamVectorRange(team, 0, nk);
     const auto g = [&] (const int k) { v(k) = i; };
-    Kokkos::parallel_for(ttr, g);
+    Kokkos::parallel_for(tevr, g);
     team.team_barrier();
     // Write race, but doesn't matter. Any err > 0 is an error.
     const auto h = [&] (const int k) { if (v(k) != i) ++err; };
-    Kokkos::parallel_for(ttr, h);
+    Kokkos::parallel_for(tevr, h);
     workspace.release(v);
   };
   for (int trial = 0; trial < 10; ++trial) {
@@ -115,7 +115,7 @@ static void unittest_workspace_idx_lock()
     Kokkos::parallel_reduce(policy, f, err);
     REQUIRE(err == 0);
   }
-}    
+}
 
 static void unittest_workspace()
 {
@@ -325,7 +325,7 @@ static void unittest_workspace()
         }
 
         for (int w = 0; w < n_slots_per_team; ++w) {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, slot_length), [&] (Int i) {
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(team, slot_length), [&] (Int i) {
             if (r % 5 == 1) {
               wsmacro2d(w,i) = i * w;
             } else {
@@ -403,7 +403,7 @@ static void unittest_workspace()
             team.team_barrier();
 
             for (int w = 0; w < n_slots_per_team; ++w) {
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(team, slot_length), [&] (Int i) {
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(team, slot_length), [&] (Int i) {
                   wssub[w](i) = i * w;
                 });
             }
@@ -467,7 +467,7 @@ static void unittest_workspace()
 
             for (int w = 0; w < n_slots_per_team; ++w) {
               if (exp_active[w]) {
-                Kokkos::parallel_for(Kokkos::TeamThreadRange(team, slot_length), [&] (Int i) {
+                Kokkos::parallel_for(Kokkos::TeamVectorRange(team, slot_length), [&] (Int i) {
                     wssub[w](i) = i * w;
                   });
               }

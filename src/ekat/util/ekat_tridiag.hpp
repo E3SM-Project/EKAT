@@ -645,7 +645,7 @@ void bfb (const TeamMember& team,
   const auto f = [&] (const int& j) {
     impl::bfb_thomas_solve(dl, d, du, Kokkos::subview(X , Kokkos::ALL(), j));
   };
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nrhs), f);
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nrhs), f);
 }
 
 template <typename TeamMember, typename TridiagDiag, typename DataArray>
@@ -675,7 +675,7 @@ void bfb (const TeamMember& team,
                            subview(du, ALL(), j),
                            subview(X , ALL(), j));
   };
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nrhs), f);
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nrhs), f);
 }
 
 } // namespace tridiag
