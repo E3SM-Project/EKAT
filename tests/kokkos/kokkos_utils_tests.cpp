@@ -379,6 +379,7 @@ TEST_CASE("subviews") {
   const int i2 = 3;
   const int i3 = 2;
   const int i4 = 1;
+  const int i5 = 0;
 
   // Create input view
   kt::view_ND<Real,6> v6("v6",7,6,5,4,3,2);
@@ -468,6 +469,14 @@ TEST_CASE("subviews") {
     auto sv5 = ekat::subview_1(v5,i2);
     auto sv4 = ekat::subview_1(v4,i3);
     auto sv3 = ekat::subview_1(v3,i4);
+    auto sv2 = ekat::subview_1(v2,i5);
+
+    // First four should retain LaoutRight, last one has no other choice but getting LayoutStride
+    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutRight>::value);
+    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutRight>::value);
+    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutRight>::value);
+    REQUIRE (std::is_same<typename decltype(sv3)::traits::array_layout,Kokkos::LayoutRight>::value);
+    REQUIRE (std::is_same<typename decltype(sv2)::traits::array_layout,Kokkos::LayoutStride>::value);
 
     // Subview again the second slowest
     auto sv6_2 = ekat::subview_1(sv6,i2);
@@ -504,6 +513,9 @@ TEST_CASE("subviews") {
           if (sv3(k,m)!=v6(i0,i1,i2,k,i4,m)) ++ndiffs;
         }
 
+      for (int l=0; l<3; ++l) {
+        if (sv2(l)!=v6(i0,i1,i2,i3,l,i5)) ++ndiffs;
+      }
 
       for (int h=0; h<7; ++h)
         for (int k=0; k<4; ++k)

@@ -27,6 +27,9 @@ using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::Def
 template<typename DT, typename... Props>
 using ViewLR = Kokkos::View<DT,Kokkos::LayoutRight,Props...>;
 
+template<typename DT, typename... Props>
+using ViewLS = Kokkos::View<DT,Kokkos::LayoutStride,Props...>;
+
 // Struct for getting useful Kokkos types based on the device
 template <typename DeviceType>
 struct KokkosTypes
@@ -49,6 +52,10 @@ struct KokkosTypes
   // left-layout views, may be useful for interacting with fortran
   template <typename DataType, typename MemoryTraits = Kokkos::MemoryManaged>
   using lview = Kokkos::View<DataType, Kokkos::LayoutLeft, Device, MemoryTraits>;
+
+  // strided-layout views, may be needed in certain subview operations
+  template <typename DataType, typename MemoryTraits = Kokkos::MemoryManaged>
+  using sview = Kokkos::View<DataType, Kokkos::LayoutStride, Device, MemoryTraits>;
 
   // A N-dim view given scalar type and N
   template<typename Scalar, int N, typename MemoryTraits = Kokkos::MemoryManaged>
