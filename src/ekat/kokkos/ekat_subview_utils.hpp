@@ -205,16 +205,26 @@ subview(const ViewLR<ST******,Props...>& v,
 
 // ================ Subviews along 2nd dimension ======================= //
 
-// Note: these subviews can retain LayoutRight, with a single stride
+// Note: if input rank>2, these subviews can retain LayoutRight.
 //       However, Kokkos::subview only works if the output rank is <=2,
 //       so for higher ranks, we manually build the output view
 //       instead of relying on Kokkos::subview.
 //       See https://github.com/kokkos/kokkos/issues/3757
-// Note: we *cannot* offer this method for Rank2 views, since
-//       kokkos does not offer LayoutRight with a stride for dim0
-//       for rank 1 layouts, and forces to use LayoutStride instead.
-//       That means that v(m,n) subviewed as v(:,n0) will *always*
-//       have LayoutStride, which we try to avoid.
+//       If the input view has rank=2, then the output view MUST have
+//       LayoutStride (there is no alternative).
+
+// --- Rank2 --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST*,Props...>>
+subview_1(const ViewLR<ST**,Props...>& v,
+          const int i1) {
+  assert(v.data() != nullptr);
+  assert(i1>=0 && i1 < v.extent_int(1));
+
+  auto sv = Kokkos::subview(v,Kokkos::ALL,i1);
+  return Unmanaged<ViewLS<ST*,Props...>>(sv);
+}
 
 // --- Rank3 --- //
 template <typename ST, typename... Props>
