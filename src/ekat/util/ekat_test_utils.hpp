@@ -14,6 +14,7 @@ struct TestSession {
   }
 
   std::map<std::string,std::string> params;
+  std::map<std::string,bool>        flags;
 private:
   TestSession() = default;
 };

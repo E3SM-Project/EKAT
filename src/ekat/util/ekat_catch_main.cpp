@@ -31,7 +31,7 @@ int main (int argc, char **argv) {
   };
 
   // Read possible ekat-specific arguments
-  auto const readCommaSeparaterParams = [] (const std::string& cmd_line_arg) {
+  auto const readCommaSeparatedParams = [] (const std::string& cmd_line_arg) {
     if (cmd_line_arg=="") {
       return;
     }
@@ -50,16 +50,32 @@ int main (int argc, char **argv) {
       ts.params[key] = val;
     }
   };
+  auto const readCommaSeparatedOptions = [] (const std::string& cmd_line_arg) {
+    if (cmd_line_arg=="") {
+      return;
+    }
+    auto& ts = ekat::TestSession::get();
+
+    std::stringstream input(cmd_line_arg);
+    std::string option;
+    while (getline(input,option,',')) {
+      // Split option according to key=val
+      ts.flags[option] = true;
+    }
+  };
   Catch::Session catch_session;
   auto cli = catch_session.cli();
   auto& ts = ekat::TestSession::get();
   auto& device = ts.params["kokkos-device-id"];
   device = "-1";
-  cli |= Catch::clara::Opt(readCommaSeparaterParams, "key1=val1[,key2=val2[,...]]")
+  cli |= Catch::clara::Opt(readCommaSeparatedParams, "key1=val1[,key2=val2[,...]]")
              ["--ekat-test-params"]
              ("list of parameters to forward to the test");
   cli |= Catch::clara::Opt(device, "device")["--ekat-kokkos-device"]
              ("The device to be used (for GPU runs only");
+  cli |= Catch::clara::Opt(readCommaSeparatedOptions, "option1[,option2[,...]]")
+             ["--flags"]
+             ("list of flags to forward to the test");
   catch_session.cli(cli);
 
   EKAT_REQUIRE_MSG(catch_session.applyCommandLine(argc,argv)==0,
