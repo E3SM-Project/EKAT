@@ -17,7 +17,7 @@ set(CUT_EXEC_MV_ARGS
   LIBS LIBS_DIRS LINKER_FLAGS)
 
 set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
-set(CUT_TEST_1V_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG)
+set(CUT_TEST_1V_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG MPI_THREAD_FLAG)
 set(CUT_TEST_MV_ARGS EXE_ARGS MPI_RANKS THREADS MPI_EXTRA_ARGS LABELS PROPERTIES)
 
 # This function takes the following mandatory arguments:
@@ -302,6 +302,9 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
           set (RANK_MAPPING "--map-by ppr:${NRANKS}:node:pe=${NTHREADS}")
         else()
           set (RANK_MAPPING "${ecutfe_MPI_NP_FLAG} ${NRANKS}")
+        endif()
+        if (ecutfe_MPI_THREAD_FLAG)
+          string(APPEND RANK_MAPPING " ${ecutfe_MPI_THREAD_FLAG} ${NTHREADS}")
         endif()
         add_test(NAME ${FULL_TEST_NAME}
                  COMMAND sh -c "${ecutfe_MPI_EXEC_NAME} ${RANK_MAPPING} ${ecutfe_MPI_EXTRA_ARGS} ${invokeExecCurr}")
