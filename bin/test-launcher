@@ -118,53 +118,57 @@ def run_test(buffer_output,print_omp_affinity,exec_args):
     cmd = " ".join(omp_env)
 
     # If run with --resource-spec-file, we will have some special env var set
-    if "CTEST_RESOURCE_GROUP_COUNT" in env:
-        print ("HAS RESOURCE SPECS")
-        # Total number of resources for this test (for all ranks/threads)
-        res_count = int(env["CTEST_RESOURCE_GROUP_COUNT"])
-        my_res_id = myrank % res_count
+    if ${TEST_LAUNCHER_MANAGE_RESOURCES}:
+        if "CTEST_RESOURCE_GROUP_COUNT" in env:
+            print ("HAS RESOURCE SPECS")
+            # Total number of resources for this test (for all ranks/threads)
+            res_count = int(env["CTEST_RESOURCE_GROUP_COUNT"])
+            my_res_id = myrank % res_count
 
-        # Get the list of devices ids in my resource group
-        key = "CTEST_RESOURCE_GROUP_" + str(my_res_id)
-        expect(key in env, "Error! CTEST_RESOURCE_GROUP_COUNT found in the env, but can't find {}".format(key))
-        my_res_name = env[key]
-        expect (my_res_name=="devices", "Error! My ctest resource group should be 'devices'.")
-        key += "_DEVICES"
-        expect(key in env, "Error! CTEST_RESOURCE_GROUP_{} found in the env, but can't find {}".format(my_res_id,key))
-        my_res_str = env[key]
+            # Get the list of devices ids in my resource group
+            key = "CTEST_RESOURCE_GROUP_" + str(my_res_id)
+            expect(key in env, "Error! CTEST_RESOURCE_GROUP_COUNT found in the env, but can't find {}".format(key))
+            my_res_name = env[key]
+            expect (my_res_name=="devices", "Error! My ctest resource group should be 'devices'.")
+            key += "_DEVICES"
+            expect(key in env, "Error! CTEST_RESOURCE_GROUP_{} found in the env, but can't find {}".format(my_res_id,key))
+            my_res_str = env[key]
 
-        # Split the CTEST_RESOURCE_GROUP_[N]_DEVICE string into tokens, and get the slots ids
-        my_res = my_res_str.split(';')
-        ids = []
-        for res in my_res:
-            id_slots_tokens = res.split(',')
-            id_tokens = id_slots_tokens[0].split(':')
-            ids.append(int(id_tokens[1]))
+            # Split the CTEST_RESOURCE_GROUP_[N]_DEVICE string into tokens, and get the slots ids
+            my_res = my_res_str.split(';')
+            ids = []
+            for res in my_res:
+                id_slots_tokens = res.split(',')
+                id_tokens = id_slots_tokens[0].split(':')
+                ids.append(int(id_tokens[1]))
 
-        # CTest should already present these in lexicographic order, which should match
-        # numeric order thanks to our recent change to prepend leading 0's to fill empty
-        # digits. This sort shouldn't be necessary but it can't hurt.
-        ids.sort()
+            # CTest should already present these in lexicographic order, which should match
+            # numeric order thanks to our recent change to prepend leading 0's to fill empty
+            # digits. This sort shouldn't be necessary but it can't hurt.
+            ids.sort()
 
-        # Convert back to str so ids can be used in shell commands
-        ids = [str(item) for item in ids]
+            # Convert back to str so ids can be used in shell commands
+            ids = [str(item) for item in ids]
 
-        # Now get the chunk of ids that belongs to this rank
-        expect (len(ids) % nranks == 0, "Error! Number of ranks does not divide the number of resources.")
-        ids_per_rank = int(len(ids) / nranks)
-        my_ids = ids[myrank*ids_per_rank : (myrank+1)*ids_per_rank]
+            # Now get the chunk of ids that belongs to this rank
+            expect (len(ids) % nranks == 0, "Error! Number of ranks does not divide the number of resources.")
+            ids_per_rank = int(len(ids) / nranks)
+            my_ids = ids[myrank*ids_per_rank : (myrank+1)*ids_per_rank]
 
-        # This file is to be run through cmake's configure_file, which will expand the
-        # variable TEST_LAUNCHER_ON_GPU to either True or False
-        if ${TEST_LAUNCHER_ON_GPU}:
-            expect (len(my_ids)==1, "Error! For GPU runs, each rank should use only one device.")
-            exec_args.append(" --ekat-kokkos-device {}".format(ids[0]))
+            # This file is to be run through cmake's configure_file, which will expand the
+            # variable TEST_LAUNCHER_ON_GPU to either True or False
+            if ${TEST_LAUNCHER_ON_GPU}:
+                expect (len(my_ids)==1, "Error! For GPU runs, each rank should use only one device.")
+                exec_args.append(" --ekat-kokkos-device {}".format(ids[0]))
+            else:
+                # Start placing on the correct cpu set
+                cmd += " taskset -c " + ",".join(my_ids)
+
         else:
-            # Start placing on the correct cpu set
-            cmd += " taskset -c " + ",".join(my_ids)
+            print ("WARNING: NO RESOUCE SPECS. EKAT was configured to manage resources, but no --resource-spec-file option was provided.")
 
     else:
-        print ("NO RESOURCE SPECS")
+        print ("EKAT is not managing resources.")
 
     cmd += " {}".format(" ".join(exec_args[1:]))
 
