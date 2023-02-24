@@ -67,6 +67,7 @@ option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
 option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
 option (EKAT_TEST_LAUNCHER_BUFFER "Whether test-launcher should buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently" OFF)
+option (EKAT_TEST_LAUNCHER_MANAGE_RESOURCES "Whether test-launcher should try to manage thread distribution. Requires a ctest resource file to be effective." OFF)
 set (EKAT_PROFILING_TOOL "NONE" CACHE STRING "Profiling tool to be used")
 
 if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -151,10 +152,20 @@ add_subdirectory(src/ekat)
 if (EKAT_ENABLE_MPI)
   SetMpiRuntimeEnvVars()
 endif()
+
+#
+# These need to be set to python boolean values
+#
 if (EKAT_ENABLE_GPU)
   set (TEST_LAUNCHER_ON_GPU True)
 else()
   set (TEST_LAUNCHER_ON_GPU False)
+endif()
+
+if (EKAT_TEST_LAUNCHER_MANAGE_RESOURCES)
+  set (TEST_LAUNCHER_MANAGE_RESOURCES True)
+else()
+  set (TEST_LAUNCHER_MANAGE_RESOURCES False)
 endif()
 
 # Configure/install test-launcher to build/install folder
