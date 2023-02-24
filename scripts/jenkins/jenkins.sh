@@ -17,6 +17,12 @@ export SCREAM_SCRIPTS=${WORK_DIR}/scream/components/eamxx/scripts
 export JENKINS_SCRIPT_DIR=${SCREAM_SCRIPTS}/jenkins # some scream env setups depend on this
 source ${SCREAM_SCRIPTS}/jenkins/${NODE_NAME}_setup
 source ${SCREAM_SCRIPTS}/source_to_load_scream_env.sh
+
+if [ -z "$SCREAM_MACHINE" ];
+    echo "SCREAM_MACHINE must be set by ${SCREAM_SCRIPTS}/jenkins/${NODE_NAME}_setup in order for jenkins infrastructure to work"
+    exit 1
+fi
+
 export SCREAM_MACHINE
 
 BATCHP=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE batch)

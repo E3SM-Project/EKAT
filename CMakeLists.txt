@@ -78,6 +78,14 @@ if (EKAT_DEFAULT_BFB AND NOT EKAT_IS_DEBUG_BUILD)
   message("WARNING: Setting EKAT_DEFAULT_BFB in an optimized build may invalidate BFBness.")
 endif()
 
+# MPI CONFIG OPTIONS. Defaults are set for generic MPI desktop.
+if (EKAT_ENABLE_MPI)
+  set(EKAT_MPIRUN_EXE "mpiexec" CACHE STRING "The executable name for mpirun")
+  set(EKAT_MPI_EXTRA_ARGS "--bind-to core" CACHE STRING "Options for mpirun")
+  set(EKAT_MPI_NP_FLAG "--map-by" CACHE STRING "The mpirun flag for designating the total number of ranks")
+  set(EKAT_MPI_THREAD_FLAG "" CACHE STRING "The mpirun flag for designating the number of threads")
+endif()
+
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
 ############################################
