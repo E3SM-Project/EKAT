@@ -1,0 +1,4 @@
+set(EKAT_MPIRUN_EXE "srun" CACHE STRING "")
+set(EKAT_MPI_NP_FLAG "-n" CACHE STRING "")
+set(EKAT_MPI_EXTRA_ARGS "--cpu_bind=threads" CACHE STRING "")
+set(EKAT_MPI_THREAD_FLAG "-c" CACHE STRING "")

@@ -17,8 +17,7 @@ set(CUT_EXEC_MV_ARGS
   LIBS LIBS_DIRS LINKER_FLAGS)
 
 set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
-set(CUT_TEST_1V_ARGS DEP MPI_EXEC_NAME MPI_NP_FLAG MPI_THREAD_FLAG)
-set(CUT_TEST_MV_ARGS EXE_ARGS MPI_RANKS THREADS MPI_EXTRA_ARGS LABELS PROPERTIES)
+set(CUT_TEST_MV_ARGS DEP EXE_ARGS MPI_RANKS THREADS LABELS PROPERTIES)
 
 # This function takes the following mandatory arguments:
 #    - exec_name: the name of the test executable that will be created.
@@ -131,11 +130,7 @@ endfunction(EkatCreateUnitTestExec)
 #      Note: if 2 values, it's a range, if 3, it's a range plus an increment. default is 1 thread
 #      Note: for each combination of valid mpi-rank and thread value, a new test will be created,
 #            with suffix '_npN_omp_M', with N numver of mpi ranks, and M number of omp threads.
-#    - MPI_EXEC_NAME: name of the mpi launcher (usually, mpiexe or mpirun, but may be another wrapper)
 #    - TEST_EXE: name of a pre-existing test executable. Use this to reuse
-#    - MPI_NP_FLAG: the flag used to specify the number of mpi ranks (usually, -np or -n).
-#                   If --map-by is used, the macro will pass `--map-by ppr:NRANKS:pe=NTHREADS` to mpiexec
-#    - MPI_EXTRA_ARGS: additional args to be forwarded to the mpi launches (e.g., --map-by, --bind-to, ...)
 #    - LABELS: a set of labels to attach to the test
 #    - PROPERTIES: a list of properties for ALL the tests in the threads/ranks combinations
 #    - SERIAL: if this options is present, the different tests (corresponding to different
@@ -158,10 +153,10 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
   list(LENGTH ecutfe_THREADS   NUM_THREAD_ARGS)
 
   if (NUM_MPI_RANK_ARGS GREATER 3)
-    message(FATAL_ERROR "Too many mpi arguments for test ${test_name}")
+    message(FATAL_ERROR "Too many mpi arguments for test ${test_name}: ${ecutfe_MPI_RANKS}")
   endif()
   if (NUM_THREAD_ARGS GREATER 3)
-    message(FATAL_ERROR "Too many thread arguments for test ${test_name}")
+    message(FATAL_ERROR "Too many thread arguments for test ${test_name}: ${ecutfe_THREADS}")
   endif()
 
   set(MPI_START_RANK 1)
@@ -246,9 +241,9 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
   endif()
 
   # If MPI_EXEC_NAME wasn't given, make sure we don't need more than one proc.
-  if (NOT ecutfe_MPI_EXEC_NAME)
-    if (NOT MPI_START_RANK EQUAL MPI_END_RANK)
-      message (FATAL_ERROR "Error! MPI_START_RANK != MPI_END_RANK, but MPI_EXEC_NAME was not given.")
+  if (NOT EKAT_MPIRUN_EXE)
+    if (MPI_END_RANK GREATER 1)
+      message (FATAL_ERROR "Error! MPI_END_RANK > 1, but EKAT_MPIRUN_EXE is not known.")
     endif()
   endif()
 
@@ -285,7 +280,11 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
 
       # Setup valgrind/memcheck commmand modifications
       if (EKAT_ENABLE_VALGRIND)
-        set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/mpi.supp")
+        if (EKAT_ENABLE_MPI)
+          set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/mpi.supp")
+        else()
+          set(VALGRIND_SUP_FILE "${CMAKE_BINARY_DIR}/serial.supp")
+        endif()
         set(invokeExecCurr "valgrind --error-exitcode=1 --suppressions=${VALGRIND_SUP_FILE} ${invokeExec}")
       elseif(EKAT_ENABLE_CUDA_MEMCHECK)
         set(invokeExecCurr "cuda-memcheck --error-exitcode 1 ${invokeExec}")
@@ -296,18 +295,18 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
       # Prepend launcher to serial command
       set(invokeExecCurr "${launcher} ${invokeExecCurr}")
 
-      # Create the test.
-      if (ecutfe_MPI_EXEC_NAME)
-        if (ecutfe_MPI_NP_FLAG STREQUAL "--map-by")
+      # Create the test. Run with MPI if possible.
+      if (EKAT_MPIRUN_EXE)
+        if (EKAT_MPI_NP_FLAG STREQUAL "--map-by")
           set (RANK_MAPPING "--map-by ppr:${NRANKS}:node:pe=${NTHREADS}")
         else()
-          set (RANK_MAPPING "${ecutfe_MPI_NP_FLAG} ${NRANKS}")
+          set (RANK_MAPPING "${EKAT_MPI_NP_FLAG} ${NRANKS}")
         endif()
-        if (ecutfe_MPI_THREAD_FLAG)
-          string(APPEND RANK_MAPPING " ${ecutfe_MPI_THREAD_FLAG} ${NTHREADS}")
+        if (EKAT_MPI_THREAD_FLAG)
+          string(APPEND RANK_MAPPING " ${EKAT_MPI_THREAD_FLAG} ${NTHREADS}")
         endif()
         add_test(NAME ${FULL_TEST_NAME}
-                 COMMAND sh -c "${ecutfe_MPI_EXEC_NAME} ${RANK_MAPPING} ${ecutfe_MPI_EXTRA_ARGS} ${invokeExecCurr}")
+                 COMMAND sh -c "${EKAT_MPIRUN_EXE} ${RANK_MAPPING} ${EKAT_MPI_EXTRA_ARGS} ${invokeExecCurr}")
       else()
         add_test(NAME ${FULL_TEST_NAME} COMMAND sh -c "${invokeExecCurr}")
       endif()
