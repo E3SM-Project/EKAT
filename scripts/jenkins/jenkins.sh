@@ -18,7 +18,7 @@ export JENKINS_SCRIPT_DIR=${SCREAM_SCRIPTS}/jenkins # some scream env setups dep
 source ${SCREAM_SCRIPTS}/jenkins/${NODE_NAME}_setup
 source ${SCREAM_SCRIPTS}/source_to_load_scream_env.sh
 
-if [ -z "$SCREAM_MACHINE" ];
+if [ -z "$SCREAM_MACHINE" ]; then
     echo "SCREAM_MACHINE must be set by ${SCREAM_SCRIPTS}/jenkins/${NODE_NAME}_setup in order for jenkins infrastructure to work"
     exit 1
 fi
