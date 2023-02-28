@@ -28,8 +28,8 @@ void initialize_kokkos () {
   //   If for some reason we're running on a GPU platform, have Cuda enabled,
   // but are using a different execution space, this initialization is still
   // OK. The rank gets a GPU assigned and simply will ignore it.
+  int nd = 1;
 #ifdef EKAT_ENABLE_GPU
-  int nd;
 # if defined KOKKOS_ENABLE_CUDA
   const auto ret = cudaGetDeviceCount(&nd);
   const bool ok = ret == cudaSuccess;
