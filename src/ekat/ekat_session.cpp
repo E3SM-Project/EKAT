@@ -17,70 +17,13 @@ static int get_default_fpes () {
 }
 #endif
 
-// If we initialize from inside a Fortran code, we don't have access to
-// char** args to pass to Kokkos::initialize. In this case we need to do
-// some work on our own. As a side benefit, we'll end up running on GPU
-// platforms optimally without having to specify
-// --kokkos-map-device-id-by=mpi_rank on the command line.
-// We also will use this function to generate kokkos args if the user
-// specified none.
+// This function provides a simple and correct way to initialize Kokkos from
+// any context with the correct settings.
 void initialize_kokkos () {
-  // This is in fact const char*, but Kokkos::initialize requires char*.
-  std::vector<char*> args;
-
-  //   This is the only way to get the round-robin rank assignment Kokkos
-  // provides, as that algorithm is hardcoded in Kokkos::initialize(int& narg,
-  // char* arg[]). Once the behavior is exposed in the InitArguments version of
-  // initialize, we can remove this string code.
-  //   If for some reason we're running on a GPU platform, have Cuda enabled,
-  // but are using a different execution space, this initialization is still
-  // OK. The rank gets a GPU assigned and simply will ignore it.
-#ifdef EKAT_ENABLE_GPU
-  int nd;
-# if defined KOKKOS_ENABLE_CUDA
-  const auto ret = cudaGetDeviceCount(&nd);
-  const bool ok = ret == cudaSuccess;
-# elif defined KOKKOS_ENABLE_HIP
-  const auto ret = hipGetDeviceCount(&nd);
-  const bool ok = ret == hipSuccess;
-# elif defined KOKKOS_ENABLE_SYCL
-  nd = 0;
-  auto gpu_devs = sycl::device::get_devices(sycl::info::device_type::gpu);
-  for (auto &dev : gpu_devs) {
-    if (dev.get_info<sycl::info::device::partition_max_sub_devices>() > 0) {
-      auto subDevs = dev.create_sub_devices<sycl::info::partition_property::partition_by_affinity_domain>(sycl::info::partition_affinity_domain::numa);
-      nd += subDevs.size();
-    } else {
-      nd++;
-    }
-  }
-  const bool ok = true;
-# else
-  error "No valid GPU space, yet EKAT_ENABLE_GPU is defined."
-# endif
-  if (not ok) {
-    // It isn't a big deal if we can't get the device count.
-    nd = 1;
-  }
-  std::stringstream ss;
-  ss << "--kokkos-map-device-id-by=mpi_rank" << nd;
-  const auto key = ss.str();
-  std::vector<char> str(key.size()+1);
-  std::copy(key.begin(), key.end(), str.begin());
-  str.back() = 0;
-  args.push_back(const_cast<char*>(str.data()));
-#endif
-
-  const char* silence = "--kokkos-disable-warnings";
-  args.push_back(const_cast<char*>(silence));
-
-  int narg = args.size();
-  // Kokkos::Impl::parse_command_line_arguments in >= 3.7.00 expects argv to
-  // have one more entry than narg, as documented in a comment: "Note that argv
-  // has (argc + 1) arguments, the last one always being nullptr." This is safe
-  // to insert for < 3.7.00, as well, so no KOKKOS_VERSION switch is needed.
-  args.push_back(nullptr);
-  Kokkos::initialize(narg, args.data());
+  auto const settings = Kokkos::InitializationSettings()
+    .map_device_id_by("mpi_rank")
+    .set_disable_warnings(true);
+  Kokkos::initialize(settings);
 }
 
 } // anonymous namespace
