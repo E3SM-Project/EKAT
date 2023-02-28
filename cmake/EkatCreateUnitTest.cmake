@@ -314,7 +314,7 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
 
       # Set test properties
       math(EXPR CURR_CORES "${NRANKS}*${NTHREADS}")
-      set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${NTHREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True FULL_TEST_COMMAND ${FULL_TEST_CMD})
+      set_tests_properties(${FULL_TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${NTHREADS} PROCESSORS ${CURR_CORES} PROCESSOR_AFFINITY True FULL_TEST_COMMAND "${FULL_TEST_CMD}")
       if (ecutfe_DEP AND NOT ecutfe_DEP STREQUAL "${FULL_TEST_NAME}")
         set_tests_properties(${FULL_TEST_NAME} PROPERTIES DEPENDS ${ecutfe_DEP})
       endif()
