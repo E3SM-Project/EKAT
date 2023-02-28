@@ -20,8 +20,8 @@ static int get_default_fpes () {
 // If we initialize from inside a Fortran code, we don't have access to
 // char** args to pass to Kokkos::initialize. In this case we need to do
 // some work on our own. As a side benefit, we'll end up running on GPU
-// platforms optimally without having to specify --kokkos-num-devices on
-// the command line.
+// platforms optimally without having to specify
+// --kokkos-map-device-id-by=mpi_rank on the command line.
 // We also will use this function to generate kokkos args if the user
 // specified none.
 void initialize_kokkos () {
@@ -57,13 +57,13 @@ void initialize_kokkos () {
   const bool ok = true;
 # else
   error "No valid GPU space, yet EKAT_ENABLE_GPU is defined."
-# endif  
+# endif
   if (not ok) {
     // It isn't a big deal if we can't get the device count.
     nd = 1;
   }
   std::stringstream ss;
-  ss << "--kokkos-num-devices=" << nd;
+  ss << "--kokkos-map-device-id-by=mpi_rank" << nd;
   const auto key = ss.str();
   std::vector<char> str(key.size()+1);
   std::copy(key.begin(), key.end(), str.begin());
