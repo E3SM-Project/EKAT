@@ -98,6 +98,11 @@ public:
     m_content.reset( holder<T>::create(args...) );
   }
 
+  template<typename T>
+  void reset (const T& t) {
+    m_content.reset( holder<T>::create(t) );
+  }
+
   holder_base& content () const { 
     EKAT_REQUIRE_MSG (static_cast<bool>(m_content), "Error! Object not yet initialized.\n");
     return *m_content;
