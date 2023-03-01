@@ -55,9 +55,12 @@ void initialize_kokkos () {
     // It isn't a big deal if we can't get the device count.
     nd = 1;
   }
+#endif
 
   auto const settings = Kokkos::InitializationSettings()
-    .map_device_id_by("mpi_rank")
+#ifdef EKAT_ENABLE_MPI
+    .set_map_device_id_by("mpi_rank")
+#endif
     .set_num_devices(nd)
     .set_disable_warnings(true);
   Kokkos::initialize(settings);
