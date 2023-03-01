@@ -92,6 +92,10 @@ class any {
 public:
 
   any () = default;
+  template<typename T>
+  any (const T& t) {
+    reset (t);
+  }
 
   template<typename T, typename... Args>
   void reset (Args... args) {

@@ -20,4 +20,7 @@ TEST_CASE ("any") {
 
   REQUIRE (a.isType<std::vector<int>>());
   REQUIRE (not a.isType<int>());
+
+  any c (u);
+  REQUIRE (any_cast<std::vector<int>>(a)==any_cast<std::vector<int>>(c));
 }
