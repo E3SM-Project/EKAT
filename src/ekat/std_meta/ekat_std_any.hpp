@@ -92,10 +92,19 @@ class any {
 public:
 
   any () = default;
+  template<typename T>
+  any (const T& t) {
+    reset (t);
+  }
 
   template<typename T, typename... Args>
   void reset (Args... args) {
     m_content.reset( holder<T>::create(args...) );
+  }
+
+  template<typename T>
+  void reset (const T& t) {
+    m_content.reset( holder<T>::create(t) );
   }
 
   holder_base& content () const { 

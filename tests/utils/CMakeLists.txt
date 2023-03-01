@@ -13,6 +13,10 @@ EkatCreateUnitTest (catch_main_tests catch_main_tests.cpp
 EkatCreateUnitTest(debug_tools debug_tools_tests.cpp
   LIBS ekat)
 
+# Test std_meta stuff
+EkatCreateUnitTest(std_meta std_meta.cpp
+  LIBS ekat)
+
 # Test meta utilities
 EkatCreateUnitTest(meta_utils meta_utils.cpp
   LIBS ekat)
