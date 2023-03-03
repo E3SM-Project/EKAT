@@ -59,7 +59,7 @@ int run_fpe_tests () {
   //       is generated, but rather the next time is used.
   //       Therefore, sometimes we multiply the result
   //       by 1.0 before testing that the FPE was thrown.
-  
+
   // Test 1/0
   if (setjmp(JumpBuffer)) {
     REQUIRE (gSignalStatus==has_fe_divbyzero(mask));
@@ -107,9 +107,9 @@ int run_fpe_tests () {
     ovfl *= 1.0;
   }
 
-  (void) inf;
-  (void) nan;
-  (void) ovfl;
+  std::cout << inf << std::endl;
+  std::cout << nan << std::endl;
+  std::cout << ovfl << std::endl;
 
   return ntests;
 }
