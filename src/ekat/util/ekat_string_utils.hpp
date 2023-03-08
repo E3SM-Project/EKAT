@@ -80,6 +80,58 @@ std::string join (const Iterable& v, const Lambda& f, const std::string& sep) {
   return ss.str();
 }
 
+template<typename Iterable, typename Selector>
+std::string join_if (const Iterable& v, const Selector& check, const std::string& sep) {
+  auto it = cbegin(v);
+  auto end = cend(v);
+  if (it==end) {
+    return "";
+  }
+
+  // It is complicated to figure out if/when to add sep, since we don't
+  // know a priori if the following items will satisfy the check.
+  // Hence, build short list of ptrs beforehand
+  using elem_t = typename std::remove_reference<decltype(*it)>::type;
+  std::list<elem_t*> ptrs;
+
+  for (const auto& elem : v) {
+    if (check(elem)) {
+      ptrs.push_back(&elem);
+    }
+  }
+  auto deref = [](const auto& p) {
+    return *p;
+  };
+  return ekat::join(ptrs,deref,sep);
+}
+
+// Combo of prebious two
+template<typename Iterable, typename Selector, typename Lambda>
+std::string join_if (const Iterable& v, const Selector& check,
+                     const Lambda& f, const std::string& sep) {
+  auto it = cbegin(v);
+  auto end = cend(v);
+  if (it==end) {
+    return "";
+  }
+
+  // It is complicated to figure out if/when to add sep, since we don't
+  // know a priori if the following items will satisfy the check.
+  // Hence, build short list of ptrs beforehand
+  using elem_t = typename std::remove_reference<decltype(*it)>::type;
+  std::list<elem_t*> ptrs;
+
+  for (const auto& elem : v) {
+    if (check(elem)) {
+      ptrs.push_back(&elem);
+    }
+  }
+  auto apply_f = [&](const auto& p) {
+    return f(*p);
+  };
+  return ekat::join(ptrs,apply_f,sep);
+}
+
 // Split a string into tokens, according to any of the provided delimiters.
 // If atomic!="", substrings matching atomic will not be split with
 // any of the delimiters.

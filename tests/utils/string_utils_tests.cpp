@@ -41,12 +41,31 @@ TEST_CASE("string","string") {
     REQUIRE (join(i,",")=="1,2,3");
   }
 
-  SECTION ("join with lambda") {
+  SECTION ("join_apply") {
     std::list<std::string> l = {"hello","world"};
     auto f = [](const std::string& s)->std::string {
       return upper_case(s);
     };
-    REQUIRE (join(f,l," ")=="HELLO WORLD");
+    REQUIRE (join(l,f," ")=="HELLO WORLD");
+  }
+
+  SECTION ("join_if") {
+    std::list<std::string> l = {"hello","SKIP","world","SKIP"};
+    auto f = [](const std::string& s) {
+      return s!="SKIP";
+    };
+    REQUIRE (join_if(l,f," ")=="hello world");
+  }
+
+  SECTION ("join_apply_if") {
+    std::list<std::string> l = {"hello","SKIP","world","SKIP"};
+    auto f = [](const std::string& s)->std::string {
+      return upper_case(s);
+    };
+    auto cond = [](const std::string& s) {
+      return s!="SKIP";
+    };
+    REQUIRE (join_if(l,cond,f," ")=="HELLO WORLD");
   }
 
   SECTION ("case_insensitive_string") {
