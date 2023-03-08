@@ -61,6 +61,25 @@ std::string join (const Iterable& v, const std::string& sep) {
   return ss.str();
 }
 
+template<typename Iterable, typename Lambda>
+std::string join (const Iterable& v, const Lambda& f, const std::string& sep) {
+  auto it = cbegin(v);
+  auto end = cend(v);
+  if (it==end) {
+    return "";
+  }
+
+  std::stringstream ss;
+  ss << f(*it);
+  ++it;
+  for (; it!=end; ++it) {
+    ss << sep;
+    ss << f(*it);
+  }
+
+  return ss.str();
+}
+
 // Split a string into tokens, according to any of the provided delimiters.
 // If atomic!="", substrings matching atomic will not be split with
 // any of the delimiters.

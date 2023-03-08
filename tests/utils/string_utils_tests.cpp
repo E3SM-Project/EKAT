@@ -41,6 +41,14 @@ TEST_CASE("string","string") {
     REQUIRE (join(i,",")=="1,2,3");
   }
 
+  SECTION ("join with lambda") {
+    std::list<std::string> l = {"hello","world"};
+    auto f = [](const std::string& s)->std::string {
+      return upper_case(s);
+    };
+    REQUIRE (join(f,l," ")=="HELLO WORLD");
+  }
+
   SECTION ("case_insensitive_string") {
     CaseInsensitiveString cis1 = "field_1";
     CaseInsensitiveString cis2 = "fIeLd_1";
