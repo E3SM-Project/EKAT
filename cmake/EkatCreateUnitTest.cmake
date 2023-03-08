@@ -70,8 +70,17 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
     ${ecute_INCLUDE_DIRS}
     )
 
-  # F90 output dir
-  set_target_properties(${target_name} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_modules)
+  # Check if we need a Fortran modules folder
+  foreach (file ${exec_srcs})
+    get_filename_component(ext ${file} EXT)
+    string(REGEX REPLACE "^\\." "" ext ${ext})
+
+    if (ext IN_LIST CMAKE_Fortran_SOURCE_FILE_EXTENSIONS)
+      set_target_properties(${target_name} PROPERTIES
+        Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_modules)
+      break()
+    endif()
+  endforeach()
 
   # Link flags/libs
   if (NOT ecute_EXCLUDE_MAIN_CPP)
