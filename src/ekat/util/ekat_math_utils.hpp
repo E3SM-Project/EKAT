@@ -54,6 +54,8 @@ KOKKOS_INLINE_FUNCTION
 bool is_nan (const RealT& a) {
 #ifdef __CUDA_ARCH__
   return isnan(a);
+#elif defined(__SYCL_DEVICE_ONLY__)
+  return sycl::isnan(a);
 #else
   return std::isnan(a);
 #endif
