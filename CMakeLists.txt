@@ -65,10 +65,19 @@ if (EKAT_ENABLE_FPE)
 endif()
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
+option (EKAT_ENABLE_COMPUTE_SANITIZER "Whether to run tests with nvidia's compute-sanitizer" OFF)
 option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
 option (EKAT_TEST_LAUNCHER_BUFFER "Whether test-launcher should buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently" OFF)
 option (EKAT_TEST_LAUNCHER_MANAGE_RESOURCES "Whether test-launcher should try to manage thread distribution. Requires a ctest resource file to be effective." OFF)
 set (EKAT_PROFILING_TOOL "NONE" CACHE STRING "Profiling tool to be used")
+
+# Options to pass to compute-sanitizer, which is a newer, expanded error checker for CUDA programs.
+# --error-exitcode 1 will always be added by EKAT.
+# We default to the memcheck tool but there are other tools: racecheck, initcheck, and synccheck
+# Only a single tool can be enabled at a time
+# As an example, if you wanted to enable racecheck for ekat or scream, you'd add this to your cmake cmd:
+#   -DEKAT_ENABLE_COMPUTE_SANITIZER=On -DEKAT_COMPUTE_SANITIZER_OPTIONS="--tool racecheck"
+set (EKAT_COMPUTE_SANITIZER_OPTIONS "--tool memcheck" CACHE STRING "options to be passed to compute-sanitizer, does nothing if EKAT_ENABLE_COMPUTE_SANITIZER is OFF")
 
 if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   message(FATAL_ERROR "Code coverage will only work with Debug build type")
