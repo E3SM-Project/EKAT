@@ -71,6 +71,15 @@ option (EKAT_TEST_LAUNCHER_BUFFER "Whether test-launcher should buffer all out a
 option (EKAT_TEST_LAUNCHER_MANAGE_RESOURCES "Whether test-launcher should try to manage thread distribution. Requires a ctest resource file to be effective." OFF)
 set (EKAT_PROFILING_TOOL "NONE" CACHE STRING "Profiling tool to be used")
 
+# Path to valgrind suppression file. If none is provided, EKAT will generate one
+# for you. The generated ones are OK but there's an element of nondeterminism
+# in some of the valgrind interactions with some of our TPLs (like MPI), so
+# a persistent, maintained suppression file is best for consistency.
+#
+# If new valgrind errors emerge that you want to suppress, run the error text
+# through gen_sup.sh and add the output to the stored suppression file.
+set(EKAT_VALGRIND_SUPPRESSION_FILE "" CACHE FILEPATH "Use this valgrind suppression file if valgrind is enabled.")
+
 # Options to pass to compute-sanitizer, which is a newer, expanded error checker for CUDA programs.
 # --error-exitcode 1 will always be added by EKAT.
 # We default to the memcheck tool but there are other tools: racecheck, initcheck, and synccheck
