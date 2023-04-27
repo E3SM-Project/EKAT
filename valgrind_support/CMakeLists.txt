@@ -8,7 +8,6 @@ if (NOT EKAT_VALGRIND_SUPPRESSION_FILE)
 
   # We know this var was not set so it's safe to FORCE set it.
   set(EKAT_VALGRIND_SUPPRESSION_FILE ${CMAKE_BINARY_DIR}/ekat_gen_valgrind.supp CACHE FILEPATH "" FORCE)
-  message("JGF EKAT_VALGRIND_SUPPRESSION_FILE=${EKAT_VALGRIND_SUPPRESSION_FILE}")
 
   if (EKAT_ENABLE_MPI)
     add_custom_target(mpi_sup ALL
