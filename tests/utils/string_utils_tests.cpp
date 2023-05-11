@@ -20,6 +20,11 @@ TEST_CASE("string","string") {
     REQUIRE(items[1]=="item2");
     REQUIRE(items[2]=="item3");
 
+    auto items2 = split(my_list,";item2;");
+    REQUIRE(items2.size()==2);
+    REQUIRE(items2[0]=="item1");
+    REQUIRE(items2[1]=="item3");
+
     std::string padded   = "*****my**string**";
     std::string unpadded = "my**string";
     REQUIRE (trim(padded,'*')==unpadded);
@@ -27,6 +32,12 @@ TEST_CASE("string","string") {
     std::string lower = "my_lower case string!";
     std::string upper = "MY_LOWER CASE STRING!";
     REQUIRE (upper==upper_case(lower));
+  }
+
+  SECTION ("starts_with") {
+    std::string s = "hello world";
+    REQUIRE (starts_with(s,"hello"));
+    REQUIRE (not starts_with(s,"world"));
   }
 
   SECTION ("join") {
