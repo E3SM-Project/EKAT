@@ -32,6 +32,10 @@ std::vector<std::string> split(const std::string& str, const std::string& delim)
   return tokens;
 }
 
+bool starts_with (const std::string& s, const std::string& start) {
+  return s.substr(0,start.size())==start;
+}
+
 std::string trim (const std::string& s, const char c) {
   if (s=="") {
     return s;

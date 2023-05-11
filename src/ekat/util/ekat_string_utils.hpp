@@ -35,6 +35,9 @@ inline std::vector<std::string> split(const std::string& str, const char delim) 
   return split(str,std::string(1,delim));
 }
 
+// Checks if string begins with given substring
+bool starts_with (const std::string& s, const std::string& start);
+
 // Trim leading/trailing characters matching given one (default: whitespace).
 std::string trim (const std::string& s, const char c = ' ');
 
