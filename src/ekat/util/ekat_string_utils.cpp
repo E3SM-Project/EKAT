@@ -16,20 +16,24 @@ void strip (std::string& str, const char c) {
   str.erase(new_end,str.end());
 }
 
-std::vector<std::string> split(const std::string& str, const char del) {
-  std::vector<std::string> blocks;
+std::vector<std::string> split(const std::string& str, const std::string& delim) {
+  std::vector<std::string> tokens;
 
   auto start = 0;
-  auto pos = str.find(del);
+  auto pos = str.find(delim);
   while (pos!=std::string::npos) {
-    blocks.push_back(str.substr(start,pos-start));
-    start = pos + 1;
-    pos = str.find(del,start);
+    tokens.push_back(str.substr(start,pos-start));
+    start = pos + delim.size();
+    pos = str.find(delim,start);
   }
 
-  // Don't forget to add the substring from the last occurrence of 'del' (if any) to the end of str
-  blocks.push_back(str.substr(start));
-  return blocks;
+  // Don't forget to add the substring from the last occurrence of 'delim' (if any) to the end of str
+  tokens.push_back(str.substr(start));
+  return tokens;
+}
+
+bool starts_with (const std::string& s, const std::string& start) {
+  return s.substr(0,start.size())==start;
 }
 
 std::string trim (const std::string& s, const char c) {

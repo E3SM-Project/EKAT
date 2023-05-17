@@ -28,8 +28,15 @@ namespace ekat {
 // Strip character c from input string
 void strip (std::string& str, const char c);
 
-// Split a string at every occurrence of given delimiter char
-std::vector<std::string> split(const std::string& str, const char del);
+// Split a string at every occurrence of given delimiter string
+std::vector<std::string> split(const std::string& str, const std::string& delim);
+
+inline std::vector<std::string> split(const std::string& str, const char delim) {
+  return split(str,std::string(1,delim));
+}
+
+// Checks if string begins with given substring
+bool starts_with (const std::string& s, const std::string& start);
 
 // Trim leading/trailing characters matching given one (default: whitespace).
 std::string trim (const std::string& s, const char c = ' ');
