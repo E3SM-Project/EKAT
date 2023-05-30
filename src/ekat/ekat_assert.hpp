@@ -30,7 +30,7 @@
   do {                                                \
     if ( ! (condition) ) {                            \
       std::stringstream _ss_;                         \
-      _ss_ << "\n FAIL:\n" << #condition;             \
+      _ss_ << "\n FAIL:\n" << #condition  << "\n";   \
       _ss_ << EKAT_BACKTRACE;                         \
       _ss_ << "\n" << msg;                            \
       throw exception_type(_ss_.str());               \
