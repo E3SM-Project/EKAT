@@ -154,6 +154,21 @@ list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
 BuildSpdlog()
 list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${SPDLOG_LIBRARIES})
 
+# Try to find Boost>=1.6
+message (STATUS "Looking for boost::stacktrace ...")
+find_package(Boost 1.65.0
+  COMPONENTS stacktrace_addr2line
+)
+
+if (Boost_STACKTRACE_ADDR2LINE_FOUND)
+  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Boost_LIBRARIES})
+  message (STATUS "Looking for boost::stacktrace ... Found")
+  message ("    -> EKAT's assert macros will provide a stacktrace.")
+else()
+  message (STATUS "Looking for boost::stacktrace ... NOT Found")
+  message ("    -> EKAT's assert macros will NOT provide a stacktrace.")
+endif()
+
 set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
 
 ##################################

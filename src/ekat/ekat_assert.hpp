@@ -18,15 +18,23 @@
  * For _msg checks, the msg argument can contain '<<' if not a kernel check.
  */
 
+#ifdef EKAT_HAS_STACKTRACE
+#include <boost/stacktrace.hpp>
+#define EKAT_BACKTRACE boost::stacktrace::stacktrace()
+#else
+#define EKAT_BACKTRACE __FILE__ << ":" << __LINE__
+#endif
+
 // Internal do not call directly
-#define IMPL_THROW(condition, msg, exception_type)                      \
-  do {                                                                  \
-    if ( ! (condition) ) {                                              \
-      std::stringstream _ss_;                                           \
-      _ss_ << __FILE__ << ":" << __LINE__ << ": FAIL:\n" << #condition; \
-      _ss_ << "\n" << msg;                                              \
-      throw exception_type(_ss_.str());                                 \
-    }                                                                   \
+#define IMPL_THROW(condition, msg, exception_type)    \
+  do {                                                \
+    if ( ! (condition) ) {                            \
+      std::stringstream _ss_;                         \
+      _ss_ << "\n FAIL:\n" << #condition  << "\n";   \
+      _ss_ << EKAT_BACKTRACE;                         \
+      _ss_ << "\n" << msg;                            \
+      throw exception_type(_ss_.str());               \
+    }                                                 \
   } while(0)
 
 // SYCL cannot printf like the other backends quite yet
