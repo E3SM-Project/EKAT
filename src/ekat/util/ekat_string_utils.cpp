@@ -67,7 +67,7 @@ std::string upper_case (const std::string& s) {
   return s_up;
 }
 
-bool valid_nested_list_format (const std::string& str)
+bool valid_nested_list_format (const std::string& str, char* sep)
 {
   constexpr auto npos = std::string::npos;
 
@@ -100,7 +100,9 @@ bool valid_nested_list_format (const std::string& str)
   } else {
     separators += angles;
   }
-  separators += ",";
+  if (sep) {
+    separators += std::string(1,*sep);
+  }
 
   const char open  = separators[0];
   const char close = separators[1];
@@ -132,7 +134,7 @@ bool valid_nested_list_format (const std::string& str)
   size_t pos = str.find_first_of(separators,start);
 
   while (pos!=npos) {
-    if (last_match==open && str[pos]==',' && pos==start) {
+    if (sep && last_match==open && str[pos]==*sep && pos==start) {
 #ifdef DEBUG_OUTPUT
       std::cout << "Input string '" << str << "' contains a comma right after an open.\n";
 #endif
@@ -141,14 +143,14 @@ bool valid_nested_list_format (const std::string& str)
     }
 
     // After ',' we need a name or a new list, not a ',' or ']'
-    if (last_match==',' && str[pos]==',' && pos==start) {
+    if (sep && last_match==*sep && str[pos]==*sep && pos==start) {
 #ifdef DEBUG_OUTPUT
       std::cout << "Input string '" << str << "' contains two commas in a row.\n";
 #endif
       return false;
     }
 
-    if (last_match==',' && str[pos]==close && pos==start) {
+    if (sep && last_match==*sep && str[pos]==close && pos==start) {
 #ifdef DEBUG_OUTPUT
       std::cout << "Input string '" << str << "' contains a close right after a comma.\n";
 #endif
@@ -164,8 +166,8 @@ bool valid_nested_list_format (const std::string& str)
     }
 
     // We can open a sublist if a) at the beginning of a list,
-    // or after a comma. No '][' allowed.
-    if (str[pos]==open && str[pos-1]!=',' && str[pos-1]!=open) {
+    // or, if sep!=nullptr, after a sep char (no '][' allowed if sep!=nullptr).
+    if (str[pos]==open && sep && str[pos-1]!=*sep && str[pos-1]!=open) {
 #ifdef DEBUG_OUTPUT
       std::cout << "Input string '" << str << "' contains " << open << " after an entry. Did you forget a comma?\n";
 #endif
@@ -282,6 +284,98 @@ ParameterList parse_nested_list (std::string str)
   list.set("Num Entries",num_entries);
   list.set("Depth",depth_max);
   list.set("String",str);
+
+  return list;
+}
+
+ParameterList parse_nested_list_no_sep (std::string str)
+{
+  constexpr auto npos = std::string::npos;
+
+  // 1. Strip spaces
+  strip(str,' ');
+
+  // 2. Verify input is valid
+  EKAT_REQUIRE_MSG (valid_nested_list_format(str),
+      "Error! Input std::string '" + str + "' is not a valid (nested) list.\n");
+
+  const char open_char  = str.front();
+  const char close_char = str.back();
+  std::string brackets;
+  brackets += open_char;
+  brackets += close_char;
+
+  // Find the closing bracket matching the open one at open_pos
+  auto find_closing = [&] (const std::string& s, size_t open_pos) ->size_t {
+    int num_open = 0;
+    auto pos = open_pos;
+    auto prev = npos;
+    do {
+      prev = pos;
+      if (s[prev]==close_char) {
+        --num_open;
+      } else {
+        ++num_open;
+      }
+      pos = s.find_first_of(brackets,prev+1);
+    } while (num_open>0 && pos!=npos);
+
+    return prev;
+  };
+
+  // 3. Loop through each entry, recursing when finding a nested list
+  int num_entries = 0;
+  int depth_max = 1;
+
+  std::string separators = brackets;
+  size_t start = 1; // We know str[0] = $open
+  size_t pos = str.find_first_of(separators,start);
+
+  ParameterList list (str);
+  std::cout << "parsing: '" << str << "'\n";
+  while (pos!=npos and pos<str.size()) {
+    std::cout << " start=" << start << "\n";
+    std::cout << " pos=" << pos << "\n";
+    std::cout << " s[pos]=" << str[pos] << "\n";
+    if (pos>start) {
+      // Whatever is between start and pos is an entry
+      auto substr = str.substr(start,pos-start);
+      std::cout << "normal entry: '" << substr << "'\n";
+      list.set<std::string>(strint("Type",num_entries),"Value");
+      list.set(strint("Entry",num_entries),substr);
+
+      ++num_entries;
+    }
+
+    if (str[pos]==open_char) {
+      auto close = find_closing(str,pos);
+      auto substr = str.substr(pos,close-pos+1);
+      std::cout << "recursing on substr: '" << substr << "'\n";
+      auto sublist = parse_nested_list_no_sep(substr);
+      sublist.rename(strint("Entry",num_entries));
+
+      EKAT_REQUIRE_MSG (sublist.get<int>("Num Entries")>0,
+          "Found an empty sublist.\n");
+      list.set<std::string>(strint("Type",num_entries),"List");
+      list.sublist(strint("Entry",num_entries)) = sublist;
+      depth_max = std::max(depth_max,1+sublist.get<int>("Depth"));
+      start = close+1;
+
+      ++num_entries;
+    } else {
+      // We're done.
+      start = npos;
+    }
+
+    // Search nextr entry
+    pos = str.find_first_of(separators,start);
+  }
+
+  list.set("Num Entries",num_entries);
+  list.set("Depth",depth_max);
+  list.set("String",str);
+
+  std::cout << "[done]\n";
 
   return list;
 }

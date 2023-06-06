@@ -148,7 +148,8 @@ std::list<std::string> gather_tokens(const std::string& s,
 
 // Utils to verify/parse a string encoding nested lists,
 // such as '[a,b,[c,d],e]'
-bool valid_nested_list_format (const std::string& str);
+bool valid_nested_list_format (const std::string& str, char* sep = nullptr);
+ParameterList parse_nested_list_no_sep (std::string str);
 ParameterList parse_nested_list (std::string str);
 
 // Computing similarity index between s1 and s2 using Jaro algorithm
