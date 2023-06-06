@@ -35,6 +35,12 @@ inline std::vector<std::string> split(const std::string& str, const char delim) 
   return split(str,std::string(1,delim));
 }
 
+// Given a set of delimiters, split the string when any of the delim chars appears.
+// Returns two vectors: the tokens, and the list of char that caused each split.
+std::pair<std::vector<std::string>,
+          std::vector<char>>
+split(const std::string& str, const std::vector<char>& delims);
+
 // Checks if string begins with given substring
 bool starts_with (const std::string& s, const std::string& start);
 

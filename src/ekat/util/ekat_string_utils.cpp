@@ -32,6 +32,28 @@ std::vector<std::string> split(const std::string& str, const std::string& delim)
   return tokens;
 }
 
+std::pair<std::vector<std::string>,
+          std::vector<char>>
+split(const std::string& str, const std::vector<char>& delims)
+{
+  std::string delims_str (delims.begin(),delims.end());
+  std::vector<std::string> tokens;
+  std::vector<char> used_delims;
+
+  auto start = 0;
+  auto pos = str.find_first_of(delims_str);
+  while (pos!=std::string::npos) {
+    tokens.push_back(str.substr(start,pos-start));
+    used_delims.push_back(str[pos]);
+    start = pos + 1;
+    pos = str.find_first_of(delims_str,start);
+  }
+
+  // Don't forget to add the substring from the last occurrence of 'delim' (if any) to the end of str
+  tokens.push_back(str.substr(start));
+  return std::make_pair(tokens,used_delims);
+}
+
 bool starts_with (const std::string& s, const std::string& start) {
   return s.substr(0,start.size())==start;
 }
