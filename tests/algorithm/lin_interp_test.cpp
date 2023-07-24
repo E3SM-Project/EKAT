@@ -9,12 +9,14 @@
 #include <vector>
 #include <algorithm>
 
+#ifdef EKAT_ENABLE_FORTRAN
 extern "C" {
 
 // This will link to the fortran reference implementation
 void linear_interp_c(const Real* x1, const Real* x2, const Real* y1, Real* y2, int km1, int km2, int ncol);
 
 }
+#endif
 
 namespace {
 
@@ -64,6 +66,7 @@ auto get_col (const ViewT& packed_view, int i) ->
     return ekat::scalarize(ekat::subview(packed_view,i));
 };
 
+#ifdef EKAT_ENABLE_FORTRAN
 TEST_CASE("lin_interp_soak", "lin_interp") {
 
   std::default_random_engine generator;
@@ -278,6 +281,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
     }
   }
 }
+#endif // EKAT_ENABLE_FORTRAN
 
 TEST_CASE("lin_interp_api", "lin_interp")
 {

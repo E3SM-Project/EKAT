@@ -6,8 +6,10 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.f.in
 # Test lin interp processes
 set (LIN_INTERP_SRCS
   lin_interp_test.cpp
-  lin_interp_ref.F90
 )
+if (EKAT_ENABLE_FORTRAN)
+  set (LIN_INTERP_SRCS ${LIN_INTERP_SRCS} lin_interp_ref.F90)
+endif()
 
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(lin_interp${DP_POSTFIX} "${LIN_INTERP_SRCS}"
@@ -28,8 +30,10 @@ set (TRIDIAG_SRCS
   tridiag_bfb.cpp
   tridiag_tests_correctness.cpp
   tridiag_tests_performance.cpp
-  tridiag_bfb_mod.F90
 )
+if (EKAT_ENABLE_FORTRAN)
+  set (TRIDIAG_SRCS ${TRIDIAG_SRCS} tridiag_bfb_mod.F90)
+endif()
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(tridiag${DP_POSTFIX} "${TRIDIAG_SRCS}"
     LIBS ekat
