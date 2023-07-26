@@ -2,10 +2,15 @@ include(GNUInstallDirs)
 include(EkatSetCompilerFlags)
 include (EkatUtils)
 
-# Generate configuration file
-EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
-                ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
-                F90_FILE ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f)
+# Generate configuration files
+if (EKAT_ENABLE_FORTRAN)
+  EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
+                  ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
+                  F90_FILE ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f)
+else()
+  EkatConfigFile (${CMAKE_CURRENT_SOURCE_DIR}/ekat_config.h.in
+                  ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h)
+endif()
 
 set(EKAT_SOURCES
   ekat_assert.cpp
@@ -13,11 +18,13 @@ set(EKAT_SOURCES
   ekat_session.cpp
   io/ekat_yaml.cpp
   io/ekat_array_io.cpp
-  io/ekat_array_io_mod.f90
   util/ekat_arch.cpp
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
 )
+if (EKAT_ENABLE_FORTRAN)
+  set(EKAT_SOURCES ${EKAT_SOURCES} io/ekat_array_io_mod.f90)
+endif()
 
 if (EKAT_ENABLE_MPI)
   set(EKAT_SOURCES ${EKAT_SOURCES} mpi/ekat_comm.cpp)
@@ -43,10 +50,13 @@ endif()
 target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${EKAT_BINARY_DIR}/src>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules>
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/Catch2/single_include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat_f90_modules>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+if (EKAT_ENABLE_FORTRAN)
+  target_include_directories(ekat PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat_f90_modules>)
+endif()
 
 # TODO: The current version of kokkos we are using in e3sm has a nvcc_wrapper
 #       which breaks the cmake toolchain features detection mechanisms.
@@ -63,8 +73,10 @@ if (EKAT_HAVE_FEENABLEEXCEPT)
 endif()
 
 target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
-set_target_properties(ekat PROPERTIES
-    Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules)
+if (EKAT_ENABLE_FORTRAN)
+  set_target_properties(ekat PROPERTIES
+      Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules)
+endif()
 
 install (TARGETS ekat
          EXPORT EkatTargets
@@ -83,8 +95,10 @@ install (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.h
                ${CMAKE_CURRENT_BINARY_DIR}/ekat_config.f
          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ekat)
-install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules
-         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if (EKAT_ENABLE_FORTRAN)
+  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules
+           DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 ###########################################
 ###       Testing micro-libraries       ###

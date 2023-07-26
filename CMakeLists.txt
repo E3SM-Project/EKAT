@@ -18,8 +18,14 @@ include(EkatBuildKokkos)
 include(EkatBuildYamlCpp)
 include(EkatBuildSpdlog)
 
-# EKAT has mostly C++, but some Fortran too
-project (EKAT C CXX Fortran)
+# EKAT has mostly C++, but (optionally) Fortran too
+option (EKAT_ENABLE_FORTRAN "Whether EKAT Fortran support is enabled." ON)
+enable_language(C)
+enable_language(CXX)
+if (EKAT_ENABLE_FORTRAN)
+  enable_language(Fortran)
+endif()
+project (EKAT)
 
 # MPI is enabled by default, but not needed.
 option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)

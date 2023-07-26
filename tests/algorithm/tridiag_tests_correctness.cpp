@@ -2,12 +2,14 @@
 
 #include "tridiag_tests.hpp"
 
+#ifdef EKAT_ENABLE_FORTRAN
 extern "C" {
   void tridiag_diagdom_bfb_a1x1(int n, Real* dl, Real* d,
                                 Real* du, Real* x);
   void tridiag_diagdom_bfb_a1xm(int n, int nrhs, Real* dl, Real* d,
                                 Real* du, Real* x);
 }
+#endif
 
 namespace ekat {
 namespace test {
@@ -16,7 +18,10 @@ namespace correct {
 struct Solver {
   enum Enum { thomas_team_scalar, thomas_team_pack,
               thomas_scalar, thomas_pack,
-              cr_scalar, bfb, bfbf90,
+              cr_scalar, bfb,
+#ifdef EKAT_ENABLE_FORTRAN
+              bfbf90,
+#endif
               error };
 
   static std::string convert (Enum e) {
@@ -27,7 +32,9 @@ struct Solver {
     case thomas_pack: return "thomas_pack";
     case cr_scalar: return "cr_scalar";
     case bfb: return "bfb";
+#ifdef EKAT_ENABLE_FORTRAN
     case bfbf90: return "bfbf90";
+#endif
     default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
     }
   }
@@ -39,7 +46,9 @@ struct Solver {
     if (s == "thomas_pack") return thomas_pack;
     if (s == "cr_scalar") return cr_scalar;
     if (s == "bfb") return bfb;
+#ifdef EKAT_ENABLE_FORTRAN
     if (s == "bfbf90") return bfbf90;
+#endif
     return error;
   }
 
@@ -48,7 +57,11 @@ struct Solver {
 
 Solver::Enum Solver::all[] = { thomas_team_scalar, thomas_team_pack,
                                thomas_scalar, thomas_pack,
-                               cr_scalar, bfb, bfbf90 };
+                               cr_scalar, bfb,
+#ifdef EKAT_ENABLE_FORTRAN
+                               bfbf90
+#endif
+                             };
 
 struct TestConfig {
   using TeamLayout = Kokkos::LayoutRight;
@@ -243,6 +256,7 @@ struct Solve<true, APack, DataPack> {
       };
       Kokkos::parallel_for(policy, f);
     } break;
+#ifdef EKAT_ENABLE_FORTRAN
     case Solver::bfbf90: {
       const auto Am = create_mirror_view(A);
       const auto Xm = create_mirror_view(X);
@@ -268,6 +282,7 @@ struct Solve<true, APack, DataPack> {
       deep_copy(A, Am);
       deep_copy(X, Xm);
     } break;
+#endif
     default:
       EKAT_REQUIRE_MSG(false, "Same pack size: " << Solver::convert(tc.solver));
     }
@@ -468,12 +483,16 @@ void run_property_test_on_config (const TestConfig& tc) {
           continue;
         if ((tc.solver == Solver::thomas_team_scalar ||
              tc.solver == Solver::thomas_scalar ||
-             tc.solver == Solver::cr_scalar ||
-             tc.solver == Solver::bfbf90) &&
-            data_pack_size > 1)
+             tc.solver == Solver::cr_scalar
+#ifdef EKAT_ENABLE_FORTRAN
+             || tc.solver == Solver::bfbf90
+#endif
+            ) && data_pack_size > 1)
           continue;
+#ifdef EKAT_ENABLE_FORTRAN
         if (tc.solver == Solver::bfbf90 && nprob > 1)
           continue;
+#endif
         if (static_cast<int>(APack::n) != static_cast<int>(DataPack::n) && nprob > 1)
           continue;
 
@@ -503,6 +522,7 @@ void run_property_test () {
   run_test_configs(run_property_test_on_config<A_pack_size, data_pack_size>);
 }
 
+#ifdef EKAT_ENABLE_FORTRAN
 template <int A_pack_size, int data_pack_size>
 void run_bfb_test_on_config (TestConfig& tc) {
   using namespace ekat::test;
@@ -572,6 +592,7 @@ template <int A_pack_size, int data_pack_size>
 void run_bfb_test () {
   run_test_configs(run_bfb_test_on_config<A_pack_size, data_pack_size>);
 }
+#endif // EKAT_ENABLE_FORTRAN
 
 } // namespace correct
 } // namespace test
@@ -585,6 +606,7 @@ TEST_CASE("property", "tridiag") {
   }
 }
 
+#ifdef EKAT_ENABLE_FORTRAN
 TEST_CASE("bfb", "tridiag") {
 #ifdef EKAT_DEFAULT_BFB
   ekat::test::correct::run_bfb_test<1,1>();
@@ -592,3 +614,4 @@ TEST_CASE("bfb", "tridiag") {
     ekat::test::correct::run_bfb_test<EKAT_TEST_PACK_SIZE, EKAT_TEST_PACK_SIZE>();
 #endif
 }
+#endif // EKAT_ENABLE_FORTRAN

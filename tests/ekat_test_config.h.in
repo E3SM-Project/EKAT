@@ -14,6 +14,9 @@ using Real = double;
 using Real = float;
 #endif
 
+// Whether Fortran is enabled
+#cmakedefine EKAT_ENABLE_FORTRAN
+
 // The number of scalars in a default pack::Pack and Mask.
 #cmakedefine EKAT_TEST_PACK_SIZE ${EKAT_TEST_PACK_SIZE}
 
