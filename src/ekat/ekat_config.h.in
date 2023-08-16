@@ -27,4 +27,7 @@
 // A GPU space has been enabled in Kokkos, e.g., CUDA or HIP OR SYCL.
 #cmakedefine EKAT_ENABLE_GPU
 
+// Whether to build the interfaces to read/write YAML files
+#cmakedefine EKAT_ENABLE_YAML_PARSER
+
 #endif // EKAT_CONFIG_H

@@ -18,8 +18,10 @@ if (EKAT_TEST_SINGLE_PRECISION)
   )
 endif ()
 
-# YAML parser
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/input.yaml ${CMAKE_CURRENT_BINARY_DIR}/input.yaml COPYONLY)
-EkatCreateUnitTest(yaml_parser yaml_parser.cpp
-  LIBS ekat
-)
+if (EKAT_ENABLE_YAML_PARSER)
+  # YAML parser
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/input.yaml ${CMAKE_CURRENT_BINARY_DIR}/input.yaml COPYONLY)
+  EkatCreateUnitTest(yaml_parser yaml_parser.cpp
+    LIBS ekat
+  )
+endif()

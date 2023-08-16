@@ -16,12 +16,14 @@ set(EKAT_SOURCES
   ekat_assert.cpp
   ekat_parameter_list.cpp
   ekat_session.cpp
-  io/ekat_yaml.cpp
   io/ekat_array_io.cpp
   util/ekat_arch.cpp
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
 )
+if (EKAT_ENABLE_YAML_PARSER)
+  list (APPEND EKAT_SOURCES io/ekat_yaml.cpp)
+endif()
 if (EKAT_ENABLE_FORTRAN)
   set(EKAT_SOURCES ${EKAT_SOURCES} io/ekat_array_io_mod.f90)
 endif()
