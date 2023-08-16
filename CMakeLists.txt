@@ -153,8 +153,11 @@ if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
 endif ()
 
 # EKAT also has some yaml parsing utility
-BuildYamlcpp()
-list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
+option (EKAT_ENABLE_YAML_PARSER "Enable support for parsing YAML files" ON)
+if (EKAT_ENABLE_YAML_PARSER)
+  BuildYamlcpp()
+  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
+endif()
 
 # EKAT uses the spdlog tpl to handle logging
 BuildSpdlog()
