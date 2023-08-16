@@ -36,7 +36,7 @@ endmacro()
 
 # Process the spdlog subdirectory
 macro (BuildSpdlog)
-  if (NOT IS_SPDLOG_ALREADY_BUILT)
+  if (NOT IS_EKAT_SPDLOG_BUILT)
 
     # Make sure SPDLOG_SOURCE_DIR is set
     EkatSetSpdlogSourceDir()
