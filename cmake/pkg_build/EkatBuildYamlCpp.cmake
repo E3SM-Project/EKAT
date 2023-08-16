@@ -36,7 +36,7 @@ endmacro()
 
 # Process the libyaml subdirectory
 macro (BuildYamlcpp)
-  if (NOT IS_YAMLCPP_ALREADY_BUILT)
+  if (NOT IS_EKAT_YAMLCPP_BUILT)
 
     # Make sure YAMLCPP_SOURCE_DIR is set
     EkatSetYamlcppSourceDir()
