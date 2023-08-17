@@ -12,7 +12,13 @@ TEST_CASE ("yaml_parser","") {
 
   std::string fname = "input.yaml";
   ParameterList params("parameters");
-  REQUIRE_NOTHROW ( parse_yaml_file(fname,params) );
+  parse_yaml_file(fname,params);
+
+  REQUIRE (params.isParameter ("ints_as_strings"));
+  REQUIRE (params.isType<std::vector<std::string>> ("ints_as_strings"));
+  REQUIRE (params.isParameter ("empty_as_doubles"));
+  REQUIRE (params.isType<std::vector<double>> ("empty_as_doubles"));
+  REQUIRE (params.get<std::vector<double>> ("empty_as_doubles").size()==0);
 
   // Check some of the loaded parameters.
   // NOTE: if you change input.yaml, you may have to
