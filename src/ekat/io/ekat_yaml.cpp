@@ -106,15 +106,40 @@ void parse_node<YAML::NodeType::Scalar> (
   // Extract scalar as string, then try some casts
   // First int, then double, and finally fall back to string
   std::string str = node.as<std::string>();
+  const auto& tag = node.Tag();
 
-  TypeListFor<values_t>([&](auto t) -> bool{
-    using vtype = decltype(t);
-    if (is_type<vtype>(str)) {
-      list.set(key,str2type<vtype>(str));
-      return true;
+  if (tag=="?") {
+    // There's no tag annotation regarding the node type,
+    // so we just try in order bool, int, double, string
+    TypeListFor<values_t>([&](auto t) -> bool{
+      using vtype = decltype(t);
+      if (is_type<vtype>(str)) {
+        list.set(key,str2type<vtype>(str));
+        return true;
+      }
+      return false;
+    });
+  } else {
+    // YAY, the user is telling us how to interpret the values
+    if (tag=="!bool") {
+      EKAT_REQUIRE_MSG (is_type<bool>(str),
+          "Error! Tag " + tag + " not compatible with the stored value '" + str + "'\n");
+      list.set(key,str2type<bool>(str));
+    } else if (tag=="!int") {
+      EKAT_REQUIRE_MSG (is_type<int>(str),
+          "Error! Tag " + tag + " not compatible with the stored value '" + str + "'\n");
+      list.set(key,str2type<int>(str));
+    } else if (tag=="!double") {
+      EKAT_REQUIRE_MSG (is_type<double>(str),
+          "Error! Tag " + tag + " not compatible with the stored value '" + str + "'\n");
+      list.set(key,str2type<double>(str));
+    } else if (tag=="!string") {
+      list.set(key,str);
+    } else {
+      EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag: " + tag + "\n"
+          "  Supported tags: !int, !bool, !double, !string");
     }
-    return false;
-  });
+  }
 }
 
 template<>
@@ -160,15 +185,36 @@ void parse_node<YAML::NodeType::Sequence> (
     std::vector<seq_val_t> vec(n); \
     for (int i=0; i<n; ++i) { \
       std::string str = node[i].as<std::string>(); \
-        vec[i] = str2type<seq_val_t>(str); \
+      vec[i] = str2type<seq_val_t>(str); \
     } \
     list.set(key,vec); \
     return; \
   }
-  TRY_TYPE_ON_NODE(bool, char, node);
-  TRY_TYPE_ON_NODE(int, int, node);
-  TRY_TYPE_ON_NODE(double, double, node);
-  TRY_TYPE_ON_NODE(std::string, std::string, node);
+  const auto& tag = node.Tag();
+  if (tag=="?") {
+    // There's no tag annotation regarding the node type,
+    // so we just try in order bool, int, double, string
+    TRY_TYPE_ON_NODE(bool, char, node);
+    TRY_TYPE_ON_NODE(int, int, node);
+    TRY_TYPE_ON_NODE(double, double, node);
+    TRY_TYPE_ON_NODE(std::string, std::string, node);
+  } else {
+    // YAY, the user is telling us how to interpret the values
+    if (tag=="!bool") {
+      TRY_TYPE_ON_NODE(bool,char,node);
+    } else if (tag=="!int") {
+      TRY_TYPE_ON_NODE(int,int,node);
+    } else if (tag=="!double") {
+      TRY_TYPE_ON_NODE(double,double,node);
+    } else if (tag=="!string") {
+      TRY_TYPE_ON_NODE(std::string,std::string,node);
+    } else {
+      EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag.\n"
+          "  tag: " + tag + "\n"
+          "  supported tags: !int, !bool, !double, !string");
+    }
+    EKAT_ERROR_MSG ("Error! Tag '" + tag + "' was not compatible with the stored values.\n");
+  }
 #undef TRY_TYPE_ON_NODE
 }
 
