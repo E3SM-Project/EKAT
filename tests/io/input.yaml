@@ -1,7 +1,7 @@
 %YAML 1.1
 ---
-ints_as_strings: !string [1,2]
-empty_as_doubles: !double []
+ints_as_strings: !strings [1,2]
+empty_as_doubles: !floats []
 Constants:
   One Double: 9.8
   Three Doubles: [1.024e3, .1 , -1.0E-2]
@@ -12,6 +12,6 @@ Constants:
 Options:
   My Bool: FALSE
   My Int: -2
-  My String: string
+  My String: !!str 1
   My Real: -1.0
 ...

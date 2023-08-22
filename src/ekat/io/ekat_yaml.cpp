@@ -121,23 +121,23 @@ void parse_node<YAML::NodeType::Scalar> (
     });
   } else {
     // YAY, the user is telling us how to interpret the values
-    if (tag=="!bool") {
+    if (tag=="!!bool" or tag=="tag:yaml.org,2002:bool") {
       EKAT_REQUIRE_MSG (is_type<bool>(str),
           "Error! Tag " + tag + " not compatible with the stored value '" + str + "'\n");
       list.set(key,str2type<bool>(str));
-    } else if (tag=="!int") {
+    } else if (tag=="!!int" or tag=="tag:yaml.org,2002:int") {
       EKAT_REQUIRE_MSG (is_type<int>(str),
           "Error! Tag " + tag + " not compatible with the stored value '" + str + "'\n");
       list.set(key,str2type<int>(str));
-    } else if (tag=="!double") {
+    } else if (tag=="!!float" or tag=="tag:yaml.org,2002:float") {
       EKAT_REQUIRE_MSG (is_type<double>(str),
           "Error! Tag " + tag + " not compatible with the stored value '" + str + "'\n");
       list.set(key,str2type<double>(str));
-    } else if (tag=="!string") {
+    } else if (tag=="!!str" or tag=="tag:yaml.org,2002:str") {
       list.set(key,str);
     } else {
       EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag: " + tag + "\n"
-          "  Supported tags: !int, !bool, !double, !string");
+          "  Supported tags: !!int, !!bool, !!float, !!str");
     }
   }
 }
@@ -200,18 +200,18 @@ void parse_node<YAML::NodeType::Sequence> (
     TRY_TYPE_ON_NODE(std::string, std::string, node);
   } else {
     // YAY, the user is telling us how to interpret the values
-    if (tag=="!bool") {
+    if (tag=="!bools") {
       TRY_TYPE_ON_NODE(bool,char,node);
-    } else if (tag=="!int") {
+    } else if (tag=="!ints") {
       TRY_TYPE_ON_NODE(int,int,node);
-    } else if (tag=="!double") {
+    } else if (tag=="!floats") {
       TRY_TYPE_ON_NODE(double,double,node);
-    } else if (tag=="!string") {
+    } else if (tag=="!strings") {
       TRY_TYPE_ON_NODE(std::string,std::string,node);
     } else {
       EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag.\n"
           "  tag: " + tag + "\n"
-          "  supported tags: !int, !bool, !double, !string");
+          "  supported tags: !ints, !bools, !floats, !strings");
     }
     EKAT_ERROR_MSG ("Error! Tag '" + tag + "' was not compatible with the stored values.\n");
   }
