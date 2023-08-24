@@ -96,6 +96,25 @@ TEST_CASE("parameter_list", "") {
   src.set<int>("j",10);
   src.sublist("sl").set<double>("d",1.0);
 
+  bool thrown = false;
+  try {
+    double d = src.get<double>("i");
+  } catch (std::exception& e) {
+    std::stringstream exp_err;
+    exp_err << "\n FAIL:\n"
+            << "p.isType<T>()\n"
+            << "/home/lbertag/workdir/libs/ekat/ekat-src/branch/src/ekat/ekat_parameter_list.hpp:107\n"
+            << "Error! Attempting to access parameter using the wrong type.\n"
+            << "   - list name : src\n"
+            << "   - param name: i\n"
+            << "   - param type: i\n"
+            << "   - input type: d'.\n";
+    REQUIRE (e.what()==exp_err.str());
+    thrown = true;
+  }
+  // Check that an exception was thrown, so that the previous check was excercised
+  REQUIRE (thrown);
+
   ParameterList dst("dst");
   dst.set<int>("i",10);
 
