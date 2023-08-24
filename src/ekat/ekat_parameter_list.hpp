@@ -103,8 +103,15 @@ inline T& ParameterList::get (const std::string& name) {
   // Check entry exists
   EKAT_REQUIRE_MSG ( isParameter(name),
       "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
+  auto p = m_params[name];
+  EKAT_REQUIRE_MSG ( p.isType<T>(),
+      "Error! Attempting to access parameter using the wrong type.\n"
+      "   - list name : " + m_name + "\n"
+      "   - param name: " + name + "\n"
+      "   - param type: " + std::string(p.content().type().name()) + "\n"
+      "   - input type: " + std::string(typeid(T).name()) + "'.\n");
 
-  return any_cast<T>(m_params[name]);
+  return any_cast<T>(p);
 }
 
 template<typename T>
@@ -112,7 +119,15 @@ inline const T& ParameterList::get (const std::string& name) const {
   EKAT_REQUIRE_MSG ( isParameter(name),
       "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
-  return any_cast<T>(m_params.at(name));
+  auto p = m_params.at(name);
+  EKAT_REQUIRE_MSG ( p.isType<T>(),
+      "Error! Attempting to access parameter using the wrong type.\n"
+      "   - list name : " + m_name + "\n"
+      "   - param name: " + name + "\n"
+      "   - param type: " + std::string(p.content().type().name()) + "\n"
+      "   - input type: " + std::string(typeid(T).name()) + ".\n");
+
+  return any_cast<T>(p);
 }
 
 template<typename T>
