@@ -10,8 +10,8 @@ Constants:
   Nested Sublist:
     The Answer: 42
 Options:
-  My Bool: FALSE
+  My Bool: !!bool "false"
   My Int: -2
-  My String: !!str 1
+  My String: "blah"
   My Real: -1.0
 ...

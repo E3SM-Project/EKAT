@@ -133,10 +133,10 @@ void parse_node<YAML::NodeType::Scalar> (
       EKAT_REQUIRE_MSG (is_type<double>(str),
           "Error! Tag " + tag + " not compatible with the stored value '" + str + "'\n");
       list.set(key,str2type<double>(str));
-    } else if (tag=="!!str" or tag=="tag:yaml.org,2002:str") {
+    } else if (tag=="!" or tag=="!!str" or tag=="tag:yaml.org,2002:str") {
       list.set(key,str);
     } else {
-      EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag: " + tag + "\n"
+      EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag '" + tag + "' for scalar node '" + key + "'.\n"
           "  Supported tags: !!int, !!bool, !!float, !!str");
     }
   }
