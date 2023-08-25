@@ -4,6 +4,7 @@
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 #include "ekat/ekat_parameter_list.hpp"
 #include "ekat/ekat_type_traits.hpp"
+#include "ekat/util/ekat_string_utils.hpp"
 
 #include "ekat_test_config.h"
 
@@ -95,6 +96,29 @@ TEST_CASE("parameter_list", "") {
   src.set<int>("i",8);
   src.set<int>("j",10);
   src.sublist("sl").set<double>("d",1.0);
+
+  bool thrown = false;
+  try {
+    printf("d = %f\n",src.get<double>("i"));
+  } catch (std::exception& e) {
+    auto lines = ekat::split(e.what(),"\n");
+    std::vector<std::string> expected = {
+      "Error! Attempting to access parameter using the wrong type.",
+      "   - list name : src",
+      "   - param name: i",
+      "   - param type: i",
+      "   - input type: d'.",
+      ""
+    };
+    auto it = lines.end()-6;
+    for (const auto& s : expected) {
+      REQUIRE (s==*it);
+      ++it;
+    }
+    thrown = true;
+  }
+  // Check that an exception was thrown, so that the previous check was excercised
+  REQUIRE (thrown);
 
   ParameterList dst("dst");
   dst.set<int>("i",10);
