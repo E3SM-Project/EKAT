@@ -4,6 +4,7 @@
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 #include "ekat/ekat_parameter_list.hpp"
 #include "ekat/ekat_type_traits.hpp"
+#include "ekat/util/ekat_string_utils.hpp"
 
 #include "ekat_test_config.h"
 
@@ -98,18 +99,22 @@ TEST_CASE("parameter_list", "") {
 
   bool thrown = false;
   try {
-    double d = src.get<double>("i");
+    printf("d = %f\n",src.get<double>("i"));
   } catch (std::exception& e) {
-    std::stringstream exp_err;
-    exp_err << "\n FAIL:\n"
-            << "p.isType<T>()\n"
-            << "/home/lbertag/workdir/libs/ekat/ekat-src/branch/src/ekat/ekat_parameter_list.hpp:107\n"
-            << "Error! Attempting to access parameter using the wrong type.\n"
-            << "   - list name : src\n"
-            << "   - param name: i\n"
-            << "   - param type: i\n"
-            << "   - input type: d'.\n";
-    REQUIRE (e.what()==exp_err.str());
+    auto lines = ekat::split(e.what(),"\n");
+    std::vector<std::string> expected = {
+      "Error! Attempting to access parameter using the wrong type.",
+      "   - list name : src",
+      "   - param name: i",
+      "   - param type: i",
+      "   - input type: d'.",
+      ""
+    };
+    auto it = lines.end()-6;
+    for (const auto& s : expected) {
+      REQUIRE (s==*it);
+      ++it;
+    }
     thrown = true;
   }
   // Check that an exception was thrown, so that the previous check was excercised
