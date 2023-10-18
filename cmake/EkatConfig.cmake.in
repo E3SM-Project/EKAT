@@ -2,11 +2,28 @@
 
 include(CMakeFindDependencyMacro)
 
-# We are building/installing yaml and kokkos with ekat,
-# so we know exactly where they are: right next to us!
-find_dependency(yaml-cpp PATHS @CMAKE_INSTALL_PREFIX@)
-find_dependency(Kokkos PATHS @CMAKE_INSTALL_PREFIX@)
-find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@)
+# If a tpl was found, we simply declare the dependency;
+# Downstream apps are responsible for providing hints
+# for how to find them (e.g., set <PKGNAME>_ROOT env vars).
+# If a tpl was not found, we did install it along ekat, so
+# provide our install prefix as a possible search PATH)
+if (YAML_CPP_FOUND)
+  find_dependency(yaml-cpp)
+else ()
+  find_dependency(yaml-cpp PATHS @CMAKE_INSTALL_PREFIX@)
+endif()
+
+if (Kokkos_FOUND)
+  find_dependency(Kokkos)
+else()
+  find_dependency(Kokkos PATHS @CMAKE_INSTALL_PREFIX@)
+endif()
+
+if (spdlog_FOUND)
+  find_dependency(spdlog)
+else()
+  find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@)
+endif()
 
 # MPI is also a dependency, linked by ekat's main lib
 find_dependency(MPI)

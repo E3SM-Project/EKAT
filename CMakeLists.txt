@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.11)
 
 set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
 
@@ -10,16 +10,12 @@ endif(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 # Add our own cmake goodies to cmake module search path
 list(APPEND CMAKE_MODULE_PATH
      ${EKAT_CMAKE_PATH}
-     ${EKAT_CMAKE_PATH}/pkg_build
+     ${EKAT_CMAKE_PATH}/tpls
 )
-
-# Scripts containing macros needed to handle TPLs
-include(EkatBuildKokkos)
-include(EkatBuildYamlCpp)
-include(EkatBuildSpdlog)
 
 # EKAT has mostly C++, but (optionally) Fortran too
 option (EKAT_ENABLE_FORTRAN "Whether EKAT Fortran support is enabled." ON)
+message ("cm search path: ${CMAKE_PREFIX_PATH}")
 enable_language(C)
 enable_language(CXX)
 if (EKAT_ENABLE_FORTRAN)
@@ -27,6 +23,7 @@ if (EKAT_ENABLE_FORTRAN)
 endif()
 project (EKAT)
 
+message ("cm search path: ${CMAKE_PREFIX_PATH}")
 # MPI is enabled by default, but not needed.
 option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)
 
@@ -132,40 +129,28 @@ check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
 
 option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when compiling TPLs." OFF)
 
-# WARNING: you CANNOT do list(APPEND var item1 ... item2) if var is a CACHE variable!
-# Therefore, use an internal var during tpl parsing, then set a cache var ONCE at the end
-set (EKAT_TPL_LIBRARIES_INTERNAL)
-
-# A good chunk of EKAT is a utility layer over kokkos
-# Note: for SYCL/HIP backend, bleeding edge of kokkos/develop might be needed to test some functionality
-# Kokkos_ROOT can point to custom installation directory
-if (Kokkos_ROOT)
-  find_package(Kokkos REQUIRED)
-  set(Kokkos_LIBRARIES Kokkos::kokkos)
-else()
-  BuildKokkos()
-endif()
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
-
+# Find Kokkos (required)
+include(EkatEnsureKokkos)
 set (EKAT_ENABLE_GPU False)
 if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
   set (EKAT_ENABLE_GPU True)
 endif ()
+list (APPEND EKAT_TPL_LIBRARIES_INTERNAL Kokkos::kokkos)
 
-# EKAT also has some yaml parsing utility
+# Find yaml-cpp (if parser is ON)
 option (EKAT_ENABLE_YAML_PARSER "Enable support for parsing YAML files" ON)
 if (EKAT_ENABLE_YAML_PARSER)
-  BuildYamlcpp()
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
+  include(EkatEnsureYamlCpp)
+  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL yaml-cpp)
 endif()
 
-# EKAT uses the spdlog tpl to handle logging
-BuildSpdlog()
-list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${SPDLOG_LIBRARIES})
+# Find spdlog (required)
+include(EkatEnsureSpdlog)
+list (APPEND EKAT_TPL_LIBRARIES_INTERNAL spdlog)
 
-# Try to find Boost>=1.6
+# Find boost::stacktrace (optional)
 message (STATUS "Looking for boost::stacktrace ...")
-find_package(Boost 1.65.0
+find_package(Boost 1.65.0 QUIET
   COMPONENTS stacktrace_addr2line
 )
 
@@ -277,5 +262,5 @@ install (FILES
   ${EKAT_CMAKE_PATH}/EkatUtils.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
 
-install (DIRECTORY ${EKAT_CMAKE_PATH}/pkg_build
+install (DIRECTORY ${EKAT_CMAKE_PATH}/tpls
          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
