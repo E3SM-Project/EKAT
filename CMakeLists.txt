@@ -15,7 +15,6 @@ list(APPEND CMAKE_MODULE_PATH
 
 # EKAT has mostly C++, but (optionally) Fortran too
 option (EKAT_ENABLE_FORTRAN "Whether EKAT Fortran support is enabled." ON)
-message ("cm search path: ${CMAKE_PREFIX_PATH}")
 enable_language(C)
 enable_language(CXX)
 if (EKAT_ENABLE_FORTRAN)
@@ -23,7 +22,6 @@ if (EKAT_ENABLE_FORTRAN)
 endif()
 project (EKAT)
 
-message ("cm search path: ${CMAKE_PREFIX_PATH}")
 # MPI is enabled by default, but not needed.
 option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)
 
