@@ -36,16 +36,7 @@ endif()
 
 # Create the library, and set all its properties
 add_library(ekat ${EKAT_SOURCES})
-
-if (EKAT_ENABLE_MPI)
-  # Link MPI
-  target_link_libraries (ekat PUBLIC MPI::MPI_C)
-endif()
-
-if (Boost_STACKTRACE_ADDR2LINE_FOUND)
-  target_link_libraries (ekat PUBLIC
-    Boost::stacktrace_addr2line dl)
-endif()
+target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
 
 target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>
@@ -56,6 +47,11 @@ if (EKAT_ENABLE_FORTRAN)
   target_include_directories(ekat PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat_f90_modules>)
+  # Enable C Pre-Processor for Fortran.
+  # No reason to pollute C/C++ flags (CPP always runs), so add the flag only for Fortran files.
+  target_compile_options(ekat PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
+  set_target_properties(ekat PROPERTIES
+      Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules)
 endif()
 
 # TODO: The current version of kokkos we are using in e3sm has a nvcc_wrapper
@@ -64,18 +60,9 @@ endif()
 #       the following line would work fine.
 # target_compile_features(ekat PUBLIC cxx_std_11)
 
-# Enable C Pre-Processor for Fortran.
-# No reason to pollute C/C++ flags (CPP always runs), so add the flag only for Fortran files.
-target_compile_options(ekat PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:-cpp>)
 if (EKAT_HAVE_FEENABLEEXCEPT)
   # This is needed internally by ekat, so let's keep it private
   target_compile_definitions (ekat PRIVATE EKAT_HAVE_FEENABLEEXCEPT)
-endif()
-
-target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
-if (EKAT_ENABLE_FORTRAN)
-  set_target_properties(ekat PROPERTIES
-      Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ekat_f90_modules)
 endif()
 
 install (TARGETS ekat
@@ -112,7 +99,6 @@ target_link_libraries(ekat_test_main PUBLIC ekat)
 target_include_directories(ekat_test_main PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/Catch2/single_include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
-
 
 install (TARGETS ekat_test_main
          EXPORT EkatTargets
