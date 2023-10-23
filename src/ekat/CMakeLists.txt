@@ -45,8 +45,6 @@ endif()
 if (Boost_STACKTRACE_ADDR2LINE_FOUND)
   target_link_libraries (ekat PUBLIC
     Boost::stacktrace_addr2line dl)
-  target_compile_definitions (ekat PUBLIC
-    EKAT_HAS_STACKTRACE BOOST_STACKTRACE_USE_ADDR2LINE)
 endif()
 
 target_include_directories(ekat PUBLIC

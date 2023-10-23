@@ -30,4 +30,7 @@
 // Whether to build the interfaces to read/write YAML files
 #cmakedefine EKAT_ENABLE_YAML_PARSER
 
+// Whether EKAT can use boost's stacktrace library
+#cmakedefine EKAT_HAS_STACKTRACE
+
 #endif // EKAT_CONFIG_H
