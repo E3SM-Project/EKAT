@@ -10,7 +10,6 @@
 #include "ekat/ekat_scalar_traits.hpp"
 #include "ekat/ekat_type_traits.hpp"
 
-#include "spdlog/fmt/ostr.h"
 #include <iostream>
 #include <type_traits>
 
