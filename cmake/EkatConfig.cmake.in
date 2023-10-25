@@ -2,13 +2,44 @@
 
 include(CMakeFindDependencyMacro)
 
-# We are building/installing yaml and kokkos with ekat,
-# so we know exactly where they are: right next to us!
-find_dependency(yaml-cpp PATHS @CMAKE_INSTALL_PREFIX@)
-find_dependency(Kokkos PATHS @CMAKE_INSTALL_PREFIX@)
-find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@)
+###############################
+#      TPLs dependencies      #
+###############################
 
-# MPI is also a dependency, linked by ekat's main lib
-find_dependency(MPI)
+# MPI
+if (@EKAT_ENABLE_MPI@)
+  find_dependency(MPI REQUIRED QUIET COMPONENTS C)
+endif()
+
+# Kokkos
+if (@Kokkos_FOUND@)
+  find_dependency(Kokkos REQUIRED QUIET HINTS @Kokkos_DIR@)
+else()
+  # We're installing Kokkos alongside ekat
+  find_dependency(Kokkos REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+endif()
+
+# yaml-cpp
+if (@EKAT_ENABLE_YAML_PARSER@)
+  if (@yaml-cpp_FOUND@)
+    find_dependency(yaml-cpp REQUIRED QUIET HINTS @yaml-cpp_DIR@)
+  else()
+    # We're installing yaml-cpp alongside ekat
+    find_dependency(yaml-cpp REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+  endif()
+endif()
+
+# spdlog
+if (@spdlog_FOUND@)
+  find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
+else()
+  find_dependency(spdlog REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+endif()
+
+# Boost stacktrace library
+if (@EKAT_HAS_STACKTRACE@)
+  find_dependency(Boost 1.65.0 REQUIRED QUIET
+                  COMPONENTS stacktrace_addr2line)
+endif()
 
 include (${CMAKE_CURRENT_LIST_DIR}/EkatTargets.cmake)

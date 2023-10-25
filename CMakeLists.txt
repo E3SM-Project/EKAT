@@ -10,44 +10,14 @@ endif(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 # Add our own cmake goodies to cmake module search path
 list(APPEND CMAKE_MODULE_PATH
      ${EKAT_CMAKE_PATH}
-     ${EKAT_CMAKE_PATH}/pkg_build
+     ${EKAT_CMAKE_PATH}/tpls
 )
 
-# Scripts containing macros needed to handle TPLs
-include(EkatBuildKokkos)
-include(EkatBuildYamlCpp)
-include(EkatBuildSpdlog)
-
+project (EKAT C CXX)
 # EKAT has mostly C++, but (optionally) Fortran too
 option (EKAT_ENABLE_FORTRAN "Whether EKAT Fortran support is enabled." ON)
-enable_language(C)
-enable_language(CXX)
 if (EKAT_ENABLE_FORTRAN)
   enable_language(Fortran)
-endif()
-project (EKAT)
-
-# MPI is enabled by default, but not needed.
-option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)
-
-if (EKAT_ENABLE_MPI)
-  find_package(MPI REQUIRED COMPONENTS C)
-
-  # NOTE: may be an overkill, but depending on which FindMPI module is called,
-  #       if _FIND_REQUIRED is not checked, we may not get a fatal error
-  #       if the required components are not found. So check the _FOUND var.
-  if (NOT MPI_C_FOUND)
-    message (FATAL_ERROR "EKAT *requires* the C component of MPI to be found")
-  endif()
-
-  # We should avoid cxx bindings in mpi; they are already deprecated,
-  # and can cause headaches at link time, cause they require -lmpi_cxx
-  # (for openpmi; -lmpicxx for mpich) flag.
-  include(EkatMpiUtils)
-  DisableMpiCxxBindings()
-
-  # MPI-related options
-  option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 endif()
 
 include(EkatUtils)
@@ -60,10 +30,18 @@ set (EKAT_VERSION_PATCH 0)
 # Report the installation prefix.
 message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 
+###########################
+###      EKAT TPLS      ###
+###########################
+
+include (EkatTPLs)
+
 ############################
 ###  EKAT CONFIG OPTIONS ###
 ############################
 
+# TODO: this is never used in EKAT src folder, so it should be removed.
+#       Downstream projects should handle bfb logic autonomously
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
 option (EKAT_ENABLE_FPE "Whether to enable support for floating point exceptions" ON)
 if (EKAT_ENABLE_FPE)
@@ -125,60 +103,6 @@ include(CheckCXXSymbolExists)
 # functions that are helpful (such as feeenableexcept) --- Apple stopped including these
 # in 2005, so we have to drop-in replacements for them.
 check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
-
-###########################
-###      EKAT TPLS      ###
-###########################
-
-option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when compiling TPLs." OFF)
-
-# WARNING: you CANNOT do list(APPEND var item1 ... item2) if var is a CACHE variable!
-# Therefore, use an internal var during tpl parsing, then set a cache var ONCE at the end
-set (EKAT_TPL_LIBRARIES_INTERNAL)
-
-# A good chunk of EKAT is a utility layer over kokkos
-# Note: for SYCL/HIP backend, bleeding edge of kokkos/develop might be needed to test some functionality
-# Kokkos_ROOT can point to custom installation directory
-if (Kokkos_ROOT)
-  find_package(Kokkos REQUIRED)
-  set(Kokkos_LIBRARIES Kokkos::kokkos)
-else()
-  BuildKokkos()
-endif()
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Kokkos_LIBRARIES})
-
-set (EKAT_ENABLE_GPU False)
-if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
-  set (EKAT_ENABLE_GPU True)
-endif ()
-
-# EKAT also has some yaml parsing utility
-option (EKAT_ENABLE_YAML_PARSER "Enable support for parsing YAML files" ON)
-if (EKAT_ENABLE_YAML_PARSER)
-  BuildYamlcpp()
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${YAMLCPP_LIBRARIES})
-endif()
-
-# EKAT uses the spdlog tpl to handle logging
-BuildSpdlog()
-list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${SPDLOG_LIBRARIES})
-
-# Try to find Boost>=1.6
-message (STATUS "Looking for boost::stacktrace ...")
-find_package(Boost 1.65.0
-  COMPONENTS stacktrace_addr2line
-)
-
-if (Boost_STACKTRACE_ADDR2LINE_FOUND)
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Boost_LIBRARIES})
-  message (STATUS "Looking for boost::stacktrace ... Found")
-  message ("    -> EKAT's assert macros will provide a stacktrace.")
-else()
-  message (STATUS "Looking for boost::stacktrace ... NOT Found")
-  message ("    -> EKAT's assert macros will NOT provide a stacktrace.")
-endif()
-
-set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
 
 ##################################
 ##    EKAT VALGRIND SUPPORT    ###
@@ -277,5 +201,5 @@ install (FILES
   ${EKAT_CMAKE_PATH}/EkatUtils.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
 
-install (DIRECTORY ${EKAT_CMAKE_PATH}/pkg_build
+install (DIRECTORY ${EKAT_CMAKE_PATH}/tpls
          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
