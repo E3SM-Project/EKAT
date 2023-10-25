@@ -36,7 +36,22 @@ endif()
 
 # Create the library, and set all its properties
 add_library(ekat ${EKAT_SOURCES})
-target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
+
+# These libs are for sure needed
+target_link_libraries(ekat PUBLIC Kokkos::kokkos spdlog::spdlog)
+# target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
+
+# These libs are optional
+if (EKAT_ENABLE_YAML_PARSER)
+  message ("linking yaml-cpp")
+  target_link_libraries(ekat PRIVATE yaml-cpp)
+endif()
+
+if (EKAT_HAS_STACKTRACE)
+  message ("linking boost: ${Boost_LIBRARIES}")
+  target_link_libraries(ekat PUBLIC ${Boost_LIBRARIES})
+endif()
+
 
 target_include_directories(ekat PUBLIC
   $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/src>

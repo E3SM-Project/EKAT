@@ -62,11 +62,23 @@ endif ()
 # EKAT also has some yaml parsing utility
 option (EKAT_ENABLE_YAML_PARSER "Enable support for parsing YAML files" ON)
 if (EKAT_ENABLE_YAML_PARSER)
+  # I am having issues getting the env var YAML_CPP_ROOT being picked up
+  # by cmake. I suspect this has to do with the presence of the hyphen
+  # CMake *should* convert '-' to '_' when forming the cmake/env var name,
+  # so YAML_CPP_ROOT should be recognized. Alas, it's not on my machine,
+  # running CMake 3.26.3, so we must pass the var explicitly via HINTS
+  message (STATUS "Looking for yaml-cpp ...")
+  if (NOT YAML_CPP_ROOT AND NOT "$ENV{YAML_CPP_ROOT}" STREQUAL "")
+    set (YAML_CPP_ROOT $ENV{YAML_CPP_ROOT})
+  endif()
 
-  # We first try to use find_XYZ. If that doesn't work, build from submodule
-  include (EkatFindYamlCpp)
-  if (NOT YAML_CPP_FOUND)
+  find_package(yaml-cpp HINTS ${YAML_CPP_ROOT})
+  if (NOT yaml-cpp_FOUND)
+    message (STATUS "Looking for yaml-cpp ... NOT FOUND")
     include(EkatBuildYamlCpp)
+  else()
+    message (STATUS "Looking for yaml-cpp ... FOUND")
+    message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
   endif()
   list (APPEND EKAT_TPL_LIBRARIES_INTERNAL yaml-cpp)
 endif()
