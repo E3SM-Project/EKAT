@@ -1,8 +1,8 @@
 # Build spdlog from the submodule, unless already built in this CMake project
 if (NOT TARGET spdlog)
   message (STATUS "No spdlog target already defined. Building locally from submodule")
-  set (SPDLOG_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../../extern/spdlog)
-  set (SPDLOG_BINARY_DIR ${CMAKE_BINARY_DIR}/externals/spdlog)
+  set (spdlog_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../../extern/spdlog)
+  set (spdlog_BINARY_DIR ${CMAKE_BINARY_DIR}/externals/spdlog)
 
   message (STATUS "  spdlog_SOURCE_DIR: ${spdlog_SOURCE_DIR}")
   message (STATUS "  spdlog_BINARY_DIR: ${spdlog_BINARY_DIR}")
@@ -12,7 +12,7 @@ if (NOT TARGET spdlog)
   option (SPDLOG_BUILD_EXAMPLE "Enable spdlog examples" OFF)
   option (SPDLOG_INSTALL "Spdlog install location" ON)
 
-  add_subdirectory (${SPDLOG_SOURCE_DIR} ${SPDLOG_BINARY_DIR})
+  add_subdirectory (${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
 
   if (EKAT_DISABLE_TPL_WARNINGS)
     include (EkatUtils)
