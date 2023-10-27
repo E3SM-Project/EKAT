@@ -16,10 +16,10 @@ set(CUT_EXEC_MV_ARGS
   COMPILER_C_FLAGS COMPILER_CXX_FLAGS COMPILER_F_FLAGS
   LIBS LIBS_DIRS LINKER_FLAGS)
 
-# NOTE: for FIXTURE properties, the COMMON suffix denotes a property that has
+# NOTE: for FIXTURES properties, the version without suffix denotes a property that has
 #       to be set on all RANKS/THREADS combinations *with the same name*,
 #       while the INDIVIDUAL suffix denotes a property that has to be set on
-#       a per-test basis. In the latter case, the actual FIXTURE name set
+#       a per-test basis. In the latter case, the actual FIXTURES name set
 #       on each test will have the "_npN_ompM" suffix attached.
 #       This can help if the tests setup some fixture (e.g., an output file)
 #       that a downstream test checks. Without this options, *all* ranks/threads
@@ -27,15 +27,10 @@ set(CUT_EXEC_MV_ARGS
 #       downstream test can check their results. With this options, we can have
 #       one individual downstream test for each rank/thread combination,
 #       allowing the user to debug possible errors with a test more quickly.
-# NOTE: we do not offer the FIXTURES_CLEANUP option, since it makes no sense
-#       to have multiple tests cleaning up a FIXTURE. If a certain test is
-#       in charge of cleanup (and it must be a single rank/thread combination)
-#       the user can still specify so by passing "PROPERTIES FIXTURES_CLEANUP fname",
-#       or even manually calling set_property on the test.
 set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
 set(CUT_TEST_MV_ARGS DEP EXE_ARGS MPI_RANKS THREADS LABELS PROPERTIES
-    FIXTURES_SETUP_COMMON     FIXTURES_REQUIRED_COMMON
-    FIXTURES_SETUP_INDIVIDUAL FIXTURES_REQUIRED_INDIVIDUAL)
+    FIXTURES_SETUP FIXTURES_REQUIRED FIXTURES_CLEANUP
+    FIXTURES_SETUP_INDIVIDUAL FIXTURES_REQUIRED_INDIVIDUAL FIXTURES_CLEANUP_INDIVIDUAL)
 
 # This function takes the following mandatory arguments:
 #    - exec_name: the name of the test executable that will be created.
@@ -356,7 +351,17 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
       endif()
 
       if (ecutfe_FIXTURES_REQUIRED)
-        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_SETUP ${ecutfe_FIXTURES_REQUIRED})
+        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_REQUIRED ${ecutfe_FIXTURES_REQUIRED})
+      endif()
+
+      if (ecutfe_FIXTURES_CLEANUP)
+        # We cannot have multiple rank/thread combinations for FIXTURE_CLEANUP
+        if ((NOT MPI_START_RANK EQUAL MPI_END_RANK) OR
+            (NOT THREAD_START EQUAL THREAD_END))
+          message (FATAL_ERROR
+            "Error! FIXTURE_CLEANUP property set for test with multiple rank/thread combinations")
+        endif()
+        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_CLEANUP ${ecutfe_FIXTURES_CLEANUP})
       endif()
 
       if (ecutfe_FIXTURES_SETUP_INDIVIDUAL)
@@ -368,6 +373,12 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
       if (ecutfe_FIXTURES_REQUIRED_INDIVIDUAL)
         foreach(item IN LISTS ecutfe_FIXTURES_REQUIRED_INDIVIDUAL)
           set_property(TEST ${FULL_TEST_NAME} APPEND PROPERTY FIXTURES_REQUIRED "${item}${rank_thread_suffix}")
+        endforeach()
+      endif()
+
+      if (ecutfe_FIXTURES_CLEANUP_INDIVIDUAL)
+        foreach(item IN LISTS ecutfe_FIXTURES_CLEANUP_INDIVIDUAL)
+          set_property(TEST ${FULL_TEST_NAME} APPEND PROPERTY FIXTURES_CLEANUP "${item}${rank_thread_suffix}")
         endforeach()
       endif()
 
