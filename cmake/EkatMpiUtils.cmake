@@ -2,10 +2,10 @@
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
   if (MPI_CXX_COMPILER)
-    set (INCLUDE_DIRS ${MPI_CXX_INCLUDE_DIRS})
+    set (LINK_LIB MPI::MPI_CXX)
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
   elseif (MPI_C_COMPILER)
-    set (INCLUDE_DIRS ${MPI_C_INCLUDE_DIRS})
+    set (LINK_LIB MPI::MPI_C)
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
   else ()
     string (CONCAT MSG
@@ -20,9 +20,8 @@ macro (GetMpiDistributionName DISTRO_NAME)
     message (FATAL_ERROR "Aborting")
   endif()
   try_compile (RESULT
-               ${CMAKE_BINARY_DIR}/CMakeFiles
                SOURCES ${SOURCE_FILE}
-               CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${INCLUDE_DIRS}"
+               LINK_LIBRARIES ${LINK_LIB}
                OUTPUT_VARIABLE OUT_VAR)
 
   if (NOT RESULT)

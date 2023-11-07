@@ -2,8 +2,11 @@ include(EkatCreateUnitTest)
 
 if (NOT EKAT_VALGRIND_SUPPRESSION_FILE)
   add_executable(serial_hw serial_hw.cxx)
-  add_executable(mpi_hw mpi_hw.cxx)
 
+  if (EKAT_ENABLE_MPI)
+    add_executable(mpi_hw mpi_hw.cxx)
+    target_link_libraries (mpi_hw PUBLIC MPI::MPI_C)
+  endif()
   EkatCreateUnitTestExec(mpi_valg_catch_test mpi_catch_test.cpp)
 
   # We know this var was not set so it's safe to FORCE set it.

@@ -42,6 +42,9 @@ target_link_libraries(ekat PUBLIC Kokkos::kokkos spdlog::spdlog)
 # target_link_libraries(ekat PUBLIC ${EKAT_TPL_LIBRARIES})
 
 # These libs are optional
+if (EKAT_ENABLE_MPI)
+  target_link_libraries(ekat PUBLIC MPI::MPI_C)
+endif()
 if (EKAT_ENABLE_YAML_PARSER)
   message ("linking yaml-cpp")
   target_link_libraries(ekat PRIVATE yaml-cpp)
