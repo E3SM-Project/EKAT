@@ -8,7 +8,6 @@ option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when comp
 
 # WARNING: you CANNOT do list(APPEND var item1 ... item2) if var is a CACHE variable!
 # Therefore, use an internal var during tpl parsing, then set a cache var ONCE at the end
-set (EKAT_TPL_LIBRARIES_INTERNAL)
 
 ###################################
 #         MPI (Optional)          #
@@ -17,7 +16,7 @@ set (EKAT_TPL_LIBRARIES_INTERNAL)
 # MPI is enabled by default, but not needed.
 option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)
 if (EKAT_ENABLE_MPI)
-  find_package(MPI REQUIRED COMPONENTS C)
+  find_package(MPI REQUIRED)
 
   # NOTE: may be an overkill, but depending on which FindMPI module is called,
   #       if _FIND_REQUIRED is not checked, we may not get a fatal error
@@ -35,7 +34,6 @@ if (EKAT_ENABLE_MPI)
   # MPI-related options
   option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
 
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL MPI::MPI_C)
 endif()
 
 ###################################
@@ -47,7 +45,6 @@ include (EkatFindKokkos)
 if (NOT Kokkos_FOUND)
   include (EkatBuildKokkos)
 endif()
-list (APPEND EKAT_TPL_LIBRARIES_INTERNAL Kokkos::kokkos)
 
 # A shortcut var, to handle GPU-specific (but backend-agnostic) stuff
 set (EKAT_ENABLE_GPU False)
@@ -80,7 +77,6 @@ if (EKAT_ENABLE_YAML_PARSER)
     message (STATUS "Looking for yaml-cpp ... FOUND")
     message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
   endif()
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL yaml-cpp)
 endif()
 
 ###################################
@@ -97,7 +93,6 @@ else()
   message (STATUS "Looking for spdlog ... FOUND")
   message (STATUS "  spdlog_DIR: ${spdlog_DIR}")
 endif()
-list (APPEND EKAT_TPL_LIBRARIES_INTERNAL spdlog::spdlog)
 
 ###################################
 #   Boost stacktrace (Optional)   #
@@ -110,7 +105,6 @@ find_package(Boost 1.65.0
 )
 
 if (Boost_STACKTRACE_ADDR2LINE_FOUND)
-  list (APPEND EKAT_TPL_LIBRARIES_INTERNAL ${Boost_LIBRARIES})
   message (STATUS "Looking for boost::stacktrace ... Found")
   message ("    -> EKAT's assert macros will provide a stacktrace.")
   set (EKAT_HAS_STACKTRACE TRUE)
@@ -119,6 +113,5 @@ else()
   message ("    -> EKAT's assert macros will NOT provide a stacktrace.")
 endif()
 
-set (EKAT_TPL_LIBRARIES ${EKAT_TPL_LIBRARIES_INTERNAL} CACHE INTERNAL "List of EKAT's TPLs")
 
 message (STATUS " *** End processing EKAT's TPLs ***")
