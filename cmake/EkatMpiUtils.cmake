@@ -1,18 +1,19 @@
 # Detect the library that provides MPI
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  if (MPI_CXX_COMPILER)
+  dump_cmake_variables(REGEX "^MPI")
+  if (CMAKE_CXX_COMPILER AND MPI_CXX_FOUND)
     set (LINK_LIB MPI::MPI_CXX)
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
-  elseif (MPI_C_COMPILER)
+  elseif (CMAKE_C_COMPILER AND MPI_C_FOUND)
     set (LINK_LIB MPI::MPI_C)
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
   else ()
     string (CONCAT MSG
       "**************************************************************\n"
-      "  MPI_C_COMPILER and MPI_CXX_COMPILER are not set.\n"
       "  CMake logic to determine the distribution name\n"
-      "  requires a valid C or CXX mpi compiler.\n"
+      "  requires a valid C or CXX mpi compiler, with the corresponding\n"
+      "  MPI_<LANG>_FOUND=TRUE set (via previous call to find_package).\n"
       "  Please call find_package(MPI [REQUIRED] COMPONENTS [C|CXX])\n"
       "  *before* calling GetMpiDistributionName (in the same scope).\n"
       "**************************************************************\n")
@@ -59,6 +60,7 @@ function (DisableMpiCxxBindings)
 endfunction()
 
 # Set MPI runtime env vars for comm world rank/size, depending on mpi distribution
+# NOTE: this is needed by the test-launcher script you find in ${CMAKE_SOURCE_DIR}/bin
 macro (SetMpiRuntimeEnvVars)
   set (DISTRO_NAME)
   GetMpiDistributionName (DISTRO_NAME)
