@@ -1,7 +1,6 @@
 # Detect the library that provides MPI
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  dump_cmake_variables(REGEX "^MPI")
   if (CMAKE_CXX_COMPILER AND MPI_CXX_FOUND)
     set (LINK_LIB MPI::MPI_CXX)
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
