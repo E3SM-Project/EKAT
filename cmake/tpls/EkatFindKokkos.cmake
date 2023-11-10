@@ -44,7 +44,15 @@ endforeach()
 
 # Try to find the package
 message (STATUS "Looking for a Kokkos installation ...")
-find_package(Kokkos QUIET)
+find_package(Kokkos QUIET
+  # Skip all cmake defaults paths, except for env/cmake vars Kokkos_ROOT (if any)
+  NO_CMAKE_PATH
+  NO_CMAKE_ENVIRONMENT_PATH
+  NO_SYSTEM_ENVIRONMENT_PATH
+  NO_CMAKE_PACKAGE_REGISTRY
+  NO_CMAKE_SYSTEM_PATH
+  NO_CMAKE_INSTALL_PREFIX
+  NO_CMAKE_SYSTEM_PACKAGE_REGISTRY)
 
 if (Kokkos_FOUND)
   # Check if the requested devices/archs/options are enabled in the installation
@@ -69,12 +77,9 @@ if (Kokkos_FOUND)
       set (Kokkos_FOUND FALSE)
     endif()
   endforeach()
-endif()
 
-# If not found, download it and add subirectory
-if (NOT Kokkos_FOUND)
-  message (STATUS "Looking for a Kokkos installation ... NOT FOUND")
   if (MISSING_DEVICES OR MISSING_ARCHS OR MISSING_OPTIONS)
+    message (STATUS "Looking for a Kokkos installation ... NOT FOUND")
     message (STATUS "  -> An installation was found at ${Kokkos_DIR}, but was not accepted, because:")
 
     if (MISSING_DEVICES)
@@ -86,8 +91,15 @@ if (NOT Kokkos_FOUND)
     if (MISSING_OPTIONS)
       message (STATUS "   - Requested options ${MISSING_OPTIONS} not found in the installation")
     endif()
+
+    string (CONCAT msg
+          "Please, provide a Kokkos_ROOT env/CMake variable pointing to a correct installation.\n"
+          "You can also provide no such env/CMake variable, and we will build/install Kokkos locally")
+    message ("${msg}")
+    message (FATAL_ERROR "Aborting...")
   endif()
-else()
   message (STATUS "Looking for a Kokkos installation ... FOUND")
   message (STATUS "  Kokkos_DIR: ${Kokkos_DIR}")
+else ()
+  message (STATUS "Looking for a Kokkos installation ... NOT FOUND")
 endif()
