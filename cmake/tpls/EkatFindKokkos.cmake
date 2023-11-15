@@ -44,15 +44,28 @@ endforeach()
 
 # Try to find the package
 message (STATUS "Looking for a Kokkos installation ...")
-find_package(Kokkos QUIET
-  # Skip all cmake defaults paths, except for env/cmake vars Kokkos_ROOT (if any)
-  NO_CMAKE_PATH
-  NO_CMAKE_ENVIRONMENT_PATH
-  NO_SYSTEM_ENVIRONMENT_PATH
-  NO_CMAKE_PACKAGE_REGISTRY
-  NO_CMAKE_SYSTEM_PATH
-  NO_CMAKE_INSTALL_PREFIX
-  NO_CMAKE_SYSTEM_PACKAGE_REGISTRY)
+
+if(CMAKE_VERSION VERSION_LESS "3.24")
+  # Old cmake does not have NO_CMAKE_INSTALL_PREFIX
+  find_package(Kokkos QUIET
+    # Skip all cmake defaults paths, except for env/cmake vars Kokkos_ROOT (if any)
+    NO_CMAKE_PATH
+    NO_CMAKE_ENVIRONMENT_PATH
+    NO_SYSTEM_ENVIRONMENT_PATH
+    NO_CMAKE_PACKAGE_REGISTRY
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_SYSTEM_PACKAGE_REGISTRY)
+else()
+  find_package(Kokkos QUIET
+    # Skip all cmake defaults paths, except for env/cmake vars Kokkos_ROOT (if any)
+    NO_CMAKE_PATH
+    NO_CMAKE_ENVIRONMENT_PATH
+    NO_SYSTEM_ENVIRONMENT_PATH
+    NO_CMAKE_PACKAGE_REGISTRY
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_INSTALL_PREFIX
+    NO_CMAKE_SYSTEM_PACKAGE_REGISTRY)
+endif()
 
 if (Kokkos_FOUND)
   # Check if the requested devices/archs/options are enabled in the installation
