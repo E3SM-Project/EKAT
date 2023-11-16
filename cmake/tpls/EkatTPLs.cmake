@@ -76,6 +76,13 @@ if (EKAT_ENABLE_YAML_PARSER)
   else()
     message (STATUS "Looking for yaml-cpp ... FOUND")
     message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
+    # It is possible that the installation provides the yaml-cpp target, but not the yaml-cpp::yaml-cpp target. If so, define the alias target
+    if (NOT TARGET yaml-cpp::yaml-cpp)
+      if (NOT TARGET yaml-cpp)
+        message (FATAL_ERROR "Neither yaml-cpp nor yaml-cpp::yaml-cpp targets were found")
+      endif()
+      add_library (yaml-cpp::yaml-cpp ALIAS yaml-cpp)
+    endif()
   endif()
 endif()
 
