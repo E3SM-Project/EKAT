@@ -19,12 +19,20 @@ macro (GetMpiDistributionName DISTRO_NAME)
     message ("${MSG}")
     message (FATAL_ERROR "Aborting")
   endif()
-  try_compile (RESULT
-               SOURCES ${SOURCE_FILE}
-               LINK_LIBRARIES ${LINK_LIB}
-               OUTPUT_VARIABLE OUT_VAR)
+  message ("source file: ${SOURCE_FILE}")
+  if (CMAKE_VERSION VERSION_LESS "3.25.0")
+    try_compile (RESULT ${CMAKE_BINARY_DIR}/CMakeTmp/GetMpiDistroName
+                 SOURCES ${SOURCE_FILE}
+                 LINK_LIBRARIES ${LINK_LIB}
+                 OUTPUT_VARIABLE OUT_VAR)
+  else()
+    try_compile (RESULT
+                 SOURCES ${SOURCE_FILE}
+                 LINK_LIBRARIES ${LINK_LIB}
+                 OUTPUT_VARIABLE OUT_VAR)
+   endif()
 
-  if (NOT RESULT)
+   if (NOT RESULT)
     message (FATAL_ERROR "Could not compile a simple MPI source file.")
   endif()
 
