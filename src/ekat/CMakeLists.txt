@@ -20,6 +20,8 @@ set(EKAT_SOURCES
   util/ekat_arch.cpp
   util/ekat_string_utils.cpp
   util/ekat_test_utils.cpp
+  util/ekat_cxx_std_math_wraps.cpp
+  util/ekat_cxx_std_math_wraps_f2c.F90
 )
 if (EKAT_ENABLE_YAML_PARSER)
   list (APPEND EKAT_SOURCES io/ekat_yaml.cpp)
