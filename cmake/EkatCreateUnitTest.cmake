@@ -382,8 +382,8 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
         endforeach()
       endif()
 
-      if (eutfe_WILL_FAIL)
-        set_tests_properties(TEST ${FULL_TEST_NAME} PROPERTY WILL FAIL TRUE)
+      if (ecutfe_WILL_FAIL)
+        set_property(TEST ${FULL_TEST_NAME} PROPERTY WILL_FAIL TRUE)
       endif()
 
       if (ecutfe_PROPERTIES)
