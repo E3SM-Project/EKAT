@@ -27,7 +27,7 @@ set(CUT_EXEC_MV_ARGS
 #       downstream test can check their results. With this options, we can have
 #       one individual downstream test for each rank/thread combination,
 #       allowing the user to debug possible errors with a test more quickly.
-set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY)
+set(CUT_TEST_OPTIONS SERIAL THREADS_SERIAL RANKS_SERIAL PRINT_OMP_AFFINITY WILL_FAIL)
 set(CUT_TEST_MV_ARGS DEP EXE_ARGS MPI_RANKS THREADS LABELS PROPERTIES
     FIXTURES_SETUP FIXTURES_REQUIRED FIXTURES_CLEANUP
     FIXTURES_SETUP_INDIVIDUAL FIXTURES_REQUIRED_INDIVIDUAL FIXTURES_CLEANUP_INDIVIDUAL)
@@ -380,6 +380,10 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
         foreach(item IN LISTS ecutfe_FIXTURES_CLEANUP_INDIVIDUAL)
           set_property(TEST ${FULL_TEST_NAME} APPEND PROPERTY FIXTURES_CLEANUP "${item}${rank_thread_suffix}")
         endforeach()
+      endif()
+
+      if (ecutfe_WILL_FAIL)
+        set_property(TEST ${FULL_TEST_NAME} PROPERTY WILL_FAIL TRUE)
       endif()
 
       if (ecutfe_PROPERTIES)

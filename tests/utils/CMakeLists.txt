@@ -45,14 +45,14 @@ EkatCreateUnitTest(math_util math_util_tests.cpp
 # of input is not parsed as test filter, by fwding a file
 EkatCreateUnitTest(regress_fail regress_fail.cpp
   LIBS ekat EXE_ARGS " < CTestTestfile.cmake"
-  PROPERTIES WILL_FAIL true
+  WILL_FAIL
   LABELS "MustFail"
 )
 
 # Test that Catch returns a failure if invalid flags are passed
 EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
   EXE_ARGS " --non-existent-flag"
-  PROPERTIES WILL_FAIL true
+  WILL_FAIL
   LABELS "MustFail"
 )
 
@@ -60,7 +60,7 @@ EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
 EkatCreateUnitTestExec (fpe_check "fpe_check.cpp")
 if (EKAT_ENABLE_FPE_DEFAULT_MASK)
   EkatCreateUnitTestFromExec (fpe_check fpe_check
-    PROPERTIES WILL_FAIL TRUE
+    WILL_FAIL
     LABELS "MustFail")
 else()
   EkatCreateUnitTestFromExec (fpe_check fpe_check)

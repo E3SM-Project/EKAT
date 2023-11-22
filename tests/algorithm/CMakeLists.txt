@@ -58,6 +58,6 @@ endif()
 
 EkatCreateUnitTestFromExec(tridiag_invalid_flags ${invalid_flags_exec}
   EXE_ARGS "--non-existent-flag"
-  PROPERTIES WILL_FAIL TRUE
   LABELS "MustFail"
+  WILL_FAIL
 )
