@@ -11,15 +11,46 @@ macro (GetMpiDistributionName DISTRO_NAME)
   # of the MPI_XYZ cmake vars were populated by the above call. So add all the vars
   # that can possibly be filled by FindMPI in different versions of cmake.
   # Some will be empty, some will be redundant, but that's ok.
-  find_file (MPI_H mpi.h
-    PATHS ${MPI_C_INCLUDE_DIRS}
-          ${MPI_C_INCLUDE_PATH}
-          ${MPI_CXX_INCLUDE_DIRS}
-          ${MPI_CXX_INCLUDE_PATH}
-          ${MPI_Fortran_F77_HEADER_DIR}
-          ${MPI_INCLUDE_PATH}
-          ${MPI_INC_DIR})
+  set (MPI_H_PATHS)
+  list(APPEND MPI_H_PATHS
+    ${MPI_C_INCLUDE_DIRS}
+    ${MPI_C_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_DIRS}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_Fortran_F77_HEADER_DIR}
+    ${MPI_INCLUDE_PATH}
+    ${MPI_INC_DIR})
 
+  # Sometimes all the above vars are empty, and we only have MPI_<LANG>_COMPILER set.
+  # We can use the mpi compiler with the -show flag to get a list of the flags passed
+  # to the backend compiler, which includes the include paths.
+  if (MPI_CXX_COMPILER OR MPI_C_COMPILER OR MPI_Fortran_COMPILER)
+    if (MPI_CXX_COMPILER)
+      set (COMPILER ${MPI_CXX_COMPILER})
+    elseif (MPI_C_COMPILER)
+      set (COMPILER ${MPI_C_COMPILER})
+    else()
+      set (COMPILER ${MPI_Fortran_COMPILER})
+    endif()
+    execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
+
+    # Remove spaces/commas, and parse each entry. If it starts with -I, it may be
+    # an include path with mpi.h
+    string(REPLACE " " ";" TEMP_LIST "${TEMP}")
+    string(REPLACE "," ";" TEMP_LIST "${TEMP_LIST}")
+    foreach (entry IN_ITEMS ${TEMP_LIST})
+      if (entry MATCHES "^-I")
+        string(REGEX REPLACE "-I([^ ]*)" "\\1"  this_path ${entry})
+        list(APPEND MPI_H_PATHS ${this_path})
+      endif()
+    endforeach()
+  endif()
+
+  # Look for mpi.h
+  find_file (MPI_H mpi.h
+    PATHS ${MPI_H_PATHS})
+
+  # Check what macros are defined in mpi.h
   include (CheckSymbolExists)
   check_symbol_exists(OMPI_MAJOR_VERSION ${MPI_H} HAVE_OMPI)
   check_symbol_exists(MPICH_VERSION ${MPI_H} HAVE_MPICH)
