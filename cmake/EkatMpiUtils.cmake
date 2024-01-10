@@ -2,25 +2,23 @@
 # macros inside the mpi.h header file
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
+
+  # If find_package(MPI [...]) was already called, this is a no op.
   find_package (MPI REQUIRED QUIET)
 
   # We need the MPI headers folder, but we don't know which language is enabled
-  # by the project which is calling this macro, so we try C/CXX/Fortran.
-  if (CMAKE_C_COMPILER)
-    set (MPI_H ${MPI_C_INCLUDE_DIRS}/mpi.h)
-  elseif (CMAKE_CXX_COMPILER)
-    set (MPI_H ${MPI_CXX_INCLUDE_DIRS}/mpi.h)
-  elseif (CMAKE_Fortran_COMPILER)
-    set (MPI_H ${MPI_Fortran_F77_HEADER_DIR}/mpi.h)
-  else ()
-    string (CONCAT MSG
-      "**************************************************************\n"
-      "  CMake logic to determine the distribution name\n"
-      "  requires a valid C, CXX, or Fortran compiler.\n"
-      "**************************************************************\n")
-    message ("${MSG}")
-    message (FATAL_ERROR "Aborting")
-  endif()
+  # by the project which is calling this macro, which means we don't know which
+  # of the MPI_XYZ cmake vars were populated by the above call. So add all the vars
+  # that can possibly be filled by FindMPI in different versions of cmake.
+  # Some will be empty, some will be redundant, but that's ok.
+  find_file (MPI_H mpi.h
+    PATHS ${MPI_C_INCLUDE_DIRS}
+          ${MPI_C_INCLUDE_PATH}
+          ${MPI_CXX_INCLUDE_DIRS}
+          ${MPI_CXX_INCLUDE_PATH}
+          ${MPI_Fortran_F77_HEADER_DIR}
+          ${MPI_INCLUDE_PATH}
+          ${MPI_INC_DIR})
 
   include (CheckSymbolExists)
   check_symbol_exists(OMPI_MAJOR_VERSION ${MPI_H} HAVE_OMPI)
