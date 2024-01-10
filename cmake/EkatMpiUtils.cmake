@@ -1,43 +1,34 @@
-# Detect the library that provides MPI
+# Detect the library that provides MPI, by looking for vendor-specific
+# macros inside the mpi.h header file
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  if (CMAKE_CXX_COMPILER)
-    find_package (MPI REQUIRED COMPONENTS CXX)
-    set (LINK_LIB MPI::MPI_CXX)
-    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
-  elseif (CMAKE_C_COMPILER)
-    find_package (MPI REQUIRED COMPONENTS C)
-    set (LINK_LIB MPI::MPI_C)
-    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
+  find_package (MPI REQUIRED QUIET)
+
+  # We need the MPI headers folder, but we don't know which language is enabled
+  # by the project which is calling this macro, so we try C/CXX/Fortran.
+  if (CMAKE_C_COMPILER)
+    set (MPI_H ${MPI_C_INCLUDE_DIRS}/mpi.h)
+  elseif (CMAKE_CXX_COMPILER)
+    set (MPI_H ${MPI_CXX_INCLUDE_DIRS}/mpi.h)
+  elseif (CMAKE_Fortran_COMPILER)
+    set (MPI_H ${MPI_Fortran_F77_HEADER_DIR}/mpi.h)
   else ()
     string (CONCAT MSG
       "**************************************************************\n"
       "  CMake logic to determine the distribution name\n"
-      "  requires a valid C or CXX mpi compiler.\n"
+      "  requires a valid C, CXX, or Fortran compiler.\n"
       "**************************************************************\n")
     message ("${MSG}")
     message (FATAL_ERROR "Aborting")
   endif()
-  message ("source file: ${SOURCE_FILE}")
-  if (CMAKE_VERSION VERSION_LESS "3.25.0")
-    try_compile (RESULT ${CMAKE_BINARY_DIR}/CMakeTmp/GetMpiDistroName
-                 SOURCES ${SOURCE_FILE}
-                 LINK_LIBRARIES ${LINK_LIB}
-                 OUTPUT_VARIABLE OUT_VAR)
-  else()
-    try_compile (RESULT
-                 SOURCES ${SOURCE_FILE}
-                 LINK_LIBRARIES ${LINK_LIB}
-                 OUTPUT_VARIABLE OUT_VAR)
-   endif()
 
-   if (NOT RESULT)
-    message (FATAL_ERROR "Could not compile a simple MPI source file.")
-  endif()
+  include (CheckSymbolExists)
+  check_symbol_exists(OMPI_MAJOR_VERSION ${MPI_H} HAVE_OMPI)
+  check_symbol_exists(MPICH_VERSION ${MPI_H} HAVE_MPICH)
 
-  if (OUT_VAR MATCHES "OpenMPI")
+  if (HAVE_OMPI)
     set (${DISTRO_NAME} "openmpi")
-  elseif (OUT_VAR MATCHES "MPICH")
+  elseif (HAVE_MPICH)
     set (${DISTRO_NAME} "mpich")
   else ()
     set (${DISTRO_NAME} "unknown")
