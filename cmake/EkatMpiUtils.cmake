@@ -1,20 +1,19 @@
 # Detect the library that provides MPI
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  if (CMAKE_CXX_COMPILER AND MPI_CXX_FOUND)
+  if (CMAKE_CXX_COMPILER)
+    find_package (MPI REQUIRED COMPONENTS CXX)
     set (LINK_LIB MPI::MPI_CXX)
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
-  elseif (CMAKE_C_COMPILER AND MPI_C_FOUND)
+  elseif (CMAKE_C_COMPILER)
+    find_package (MPI REQUIRED COMPONENTS C)
     set (LINK_LIB MPI::MPI_C)
     set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
   else ()
     string (CONCAT MSG
       "**************************************************************\n"
       "  CMake logic to determine the distribution name\n"
-      "  requires a valid C or CXX mpi compiler, with the corresponding\n"
-      "  MPI_<LANG>_FOUND=TRUE set (via previous call to find_package).\n"
-      "  Please call find_package(MPI [REQUIRED] COMPONENTS [C|CXX])\n"
-      "  *before* calling GetMpiDistributionName (in the same scope).\n"
+      "  requires a valid C or CXX mpi compiler.\n"
       "**************************************************************\n")
     message ("${MSG}")
     message (FATAL_ERROR "Aborting")
