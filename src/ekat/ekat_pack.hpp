@@ -176,7 +176,7 @@ struct Pack {
   KOKKOS_FORCEINLINE_FUNCTION
   Pack () {
     vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = ScalarTraits<scalar>::invalid();
+      d[i] = scalar(0);
     }
   }
 
