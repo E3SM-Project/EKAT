@@ -175,15 +175,13 @@ struct Pack {
 
   KOKKOS_FORCEINLINE_FUNCTION
   Pack () {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = scalar(0);
-    }
+    *this = scalar(0);
   }
 
   // Init all slots to scalar v.
   KOKKOS_FORCEINLINE_FUNCTION
   Pack (const scalar& v) {
-    vector_simd for (int i = 0; i < n; ++i) d[i] = v;
+    *this = v;
   }
 
   // Init this Pack from another one.
@@ -205,14 +203,11 @@ struct Pack {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
   }
 
-  // Init this Pack from a scalar, but only where Mask is true; otherwise
-  // init to default value.
+  // Init this Pack from a scalar, but only where Mask is true
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const T p) {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p : ScalarTraits<scalar>::invalid();
-    }
+    set (m,p);
   }
 
   // Init this Pack from two scalars, according to a given mask:
@@ -220,10 +215,7 @@ struct Pack {
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const T v_true, const S v_false) {
-    vector_simd
-    for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? v_true : v_false;
-    }
+    set (m,v_true,v_false);
   }
 
   // Init this Pack from a scalar, but only where Mask is true; otherwise
@@ -231,9 +223,7 @@ struct Pack {
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const Pack<T,n>& p) {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p[i] : ScalarTraits<scalar>::invalid();
-    }
+    set (m,p);
   }
 
   // Init this Pack from two other packs, according to a given mask:
@@ -241,10 +231,7 @@ struct Pack {
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const Pack<T,n>& p_true, const Pack<S,n>& p_false) {
-    vector_simd
-    for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p_true[i] : p_false[i];
-    }
+    set (m,p_true,p_false);
   }
 
   KOKKOS_FORCEINLINE_FUNCTION const scalar& operator[] (const int& i) const { return d[i]; }
