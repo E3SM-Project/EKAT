@@ -176,7 +176,7 @@ struct TestPack {
       REQUIRE(p2[i] == p_ref[i]);
     }
 
-    // Masked ctor to create a pack with [3 invalid 3 invalid ...]
+    // Masked ctor to create a pack with [3 0 3 0 ...]
     // We can do this with scalars or packs
     Pack p3(m,3);
     Pack p4(m,three);
@@ -187,8 +187,9 @@ struct TestPack {
         REQUIRE(p3[i] == p_ref[i]);
         REQUIRE(p4[i] == p_ref[i]);
       } else {
-        REQUIRE(ekat::is_invalid(p3[i]));
-        REQUIRE(ekat::is_invalid(p4[i]));
+        // Non-masked values should keep the default ctor value (which is 0)
+        REQUIRE(p3[i]==0);
+        REQUIRE(p4[i]==0);
       }
     }
   }
