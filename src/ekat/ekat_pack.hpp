@@ -174,40 +174,44 @@ struct Pack {
   typedef typename std::remove_const<ScalarType>::type scalar;
 
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack () {
-    *this = scalar(0);
+  constexpr Pack ()
+   : Pack (scalar(0))
+  {
+    // Nothing to do here
   }
 
   // Init all slots to scalar v.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const scalar& v) {
+  constexpr Pack (const scalar& v) {
     *this = v;
   }
 
   // Init this Pack from another one.
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION explicit
-  Pack (const Pack<T,n>& v) {
+  constexpr Pack (const Pack<T,n>& v) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const Pack& src) {
+  constexpr Pack (const Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const volatile Pack& src) {
+  constexpr Pack (const volatile Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
   }
 
   // Init this Pack from a scalar, but only where Mask is true
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack (const Mask<n>& m, const T p) {
-    set (m,p);
+  explicit Pack (const Mask<n>& m, const T p)
+   : Pack (m,p,T(0))
+  {
+    // Nothing to do here
   }
 
   // Init this Pack from two scalars, according to a given mask:
@@ -223,7 +227,7 @@ struct Pack {
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const Pack<T,n>& p) {
-    set (m,p);
+    set (m,p,Pack());
   }
 
   // Init this Pack from two other packs, according to a given mask:
