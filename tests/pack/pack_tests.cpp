@@ -479,8 +479,8 @@ TEST_CASE("isnan", "ekat::pack") {
   mvt mzero("",1), mnan("",1);
   Kokkos::parallel_for(Kokkos::RangePolicy<>(0,1),
                        KOKKOS_LAMBDA(int) {
-    zero(0) = pt(0);  // Ctor inits pack to 0
-    nan(0)  = pt();   // Ctor inits pack to nan
+    zero(0) = pt();  // Ctor inits pack to 0
+    nan(0)  = ScalarTraits<Real>::invalid();
 
     const pt& z = zero(0);
     const pt& n = nan(0);
