@@ -174,45 +174,44 @@ struct Pack {
   typedef typename std::remove_const<ScalarType>::type scalar;
 
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack () {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = ScalarTraits<scalar>::invalid();
-    }
+  constexpr Pack ()
+   : Pack (scalar(0))
+  {
+    // Nothing to do here
   }
 
   // Init all slots to scalar v.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const scalar& v) {
-    vector_simd for (int i = 0; i < n; ++i) d[i] = v;
+  constexpr Pack (const scalar& v) {
+    *this = v;
   }
 
   // Init this Pack from another one.
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION explicit
-  Pack (const Pack<T,n>& v) {
+  constexpr Pack (const Pack<T,n>& v) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const Pack& src) {
+  constexpr Pack (const Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const volatile Pack& src) {
+  constexpr Pack (const volatile Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
   }
 
-  // Init this Pack from a scalar, but only where Mask is true; otherwise
-  // init to default value.
+  // Init this Pack from a scalar, but only where Mask is true
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack (const Mask<n>& m, const T p) {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p : ScalarTraits<scalar>::invalid();
-    }
+  explicit Pack (const Mask<n>& m, const T p)
+   : Pack (m,p,T(0))
+  {
+    // Nothing to do here
   }
 
   // Init this Pack from two scalars, according to a given mask:
@@ -220,10 +219,7 @@ struct Pack {
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const T v_true, const S v_false) {
-    vector_simd
-    for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? v_true : v_false;
-    }
+    set (m,v_true,v_false);
   }
 
   // Init this Pack from a scalar, but only where Mask is true; otherwise
@@ -231,9 +227,7 @@ struct Pack {
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const Pack<T,n>& p) {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p[i] : ScalarTraits<scalar>::invalid();
-    }
+    set (m,p,Pack());
   }
 
   // Init this Pack from two other packs, according to a given mask:
@@ -241,10 +235,7 @@ struct Pack {
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const Pack<T,n>& p_true, const Pack<S,n>& p_false) {
-    vector_simd
-    for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p_true[i] : p_false[i];
-    }
+    set (m,p_true,p_false);
   }
 
   KOKKOS_FORCEINLINE_FUNCTION const scalar& operator[] (const int& i) const { return d[i]; }

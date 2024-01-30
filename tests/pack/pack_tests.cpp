@@ -176,7 +176,7 @@ struct TestPack {
       REQUIRE(p2[i] == p_ref[i]);
     }
 
-    // Masked ctor to create a pack with [3 invalid 3 invalid ...]
+    // Masked ctor to create a pack with [3 0 3 0 ...]
     // We can do this with scalars or packs
     Pack p3(m,3);
     Pack p4(m,three);
@@ -187,8 +187,9 @@ struct TestPack {
         REQUIRE(p3[i] == p_ref[i]);
         REQUIRE(p4[i] == p_ref[i]);
       } else {
-        REQUIRE(ekat::is_invalid(p3[i]));
-        REQUIRE(ekat::is_invalid(p4[i]));
+        // Non-masked values should keep the default ctor value (which is 0)
+        REQUIRE(p3[i]==0);
+        REQUIRE(p4[i]==0);
       }
     }
   }
@@ -478,8 +479,8 @@ TEST_CASE("isnan", "ekat::pack") {
   mvt mzero("",1), mnan("",1);
   Kokkos::parallel_for(Kokkos::RangePolicy<>(0,1),
                        KOKKOS_LAMBDA(int) {
-    zero(0) = pt(0);  // Ctor inits pack to 0
-    nan(0)  = pt();   // Ctor inits pack to nan
+    zero(0) = pt();  // Ctor inits pack to 0
+    nan(0)  = ScalarTraits<Real>::invalid();
 
     const pt& z = zero(0);
     const pt& n = nan(0);
