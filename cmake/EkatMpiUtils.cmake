@@ -32,7 +32,13 @@ macro (GetMpiDistributionName DISTRO_NAME)
     else()
       set (COMPILER ${MPI_Fortran_COMPILER})
     endif()
-    execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
+
+    if (DEFINED ENV{CRAYPE_VERSION})
+      # Cray wrappers have different options from mpicxx
+      execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags OUTPUT_VARIABLE TEMP)
+    else()
+      execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
+    endif()
 
     # Remove spaces/commas, and parse each entry. If it starts with -I, it may be
     # an include path with mpi.h
