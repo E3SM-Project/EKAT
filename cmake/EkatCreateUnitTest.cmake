@@ -347,11 +347,11 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
       endif()
 
       if (ecutfe_FIXTURES_SETUP)
-        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_SETUP ${ecutfe_FIXTURES_SETUP})
+        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_SETUP "${ecutfe_FIXTURES_SETUP}")
       endif()
 
       if (ecutfe_FIXTURES_REQUIRED)
-        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_REQUIRED ${ecutfe_FIXTURES_REQUIRED})
+        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_REQUIRED "${ecutfe_FIXTURES_REQUIRED}")
       endif()
 
       if (ecutfe_FIXTURES_CLEANUP)
@@ -361,7 +361,7 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
           message (FATAL_ERROR
             "Error! FIXTURE_CLEANUP property set for test with multiple rank/thread combinations")
         endif()
-        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_CLEANUP ${ecutfe_FIXTURES_CLEANUP})
+        set_tests_properties(${FULL_TEST_NAME} PROPERTIES FIXTURES_CLEANUP "${ecutfe_FIXTURES_CLEANUP}")
       endif()
 
       if (ecutfe_FIXTURES_SETUP_INDIVIDUAL)
