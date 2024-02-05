@@ -33,8 +33,8 @@ macro (GetMpiDistributionName DISTRO_NAME)
       set (COMPILER ${MPI_Fortran_COMPILER})
     endif()
 
-    execute_process (COMMAND ${COMPILER} -show RESULT_VARIABLE SUPPORTS_SHOW)
-    execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags RESULT_VARIABLE SUPPORTS_CRAY_PRINT_OPTS)
+    execute_process (COMMAND ${COMPILER} -show RESULT_VARIABLE SUPPORTS_SHOW OUTPUT_QUIET ERROR_QUIET)
+    execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags RESULT_VARIABLE SUPPORTS_CRAY_PRINT_OPTS OUTPUT_QUIET ERROR_QUIET)
     if (SUPPORTS_SHOW EQUAL 0)
       # (mpicxx/mpicc/mpifort)-like MPI compiler
       execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
