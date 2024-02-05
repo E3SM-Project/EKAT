@@ -33,11 +33,26 @@ macro (GetMpiDistributionName DISTRO_NAME)
       set (COMPILER ${MPI_Fortran_COMPILER})
     endif()
 
-    if (DEFINED ENV{CRAYPE_VERSION})
+    execute_process (COMMAND ${COMPILER} -show RESULT_VARIABLE SUPPORTS_SHOW)
+    execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags RESULT_VARIABLE SUPPORTS_CRAY_PRINT_OPTS)
+    if (SUPPORTS_SHOW EQUAL 0)
+      # (mpicxx/mpicc/mpifort)-like MPI compiler
+      execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
+    elseif (SUPPORTS_CRAY_PRINT_OPTS EQUAL 0)
+      # craype-like MPI wrapper compiler
       # Cray wrappers have different options from mpicxx
       execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags OUTPUT_VARIABLE TEMP)
     else()
-      execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
+      # unknow MPI compiler
+      string (CONCAT msgs
+        " ** Unhandled scenario in ekat's GetMpiDistributionName **"
+        "The MPI compiler does not support any known flag to show compile command\n"
+        " - compiler: ${COMPILER}\n"
+        " - known flags: '-show' (for mpicxx/mpicc/mpifort) '--cray-print-opts=cflags' (for cray's CC/cc/ftn)\n"
+        "We will not be able to check the include paths of the MPI compiler when looking for mpi.h"
+      )
+
+      message (WARNING "${msg}")
     endif()
 
     # Remove spaces/commas, and parse each entry. If it starts with -I, it may be
