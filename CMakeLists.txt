@@ -13,6 +13,12 @@ list(APPEND CMAKE_MODULE_PATH
      ${EKAT_CMAKE_PATH}/tpls
 )
 
+if (DEFINED PROJECT_NAME)
+  set (EKAT_STANDALONE FALSE)
+else ()
+  set (EKAT_STANDALONE TRUE)
+endif()
+
 project (EKAT C CXX)
 # EKAT has mostly C++, but (optionally) Fortran too
 option (EKAT_ENABLE_FORTRAN "Whether EKAT Fortran support is enabled." ON)
@@ -92,11 +98,13 @@ endif()
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
 ############################################
 
-# Initialize flags
-include (EkatSetCompilerFlags)
-ResetFlags()
-SetCommonFlags()
-SetProfilingFlags(PROFILER ${EKAT_PROFILING_TOOL} COVERAGE ${EKAT_ENABLE_COVERAGE})
+if (EKAT_STANDALONE)
+  # Initialize flags
+  include (EkatSetCompilerFlags)
+  ResetFlags()
+  SetCommonFlags()
+  SetProfilingFlags(PROFILER ${EKAT_PROFILING_TOOL} COVERAGE ${EKAT_ENABLE_COVERAGE})
+endif()
 
 include(CheckCXXSymbolExists)
 # Most of the FPE stuff was defined in C99, but gnu has some additional non-std
