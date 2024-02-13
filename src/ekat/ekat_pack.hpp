@@ -304,6 +304,13 @@ using OnlyPack = typename std::enable_if<PackType::packtag,PackType>::type;
 template <typename PackType, typename ReturnType>
 using OnlyPackReturn = typename std::enable_if<PackType::packtag,ReturnType>::type;
 
+// A more general SFINAE utility, which can be used to select pack or non-pack
+template<typename T>
+struct IsPack : std::false_type {};
+template<typename T, int N>
+struct IsPack<Pack<T,N>> : std::true_type {};
+
+
 // Later, we might support type promotion. For now, caller must explicitly
 // promote a pack's scalar type in mixed-type arithmetic.
 
