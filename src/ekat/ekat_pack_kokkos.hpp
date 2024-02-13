@@ -218,8 +218,13 @@ scalarize (const Kokkos::View<ValueT*, Parms...>& v)
 // Example: const auto b = repack<4>(a);
 
 // Helper struct
-template<int N, typename OldPackT>
-struct RepackType;
+template<int N, typename OldType>
+struct RepackType {
+  using type =
+    typename std::conditional<std::is_const<OldType>::value,
+                              const Pack<OldType,N>,
+                              Pack<OldType,N>>::type;
+};
 
 template<int N, typename T, int M>
 struct RepackType <N,Pack<T,M>>{
@@ -294,9 +299,29 @@ repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
 // General access point for repack (calls one of the three above)
 template <int N, typename OldPackT, typename... ViewProps>
 KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<typename RepackType<N,OldPackT>::type**,ViewProps...>>
+typename std::enable_if<IsPack<OldPackT>::value,
+    Unmanaged<Kokkos::View<typename RepackType<N,OldPackT>::type**,ViewProps...>>
+>::type
 repack (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
   return repack_impl<typename RepackType<N,OldPackT>::type>(vp);
+}
+
+// 2d pack from a scalar view
+template <int N, typename ScalarT, typename... ViewProps>
+KOKKOS_FORCEINLINE_FUNCTION
+typename std::enable_if<!IsPack<ScalarT>::value,
+    Unmanaged<Kokkos::View<typename RepackType<N,ScalarT>::type**,ViewProps...>>
+>::type
+repack (const Kokkos::View<ScalarT**, ViewProps...>& v)
+{
+  // NOTE: repack_impl above for the "2d growing" case will already
+  //       check that N divides the "scalarized" extent of the view
+
+  // Reinterpret the scalar view as a view of size-1 packs
+  using DummyPackT = typename RepackType<1,ScalarT>::type;
+  Kokkos::View<DummyPackT**,ViewProps...> vp(
+      reinterpret_cast<DummyPackT*>(v.data()),v.extent(0),v.extent(1));
+  return repack <N> (vp);
 }
 
 // 1d shrinking
@@ -363,9 +388,30 @@ repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
 // General access point for repack (calls one of the three above)
 template <int N, typename OldPackT, typename... ViewProps>
 KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<typename RepackType<N,OldPackT>::type*,ViewProps...>>
+typename std::enable_if<IsPack<OldPackT>::value,
+    Unmanaged<Kokkos::View<typename RepackType<N,OldPackT>::type*,ViewProps...>>
+>::type
 repack (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
   return repack_impl<typename RepackType<N,OldPackT>::type>(vp);
+
+}
+
+// 1d pack from a scalar view
+template <int N, typename ScalarT, typename... ViewProps>
+KOKKOS_FORCEINLINE_FUNCTION
+typename std::enable_if<!IsPack<ScalarT>::value,
+    Unmanaged<Kokkos::View<typename RepackType<N,ScalarT>::type*,ViewProps...>>
+>::type
+repack (const Kokkos::View<ScalarT*, ViewProps...>& v)
+{
+  // NOTE: repack_impl above for the "1d growing" case will already
+  //       check that N divides the "scalarized" extent of the view
+
+  // Reinterpret the scalar view as a view of size-1 packs
+  using DummyPackT = typename RepackType<1,ScalarT>::type;
+  Kokkos::View<DummyPackT*,ViewProps...> vp(
+      reinterpret_cast<DummyPackT*>(v.data()),v.extent(0));
+  return repack <N> (vp);
 }
 
 //
