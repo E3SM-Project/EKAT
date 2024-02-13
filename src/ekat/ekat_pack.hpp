@@ -248,6 +248,24 @@ struct Pack {
   ekat_pack_gen_assign_op_all(/=)
 
   KOKKOS_FORCEINLINE_FUNCTION
+  void store (const Mask<n>& mask, Pack<T,n>& dst) {
+    vector_simd
+    for (int i = 0; i < n; ++i)
+      if (mask[i])
+        dst[i] = d[i];
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void store (const Mask<n>& mask, Pack<T,n>& dst_true, Pack<T,n>& dst_false) {
+    vector_simd
+    for (int i = 0; i < n; ++i)
+      if (mask[i])
+        dst_true[i] = d[i];
+      else
+        dst_false[i] = d[i];
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
   Pack& set (const Mask<n>& mask, const scalar& v) {
     vector_simd for (int i = 0; i < n; ++i) if (mask[i]) d[i] = v;
 
