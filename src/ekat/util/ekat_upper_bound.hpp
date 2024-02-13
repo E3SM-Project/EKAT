@@ -47,6 +47,33 @@ const T* upper_bound_impl(const T* first, const T* last, const T& value)
   return first;
 }
 
+template<class T, int N>
+KOKKOS_INLINE_FUNCTION
+Pack<int,N> upper_bound_packed(const T* first, const int scalar_len, const Pack<T,N>& value)
+{
+  Pack<int,N> ub = scalar_len;
+  Pack<int,N> lb = 0;
+  Pack<int,N> mid;
+
+  Mask<N> gt;
+  auto check_mid = [&]() {
+    vector_simd
+    for (int i=0; i<N; ++i) {
+      gt[i] = *(first+mid[i])>=value[i];
+    }
+  };
+  mid = (ub + lb) / 2;
+  int count = 0;
+  while ( ((mid!=ub).any() and count<(scalar_len/2 + 1) ) {
+    check_mid();
+    mid.store(gt,ub,lb);
+    ++count;
+  }
+  EKAT_KERNEL_REQUIRE_MSG ( (ub==lb).all(),
+    "Error! Failed to find upper bound. Perhaps input data is not sorted?");
+  return mid;
+}
+
 #ifdef EKAT_ENABLE_GPU
 template<class T>
 KOKKOS_FORCEINLINE_FUNCTION
