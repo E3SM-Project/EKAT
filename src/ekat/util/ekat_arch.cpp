@@ -3,6 +3,7 @@
 #endif
 
 #include <sstream>
+#include <iostream>
 
 #include "ekat/ekat_assert.hpp"
 #include "ekat/util/ekat_feutils.hpp"
