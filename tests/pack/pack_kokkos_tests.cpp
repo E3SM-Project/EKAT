@@ -35,6 +35,23 @@ void compare (const VA& a, const VB& b) {
   for (int i = 0; i < spana; ++i) REQUIRE(rawa[i] == rawb[i]);
 }
 
+template <int N, typename VA, typename VB>
+void compare_s_vs_p (const VA& a, const VB& b) {
+  const auto ma = Kokkos::create_mirror_view(a);
+  const auto mb = Kokkos::create_mirror_view(b);
+  Kokkos::deep_copy(ma, a);
+  Kokkos::deep_copy(mb, b);
+  int lena = a.size();
+  int lenb = b.size();
+  REQUIRE (lena==(lenb*N));
+  auto rawa = ma.data(); auto rawb = mb.data();
+  for (int i=0; i<lenb; ++i) {
+    for (int j=0; j<N; ++j) {
+      REQUIRE(rawa[i*N+j] == rawb[i][j]);
+    }
+  }
+}
+
 #define make_get_index(rank, ...)                                         \
 template<typename View, typename IdxView, OnlyRank<View, rank, int> = 0 > \
 KOKKOS_INLINE_FUNCTION                                                    \
@@ -110,9 +127,9 @@ TEST_CASE("scalarize", "ekat::pack") {
   using ekat::Pack;
   using ekat::scalarize;
 
-  typedef Kokkos::View<Pack<double, 16>*> Array1;
-  typedef Kokkos::View<Pack<double, 32>**> Array2;
-  typedef Kokkos::View<Pack<double, 8>***> Array3;
+  typedef Kokkos::View<Pack<double, 16>*>    Array1;
+  typedef Kokkos::View<Pack<double, 32>**>   Array2;
+  typedef Kokkos::View<Pack<double, 8>***>   Array3;
   typedef Kokkos::View<Pack<double, 24>****> Array4;
 
   {
@@ -121,6 +138,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     typedef decltype(a2) VT;
     static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 160);
+    compare_s_vs_p<16>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 
   {
@@ -130,6 +149,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 10);
     REQUIRE(a2.extent_int(1) == 128);
+    compare_s_vs_p<32>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 
   {
@@ -140,6 +161,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     REQUIRE(a2.extent_int(0) == 3);
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 32);
+    compare_s_vs_p<8>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 
   {
@@ -151,6 +174,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 4);
     REQUIRE(a2.extent_int(3) == 48);
+    compare_s_vs_p<24>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 }
 
