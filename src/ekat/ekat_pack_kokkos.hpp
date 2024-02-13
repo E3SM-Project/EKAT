@@ -241,9 +241,14 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0 &&
-                old_pack_size % new_pack_size == 0,
-                "New pack size must divide old pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+
+  // It's overly restrictive to check compatibility between pack sizes.
+  // What really matters is that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(1)*old_pack_size) % new_pack_size == 0);
+
   return Unmanaged<Kokkos::View<NewPackT**, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
     vp.extent_int(0),
@@ -261,13 +266,17 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(old_pack_size > 0 &&
-                new_pack_size % old_pack_size == 0,
-                "Old pack size must divide new pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+  // It's not enough to check that the new pack is a multiple of the old pack.
+  // We actually need to check that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(1)*old_pack_size) % new_pack_size == 0);
+
   return Unmanaged<Kokkos::View<NewPackT**, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
     vp.extent_int(0),
-    (new_pack_size / old_pack_size) * vp.extent_int(1));
+    vp.extent_int(1) / (new_pack_size / old_pack_size) );
 }
 
 // 2d staying the same
@@ -301,9 +310,14 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0 &&
-                old_pack_size % new_pack_size == 0,
-                "New pack size must divide old pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+
+  // It's overly restrictive to check compatibility between pack sizes.
+  // What really matters is that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(0)*old_pack_size) % new_pack_size == 0);
+
   return Unmanaged<Kokkos::View<NewPackT*, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
     (old_pack_size / new_pack_size) * vp.extent_int(0));
@@ -320,9 +334,14 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0 &&
-                new_pack_size % old_pack_size == 0,
-                "Old pack size must divide new pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+
+  // It's not enough to check that the new pack is a multiple of the old pack.
+  // We actually need to check that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(0)*old_pack_size) % new_pack_size == 0);
+
   EKAT_KERNEL_ASSERT(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
   return Unmanaged<Kokkos::View<NewPackT*, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
