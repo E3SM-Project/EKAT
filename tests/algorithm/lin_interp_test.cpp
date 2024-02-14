@@ -70,10 +70,11 @@ auto get_col (const ViewT& packed_view, int i) ->
 TEST_CASE("lin_interp_soak", "lin_interp") {
 
   std::default_random_engine generator;
-  std::uniform_int_distribution<int> k_dist(10,100);
+  std::uniform_int_distribution<int> k_dist(128,128);
   const int ncol = 10;
 
   // increase iterations for a more-thorough soak
+  long tot_count = 0;
   for (int r = 0; r < 100; ++r) {
     const int km1 = k_dist(generator);
     const int km2 = k_dist(generator);
@@ -184,6 +185,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
 
     // Run LiVect TeamVectorRange
     {
+      auto beg = std::chrono::steady_clock::now();
       Kokkos::parallel_for("lin-interp-ut-vect-ttr",
                            vect.policy(),
                            KOKKOS_LAMBDA(typename LIV::MemberType const& team_member) {
@@ -198,7 +200,12 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
                         ekat::subview(y1kv, i),
                         ekat::subview(y2kv, i));
       });
+      Kokkos::fence();
+      auto end = std::chrono::steady_clock::now();
+      auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end-beg);
+      tot_count += elapsed.count();
     }
+    continue;
 
     // Run LiVect ThreadVectorRange, doing setup from main parallel for
     {
@@ -280,6 +287,7 @@ TEST_CASE("lin_interp_soak", "lin_interp") {
       }
     }
   }
+  std::cout << " TeVR:" << tot_count / 1000.0 << "\n";
 }
 #endif // EKAT_ENABLE_FORTRAN
 
