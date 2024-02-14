@@ -292,6 +292,58 @@ struct Pack {
     return *this;
   }
 
+  // In the update methods, return *this, so we can pipe updates.
+  // By default, the update uses alpha=1 and beta=0, which means it's the equivalent of op= and set methods
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& update (const Pack<T,n>& x, const CoeffT alpha = 1, const CoeffT beta = 0) {
+    vector_simd
+    for (int i=0; i<n; ++i) {
+      d[i] = beta*d[i] + alpha*x[i];
+    }
+    return *this;
+  }
+
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& update (const Mask<n>& m, const Pack<T,n>& x, const CoeffT alpha = 1, const CoeffT beta = 0) {
+    ekat_masked_loop(m,i)
+      d[i] = beta*d[i] + alpha*x[i];
+    return *this;
+  }
+
+  template<typename T, typename S, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& update (const Mask<n>& m, const Pack<T,n>& x_true, const Pack<S,n>& x_false, const CoeffT alpha = 1, const CoeffT beta = 0) {
+    vector_simd
+    for (int i=0; i<n; ++i) {
+      if (m[i])
+        d[i] = beta*d[i] + alpha*x_true[i];
+      else
+        d[i] = beta*d[i] + alpha*x_false[i];
+    }
+    return *this;
+  }
+
+  // Shortcuts that call the corresponding update version with beta=1
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& add (const Pack<T,n>& x, const CoeffT alpha = 1) {
+    return update(x,alpha,CoeffT(1));
+  }
+
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& add (const Mask<n>& m, const Pack<T,n>& x, const CoeffT alpha = 1) {
+    return update(m,x,alpha,CoeffT(1));
+  }
+
+  template<typename T, typename S, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& add (const Mask<n>& m, const Pack<T,n>& x_true, const Pack<S,n>& x_false, const CoeffT alpha = 1) {
+    return update(m,x_true,x_false,alpha,CoeffT(1));
+  }
+
 private:
   scalar d[n];
 };

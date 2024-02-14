@@ -1,7 +1,7 @@
 #include "catch2/catch.hpp"
 
 #include "ekat/ekat_pack.hpp"
-#include "ekat/util//ekat_math_utils.hpp"
+#include "ekat/util/ekat_math_utils.hpp"
 #include "ekat/kokkos/ekat_kokkos_types.hpp"
 #include "ekat_test_config.h"
 #include <sstream>
@@ -501,6 +501,42 @@ TEST_CASE("isnan", "ekat::pack") {
     REQUIRE (!mz[i]); // the view 'zero' should not contain nans
     REQUIRE (mn[i]);  // the view 'nan'  should contain nans
   }
+}
+
+TEST_CASE("pack_update") {
+  constexpr int N = EKAT_TEST_PACK_SIZE;
+
+  using pt = ekat::Pack<Real,N>;
+  using mt = ekat::Mask<N>;
+
+  mt even;
+  for (int i=0; i<N; ++i) {
+    even.set(i, i%2==0);
+  }
+  pt y;
+
+  pt zero (0), one(1), two(2);
+
+  y = -two;
+  y.add(two);
+  REQUIRE ((y==zero).all());
+
+  y = one;
+  y.update(two,2,-3);
+  REQUIRE ( (y==one).all() );
+
+  // alpha=0, beta=1 -> nothing changes
+  y = one;
+  y.update(two,0,1);
+  REQUIRE ( (y==one).all() );
+
+  y = zero;
+  y.add(even,one);
+  for (int i=0; i<N; ++i) REQUIRE (y[i]==(i%2==0 ? 1 : 0));
+
+  y = zero;
+  y.add(even,one,-one);
+  for (int i=0; i<N; ++i) REQUIRE (y[i]==(i%2==0 ? 1 : -1));
 }
 
 } // namespace
