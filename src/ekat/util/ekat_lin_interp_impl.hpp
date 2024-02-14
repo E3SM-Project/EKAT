@@ -104,9 +104,10 @@ void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
 
   const int i = col == -1 ? team.league_rank() : col;
 
-  Pack x1_k1, x1_k1ph, y1_k1, y1_k1ph;
-  IPackT k1ph;
   Kokkos::parallel_for(range_boundary, [&] (Int k2) {
+    Pack x1_k1, x1_k1ph, y1_k1, y1_k1ph;
+    IPackT k1ph;
+
     // Basic formula is y2(k2) = y1(k1) + m * (x2(k2)-x1(k1))
     // where m = (y1(k1+1)-y2(k1))/(x1(k1+1)-x1(k1)) is the slope of the line
     // going through (x1(k1),y1(k1)) and (x1(k1+1),y1(k1+1)).
