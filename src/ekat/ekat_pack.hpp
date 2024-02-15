@@ -292,8 +292,13 @@ struct Pack {
     return *this;
   }
 
-  // In the update methods, return *this, so we can pipe updates.
-  // By default, the update uses alpha=1 and beta=0, which means it's the equivalent of op= and set methods
+  // Update the current pack y as y = beta*y + alpha*x. The second and third overload behave like the
+  // set method, in that they allow to select the entries where the update happens.
+  // NOTES:
+  //  - by default, the update uses alpha=1 and beta=0, which means it's the equivalent of operator=
+  //    (or set, for the overloads with a mask).
+  //  - we return *this, so we can pipe calls: y.update(x,2,1)[2] performs the update and then
+  //    extracts the 3rd entry
   template<typename T, typename CoeffT = scalar>
   KOKKOS_FORCEINLINE_FUNCTION
   Pack& update (const Pack<T,n>& x, const CoeffT alpha = 1, const CoeffT beta = 0) {
