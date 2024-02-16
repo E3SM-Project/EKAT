@@ -64,7 +64,7 @@ template<typename ViewT>
 auto get_col (const ViewT& packed_view, int i) ->
   decltype(ekat::scalarize(ekat::subview(packed_view,i))) {
     return ekat::scalarize(ekat::subview(packed_view,i));
-};
+}
 
 #ifdef EKAT_ENABLE_FORTRAN
 TEST_CASE("lin_interp_soak", "lin_interp") {
