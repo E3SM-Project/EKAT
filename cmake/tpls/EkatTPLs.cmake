@@ -130,20 +130,25 @@ endif()
 #   Boost stacktrace (Optional)   #
 ###################################
 
-# Stacktrace is available with Boost>=1.65
-message (STATUS "Looking for boost::stacktrace ...")
-find_package(Boost 1.65.0
-  COMPONENTS stacktrace_addr2line
-)
+# Always looking for stacktrace can cause problems when cross compiling
+# Hence, avoid finding boost if user didn't ask for it. If they do,
+# then it's fair to expect they have a Boost_ROOT env var defined
+option (EKAT_ENABLE_BOOST_STACKTRACE "Whether to enable Boost stacktrace" OFF)
+if (EKAT_ENABLE_BOOST_STACKTRACE)
+  message (STATUS "Looking for boost::stacktrace ...")
+  # Stacktrace is available with Boost>=1.65
+  find_package(Boost 1.65.0 REQUIRED
+    COMPONENTS stacktrace_addr2line
+  )
 
-if (Boost_STACKTRACE_ADDR2LINE_FOUND)
-  message (STATUS "Looking for boost::stacktrace ... Found")
-  message ("    -> EKAT's assert macros will provide a stacktrace.")
-  set (EKAT_HAS_STACKTRACE TRUE)
+  if (Boost_STACKTRACE_ADDR2LINE_FOUND)
+    message (STATUS "Looking for boost::stacktrace ... Found")
+    message ("    -> EKAT's assert macros will provide a stacktrace.")
+    set (EKAT_HAS_STACKTRACE TRUE)
+  endif()
 else()
-  message (STATUS "Looking for boost::stacktrace ... NOT Found")
+  message (STATUS "EKAT_ENABLE_BOOST_STACKTRACE: OFF")
   message ("    -> EKAT's assert macros will NOT provide a stacktrace.")
 endif()
-
 
 message (STATUS " *** End processing EKAT's TPLs ***")
