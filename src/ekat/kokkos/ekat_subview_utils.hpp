@@ -93,6 +93,18 @@ subview(const ViewLR<ST****,Props...>& v,
       &v.impl_map().reference(i0, i1, i2, 0),v.extent(3));
 }
 
+// --- Rank4 multi-slice --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+ViewLS<ST****, Props...>
+subview(const ViewLR<ST****, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim) {
+  assert(v.data() != nullptr);
+  auto sv = Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+  return Unmanaged<ViewLS<ST****,Props...>>(sv);
+}
+
 // --- Rank5 --- //
 template <typename ST, typename... Props>
 KOKKOS_INLINE_FUNCTION
