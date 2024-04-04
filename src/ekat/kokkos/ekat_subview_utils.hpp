@@ -93,18 +93,6 @@ subview(const ViewLR<ST****,Props...>& v,
       &v.impl_map().reference(i0, i1, i2, 0),v.extent(3));
 }
 
-// --- Rank4 multi-slice --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-ViewLS<ST****, Props...>
-subview(const ViewLR<ST****, Props...>& v,
-        const Kokkos::pair<int, int> &kp0,
-        const int idim) {
-  assert(v.data() != nullptr);
-  auto sv = Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-  return Unmanaged<ViewLS<ST****,Props...>>(sv);
-}
-
 // --- Rank5 --- //
 template <typename ST, typename... Props>
 KOKKOS_INLINE_FUNCTION
@@ -279,7 +267,7 @@ subview_1(const ViewLR<ST****,Props...>& v,
   // Since we are keeping the first dimension, the stride is unchanged.
   auto vm = tmp.impl_map();
   vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  auto test =  Unmanaged<ViewLR<ST***,Props...>>(v.impl_track(),vm);
+  // auto test =  Unmanaged<ViewLR<ST***,Props...>>(v.impl_track(),vm);
   return Unmanaged<ViewLR<ST***,Props...>>(
       v.impl_track(),vm);
 }
@@ -326,6 +314,191 @@ subview_1(const ViewLR<ST******,Props...>& v,
   vm.m_impl_offset.m_stride = v.impl_map().stride_0();
   return Unmanaged<ViewLR<ST*****,Props...>>(
       v.impl_track(),vm);
+}
+
+// ================ Multi-sliced Subviews ======================= //
+// e.g., instead of a single-entry slice like v(:, 42, :), we slice over a range
+// of values, as in v(:, 27:42, :)
+// this means that the subview has the same rank as the "parent" view
+
+// --- Rank1 multi-slice --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST*, Props...>>
+subview(const ViewLR<ST*, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim) {
+  assert(v.data() != nullptr);
+  assert(idim >= 0 && idim == v.rank);
+  // NOTE: the final comparison is originally int <= long unsigned int
+  // the cast silences a warning, but may be unnecessary
+  assert(kp0.first >= 0 && kp0.first < kp0.second
+         && (unsigned int)kp0.second <= v.extent(idim));
+  if (idim == 0) {
+    return Unmanaged<ViewLS<ST*,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
+  } else {
+    // FIXME: better way to do this? necessary?
+    assert(false);
+  }
+}
+
+// --- Rank2 multi-slice --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST**, Props...>>
+subview(const ViewLR<ST**, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim) {
+  assert(v.data() != nullptr);
+  assert(idim >= 0 && idim <= v.rank);
+  // NOTE: the final comparison is originally int <= long unsigned int
+  // the cast silences a warning, but may be unnecessary
+  assert(kp0.first >= 0 && kp0.first < kp0.second
+         && (unsigned int)kp0.second <= v.extent(idim));
+  if (idim == 0) {
+    return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
+  } else if (idim == 1) {
+    return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, Kokkos::ALL, kp0));
+  } else {
+    // FIXME: better way to do this? necessary?
+    assert(false);
+  }
+}
+
+// --- Rank3 multi-slice --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST***, Props...>>
+subview(const ViewLR<ST***, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim) {
+  assert(v.data() != nullptr);
+  assert(idim >= 0 && idim <= v.rank);
+  // NOTE: the final comparison is originally int <= long unsigned int
+  // the cast silences a warning, but may be unnecessary
+  assert(kp0.first >= 0 && kp0.first < kp0.second
+         && (unsigned int)kp0.second <= v.extent(idim));
+  if (idim == 0) {
+    return Unmanaged<ViewLS<ST***,Props...>>(
+      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 1) {
+    return Unmanaged<ViewLS<ST***,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL));
+  } else if (idim == 2) {
+    return Unmanaged<ViewLS<ST***,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0));
+  } else {
+    // FIXME: better way to do this? necessary?
+    assert(false);
+  }
+}
+
+// --- Rank4 multi-slice --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST****, Props...>>
+subview(const ViewLR<ST****, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim) {
+  assert(v.data() != nullptr);
+  assert(idim >= 0 && idim <= v.rank);
+  // NOTE: the final comparison is originally int <= long unsigned int
+  // the cast silences a warning, but may be unnecessary
+  assert(kp0.first >= 0 && kp0.first < kp0.second
+         && (unsigned int)kp0.second <= v.extent(idim));
+  if (idim == 0) {
+    return Unmanaged<ViewLS<ST****,Props...>>(
+      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 1) {
+    return Unmanaged<ViewLS<ST****,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 2) {
+    return Unmanaged<ViewLS<ST****,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL));
+  } else if (idim == 3) {
+    return Unmanaged<ViewLS<ST****,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0));
+  } else {
+    // FIXME: better way to do this? necessary?
+    assert(false);
+  }
+}
+
+// --- Rank5 multi-slice --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST*****, Props...>>
+subview(const ViewLR<ST*****, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim) {
+  assert(v.data() != nullptr);
+  assert(idim >= 0 && idim <= v.rank);
+  // NOTE: the final comparison is originally int <= long unsigned int
+  // the cast silences a warning, but may be unnecessary
+  assert(kp0.first >= 0 && kp0.first < kp0.second
+         && (unsigned int)kp0.second <= v.extent(idim));
+  if (idim == 0) {
+    return Unmanaged<ViewLS<ST*****,Props...>>(
+      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 1) {
+    return Unmanaged<ViewLS<ST*****,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 2) {
+    return Unmanaged<ViewLS<ST*****,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 3) {
+    return Unmanaged<ViewLS<ST*****,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL));
+  } else if (idim == 4) {
+    return Unmanaged<ViewLS<ST*****,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0));
+  } else {
+    // FIXME: better way to do this? necessary?
+    assert(false);
+  }
+}
+
+// --- Rank6 multi-slice --- //
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST******, Props...>>
+subview(const ViewLR<ST******, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim) {
+  assert(v.data() != nullptr);
+  assert(idim >= 0 && idim <= v.rank);
+  // NOTE: the final comparison is originally int <= long unsigned int
+  // the cast silences a warning, but may be unnecessary
+  assert(kp0.first >= 0 && kp0.first < kp0.second
+         && (unsigned int)kp0.second <= v.extent(idim));
+  if (idim == 0) {
+    return Unmanaged<ViewLS<ST******,Props...>>(
+      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
+                      Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 1) {
+    return Unmanaged<ViewLS<ST******,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL,
+                      Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 2) {
+    return Unmanaged<ViewLS<ST******,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL,
+                      Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 3) {
+    return Unmanaged<ViewLS<ST******,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0,
+                      Kokkos::ALL, Kokkos::ALL));
+  } else if (idim == 4) {
+    return Unmanaged<ViewLS<ST******,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
+                      kp0, Kokkos::ALL));
+  } else if (idim == 5) {
+    return Unmanaged<ViewLS<ST******,Props...>>(
+      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
+                      Kokkos::ALL, kp0));
+  } else {
+    // FIXME: better way to do this? necessary?
+    assert(false);
+  }
 }
 
 } // namespace ekat
