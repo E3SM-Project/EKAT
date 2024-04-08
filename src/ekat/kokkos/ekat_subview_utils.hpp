@@ -267,7 +267,6 @@ subview_1(const ViewLR<ST****,Props...>& v,
   // Since we are keeping the first dimension, the stride is unchanged.
   auto vm = tmp.impl_map();
   vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  // auto test =  Unmanaged<ViewLR<ST***,Props...>>(v.impl_track(),vm);
   return Unmanaged<ViewLR<ST***,Props...>>(
       v.impl_track(),vm);
 }
@@ -329,17 +328,13 @@ subview(const ViewLR<ST*, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim) {
   assert(v.data() != nullptr);
-  assert(idim >= 0 && idim == v.rank);
+  assert(idim == 0);
   // NOTE: the final comparison is originally int <= long unsigned int
   // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
          && (unsigned int)kp0.second <= v.extent(idim));
-  if (idim == 0) {
-    return Unmanaged<ViewLS<ST*,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
-  } else {
-    // FIXME: better way to do this? necessary?
-    assert(false);
-  }
+  return Unmanaged<ViewLS<ST*,Props...>>(Kokkos::subview(v, kp0));
+
 }
 
 // --- Rank2 multi-slice --- //
@@ -357,11 +352,9 @@ subview(const ViewLR<ST**, Props...>& v,
          && (unsigned int)kp0.second <= v.extent(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
-  } else if (idim == 1) {
-    return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, Kokkos::ALL, kp0));
   } else {
-    // FIXME: better way to do this? necessary?
-    assert(false);
+    assert(idim == 1);
+    return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, Kokkos::ALL, kp0));
   }
 }
 
@@ -384,12 +377,10 @@ subview(const ViewLR<ST***, Props...>& v,
   } else if (idim == 1) {
     return Unmanaged<ViewLS<ST***,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL));
-  } else if (idim == 2) {
+  } else {
+    assert(idim == 2);
     return Unmanaged<ViewLS<ST***,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0));
-  } else {
-    // FIXME: better way to do this? necessary?
-    assert(false);
   }
 }
 
@@ -415,12 +406,10 @@ subview(const ViewLR<ST****, Props...>& v,
   } else if (idim == 2) {
     return Unmanaged<ViewLS<ST****,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL));
-  } else if (idim == 3) {
+  } else {
+    assert(idim == 3);
     return Unmanaged<ViewLS<ST****,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0));
-  } else {
-    // FIXME: better way to do this? necessary?
-    assert(false);
   }
 }
 
@@ -449,12 +438,10 @@ subview(const ViewLR<ST*****, Props...>& v,
   } else if (idim == 3) {
     return Unmanaged<ViewLS<ST*****,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL));
-  } else if (idim == 4) {
+  } else {
+    assert(idim == 4);
     return Unmanaged<ViewLS<ST*****,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0));
-  } else {
-    // FIXME: better way to do this? necessary?
-    assert(false);
   }
 }
 
@@ -491,13 +478,11 @@ subview(const ViewLR<ST******, Props...>& v,
     return Unmanaged<ViewLS<ST******,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
                       kp0, Kokkos::ALL));
-  } else if (idim == 5) {
+  } else {
+    assert(idim == 5);
     return Unmanaged<ViewLS<ST******,Props...>>(
       Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
                       Kokkos::ALL, kp0));
-  } else {
-    // FIXME: better way to do this? necessary?
-    assert(false);
   }
 }
 
