@@ -244,7 +244,6 @@ subview_1(const ViewLR<ST***,Props...>& v,
   // Since we are keeping the first dimension, the stride is unchanged.
   auto vm = tmp.impl_map();
   vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  auto test =  Unmanaged<ViewLR<ST**,Props...>>(v.impl_track(),vm);
   return Unmanaged<ViewLR<ST**,Props...>>(
       v.impl_track(),vm);
 }
@@ -318,7 +317,7 @@ subview_1(const ViewLR<ST******,Props...>& v,
 // ================ Multi-sliced Subviews ======================= //
 // e.g., instead of a single-entry slice like v(:, 42, :), we slice over a range
 // of values, as in v(:, 27:42, :)
-// this means that the subview has the same rank as the "parent" view
+// this means that the subview has the same rank as the source view
 
 // --- Rank1 multi-slice --- //
 template <typename ST, typename... Props>
@@ -332,7 +331,7 @@ subview(const ViewLR<ST*, Props...>& v,
   // NOTE: the final comparison is originally int <= long unsigned int
   // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && (unsigned int)kp0.second <= v.extent(idim));
+         && kp0.second <= v.extent_int(idim));
   return Unmanaged<ViewLS<ST*,Props...>>(Kokkos::subview(v, kp0));
 
 }
@@ -349,7 +348,7 @@ subview(const ViewLR<ST**, Props...>& v,
   // NOTE: the final comparison is originally int <= long unsigned int
   // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && (unsigned int)kp0.second <= v.extent(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
   } else {
@@ -370,7 +369,7 @@ subview(const ViewLR<ST***, Props...>& v,
   // NOTE: the final comparison is originally int <= long unsigned int
   // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && (unsigned int)kp0.second <= v.extent(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST***,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL));
@@ -396,7 +395,7 @@ subview(const ViewLR<ST****, Props...>& v,
   // NOTE: the final comparison is originally int <= long unsigned int
   // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && (unsigned int)kp0.second <= v.extent(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST****,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
@@ -425,7 +424,7 @@ subview(const ViewLR<ST*****, Props...>& v,
   // NOTE: the final comparison is originally int <= long unsigned int
   // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && (unsigned int)kp0.second <= v.extent(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST*****,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
@@ -457,7 +456,7 @@ subview(const ViewLR<ST******, Props...>& v,
   // NOTE: the final comparison is originally int <= long unsigned int
   // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && (unsigned int)kp0.second <= v.extent(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST******,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
