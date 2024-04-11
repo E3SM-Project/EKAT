@@ -330,6 +330,7 @@ subview(const ViewLR<ST*, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim = 0) {
   assert(v.data() != nullptr);
+  assert(idim == 0);
   assert(kp0.first >= 0 && kp0.first < kp0.second);
   return Unmanaged<ViewLS<ST*,Props...>>(Kokkos::subview(v, kp0));
 }
