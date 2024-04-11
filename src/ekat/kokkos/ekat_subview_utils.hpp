@@ -317,7 +317,10 @@ subview_1(const ViewLR<ST******,Props...>& v,
 // ================ Multi-sliced Subviews ======================= //
 // e.g., instead of a single-entry slice like v(:, 42, :), we slice over a range
 // of values, as in v(:, 27:42, :)
-// this means that the subview has the same rank as the source view
+// Note that this obtains entries for which in dimesion 2 is in the
+// range [27, 42) == {v(i, j, k), where 27 <= j < 42}
+// Note also that this slicing means that the subview has the same rank
+// as the source view
 
 // --- Rank1 multi-slice --- //
 template <typename ST, typename... Props>
@@ -325,15 +328,10 @@ KOKKOS_INLINE_FUNCTION
 Unmanaged<ViewLS<ST*, Props...>>
 subview(const ViewLR<ST*, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
-        const int idim) {
+        const int idim = 0) {
   assert(v.data() != nullptr);
-  assert(idim == 0);
-  // NOTE: the final comparison is originally int <= long unsigned int
-  // the cast silences a warning, but may be unnecessary
-  assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
+  assert(kp0.first >= 0 && kp0.first < kp0.second);
   return Unmanaged<ViewLS<ST*,Props...>>(Kokkos::subview(v, kp0));
-
 }
 
 // --- Rank2 multi-slice --- //
@@ -345,10 +343,8 @@ subview(const ViewLR<ST**, Props...>& v,
         const int idim) {
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim <= v.rank);
-  // NOTE: the final comparison is originally int <= long unsigned int
-  // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
+         && kp0.second < v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
   } else {
@@ -366,10 +362,8 @@ subview(const ViewLR<ST***, Props...>& v,
         const int idim) {
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim <= v.rank);
-  // NOTE: the final comparison is originally int <= long unsigned int
-  // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
+         && kp0.second < v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST***,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL));
@@ -392,10 +386,8 @@ subview(const ViewLR<ST****, Props...>& v,
         const int idim) {
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim <= v.rank);
-  // NOTE: the final comparison is originally int <= long unsigned int
-  // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
+         && kp0.second < v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST****,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
@@ -421,10 +413,8 @@ subview(const ViewLR<ST*****, Props...>& v,
         const int idim) {
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim <= v.rank);
-  // NOTE: the final comparison is originally int <= long unsigned int
-  // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
+         && kp0.second < v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST*****,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
@@ -453,10 +443,8 @@ subview(const ViewLR<ST******, Props...>& v,
         const int idim) {
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim <= v.rank);
-  // NOTE: the final comparison is originally int <= long unsigned int
-  // the cast silences a warning, but may be unnecessary
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
+         && kp0.second < v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST******,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
@@ -484,7 +472,6 @@ subview(const ViewLR<ST******, Props...>& v,
                       Kokkos::ALL, kp0));
   }
 }
-
 } // namespace ekat
 
 #endif // EKAT_SUBVIEW_UTILS_HPP

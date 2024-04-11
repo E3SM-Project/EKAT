@@ -606,7 +606,7 @@ TEST_CASE("multi-slice subviews") {
     auto v2_0 = ekat::subview(v2, p4, 0);
 
     // Subviews of v1
-    auto v1_0 = ekat::subview(v1, p5, 0);
+    auto v1_0 = ekat::subview(v1, p5);
 
     // Compare with original views and count diffs
     Kokkos::View<int> diffs("");
