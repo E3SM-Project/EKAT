@@ -65,3 +65,11 @@ if (EKAT_ENABLE_FPE_DEFAULT_MASK)
 else()
   EkatCreateUnitTestFromExec (fpe_check fpe_check)
 endif()
+
+# Test the framework that checks asserts
+if (EKAT_IS_DEBUG_BUILD)
+  include(EkatCreateUnitTestWithAsserts)
+  EkatCreateUnitTestWithAsserts (assert_tests assert_tests.cpp
+    MPI_RANKS 1 ${EKAT_TEST_MAX_RANKS}
+  )
+endif()
