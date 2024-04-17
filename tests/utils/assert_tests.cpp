@@ -7,6 +7,6 @@ void my_func () {
 }
 
 TEST_CASE ("assert") {
-  EKAT_TEST_ASSERT (assert (0==1));
-  EKAT_TEST_ASSERT (my_func ());
+  EKAT_EXPECT_ASSERT_FAIL (assert (0==1));
+  EKAT_EXPECT_ASSERT_FAIL (my_func ());
 }

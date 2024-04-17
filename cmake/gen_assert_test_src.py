@@ -15,7 +15,7 @@ OR
     )
 
     parser.add_argument("-s","--meta_src", required=True,
-                        help="Source file contianing EKAT_TEST_ASSERT macros used to generate source files to test individual asserts.")
+                        help="Source file contianing EKAT_EXPECT_ASSERT_FAIL macros used to generate source files to test individual asserts.")
     parser.add_argument("-o","--output_dir", required=True,
                         help="Directory where the generated source files should be put")
 
@@ -25,7 +25,7 @@ OR
 def create_sources (meta_src, output_dir):
 ###############################################################################
 
-    key = "EKAT_TEST_ASSERT"
+    key = "EKAT_EXPECT_ASSERT_FAIL"
 
     f_in = pathlib.Path(meta_src)
     with open(f_in,"r") as f:
@@ -35,7 +35,7 @@ def create_sources (meta_src, output_dir):
     if num_asserts==0:
         return 0
 
-    # First, a version of the test without *any* EKAT_TEST_ASSERT line
+    # First, a version of the test without *any* EKAT_EXPECT_ASSERT_FAIL line
     f_out = pathlib.Path(output_dir) / f"{f_in.stem}.cpp"
     with open (f_out,"w") as fout:
         for line in lines:
