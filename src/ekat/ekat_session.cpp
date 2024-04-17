@@ -103,11 +103,17 @@ void initialize_ekat_session (int argc, char **argv, bool print_config) {
   enable_fpes(ekat_impl::get_default_fpes());
 #endif
 
+#ifndef NDEBUG
+  g_ekat_expected_assert_fail = decltype(g_ekat_expected_assert_fail)("");
+#endif
   if (print_config) std::cout << ekat_config_string() << "\n";
 }
 
 extern "C" {
 void finalize_ekat_session () {
+#ifndef NDEBUG
+  g_ekat_expected_assert_fail = decltype(g_ekat_expected_assert_fail)();
+#endif
   Kokkos::finalize();
 }
 } // extern "C"

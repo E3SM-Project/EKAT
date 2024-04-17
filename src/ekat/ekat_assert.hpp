@@ -1,12 +1,14 @@
 #ifndef EKAT_ASSERT_HPP
 #define EKAT_ASSERT_HPP
 
+#include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE
+
+#include <Kokkos_Core.hpp>
+
 #include <sstream>
 #include <exception>
 #include <assert.h>
 #include <stdexcept>  // For std::logic_error
-
-#include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE
 
 /*
  * Asserts and error checking macros/functions.
@@ -39,6 +41,19 @@
 
 // SYCL cannot printf like the other backends quite yet
 #ifdef __SYCL_DEVICE_ONLY__
+#define EKAT_KERNEL_PRINTF(msg)				\
+  do {									\
+    const __attribute__((opencl_constant)) char format[] = "%s"; \
+    sycl::ext::oneapi::experimental::printf(format,msg);	\
+  } while (0)
+#else
+#define EKAT_KERNEL_PRINTF(msg)				\
+  do {									\
+    printf("%s",msg);	\
+  } while (0)
+#endif
+
+#ifdef __SYCL_DEVICE_ONLY__
 #define IMPL_KERNEL_THROW(condition, msg)				\
   do {									\
     if ( ! (condition) ) {						\
@@ -58,10 +73,50 @@
 #endif
 
 #ifndef NDEBUG
-#define EKAT_ASSERT(condition)                      IMPL_THROW(condition, "",  std::logic_error)
-#define EKAT_ASSERT_MSG(condition, msg)             IMPL_THROW(condition, msg, std::logic_error)
-#define EKAT_KERNEL_ASSERT(condition)               IMPL_KERNEL_THROW(condition, "")
-#define EKAT_KERNEL_ASSERT_MSG(condition, msg)      IMPL_KERNEL_THROW(condition, msg)
+#include <setjmp.h>
+Kokkos::View<jmp_buf> g_ekat_expect_assert_env_d;
+Kokkos::View<int> g_ekat_expected_assert_fail_d;
+extern jmp_buf g_ekat_expect_assert_env_h;
+extern int g_ekat_expected_assert_fail_h;
+#define EKAT_KERNEL_ASSERT_MSG(condition, msg) \
+  { \
+    if (not condition) { \
+      if (g_ekat_expected_assert_fail_d()) { \
+        /* All good, this was expected. Restore context */ \
+        longjmp(g_ekat_expect_assert_env_d(),1); \
+      } else { \
+        EKAT_KERNEL_PRINTF("Kernel assertion failed.\n"); \
+        EKAT_KERNEL_PRINTF(msg); \
+      } \
+    } \
+  }
+
+#define EKAT_EXPECT_KERNEL_ASSERT_FAILURE (function_call) \
+  { \
+    g_ekat_expected_assert_fail() = 1; \
+    const int result = setjmp(g_ekat_expect_assert_env()); \
+    if (result) { \
+      g_ekat_expected_assert_fail() = 0; \
+    } else { \
+      function_call ; \
+      EKAT_KERNEL_PRINTF("Expected assertion did not occur!\n"); \
+    } \
+  }
+#define EKAT_ASSERT_MSG(condition) \
+  { \
+    if (not condition) { \
+      if (g_ekat_expected_assert_fail_h) { \
+        /* All good, this was expected. Restore context */ \
+        longjmp(g_ekat_expect_assert_env_h,1); \
+      } else { \
+        printf("Kernel assertion failed.\n"); \
+        printf(msg); \
+      } \
+    } \
+  }
+
+#define EKAT_ASSERT(condition)        EKAT_ASSERT_MSG(condition, "")
+#define EKAT_KERNEL_ASSERT(condition) EKAT_KERNEL_ASSERT(condition, "")
 #else
 #define EKAT_ASSERT(condition)  ((void) (0))
 #define EKAT_ASSERT_MSG(condition, msg)  ((void) (0))
