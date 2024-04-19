@@ -343,7 +343,7 @@ subview(const ViewLR<ST**, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim) {
   assert(v.data() != nullptr);
-  assert(idim >= 0 && idim <= v.rank);
+  assert(idim >= 0 && idim < v.rank);
   assert(kp0.first >= 0 && kp0.first < kp0.second
          && kp0.second < v.extent_int(idim));
   if (idim == 0) {
@@ -362,7 +362,7 @@ subview(const ViewLR<ST***, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim) {
   assert(v.data() != nullptr);
-  assert(idim >= 0 && idim <= v.rank);
+  assert(idim >= 0 && idim < v.rank);
   assert(kp0.first >= 0 && kp0.first < kp0.second
          && kp0.second < v.extent_int(idim));
   if (idim == 0) {
@@ -386,7 +386,7 @@ subview(const ViewLR<ST****, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim) {
   assert(v.data() != nullptr);
-  assert(idim >= 0 && idim <= v.rank);
+  assert(idim >= 0 && idim < v.rank);
   assert(kp0.first >= 0 && kp0.first < kp0.second
          && kp0.second < v.extent_int(idim));
   if (idim == 0) {
@@ -413,7 +413,7 @@ subview(const ViewLR<ST*****, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim) {
   assert(v.data() != nullptr);
-  assert(idim >= 0 && idim <= v.rank);
+  assert(idim >= 0 && idim < v.rank);
   assert(kp0.first >= 0 && kp0.first < kp0.second
          && kp0.second < v.extent_int(idim));
   if (idim == 0) {
@@ -443,7 +443,7 @@ subview(const ViewLR<ST******, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim) {
   assert(v.data() != nullptr);
-  assert(idim >= 0 && idim <= v.rank);
+  assert(idim >= 0 && idim < v.rank);
   assert(kp0.first >= 0 && kp0.first < kp0.second
          && kp0.second < v.extent_int(idim));
   if (idim == 0) {
