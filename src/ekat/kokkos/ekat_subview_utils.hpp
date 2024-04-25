@@ -213,6 +213,17 @@ subview(const ViewLR<ST******,Props...>& v,
 //       If the input view has rank=2, then the output view MUST have
 //       LayoutStride (there is no alternative).
 
+// NOTE: DO NOT USE--used to prevent compile time error in get_strided_view()
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST,Props...>>
+subview_1(const ViewLR<ST*,Props...>& v,
+          const int i1) {
+  EKAT_ERROR_MSG("Error! Cannot call subview_1() for rank == 1.\n"
+                 "This should never be called at run time.\n"
+                 "Please contact developer if this functionality is required\n");
+}
+
 // --- Rank2 --- //
 template <typename ST, typename... Props>
 KOKKOS_INLINE_FUNCTION
@@ -321,6 +332,19 @@ subview_1(const ViewLR<ST******,Props...>& v,
 // range [27, 42) == {v(i, j, k), where 27 <= j < 42}
 // Note also that this slicing means that the subview has the same rank
 // as the source view
+
+// --- Rank0 multi-slice --- //
+// NOTE: DO NOT USE--used to prevent compile time error in get_strided_view()
+template <typename ST, typename... Props>
+KOKKOS_INLINE_FUNCTION
+Unmanaged<ViewLS<ST, Props...>>
+subview(const ViewLR<ST, Props...>& v,
+        const Kokkos::pair<int, int> &kp0,
+        const int idim = 0) {
+  assert(v.data() != nullptr);
+  EKAT_ERROR_MSG("Error! Cannot call multi-slice subview() for rank == 0.\n"
+                 "This should never be called at run time.\n");
+}
 
 // --- Rank1 multi-slice --- //
 template <typename ST, typename... Props>
