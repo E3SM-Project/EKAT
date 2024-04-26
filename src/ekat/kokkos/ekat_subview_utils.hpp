@@ -219,9 +219,12 @@ KOKKOS_INLINE_FUNCTION
 Unmanaged<ViewLS<ST,Props...>>
 subview_1(const ViewLR<ST*,Props...>& v,
           const int i1) {
-  EKAT_ERROR_MSG("Error! Cannot call subview_1() for rank == 1.\n"
-                 "This should never be called at run time.\n"
-                 "Please contact developer if this functionality is required\n");
+  // The error message **would** be:
+  // "Error! Cannot call subview_1() for rank == 1."
+  // "This should never be called at run time."
+  // "Please contact developer if this functionality is required"
+  assert(false);
+  return Unmanaged<ViewLR<ST,Props...>>();
 }
 
 // --- Rank2 --- //
@@ -342,8 +345,11 @@ subview(const ViewLR<ST, Props...>& v,
         const Kokkos::pair<int, int> &kp0,
         const int idim = 0) {
   assert(v.data() != nullptr);
-  EKAT_ERROR_MSG("Error! Cannot call multi-slice subview() for rank == 0.\n"
-                 "This should never be called at run time.\n");
+  // The error message **would** be:
+  // "Error! Cannot call multi-slice subview() for rank == 0."
+  // "This should never be called at run time."
+  assert(false);
+  return Unmanaged<ViewLR<ST, Props...>>();
 }
 
 // --- Rank1 multi-slice --- //
