@@ -1,9 +1,9 @@
 #ifndef EKAT_SCALING_FACTOR_HPP
 #define EKAT_SCALING_FACTOR_HPP
 
-#include <iostream>
 #include "ekat/util/ekat_rational_constant.hpp"
 
+#include <iostream>
 #include <array>
 
 namespace ekat
@@ -33,6 +33,21 @@ struct ScalingFactor {
 
   static constexpr ScalingFactor one () { return ScalingFactor(1); }
   static constexpr ScalingFactor zero () { return ScalingFactor(0); }
+
+  inline std::string to_string(const Format exp_fmt = Format::Rat) const {
+    std::string s = base.to_string(Format::Float);
+    if (exp!=RationalConstant::one()) {
+      s +=  '^';
+      if (exp.den!=1 and exp_fmt==Format::Rat) {
+        s+= '(';
+      }
+      s += exp.to_string(exp_fmt);
+      if (exp.den!=1 and exp_fmt==Format::Rat) {
+        s+= ')';
+      }
+    }
+    return s;
+  }
 
 private:
 
@@ -77,7 +92,7 @@ constexpr ScalingFactor operator* (const ScalingFactor& lhs, const ScalingFactor
   // otherwise, recall that, with all terms being integers,
   //    (a/b)^(c/d) * (x/y)^(w/z)
   // is equivalent to
-  //    ((a/b)^(cz) * (x/w)^(wd)) ^ (1/dz)
+  //    ((a/b)^(cz) * (x/y)^(wd)) ^ (1/dz)
   using iType = RationalConstant::iType;
 
   return lhs.base==rhs.base 
@@ -101,7 +116,7 @@ constexpr ScalingFactor operator/ (const ScalingFactor& lhs, const ScalingFactor
   // otherwise, recall that, with all terms being integers,
   //    (a/b)^(c/d) / (x/y)^(w/z)
   // is equivalent to
-  //    ((a/b)^(cz) / (x/w)^(wd)) ^ (1/dz)
+  //    ((a/b)^(cz) / (x/y)^(wd)) ^ (1/dz)
   using iType = RationalConstant::iType;
 
   return lhs.base==rhs.base 
@@ -132,16 +147,8 @@ constexpr ScalingFactor sqrt (const ScalingFactor& x) {
   return ScalingFactor(x.base,x.exp/2);
 }
 
-inline std::string to_string(const ScalingFactor& x, const Format exp_fmt = Format::Rat) {
-  std::string s = to_string(x.base,Format::Float);
-  if (x.exp!=RationalConstant::one()) {
-    s +=  "^" + to_string(x.exp,exp_fmt);
-  }
-  return s;
-}
-
 inline std::ostream& operator<< (std::ostream& out, const ScalingFactor& s) {
-  out << to_string(s);
+  out << s.to_string();
   return out;
 }
 
