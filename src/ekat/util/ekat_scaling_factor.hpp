@@ -31,18 +31,69 @@ struct ScalingFactor {
 
   constexpr ScalingFactor& operator= (const ScalingFactor&) = default;
 
+  constexpr ScalingFactor& operator*= (const ScalingFactor& rhs);
+
   static constexpr ScalingFactor one () { return ScalingFactor(1); }
   static constexpr ScalingFactor zero () { return ScalingFactor(0); }
 
-  inline std::string to_string(const Format exp_fmt = Format::Rat) const {
-    std::string s = base.to_string(Format::Float);
+  template<int N>
+  constexpr std::array<char,N> string_repr () const
+  {
+    auto b_repr = base.string_repr<N>();
+    auto e_repr = exp.string_repr<N>();
+
+    int sz1=0, sz2=0;
+    for (auto c : b_repr) {
+      if (c=='\0') break;
+      ++sz1;
+    }
+    for (auto c : e_repr) {
+      if (c=='\0') break;
+      ++sz2;
+    }
+    auto b_den_or_neg = base.den!=1 or base.num<0;
+    auto e_den_or_neg = exp.den!=1 or exp.num<0;
+    auto e_one = exp==RationalConstant::one();
+
+    // If we have denominators or are negative, add parentheses, for clarity
+    int sz_out = sz1 + (e_one ? 0 : sz2+1 + (b_den_or_neg ? 2 : 0) + (e_den_or_neg ? 2 : 0));
+    assert ( sz_out<N );
+
+    std::array<char,N> out = {'\0'};
+    int pos = 0;
+    if (b_den_or_neg) {
+      out[pos++] = '(';
+    }
+    for (int i=0; i<sz1; ++i) {
+      out[pos++] = b_repr[i];
+    }
+    if (b_den_or_neg) {
+      out[pos++] = ')';
+    }
+    if (not e_one) {
+      out[pos++] = '^';
+      if (e_den_or_neg) {
+        out[pos++] = '(';
+      }
+      for (int i=0; i<sz1; ++i) {
+        out[pos++] = e_repr[i];
+      }
+      if (e_den_or_neg) {
+        out[pos++] = ')';
+      }
+    }
+    return out;
+  }
+
+  inline std::string to_string(const Format fmt = Format::Rat) const {
+    std::string s = base.to_string(fmt);
     if (exp!=RationalConstant::one()) {
       s +=  '^';
-      if (exp.den!=1 and exp_fmt==Format::Rat) {
+      if (exp.den!=1 and fmt==Format::Rat) {
         s+= '(';
       }
-      s += exp.to_string(exp_fmt);
-      if (exp.den!=1 and exp_fmt==Format::Rat) {
+      s += exp.to_string(fmt);
+      if (exp.den!=1 and fmt==Format::Rat) {
         s+= ')';
       }
     }
@@ -152,15 +203,17 @@ inline std::ostream& operator<< (std::ostream& out, const ScalingFactor& s) {
   return out;
 }
 
+constexpr ScalingFactor& ScalingFactor::operator*= (const ScalingFactor& rhs) {
+  *this = (*this)*rhs;
+  return *this;
+}
 
 namespace prefixes {
 constexpr ScalingFactor nano  = ScalingFactor(10,-9);
 constexpr ScalingFactor micro = ScalingFactor(10,-6);
 constexpr ScalingFactor milli = ScalingFactor(10,-3);
 constexpr ScalingFactor centi = ScalingFactor(10,-2);
-constexpr ScalingFactor deci  = ScalingFactor(10,-1);
 
-constexpr ScalingFactor deca  = ScalingFactor(10, 1);
 constexpr ScalingFactor hecto = ScalingFactor(10, 2);
 constexpr ScalingFactor kilo  = ScalingFactor(10, 3);
 constexpr ScalingFactor mega  = ScalingFactor(10, 6);

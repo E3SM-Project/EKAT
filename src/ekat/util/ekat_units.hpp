@@ -63,7 +63,7 @@ public:
 
   // Construct a non-dimensional quantity
   constexpr Units (const ScalingFactor& scaling)
-   : Units(0,0,0,0,0,0,0,scaling)
+   : Units(0,0,0,0,0,0,0,scaling,scaling.string_repr<UNITS_MAX_STR_LEN>())
   {
     // Nothing to do here
   }
@@ -123,7 +123,7 @@ public:
 
     // Prepend the scaling only if it's not one, or if this is a dimensionless unit
     if (m_scaling!=ScalingFactor::one() || is_dimensionless()) {
-      s = m_scaling.to_string() + " " + s;
+      s = m_scaling.to_string(Format::Rat) + " " + s;
     }
 
     // Remove leading/trailing whitespaces
@@ -131,13 +131,8 @@ public:
   }
 
   std::string to_string () const {
-    std::string s = m_string_repr.data();
-    if (m_scaling!=ScalingFactor::one() or (is_dimensionless() and m_string_repr[0]=='\0')) {
-      s = m_scaling.to_string() + " " + s;
-    }
-
-    // Remove trailing/leading spaces
-    return trim(s);
+    // Remove trailing/leading spaces from string repr
+    return trim(std::string(m_string_repr.data()));
   }
 
   constexpr bool is_dimensionless () const {
@@ -148,6 +143,18 @@ public:
            m_units[4].num==0 &&
            m_units[5].num==0 &&
            m_units[6].num==0;
+  }
+
+  // Returns true if this Units has its own symbol.
+  // E.g., for "J" it returns true, but for "J/s" it returns false
+  constexpr bool has_symbol () const {
+    for (const auto& c : m_string_repr) {
+       if (c=='*' or c=='/' or c=='^' or c==' ' or c=='(' or c==')')
+         return false;
+       if (c=='\0')
+         return true;
+    }
+    return true;
   }
 
 private:
@@ -170,7 +177,7 @@ private:
   static constexpr std::array<char,UNITS_MAX_STR_LEN>
   concat_repr (const std::array<char,UNITS_MAX_STR_LEN>& lhs,
                const std::array<char,UNITS_MAX_STR_LEN>& rhs,
-               const char op)
+               const char sep)
   {
     std::array<char,UNITS_MAX_STR_LEN> out = {'\0'};
     const auto comp1 = composite(lhs);
@@ -190,7 +197,7 @@ private:
     } else if (size2==0) {
       return lhs;
     }
-    const auto size_out = size1 + size2 + 1
+    const auto size_out = size1 + size2 + (sep=='\0' ? 0 : 1)
                         + (comp1 ? 2 : 0)
                         + (comp2 ? 2 : 0);
     assert (size_out<UNITS_MAX_STR_LEN);
@@ -205,7 +212,9 @@ private:
     if (comp1) {
       out[pos++] = ')';
     }
-    out[pos++] = op;
+    if (sep!='\0') {
+      out[pos++] = sep;
+    }
     if (comp2) {
       out[pos++]='(';
     }
@@ -272,11 +281,39 @@ constexpr Units operator*(const Units& lhs, const Units& rhs) {
                 lhs.m_scaling*rhs.m_scaling,
                 Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'*'));
 }
+
 constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
+  using namespace prefixes;
+  // If input rhs has its own symbol, we allow prepending a letter to it,
+  // to get the usual symbol for 10^n powers
+  if (rhs.has_symbol()) {
+    Units u (rhs);
+    u.m_scaling *= lhs;
+    if (lhs==nano) {
+      u.m_string_repr = Units::concat_repr({'n'},u.string_repr(),'\0');
+    } else if (lhs==micro) {
+      u.m_string_repr = Units::concat_repr({'u'},u.string_repr(),'\0');
+    } else if (lhs==milli) {
+      u.m_string_repr = Units::concat_repr({'m'},u.string_repr(),'\0');
+    } else if (lhs==centi) {
+      u.m_string_repr = Units::concat_repr({'c'},u.string_repr(),'\0');
+    } else if (lhs==hecto) {
+      u.m_string_repr = Units::concat_repr({'h'},u.string_repr(),'\0');
+    } else if (lhs==kilo) {
+      u.m_string_repr = Units::concat_repr({'k'},u.string_repr(),'\0');
+    } else if (lhs==mega) {
+      u.m_string_repr = Units::concat_repr({'M'},u.string_repr(),'\0');
+    } else if (lhs==giga) {
+      u.m_string_repr = Units::concat_repr({'G'},u.string_repr(),'\0');
+    } else {
+      return Units(lhs)*rhs;
+    }
+    return u;
+  }
   return Units(lhs)*rhs;
 }
 constexpr Units operator*(const Units& lhs, const ScalingFactor& rhs) {
-  return lhs*Units(rhs);
+  return rhs*lhs;
 }
 constexpr Units operator*(const RationalConstant& lhs, const Units& rhs) {
   return ScalingFactor(lhs)*rhs;
@@ -353,6 +390,7 @@ constexpr Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBO
 // === DERIVED SI UNITS === //
 
 // Thermomechanics
+constexpr Units h    = Units(3600*s,"h");
 constexpr Units day  = 86400*s;                   // day          (time)
 constexpr Units year = 365*day;                   // year         (time)
 constexpr Units g    = Units(kg/1000,"g");        // gram         (mass)
