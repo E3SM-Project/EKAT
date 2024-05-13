@@ -7,6 +7,7 @@
 
 #include <array>
 #include <limits>
+#include <string_view>
 
 namespace ekat
 {
@@ -14,8 +15,11 @@ namespace ekat
 namespace units
 {
 
+constexpr int UNITS_MAX_STR_LEN = 128;
 constexpr int NUM_BASIC_UNITS = 7;
-constexpr const char* BASIC_UNITS_SYMBOLS[7] = {"m", "s", "kg", "K", "A", "mol", "cd"};
+constexpr std::array<char,UNITS_MAX_STR_LEN> BASIC_UNITS_SYMBOLS[7] = {
+  {"m"}, {"s"}, {"kg"}, {"K"}, {"A"}, {"mol"}, {"cd"}
+};
 
 /*
  *  Units: a class to store physical units in terms of fundamental ones
@@ -37,7 +41,7 @@ constexpr const char* BASIC_UNITS_SYMBOLS[7] = {"m", "s", "kg", "K", "A", "mol",
  *
  *  Note: we do *not* overload operator^. Although it would be nice to write
  *            auto my_units = m^2 / s^2;
- *        it would be very bug prone, since ^ has lower precedence than + - * /.
+ *        it would be very bug prone, since ^ has lower precedence than * /.
  *        Sure, using parentheses makes it safe, but then you may as well write
  *            auto my_units = pow(m,2) / pow(s,2);
  *            auto my_units = (m*m) / (s*s);
@@ -59,53 +63,76 @@ public:
 
   // Construct a non-dimensional quantity
   constexpr Units (const ScalingFactor& scaling)
-   : Units(0,0,0,0,0,0,0,scaling)
+   : Units(0,0,0,0,0,0,0,scaling,scaling.string_repr<UNITS_MAX_STR_LEN>())
   {
     // Nothing to do here
   }
 
   // Construct a general quantity
   constexpr Units (const RationalConstant& lengthExp,
-         const RationalConstant& timeExp,
-         const RationalConstant& massExp,
-         const RationalConstant& temperatureExp,
-         const RationalConstant& currentExp,
-         const RationalConstant& amountExp,
-         const RationalConstant& luminousIntensityExp,
-         const ScalingFactor& scalingFactor = ScalingFactor::one(),
-         const char* name = nullptr)
+                   const RationalConstant& timeExp,
+                   const RationalConstant& massExp,
+                   const RationalConstant& temperatureExp,
+                   const RationalConstant& currentExp,
+                   const RationalConstant& amountExp,
+                   const RationalConstant& luminousIntensityExp,
+                   const ScalingFactor& scalingFactor = ScalingFactor::one(),
+                   const std::array<char,UNITS_MAX_STR_LEN>& n = {'\0'})
    : m_scaling {scalingFactor}
    , m_units {lengthExp,timeExp,massExp,temperatureExp,currentExp,amountExp,luminousIntensityExp}
-   , m_name {name}
-  {
-    // Nothing to do here
-  }
-  constexpr Units (const Units& rhs, const char* n)
-   : m_scaling (rhs.m_scaling)
-   , m_units   (rhs.m_units)
-   , m_name    (n)
+   , m_string_repr(n)
   {
     // Nothing to do here
   }
 
+  constexpr Units (const Units& rhs, const std::string_view& s)
+   : Units(rhs)
+  {
+    assert (s.size()<UNITS_MAX_STR_LEN);
+    for (size_t i=0; i<s.size(); ++i) {
+      m_string_repr[i] = s[i];
+    }
+    m_string_repr[s.size()] = '\0';
+  }
   constexpr Units (const Units&) = default;
 
   constexpr Units& operator= (const Units&) = default;
 
   static constexpr Units nondimensional () {
-    return Units(ScalingFactor::one());
+    Units u(ScalingFactor::one());
+    u.m_string_repr[0] = '1';
+    return u;
   }
   static constexpr Units invalid () {
     constexpr auto infty = std::numeric_limits<RationalConstant::iType>::max();
     return ScalingFactor(-infty)*nondimensional();
   }
 
-  void set_string (const char* name) {
-    m_name = name;
+  std::string get_si_string () const {
+    std::string s;
+    for (int i=0; i<NUM_BASIC_UNITS; ++i) {
+      if (m_units[i].num==0) {
+        continue;
+      }
+      s += std::string(BASIC_UNITS_SYMBOLS[i].data());
+      if (m_units[i]!=RationalConstant::one()) {
+        s += "^" + m_units[i].to_string(Format::Rat);
+      }
+      s += " ";
+    }
+
+    // Prepend the scaling only if it's not one, or if this is a dimensionless unit
+    if (m_scaling!=ScalingFactor::one() || is_dimensionless()) {
+      s = m_scaling.to_string(Format::Rat) + " " + s;
+    }
+
+    // Remove leading/trailing whitespaces
+    return trim(s);
   }
 
-  std::string get_string () const {
-    return m_name==nullptr ? to_string(*this) : m_name;
+  std::string to_string () const {
+    // Remove trailing/leading spaces from string repr
+    return trim(std::string(m_string_repr.data()));
   }
 
   constexpr bool is_dimensionless () const {
@@ -118,6 +145,88 @@ public:
            m_units[6].num==0;
   }
 
+  // Returns true if this Units has its own symbol.
+  // E.g., for "J" it returns true, but for "J/s" it returns false
+  constexpr bool has_symbol () const {
+    for (const auto& c : m_string_repr) {
+       if (c=='*' or c=='/' or c=='^' or c==' ' or c=='(' or c==')')
+         return false;
+       if (c=='\0')
+         return true;
+    }
+    return true;
+  }
+
+private:
+  constexpr const std::array<char,UNITS_MAX_STR_LEN>& string_repr () const {
+    return m_string_repr;
+  }
+
+  // Returns true if the unit is composite (i.e., does not have a one-word symbol,
+  // but instead is a compound of symbols, such as a*b/c)
+  static constexpr bool composite (const std::array<char,UNITS_MAX_STR_LEN>& sv) {
+    for (const auto& c : sv) {
+      if (c=='*' or c=='/' or c=='^')
+        return true;
+      if (c=='\0')
+        return false;
+    }
+    return false;
+  };
+
+  static constexpr std::array<char,UNITS_MAX_STR_LEN>
+  concat_repr (const std::array<char,UNITS_MAX_STR_LEN>& lhs,
+               const std::array<char,UNITS_MAX_STR_LEN>& rhs,
+               const char sep)
+  {
+    std::array<char,UNITS_MAX_STR_LEN> out = {'\0'};
+    const auto comp1 = composite(lhs);
+    const auto comp2 = composite(rhs);
+    int size1 = 0;
+    for (auto c : lhs) {
+      if (c=='\0') break;
+      ++size1;
+    }
+    int size2 = 0;
+    for (auto c : rhs) {
+      if (c=='\0') break;
+      ++size2;
+    }
+    if (size1==0) {
+      return rhs;
+    } else if (size2==0) {
+      return lhs;
+    }
+    const auto size_out = size1 + size2 + (sep=='\0' ? 0 : 1)
+                        + (comp1 ? 2 : 0)
+                        + (comp2 ? 2 : 0);
+    assert (size_out<UNITS_MAX_STR_LEN);
+
+    int pos=0;
+    if (comp1) {
+      out[pos++]='(';
+    }
+    for (int i=0; i<size1; ++i) {
+      out [pos++] = lhs[i];
+    }
+    if (comp1) {
+      out[pos++] = ')';
+    }
+    if (sep!='\0') {
+      out[pos++] = sep;
+    }
+    if (comp2) {
+      out[pos++]='(';
+    }
+    for (int i=0; i<size2; ++i) {
+      out [pos++] = rhs[i];
+    }
+    if (comp2) {
+      out[pos++] = ')';
+    }
+    out[pos] = '\0';
+    return out;
+  }
 private:
 
   friend constexpr bool operator==(const Units&,const Units&);
@@ -129,14 +238,11 @@ private:
   friend constexpr Units operator/(const ScalingFactor&,const Units&);
   friend constexpr Units pow(const Units&,const RationalConstant&);
   friend constexpr Units sqrt(const Units&);
-  friend constexpr Units root(const Units&,const int);
-
-  friend std::string to_string(const Units&);
 
   ScalingFactor                   m_scaling;
   std::array<RationalConstant,7>  m_units;
 
-  const char*                     m_name;
+  std::array<char,UNITS_MAX_STR_LEN> m_string_repr = {'\0'};
 };
 
 // === Operators/functions overload === //
@@ -165,24 +271,46 @@ constexpr bool operator!=(const Units& lhs, const Units& rhs) {
 
 // --- Multiplicaiton --- //
 constexpr Units operator*(const Units& lhs, const Units& rhs) {
-  return Units(lhs.m_units[0]+rhs.m_units[0],
-               lhs.m_units[1]+rhs.m_units[1],
-               lhs.m_units[2]+rhs.m_units[2],
-               lhs.m_units[3]+rhs.m_units[3],
-               lhs.m_units[4]+rhs.m_units[4],
-               lhs.m_units[5]+rhs.m_units[5],
-               lhs.m_units[6]+rhs.m_units[6],
-               lhs.m_scaling*rhs.m_scaling);
+  return Units (lhs.m_units[0]+rhs.m_units[0],
+                lhs.m_units[1]+rhs.m_units[1],
+                lhs.m_units[2]+rhs.m_units[2],
+                lhs.m_units[3]+rhs.m_units[3],
+                lhs.m_units[4]+rhs.m_units[4],
+                lhs.m_units[5]+rhs.m_units[5],
+                lhs.m_units[6]+rhs.m_units[6],
+                lhs.m_scaling*rhs.m_scaling,
+                Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'*'));
 }
+
 constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
-  return Units(rhs.m_units[0],
-               rhs.m_units[1],
-               rhs.m_units[2],
-               rhs.m_units[3],
-               rhs.m_units[4],
-               rhs.m_units[5],
-               rhs.m_units[6],
-               lhs*rhs.m_scaling);
+  using namespace prefixes;
+  // If input rhs has its own symbol, we allow prepending a letter to it,
+  // to get the usual symbol for 10^n powers
+  if (rhs.has_symbol()) {
+    Units u (rhs);
+    u.m_scaling *= lhs;
+    if (lhs==nano) {
+      u.m_string_repr = Units::concat_repr({'n'},u.string_repr(),'\0');
+    } else if (lhs==micro) {
+      u.m_string_repr = Units::concat_repr({'u'},u.string_repr(),'\0');
+    } else if (lhs==milli) {
+      u.m_string_repr = Units::concat_repr({'m'},u.string_repr(),'\0');
+    } else if (lhs==centi) {
+      u.m_string_repr = Units::concat_repr({'c'},u.string_repr(),'\0');
+    } else if (lhs==hecto) {
+      u.m_string_repr = Units::concat_repr({'h'},u.string_repr(),'\0');
+    } else if (lhs==kilo) {
+      u.m_string_repr = Units::concat_repr({'k'},u.string_repr(),'\0');
+    } else if (lhs==mega) {
+      u.m_string_repr = Units::concat_repr({'M'},u.string_repr(),'\0');
+    } else if (lhs==giga) {
+      u.m_string_repr = Units::concat_repr({'G'},u.string_repr(),'\0');
+    } else {
+      return Units(lhs)*rhs;
+    }
+    return u;
+  }
+  return Units(lhs)*rhs;
 }
 constexpr Units operator*(const Units& lhs, const ScalingFactor& rhs) {
   return rhs*lhs;
@@ -203,27 +331,14 @@ constexpr Units operator/(const Units& lhs, const Units& rhs) {
                lhs.m_units[4]-rhs.m_units[4],
                lhs.m_units[5]-rhs.m_units[5],
                lhs.m_units[6]-rhs.m_units[6],
-               lhs.m_scaling/rhs.m_scaling);
+               lhs.m_scaling/rhs.m_scaling,
+               Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'/'));
 }
 constexpr Units operator/(const Units& lhs, const ScalingFactor& rhs) {
-  return Units(lhs.m_units[0],
-               lhs.m_units[1],
-               lhs.m_units[2],
-               lhs.m_units[3],
-               lhs.m_units[4],
-               lhs.m_units[5],
-               lhs.m_units[6],
-               lhs.m_scaling/rhs);
+  return lhs/Units(rhs);
 }
 constexpr Units operator/(const ScalingFactor& lhs, const Units& rhs) {
-  return Units(-rhs.m_units[0],
-               -rhs.m_units[1],
-               -rhs.m_units[2],
-               -rhs.m_units[3],
-               -rhs.m_units[4],
-               -rhs.m_units[5],
-               -rhs.m_units[6],
-               lhs/rhs.m_scaling);
+  return Units(lhs)/rhs;
 }
 constexpr Units operator/(const RationalConstant& lhs, const Units& rhs) {
   return ScalingFactor(lhs)/rhs;
@@ -233,7 +348,6 @@ constexpr Units operator/(const Units& lhs, const RationalConstant& rhs) {
 }
 
 // --- Powers and roots --- //
-
 constexpr Units pow(const Units& x, const RationalConstant& p) {
   return Units(x.m_units[0]*p,
                x.m_units[1]*p,
@@ -242,55 +356,24 @@ constexpr Units pow(const Units& x, const RationalConstant& p) {
                x.m_units[4]*p,
                x.m_units[5]*p,
                x.m_units[6]*p,
-               pow(x.m_scaling,p));
+               pow(x.m_scaling,p),
+               Units::concat_repr(x.string_repr(),p.string_repr<UNITS_MAX_STR_LEN>(),'^'));
 }
 
 constexpr Units sqrt(const Units& x) {
-  return Units(x.m_units[0] / 2,
-               x.m_units[1] / 2,
-               x.m_units[2] / 2,
-               x.m_units[3] / 2,
-               x.m_units[4] / 2,
-               x.m_units[5] / 2,
-               x.m_units[6] / 2,
-               pow(x.m_scaling,RationalConstant(1,2)));
-}
-
-inline std::string to_string(const Units& x) {
-  std::string s;
-  int num_non_trivial = 0;
-  for (int i=0; i<NUM_BASIC_UNITS; ++i) {
-    if (x.m_units[i].num==0) {
-      continue;
-    }
-    ++num_non_trivial;
-    s += BASIC_UNITS_SYMBOLS[i];
-    if (x.m_units[i]!=RationalConstant::one()) {
-      s += "^" + to_string(x.m_units[i],Format::Rat);
-    }
-    s += " ";
-  }
-
-  // Prepend the scaling only if it's not one, or if this is a dimensionless unit
-  if (x.m_scaling!=ScalingFactor::one() || num_non_trivial==0) {
-    s = to_string(x.m_scaling) + " " + s;
-  }
-
-  // Remove leading/trailing whitespaces
-  return trim(s);
+  return pow(x,RationalConstant(1,2));
 }
 
 inline std::ostream& operator<< (std::ostream& out, const Units& x) {
-  out << to_string(x);
+  out << x.to_string();
   return out;
 }
 
-// ================== SHORT NAMES FOR COMMON PHYSICAL UNITS =============== //
+// ================== SHORT NAMES FOR COMMON SI PHYSICAL UNITS =============== //
 
 // Note to developers:
-// I added the 'most common' units. I avoided 'Siemes', since
-// the symbol is 'S', which is way too close to 's' (seconds).
-// TODO: should we add 'common' scaled ones, such as km=kilo*m?
+// I added the 'most common' SI units, but I avoided 'Siemens', since the symbol
+// is 'S', which is way too close to 's' (seconds).
 
 // === FUNDAMENTAL === //
 
@@ -304,9 +387,10 @@ constexpr Units A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBO
 constexpr Units mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
 constexpr Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
 
-// === DERIVED === //
+// === DERIVED SI UNITS === //
 
 // Thermomechanics
+constexpr Units h    = Units(3600*s,"h");
 constexpr Units day  = 86400*s;                   // day          (time)
 constexpr Units year = 365*day;                   // year         (time)
 constexpr Units g    = Units(kg/1000,"g");        // gram         (mass)

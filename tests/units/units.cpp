@@ -26,6 +26,9 @@ TEST_CASE("units_framework", "") {
     REQUIRE_THROWS(pow(zero,zero));
     REQUIRE_THROWS(pow(-one,half));
 #endif
+
+    REQUIRE ((-half).to_string()==std::string("-1/2"));
+    REQUIRE ((-half).to_string(Format::Float)==std::string("-0.5"));
   }
 
   SECTION ("scaling_factor") {
@@ -42,8 +45,8 @@ TEST_CASE("units_framework", "") {
     REQUIRE( pow(three_halves,2)*pow(four_thirds,3) == 16*one/3);
 
     // Verify printing
-    REQUIRE(to_string(root2)=="2^1/2");
-    REQUIRE(to_string(root2,Format::Float)=="2^0.5");
+    REQUIRE(root2.to_string()=="2^(1/2)");
+    REQUIRE(root2.to_string(Format::Float)=="2^0.5");
 
 #if defined(EKAT_CONSTEXPR_ASSERT) && !defined(NDEBUG)
     const RationalConstant three(3);
@@ -59,27 +62,38 @@ TEST_CASE("units_framework", "") {
     const auto kPa = kilo*Pa;
 
     constexpr Units nondim (ScalingFactor(1));
-    constexpr Units milliJ = milli*N*m;
-    constexpr Units mix_ratio (kg/kg,"kg/kg");
+    constexpr Units mJ = milli*J;
+    constexpr Units mix_ratio = kg/kg;
 
     // Verify operations
-    REQUIRE (milliJ == kPa*pow(m,3)/mega);
+    REQUIRE (mJ == kPa*pow(m,3)/mega);
     REQUIRE (m/s*day/km == Units(one*86400/1000));
     REQUIRE (pow(sqrt(m),2)==m);
 
-    // Verify printing
-    REQUIRE (to_string(nondim)=="1");
-    REQUIRE (to_string(milliJ)=="0.001 m^2 s^-2 kg");
+    // Verify all printing properties
+    REQUIRE (nondim.to_string()=="1");
+    REQUIRE (mJ.to_string()=="mJ");
+    REQUIRE ((J/1000).to_string()=="J/1000");
+    REQUIRE (mJ.get_si_string()=="1/1000 m^2 s^-2 kg");
 
-    // Verify changing the string works and does not affect the to_string function
     REQUIRE (mix_ratio==nondim);
-    REQUIRE (to_string(mix_ratio)=="1");
-    REQUIRE (mix_ratio.get_string()=="kg/kg");
+    REQUIRE (mix_ratio.get_si_string()=="1");
+    REQUIRE (mix_ratio.to_string()=="kg/kg");
+    REQUIRE ((m*mix_ratio).to_string()=="m*(kg/kg)");
+    REQUIRE ((m*mix_ratio).get_si_string()=="m");
 
-    Units my_J = N*m;
-    my_J.set_string("J");
-    REQUIRE (my_J.get_string()==std::string("J"));
+    constexpr Units uJ = micro*J;
+    constexpr Units ug = micro*g;
+    constexpr Units mbar = milli*bar;
 
+    REQUIRE (uJ.to_string()=="uJ");
+    REQUIRE ((ug/kg).to_string()=="ug/kg");
+    REQUIRE ((mbar/h).to_string()=="mbar/h");
+
+    REQUIRE ((mbar/h).get_si_string()=="1/36 m^-1 s^-3 kg");
+    REQUIRE ((ug/kg).get_si_string()=="1/1000000000");
+
+    REQUIRE ((kilo*(ug/kg)).to_string()=="(10^3)*(ug/kg)");
   }
 
   SECTION ("issue-52") {
