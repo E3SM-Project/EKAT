@@ -1,3 +1,26 @@
+# Useful function, that grabs all the cmake vars visible in this scope
+# and prints them to screen. One can pass REGEX <regex> to filter
+# which vars to print
+function(dump_cmake_variables)
+  set (opts)
+  set (args1v REGEX)
+  set (argsMv)
+  cmake_parse_arguments (dcv "${opts}" "${args1v}" "${argsMv}" ${ARGN})
+
+  get_cmake_property(dcv_var_names VARIABLES)
+
+  foreach (var_name IN LISTS dcv_var_names)
+    if (dcv_REGEX)
+      string(REGEX MATCH ${dcv_REGEX} MATCHES ${var_name})
+      if (MATCHES)
+        message(STATUS "${var_name}=${${var_name}}")
+      endif()
+    else ()
+      message(STATUS "${var_name}=${${var_name}}")
+    endif ()
+  endforeach()
+endfunction()
+
 macro (IsDebugBuild OUT_VAR_NAME)
   string(TOLOWER "${CMAKE_BUILD_TYPE}" INTERNAL_BUILD_TYPE_CI)
   if ("${INTERNAL_BUILD_TYPE_CI}" STREQUAL "debug")

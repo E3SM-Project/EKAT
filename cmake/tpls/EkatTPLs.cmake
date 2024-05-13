@@ -40,10 +40,19 @@ endif()
 #        Kokkos (Required)        #
 ###################################
 
-# We first try to use find_package. If that doesn't work, build from submodule
-include (EkatFindKokkos)
-if (NOT Kokkos_FOUND)
+option (EKAT_SKIP_FIND_KOKKOS
+  "Skip find_package for Kokkos, and  build directly from submodule" OFF)
+if (EKAT_SKIP_FIND_KOKKOS)
+  # The user does not want to accidentally get an existing installation,
+  # and instead wants to force a build from the internal submodule
   include (EkatBuildKokkos)
+else()
+  # We first try to use find_package (unless told to skip this phase).
+  # If that doesn't work, build from submodule
+  include (EkatFindKokkos)
+  if (NOT Kokkos_FOUND)
+    include (EkatBuildKokkos)
+  endif()
 endif()
 
 # A shortcut var, to handle GPU-specific (but backend-agnostic) stuff
@@ -59,23 +68,38 @@ endif ()
 # EKAT also has some yaml parsing utility
 option (EKAT_ENABLE_YAML_PARSER "Enable support for parsing YAML files" ON)
 if (EKAT_ENABLE_YAML_PARSER)
-  # I am having issues getting the env var YAML_CPP_ROOT being picked up
-  # by cmake. I suspect this has to do with the presence of the hyphen
-  # CMake *should* convert '-' to '_' when forming the cmake/env var name,
-  # so YAML_CPP_ROOT should be recognized. Alas, it's not on my machine,
-  # running CMake 3.26.3, so we must pass the var explicitly via HINTS
-  message (STATUS "Looking for yaml-cpp ...")
-  if (NOT YAML_CPP_ROOT AND NOT "$ENV{YAML_CPP_ROOT}" STREQUAL "")
-    set (YAML_CPP_ROOT $ENV{YAML_CPP_ROOT})
-  endif()
-
-  find_package(yaml-cpp HINTS ${YAML_CPP_ROOT})
-  if (NOT yaml-cpp_FOUND)
-    message (STATUS "Looking for yaml-cpp ... NOT FOUND")
-    include(EkatBuildYamlCpp)
+  option (EKAT_SKIP_FIND_YAML_CPP
+    "Skip find_package for yaml-cpp, and  build directly from submodule" OFF)
+  if (EKAT_SKIP_FIND_YAML_CPP)
+    # The user does not want to accidentally get an existing installation,
+    # and instead wants to force a build from the internal submodule
+    include (EkatBuildYamlCpp)
   else()
-    message (STATUS "Looking for yaml-cpp ... FOUND")
-    message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
+    # I am having issues getting the env var YAML_CPP_ROOT being picked up
+    # by cmake. I suspect this has to do with the presence of the hyphen
+    # CMake *should* convert '-' to '_' when forming the cmake/env var name,
+    # so YAML_CPP_ROOT should be recognized. Alas, it's not on my machine,
+    # running CMake 3.26.3, so we must pass the var explicitly via HINTS
+    message (STATUS "Looking for yaml-cpp ...")
+    if (NOT YAML_CPP_ROOT AND NOT "$ENV{YAML_CPP_ROOT}" STREQUAL "")
+      set (YAML_CPP_ROOT $ENV{YAML_CPP_ROOT})
+    endif()
+
+    find_package(yaml-cpp HINTS ${YAML_CPP_ROOT})
+    if (NOT yaml-cpp_FOUND)
+      message (STATUS "Looking for yaml-cpp ... NOT FOUND")
+      include(EkatBuildYamlCpp)
+    else()
+      message (STATUS "Looking for yaml-cpp ... FOUND")
+      message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
+      # It is possible that the installation provides the yaml-cpp target, but not the yaml-cpp::yaml-cpp target. If so, define the alias target
+      if (NOT TARGET yaml-cpp::yaml-cpp)
+        if (NOT TARGET yaml-cpp)
+          message (FATAL_ERROR "Neither yaml-cpp nor yaml-cpp::yaml-cpp targets were found")
+        endif()
+        add_library (yaml-cpp::yaml-cpp ALIAS yaml-cpp)
+      endif()
+    endif()
   endif()
 endif()
 
@@ -83,35 +107,48 @@ endif()
 #        spdlog (Required)        #
 ###################################
 
-# We first try to use find_XYZ. If that doesn't work, build from submodule
-message (STATUS "Looking for spdlog ...")
-find_package(spdlog QUIET)
-if (NOT spdlog_FOUND)
-  message (STATUS "Looking for spdlog ... NOT FOUND")
-  include(EkatBuildSpdlog)
+option (EKAT_SKIP_FIND_SPDLOG
+    "Skip find_package for spdlog, and  build directly from submodule" OFF)
+if (EKAT_SKIP_FIND_SPDLOG)
+  # The user does not want to accidentally get an existing installation,
+  # and instead wants to force a build from the internal submodule
+  include (EkatBuildSpdlog)
 else()
-  message (STATUS "Looking for spdlog ... FOUND")
-  message (STATUS "  spdlog_DIR: ${spdlog_DIR}")
+  # We first try to use find_XYZ. If that doesn't work, build from submodule
+  message (STATUS "Looking for spdlog ...")
+  find_package(spdlog QUIET)
+  if (NOT spdlog_FOUND)
+    message (STATUS "Looking for spdlog ... NOT FOUND")
+    include(EkatBuildSpdlog)
+  else()
+    message (STATUS "Looking for spdlog ... FOUND")
+    message (STATUS "  spdlog_DIR: ${spdlog_DIR}")
+  endif()
 endif()
 
 ###################################
 #   Boost stacktrace (Optional)   #
 ###################################
 
-# Stacktrace is available with Boost>=1.65
-message (STATUS "Looking for boost::stacktrace ...")
-find_package(Boost 1.65.0
-  COMPONENTS stacktrace_addr2line
-)
+# Always looking for stacktrace can cause problems when cross compiling
+# Hence, avoid finding boost if user didn't ask for it. If they do,
+# then it's fair to expect they have a Boost_ROOT env var defined
+option (EKAT_ENABLE_BOOST_STACKTRACE "Whether to enable Boost stacktrace" OFF)
+if (EKAT_ENABLE_BOOST_STACKTRACE)
+  message (STATUS "Looking for boost::stacktrace ...")
+  # Stacktrace is available with Boost>=1.65
+  find_package(Boost 1.65.0 REQUIRED
+    COMPONENTS stacktrace_addr2line
+  )
 
-if (Boost_STACKTRACE_ADDR2LINE_FOUND)
-  message (STATUS "Looking for boost::stacktrace ... Found")
-  message ("    -> EKAT's assert macros will provide a stacktrace.")
-  set (EKAT_HAS_STACKTRACE TRUE)
+  if (Boost_STACKTRACE_ADDR2LINE_FOUND)
+    message (STATUS "Looking for boost::stacktrace ... Found")
+    message ("    -> EKAT's assert macros will provide a stacktrace.")
+    set (EKAT_HAS_STACKTRACE TRUE)
+  endif()
 else()
-  message (STATUS "Looking for boost::stacktrace ... NOT Found")
+  message (STATUS "EKAT_ENABLE_BOOST_STACKTRACE: OFF")
   message ("    -> EKAT's assert macros will NOT provide a stacktrace.")
 endif()
-
 
 message (STATUS " *** End processing EKAT's TPLs ***")

@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <array>
 
 #include "ekat/ekat_assert.hpp"
 
@@ -74,7 +75,80 @@ struct RationalConstant {
   static constexpr RationalConstant one () { return RationalConstant(1); }
   static constexpr RationalConstant zero () { return RationalConstant(0); }
 
+  template<int N>
+  constexpr std::array<char,N> string_repr () const
+  {
+    std::array<char,N> s = {'\0'};
+    int pos = 0;
+    int nd_num = ndigits(num);
+    int nd_den = ndigits(den);
+
+    assert (N>(nd_num+nd_den+(num<0 ? 1 : 0)));
+
+    if (num<0) {
+      s[pos++] = '-';
+    }
+    int absnum = num<0 ? -num : num;
+    for (int i=(nd_num-1); i>=0; --i) {
+      s[pos++] = digit2char(get_digit(absnum,i));
+    }
+
+    if (den!=1) {
+      s[pos++] = '/';
+      for (int i=(nd_den-1); i>=0; --i) {
+        s[pos++] = digit2char(get_digit(den,i));
+      }
+    }
+
+    return s;
+  }
+
+  std::string to_string (const Format fmt = Format::Rat) const 
+  {
+    std::stringstream ss;
+    switch (fmt) {
+      case Format::Float:
+        ss << static_cast<double>(num)/den;
+        break;
+      case Format::Rat:
+        ss << num;
+        if (den!=1) {
+          ss << "/" << den;
+        }
+        break;
+      default:
+        EKAT_REQUIRE_MSG(false,"Error! Unrecognized format for printing RationalConstant.\n");
+
+    }
+    return ss.str();
+  }
+
 private:
+  static constexpr char digit2char (int n) {
+    if (n==0) return '0';
+    else if (n==1) return '1';
+    else if (n==2) return '2';
+    else if (n==3) return '3';
+    else if (n==4) return '4';
+    else if (n==5) return '5';
+    else if (n==6) return '6';
+    else if (n==7) return '7';
+    else if (n==8) return '8';
+    else return '9';
+  }
+
+  static constexpr int ndigits (iType n) {
+    return n<10 ? 1 : 1 + ndigits(n/10);
+  }
+
+  static constexpr int get_digit(int n, int ten_pow_exp) {
+    int ten_pow = 1;
+    for (int i=0; i<ten_pow_exp; ++i) {
+      ten_pow *= 10;
+    }
+
+    return (n / ten_pow) % 10;
+  }
 
   // These two are used to help reduce a/b to lowest terms
   static constexpr iType fix_num(const iType n, const iType d) {
@@ -134,30 +208,8 @@ pow (const RationalConstant& x, const IntType p) {
                      : ( (p&1)!=0 ? x*pow(x*x,p>>1) : pow(x*x,p>>1)));
 }
 
-inline std::string to_string (const RationalConstant& rat, const Format fmt = Format::Rat) {
-  // Note: using std::to_string(double) causes insertion of trailing zeros,
-  //       and the insertion of decimal part for integers.
-  //       E.g., to_string(1.0/2) leads to 0.5000000
-  std::stringstream ss;
-  switch (fmt) {
-    case Format::Float:
-      ss << static_cast<double>(rat.num)/rat.den;
-      break;
-    case Format::Rat:
-      ss << rat.num;
-      if (rat.den!=1) {
-        ss << "/" << rat.den;
-      }
-      break;
-    default:
-      EKAT_REQUIRE_MSG(false,"Error! Unrecognized format for printing RationalConstant.\n");
-
-  }
-  return ss.str();
-}
-
 inline std::ostream& operator<< (std::ostream& out, const RationalConstant& rat) {
-  out << to_string(rat);
+  out << rat.to_string();
   return out;
 }
 

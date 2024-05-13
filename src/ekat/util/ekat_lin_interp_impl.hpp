@@ -90,36 +90,68 @@ KOKKOS_INLINE_FUNCTION
 void LinInterp<ScalarT, PackSize, DeviceT>::lin_interp_impl(
   const MemberType& team,
   const RangeBoundary& range_boundary,
-  const view_1d<const Pack>& x1, const view_1d<const Pack>& x2, const view_1d<const Pack>& y1,
-  const view_1d<Pack>& y2,
+  const view_1d<const Pack>& x1,
+  const view_1d<const Pack>& x2,
+  const view_1d<const Pack>& y1,
+  const view_1d<      Pack>& y2,
   const Int col) const
 {
-  auto x1s = ekat::scalarize(x1);
-  auto y1s = ekat::scalarize(y1);
+  constexpr int N = Pack::n;
+  using IPackT = ekat::Pack<int,N>;
+
+  auto x1s = scalarize(x1);
+  auto y1s = scalarize(y1);
 
   const int i = col == -1 ? team.league_rank() : col;
-  Kokkos::parallel_for(range_boundary, [&] (Int k2) {
-    const auto indx_pk = m_indx_map(i, k2);
-    const auto end_mask = indx_pk == m_km1 - 1;
-    if (end_mask.any()) {
-      const auto not_end = !end_mask;
-      ekat_masked_loop(end_mask, s) {
-        int k1 = indx_pk[s];
-        y2(k2)[s] = y1s(k1) + (y1s(k1)-y1s(k1-1))*(x2(k2)[s]-x1s(k1))/(x1s(k1)-x1s(k1-1));
-      }
-      ekat_masked_loop(not_end, s) {
-        int k1 = indx_pk[s];
-        y2(k2)[s] = y1s(k1) + (y1s(k1+1)-y1s(k1))*(x2(k2)[s]-x1s(k1))/(x1s(k1+1)-x1s(k1));
-      }
-    }
-    else {
-      Pack x1p, x1p1, y1p, y1p1;
-      ekat::index_and_shift<1>(x1s, indx_pk, x1p, x1p1);
-      ekat::index_and_shift<1>(y1s, indx_pk, y1p, y1p1);
-      const auto& x2p = x2(k2);
 
-      y2(k2) = y1p + (y1p1-y1p)*(x2p-x1p)/(x1p1-x1p);
+  Kokkos::parallel_for(range_boundary, [&] (Int k2) {
+    Pack x1_k1, x1_k1ph, y1_k1, y1_k1ph;
+    IPackT k1ph;
+
+    // Basic formula is y2(k2) = y1(k1) + m * (x2(k2)-x1(k1))
+    // where m = (y1(k1+1)-y2(k1))/(x1(k1+1)-x1(k1)) is the slope of the line
+    // going through (x1(k1),y1(k1)) and (x1(k1+1),y1(k1+1)).
+    // The catch is that k1 may be the last point. In that case, we go backward instead of fwd
+    // to compute the slope
+
+    const auto& k1 = m_indx_map(i, k2);
+
+    // k1ph = k1+h, where h=1 except at the last entry, where h=-1
+    k1ph = k1;
+    vector_simd
+    for (int i=0; i<N; ++i) {
+      // k1ph[i] = k1[i];
+      if (k1ph[i]==(m_km1-1)) {
+        --k1ph[i];
+      } else {
+        ++k1ph[i];
+      }
     }
+
+    // Eval x1 and y1 at k1 and k1+h
+    // NOTE: 4 separate loops seem to be a few % better. Might have something to do with loop unrolling
+    //       Also, using vector_simd deteriorates performance by >10%. That's not too surprising,
+    //       considering that we are accessing non-contiguous memory. SIMD *forces* the compiler to
+    //       vectorize, even if it would deem the vectorization inefficient
+    for (int i=0; i<N; ++i) {
+      x1_k1[i] = x1s(k1[i]);
+    }
+    for (int i=0; i<N; ++i) {
+      y1_k1[i] = y1s(k1[i]);
+    }
+    for (int i=0; i<N; ++i) {
+      x1_k1ph[i] = x1s(k1ph[i]);
+    }
+    for (int i=0; i<N; ++i) {
+      y1_k1ph[i] = y1s(k1ph[i]);
+    }
+
+    // Apply linear interpolation formula. Use multiple statements with op= to minimize temporaries
+    auto& y2_k2 = y2(k2);
+    y2_k2  = y1_k1ph-y1_k1;
+    y2_k2 *= x2(k2)-x1_k1;
+    y2_k2 /= x1_k1ph-x1_k1;
+    y2_k2 += y1_k1;
   });
 }
 

@@ -64,7 +64,7 @@ template<typename ViewT>
 auto get_col (const ViewT& packed_view, int i) ->
   decltype(ekat::scalarize(ekat::subview(packed_view,i))) {
     return ekat::scalarize(ekat::subview(packed_view,i));
-};
+}
 
 #ifdef EKAT_ENABLE_FORTRAN
 TEST_CASE("lin_interp_soak", "lin_interp") {
@@ -588,9 +588,9 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
 
   // Generic lambda, to get min-max of a scalarized subview
   // Must use with rank-1 scalar views only
-  auto minmax = [](const auto& v) -> std::pair<Real,Real> {
+  auto minmax = [](const auto& v, const int sz) -> std::pair<Real,Real> {
     std::pair<Real,Real> minmax {v[0],v[0]};
-    for (int i=1; i<v.extent_int(0); ++i) {
+    for (int i=1; i<sz; ++i) {
       minmax.first = std::min(minmax.first,v[i]);
       minmax.second = std::max(minmax.second,v[i]);
     }
@@ -623,7 +623,7 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
       populate_array (km1,get_col(y1_h,i).data(),generator,y_dist,false);
 
       // Generate x2 in a way that guarantees its range is contained in that of x1
-      auto mm1 = minmax(get_col(x1_h,i));
+      auto mm1 = minmax(get_col(x1_h,i),km1);
       auto delta = mm1.second-mm1.first;
       real_pdf x2_dist(mm1.first+delta/1000,mm1.second-delta/1000);
       populate_array (km2,get_col(x2_h,i).data(),generator,x2_dist,true);
@@ -653,8 +653,8 @@ TEST_CASE("lin_interp_monotone", "lin_interp") {
     auto y2_h_s = ekat::scalarize(y2_h);
     auto y1_h_s = ekat::scalarize(y1_h);
     for (int i = 0; i < ncol; ++i) {
-      auto mm1 = minmax(ekat::subview(y1_h_s,i));
-      auto mm2 = minmax(ekat::subview(y2_h_s,i));
+      auto mm1 = minmax(ekat::subview(y1_h_s,i),km1);
+      auto mm2 = minmax(ekat::subview(y2_h_s,i),km2);
       REQUIRE ( (mm2.first>=mm1.first && mm2.second<=mm1.second) );
     }
   }

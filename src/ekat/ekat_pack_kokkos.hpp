@@ -86,74 +86,130 @@ index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_c
 // Turn a View of Packs into a View of scalars.
 // Example: const auto b = scalarize(a);
 
-// 4d
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<T****, Parms...> >
-scalarize (const Kokkos::View<Pack<T, pack_size>****, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<T****, Parms...> >(
-    reinterpret_cast<T*>(vp.data()),
-    vp.extent_int(0), vp.extent_int(1), vp.extent_int(2),
-    pack_size * vp.extent_int(3));
+// Default impl returns the input view, regardless of rank
+template<typename ScalarT>
+struct ScalarizeHelper
+{
+  template <typename ViewT>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<ViewT>
+  scalarize (const ViewT& v) { return v; }
+};
+
+// Specialization if ScalarT is a non-const Pack type
+template<typename T, int N>
+struct ScalarizeHelper<Pack<T,N>>
+{
+  using PackT = Pack<T,N>;
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T****, Parms...> >
+  scalarize (const Kokkos::View<PackT****, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T****, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
+                                       vp.extent_int(2), N * vp.extent_int(3));
+  }
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T***, Parms...> >
+  scalarize (const Kokkos::View<PackT***, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T***, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
+                                       N * vp.extent_int(2));
+  }
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T**, Parms...> >
+  scalarize (const Kokkos::View<PackT**, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T**, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), N * vp.extent_int(1));
+  }
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T*, Parms...> >
+  scalarize (const Kokkos::View<PackT*, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T*, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), N * vp.extent_int(0));
+  }
+};
+
+// Specialization if ScalarT is a const Pack type
+template<typename ScalarT, int N>
+struct ScalarizeHelper<const Pack<ScalarT,N>>
+{
+  using PackT = const Pack<ScalarT,N>;
+  using T = const ScalarT;
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T****, Parms...> >
+  scalarize (const Kokkos::View<PackT****, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T****, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
+                                       vp.extent_int(2), N * vp.extent_int(3));
+  }
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T***, Parms...> >
+  scalarize (const Kokkos::View<PackT***, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T***, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
+                                       N * vp.extent_int(2));
+  }
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T**, Parms...> >
+  scalarize (const Kokkos::View<PackT**, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T**, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), N * vp.extent_int(1));
+  }
+
+  template <typename ...Parms>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static Unmanaged<Kokkos::View<T*, Parms...> >
+  scalarize (const Kokkos::View<PackT*, Parms...>& vp) {
+    return Unmanaged<Kokkos::View<T*, Parms...> >(
+      reinterpret_cast<T*>(vp.data()), N * vp.extent_int(0));
+  }
+};
+
+// Free functions, that call the helper above
+template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
+auto 
+scalarize (const Kokkos::View<ValueT****, Parms...>& v)
+ -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
+{
+  return ScalarizeHelper<ValueT>::scalarize(v);
 }
 
-// 4d const
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<const T****, Parms...> >
-scalarize (const Kokkos::View<const Pack<T, pack_size>****, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<const T****, Parms...> >(
-    reinterpret_cast<const T*>(vp.data()),
-    vp.extent_int(0), vp.extent_int(1), vp.extent_int(2),
-    pack_size * vp.extent_int(3));
+template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
+auto 
+scalarize (const Kokkos::View<ValueT***, Parms...>& v)
+ -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
+{
+  return ScalarizeHelper<ValueT>::scalarize(v);
 }
 
-// 3d
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<T***, Parms...> >
-scalarize (const Kokkos::View<Pack<T, pack_size>***, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<T***, Parms...> >(
-    reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-    pack_size * vp.extent_int(2));
+template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
+auto 
+scalarize (const Kokkos::View<ValueT**, Parms...>& v)
+ -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
+{
+  return ScalarizeHelper<ValueT>::scalarize(v);
 }
 
-// 3d const
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<const T***, Parms...> >
-scalarize (const Kokkos::View<const Pack<T, pack_size>***, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<const T***, Parms...> >(
-    reinterpret_cast<const T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-    pack_size * vp.extent_int(2));
-}
-
-// 2d
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<T**, Parms...> >
-scalarize (const Kokkos::View<Pack<T, pack_size>**, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<T**, Parms...> >(
-    reinterpret_cast<T*>(vp.data()), vp.extent_int(0), pack_size * vp.extent_int(1));
-}
-
-// 2d const
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<const T**, Parms...> >
-scalarize (const Kokkos::View<const Pack<T, pack_size>**, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<const T**, Parms...> >(
-    reinterpret_cast<const T*>(vp.data()), vp.extent_int(0), pack_size * vp.extent_int(1));
-}
-
-// 1d
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<T*, Parms...> >
-scalarize (const Kokkos::View<Pack<T, pack_size>*, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<T*, Parms...> >(
-    reinterpret_cast<T*>(vp.data()), pack_size * vp.extent_int(0));
-}
-
-// 1d const
-template <typename T, typename ...Parms, int pack_size> KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<const T*, Parms...> >
-scalarize (const Kokkos::View<const Pack<T, pack_size>*, Parms...>& vp) {
-  return Unmanaged<Kokkos::View<const T*, Parms...> >(
-    reinterpret_cast<const T*>(vp.data()), pack_size * vp.extent_int(0));
+template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
+auto 
+scalarize (const Kokkos::View<ValueT*, Parms...>& v)
+ -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
+{
+  return ScalarizeHelper<ValueT>::scalarize(v);
 }
 
 // Turn a View of Pack<T,N>s into a View of Pack<T,M>s.
@@ -162,8 +218,13 @@ scalarize (const Kokkos::View<const Pack<T, pack_size>*, Parms...>& vp) {
 // Example: const auto b = repack<4>(a);
 
 // Helper struct
-template<int N, typename OldPackT>
-struct RepackType;
+template<int N, typename OldType>
+struct RepackType {
+  using type =
+    typename std::conditional<std::is_const<OldType>::value,
+                              const Pack<OldType,N>,
+                              Pack<OldType,N>>::type;
+};
 
 template<int N, typename T, int M>
 struct RepackType <N,Pack<T,M>>{
@@ -185,9 +246,14 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0 &&
-                old_pack_size % new_pack_size == 0,
-                "New pack size must divide old pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+
+  // It's overly restrictive to check compatibility between pack sizes.
+  // What really matters is that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(1)*old_pack_size) % new_pack_size == 0);
+
   return Unmanaged<Kokkos::View<NewPackT**, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
     vp.extent_int(0),
@@ -205,13 +271,17 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(old_pack_size > 0 &&
-                new_pack_size % old_pack_size == 0,
-                "Old pack size must divide new pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+  // It's not enough to check that the new pack is a multiple of the old pack.
+  // We actually need to check that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(1)*old_pack_size) % new_pack_size == 0);
+
   return Unmanaged<Kokkos::View<NewPackT**, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
     vp.extent_int(0),
-    (new_pack_size / old_pack_size) * vp.extent_int(1));
+    vp.extent_int(1) / (new_pack_size / old_pack_size) );
 }
 
 // 2d staying the same
@@ -227,10 +297,21 @@ repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
 }
 
 // General access point for repack (calls one of the three above)
-template <int N, typename OldPackT, typename... ViewProps>
+template <int N, typename OldValueT, typename... ViewProps>
 KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<typename RepackType<N,OldPackT>::type**,ViewProps...>>
-repack (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
+Unmanaged<Kokkos::View<typename RepackType<N,OldValueT>::type**,ViewProps...>>
+repack (const Kokkos::View<OldValueT**, ViewProps...>& v) {
+  using OldPackT =
+    typename std::conditional<IsPack<OldValueT>::value,
+                              OldValueT,
+                              typename RepackType<1,OldValueT>::type
+                             >::type;
+
+  // We are not changing the layout of the view, since
+  //  - if OldValueT was a pack, OldPackT=OldValueT
+  //  - if OldValueT was NOT a pack, OldPackT has size 1
+  Kokkos::View<OldPackT**,ViewProps...> vp(
+      reinterpret_cast<OldPackT*>(v.data()),v.extent(0),v.extent(1));
   return repack_impl<typename RepackType<N,OldPackT>::type>(vp);
 }
 
@@ -245,9 +326,14 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0 &&
-                old_pack_size % new_pack_size == 0,
-                "New pack size must divide old pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+
+  // It's overly restrictive to check compatibility between pack sizes.
+  // What really matters is that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(0)*old_pack_size) % new_pack_size == 0);
+
   return Unmanaged<Kokkos::View<NewPackT*, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
     (old_pack_size / new_pack_size) * vp.extent_int(0));
@@ -264,9 +350,14 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
 repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
   constexpr auto new_pack_size = NewPackT::n;
   constexpr auto old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0 &&
-                new_pack_size % old_pack_size == 0,
-                "Old pack size must divide new pack size.");
+  static_assert(new_pack_size > 0, "New pack size must be positive");
+
+  // It's not enough to check that the new pack is a multiple of the old pack.
+  // We actually need to check that the new pack size divides the last extent
+  // of the "scalarized" view.
+  // This MUST be a runtime check.
+  assert ( (vp.extent_int(0)*old_pack_size) % new_pack_size == 0);
+
   EKAT_KERNEL_ASSERT(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
   return Unmanaged<Kokkos::View<NewPackT*, ViewProps...> >(
     reinterpret_cast<NewPackT*>(vp.data()),
@@ -286,10 +377,21 @@ repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
 }
 
 // General access point for repack (calls one of the three above)
-template <int N, typename OldPackT, typename... ViewProps>
+template <int N, typename OldValueT, typename... ViewProps>
 KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<typename RepackType<N,OldPackT>::type*,ViewProps...>>
-repack (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
+Unmanaged<Kokkos::View<typename RepackType<N,OldValueT>::type*,ViewProps...>>
+repack (const Kokkos::View<OldValueT*, ViewProps...>& v) {
+  using OldPackT =
+    typename std::conditional<IsPack<OldValueT>::value,
+                              OldValueT,
+                              typename RepackType<1,OldValueT>::type
+                             >::type;
+
+  // We are not changing the layout of the view, since
+  //  - if OldValueT was a pack, OldPackT=OldValueT
+  //  - if OldValueT was NOT a pack, OldPackT has size 1
+  Kokkos::View<OldPackT*,ViewProps...> vp(
+      reinterpret_cast<OldPackT*>(v.data()),v.extent(0));
   return repack_impl<typename RepackType<N,OldPackT>::type>(vp);
 }
 

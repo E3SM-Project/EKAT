@@ -35,6 +35,35 @@ void compare (const VA& a, const VB& b) {
   for (int i = 0; i < spana; ++i) REQUIRE(rawa[i] == rawb[i]);
 }
 
+template <int N, typename VA, typename VB>
+void compare_s_vs_p (const VA& a, const VB& b) {
+  const auto ma = Kokkos::create_mirror_view(a);
+  const auto mb = Kokkos::create_mirror_view(b);
+  Kokkos::deep_copy(ma, a);
+  Kokkos::deep_copy(mb, b);
+  int lena = a.size();
+  int lenb = b.size();
+  REQUIRE (lena==(lenb*N));
+  auto rawa = ma.data(); auto rawb = mb.data();
+  for (int i=0; i<lenb; ++i) {
+    for (int j=0; j<N; ++j) {
+      REQUIRE(rawa[i*N+j] == rawb[i][j]);
+    }
+  }
+}
+
+template <typename VA, typename VB>
+void compare_p_vs_p (const VA& a, const VB& b) {
+  const auto ma = Kokkos::create_mirror_view(a);
+  const auto mb = Kokkos::create_mirror_view(b);
+  Kokkos::deep_copy(ma, a);
+  Kokkos::deep_copy(mb, b);
+  int spana = ma.span(), spanb = mb.span();
+  auto rawa = ma.data(); auto rawb = mb.data();
+  REQUIRE(spana == spanb);
+  for (int i = 0; i < spana; ++i) REQUIRE( (rawa[i] == rawb[i]).all() );
+}
+
 #define make_get_index(rank, ...)                                         \
 template<typename View, typename IdxView, OnlyRank<View, rank, int> = 0 > \
 KOKKOS_INLINE_FUNCTION                                                    \
@@ -110,9 +139,9 @@ TEST_CASE("scalarize", "ekat::pack") {
   using ekat::Pack;
   using ekat::scalarize;
 
-  typedef Kokkos::View<Pack<double, 16>*> Array1;
-  typedef Kokkos::View<Pack<double, 32>**> Array2;
-  typedef Kokkos::View<Pack<double, 8>***> Array3;
+  typedef Kokkos::View<Pack<double, 16>*>    Array1;
+  typedef Kokkos::View<Pack<double, 32>**>   Array2;
+  typedef Kokkos::View<Pack<double, 8>***>   Array3;
   typedef Kokkos::View<Pack<double, 24>****> Array4;
 
   {
@@ -121,6 +150,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     typedef decltype(a2) VT;
     static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 160);
+    compare_s_vs_p<16>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 
   {
@@ -130,6 +161,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     static_assert(VT::memory_traits::is_unmanaged, "Um");
     REQUIRE(a2.extent_int(0) == 10);
     REQUIRE(a2.extent_int(1) == 128);
+    compare_s_vs_p<32>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 
   {
@@ -140,6 +173,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     REQUIRE(a2.extent_int(0) == 3);
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 32);
+    compare_s_vs_p<8>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 
   {
@@ -151,6 +186,8 @@ TEST_CASE("scalarize", "ekat::pack") {
     REQUIRE(a2.extent_int(1) == 2);
     REQUIRE(a2.extent_int(2) == 4);
     REQUIRE(a2.extent_int(3) == 48);
+    compare_s_vs_p<24>(a2,a1);
+    compare(scalarize(a2),a2);
   }
 }
 
@@ -159,7 +196,10 @@ OnlyRank<Src, 1> repack_test (const Src& a_src, const Dst& a) {
   static_assert(Dst::memory_traits::is_unmanaged, "Um");
   static_assert(Dst::value_type::n == repack_size, "Pack::n");
   REQUIRE(a.extent_int(0) == (Src::value_type::n/repack_size)*a_src.extent_int(0));
-  compare(scalarize(a_src), scalarize(a));
+  compare(ekat::scalarize(a_src), ekat::scalarize(a));
+  auto sa = ekat::scalarize(a);
+  auto rsa = ekat::repack<repack_size>(sa);
+  compare_p_vs_p(rsa,a);
 }
 
 template <int repack_size, typename Src, typename Dst>
@@ -168,7 +208,10 @@ OnlyRank<Src, 2> repack_test (const Src& a_src, const Dst& a) {
   static_assert(Dst::value_type::n == repack_size, "Pack::n");
   REQUIRE(a.extent_int(0) == a_src.extent_int(0));
   REQUIRE(a.extent_int(1) == (Src::value_type::n/repack_size)*a_src.extent_int(1));
-  compare(scalarize(a_src), scalarize(a));
+  compare(ekat::scalarize(a_src), ekat::scalarize(a));
+  auto sa = ekat::scalarize(a);
+  auto rsa = ekat::repack<repack_size>(sa);
+  compare_p_vs_p(rsa,a);
 }
 
 TEST_CASE("repack", "ekat::pack") {

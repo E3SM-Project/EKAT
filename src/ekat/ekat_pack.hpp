@@ -174,45 +174,44 @@ struct Pack {
   typedef typename std::remove_const<ScalarType>::type scalar;
 
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack () {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = ScalarTraits<scalar>::invalid();
-    }
+  constexpr Pack ()
+   : Pack (scalar(0))
+  {
+    // Nothing to do here
   }
 
   // Init all slots to scalar v.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const scalar& v) {
-    vector_simd for (int i = 0; i < n; ++i) d[i] = v;
+  constexpr Pack (const scalar& v) {
+    *this = v;
   }
 
   // Init this Pack from another one.
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION explicit
-  Pack (const Pack<T,n>& v) {
+  constexpr Pack (const Pack<T,n>& v) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const Pack& src) {
+  constexpr Pack (const Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  Pack (const volatile Pack& src) {
+  constexpr Pack (const volatile Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
   }
 
-  // Init this Pack from a scalar, but only where Mask is true; otherwise
-  // init to default value.
+  // Init this Pack from a scalar, but only where Mask is true
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
-  explicit Pack (const Mask<n>& m, const T p) {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p : ScalarTraits<scalar>::invalid();
-    }
+  explicit Pack (const Mask<n>& m, const T p)
+   : Pack (m,p,T(0))
+  {
+    // Nothing to do here
   }
 
   // Init this Pack from two scalars, according to a given mask:
@@ -220,10 +219,7 @@ struct Pack {
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const T v_true, const S v_false) {
-    vector_simd
-    for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? v_true : v_false;
-    }
+    set (m,v_true,v_false);
   }
 
   // Init this Pack from a scalar, but only where Mask is true; otherwise
@@ -231,9 +227,7 @@ struct Pack {
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const Pack<T,n>& p) {
-    vector_simd for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p[i] : ScalarTraits<scalar>::invalid();
-    }
+    set (m,p,Pack());
   }
 
   // Init this Pack from two other packs, according to a given mask:
@@ -241,10 +235,7 @@ struct Pack {
   template <typename T, typename S>
   KOKKOS_FORCEINLINE_FUNCTION
   explicit Pack (const Mask<n>& m, const Pack<T,n>& p_true, const Pack<S,n>& p_false) {
-    vector_simd
-    for (int i = 0; i < n; ++i) {
-      d[i] = m[i] ? p_true[i] : p_false[i];
-    }
+    set (m,p_true,p_false);
   }
 
   KOKKOS_FORCEINLINE_FUNCTION const scalar& operator[] (const int& i) const { return d[i]; }
@@ -301,6 +292,63 @@ struct Pack {
     return *this;
   }
 
+  // Update the current pack y as y = beta*y + alpha*x. The second and third overload behave like the
+  // set method, in that they allow to select the entries where the update happens.
+  // NOTES:
+  //  - by default, the update uses alpha=1 and beta=0, which means it's the equivalent of operator=
+  //    (or set, for the overloads with a mask).
+  //  - we return *this, so we can pipe calls: y.update(x,2,1)[2] performs the update and then
+  //    extracts the 3rd entry
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& update (const Pack<T,n>& x, const CoeffT alpha = 1, const CoeffT beta = 0) {
+    vector_simd
+    for (int i=0; i<n; ++i) {
+      d[i] = beta*d[i] + alpha*x[i];
+    }
+    return *this;
+  }
+
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& update (const Mask<n>& m, const Pack<T,n>& x, const CoeffT alpha = 1, const CoeffT beta = 0) {
+    ekat_masked_loop(m,i)
+      d[i] = beta*d[i] + alpha*x[i];
+    return *this;
+  }
+
+  template<typename T, typename S, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& update (const Mask<n>& m, const Pack<T,n>& x_true, const Pack<S,n>& x_false, const CoeffT alpha = 1, const CoeffT beta = 0) {
+    vector_simd
+    for (int i=0; i<n; ++i) {
+      if (m[i])
+        d[i] = beta*d[i] + alpha*x_true[i];
+      else
+        d[i] = beta*d[i] + alpha*x_false[i];
+    }
+    return *this;
+  }
+
+  // Shortcuts that call the corresponding update version with beta=1
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& add (const Pack<T,n>& x, const CoeffT alpha = 1) {
+    return update(x,alpha,CoeffT(1));
+  }
+
+  template<typename T, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& add (const Mask<n>& m, const Pack<T,n>& x, const CoeffT alpha = 1) {
+    return update(m,x,alpha,CoeffT(1));
+  }
+
+  template<typename T, typename S, typename CoeffT = scalar>
+  KOKKOS_FORCEINLINE_FUNCTION
+  Pack& add (const Mask<n>& m, const Pack<T,n>& x_true, const Pack<S,n>& x_false, const CoeffT alpha = 1) {
+    return update(m,x_true,x_false,alpha,CoeffT(1));
+  }
+
 private:
   scalar d[n];
 };
@@ -312,6 +360,14 @@ template <typename PackType>
 using OnlyPack = typename std::enable_if<PackType::packtag,PackType>::type;
 template <typename PackType, typename ReturnType>
 using OnlyPackReturn = typename std::enable_if<PackType::packtag,ReturnType>::type;
+
+// A more general SFINAE utility, which can be used to select pack or non-pack
+template<typename T>
+struct IsPack : std::false_type {};
+template<typename T, int N>
+struct IsPack<Pack<T,N>> : std::true_type {};
+template<typename T, int N>
+struct IsPack<const Pack<T,N>> : std::true_type {};
 
 // Later, we might support type promotion. For now, caller must explicitly
 // promote a pack's scalar type in mixed-type arithmetic.

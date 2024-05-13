@@ -1,36 +1,84 @@
-# Detect the library that provides MPI
+# Detect the library that provides MPI, by looking for vendor-specific
+# macros inside the mpi.h header file
 set (EKAT_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR})
 macro (GetMpiDistributionName DISTRO_NAME)
-  if (CMAKE_CXX_COMPILER AND MPI_CXX_FOUND)
-    set (LINK_LIB MPI::MPI_CXX)
-    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.cxx)
-  elseif (CMAKE_C_COMPILER AND MPI_C_FOUND)
-    set (LINK_LIB MPI::MPI_C)
-    set (SOURCE_FILE ${EKAT_CMAKE_DIR}/TryCompileMPI.c)
-  else ()
-    string (CONCAT MSG
-      "**************************************************************\n"
-      "  CMake logic to determine the distribution name\n"
-      "  requires a valid C or CXX mpi compiler, with the corresponding\n"
-      "  MPI_<LANG>_FOUND=TRUE set (via previous call to find_package).\n"
-      "  Please call find_package(MPI [REQUIRED] COMPONENTS [C|CXX])\n"
-      "  *before* calling GetMpiDistributionName (in the same scope).\n"
-      "**************************************************************\n")
-    message ("${MSG}")
-    message (FATAL_ERROR "Aborting")
-  endif()
-  try_compile (RESULT
-               SOURCES ${SOURCE_FILE}
-               LINK_LIBRARIES ${LINK_LIB}
-               OUTPUT_VARIABLE OUT_VAR)
 
-  if (NOT RESULT)
-    message (FATAL_ERROR "Could not compile a simple MPI source file.")
+  # If find_package(MPI [...]) was already called, this is a no op.
+  find_package (MPI REQUIRED QUIET)
+
+  # We need the MPI headers folder, but we don't know which language is enabled
+  # by the project which is calling this macro, which means we don't know which
+  # of the MPI_XYZ cmake vars were populated by the above call. So add all the vars
+  # that can possibly be filled by FindMPI in different versions of cmake.
+  # Some will be empty, some will be redundant, but that's ok.
+  set (MPI_H_PATHS)
+  list(APPEND MPI_H_PATHS
+    ${MPI_C_INCLUDE_DIRS}
+    ${MPI_C_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_DIRS}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_Fortran_F77_HEADER_DIR}
+    ${MPI_INCLUDE_PATH}
+    ${MPI_INC_DIR})
+
+  # Sometimes all the above vars are empty, and we only have MPI_<LANG>_COMPILER set.
+  # We can use the mpi compiler with the -show flag to get a list of the flags passed
+  # to the backend compiler, which includes the include paths.
+  if (MPI_CXX_COMPILER OR MPI_C_COMPILER OR MPI_Fortran_COMPILER)
+    if (MPI_CXX_COMPILER)
+      set (COMPILER ${MPI_CXX_COMPILER})
+    elseif (MPI_C_COMPILER)
+      set (COMPILER ${MPI_C_COMPILER})
+    else()
+      set (COMPILER ${MPI_Fortran_COMPILER})
+    endif()
+
+    execute_process (COMMAND ${COMPILER} -show RESULT_VARIABLE SUPPORTS_SHOW OUTPUT_QUIET ERROR_QUIET)
+    execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags RESULT_VARIABLE SUPPORTS_CRAY_PRINT_OPTS OUTPUT_QUIET ERROR_QUIET)
+    if (SUPPORTS_SHOW EQUAL 0)
+      # (mpicxx/mpicc/mpifort)-like MPI compiler
+      execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
+    elseif (SUPPORTS_CRAY_PRINT_OPTS EQUAL 0)
+      # craype-like MPI wrapper compiler
+      # Cray wrappers have different options from mpicxx
+      execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags OUTPUT_VARIABLE TEMP)
+    else()
+      # unknow MPI compiler
+      string (CONCAT msgs
+        " ** Unhandled scenario in ekat's GetMpiDistributionName **"
+        "The MPI compiler does not support any known flag to show compile command\n"
+        " - compiler: ${COMPILER}\n"
+        " - known flags: '-show' (for mpicxx/mpicc/mpifort) '--cray-print-opts=cflags' (for cray's CC/cc/ftn)\n"
+        "We will not be able to check the include paths of the MPI compiler when looking for mpi.h"
+      )
+
+      message (WARNING "${msg}")
+    endif()
+
+    # Remove spaces/commas, and parse each entry. If it starts with -I, it may be
+    # an include path with mpi.h
+    string(REPLACE " " ";" TEMP_LIST "${TEMP}")
+    string(REPLACE "," ";" TEMP_LIST "${TEMP_LIST}")
+    foreach (entry IN_ITEMS ${TEMP_LIST})
+      if (entry MATCHES "^-I")
+        string(REGEX REPLACE "-I([^ ]*)" "\\1"  this_path ${entry})
+        list(APPEND MPI_H_PATHS ${this_path})
+      endif()
+    endforeach()
   endif()
 
-  if (OUT_VAR MATCHES "OpenMPI")
+  # Look for mpi.h
+  find_file (MPI_H mpi.h
+    PATHS ${MPI_H_PATHS})
+
+  # Check what macros are defined in mpi.h
+  include (CheckSymbolExists)
+  check_symbol_exists(OMPI_MAJOR_VERSION ${MPI_H} HAVE_OMPI)
+  check_symbol_exists(MPICH_VERSION ${MPI_H} HAVE_MPICH)
+
+  if (HAVE_OMPI)
     set (${DISTRO_NAME} "openmpi")
-  elseif (OUT_VAR MATCHES "MPICH")
+  elseif (HAVE_MPICH)
     set (${DISTRO_NAME} "mpich")
   else ()
     set (${DISTRO_NAME} "unknown")
