@@ -72,6 +72,7 @@ index (const Array5& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2,
 // which becomes
 //   index_and_shift<1>(y1, kpk, y1k, y1k1);
 //   y2(k2) = y1k + y1k1
+// Note: if k1+Shift is OOB, we use ScalarTraits<T>::invalid()
 template<int Shift, typename Array1, typename IdxPack> KOKKOS_INLINE_FUNCTION
 void
 index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_const_value_type, IdxPack::n>& index, Pack<typename Array1::non_const_value_type, IdxPack::n>& index_shift,
@@ -79,7 +80,14 @@ index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_c
   vector_simd for (int i = 0; i < IdxPack::n; ++i) {
     const auto i0i = i0[i];
     index[i]       = a(i0i);
+#ifdef NDEBUG
+    // Unsafe: access view OOB, and "hope" we won't actually use that value
     index_shift[i] = a(i0i + Shift);
+#else
+    // If i0i+Shift is OOB, use an invalid value
+    const auto invalid = ScalarTraits<typename Array1::non_const_value_type>::invalid();
+    index_shift[i] = (i0i+Shift)>=0 and (i0i+Shift)<static_cast<int>(a.size()) ? a(i0i + Shift) : invalid;
+#endif
   }
 }
 
