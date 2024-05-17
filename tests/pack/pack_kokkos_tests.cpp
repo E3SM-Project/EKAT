@@ -11,7 +11,7 @@
 namespace {
 
 template <typename View, int rank, typename T = void>
-using OnlyRank = typename std::enable_if<View::Rank == rank, T>::type;
+using OnlyRank = typename std::enable_if<View::rank == rank, T>::type;
 
 template <typename View>
 void fill(const View& a)
@@ -91,8 +91,8 @@ void do_index_test(const View& data)
   static constexpr int pack_size = Packn;
   using IdxPack = ekat::Pack<int, pack_size>;
   fill(data);
-  Kokkos::View<IdxPack[View::Rank]> idx("idx");
-  Kokkos::parallel_for(View::Rank, KOKKOS_LAMBDA(const int r) {
+  Kokkos::View<IdxPack[View::rank]> idx("idx");
+  Kokkos::parallel_for(View::rank, KOKKOS_LAMBDA(const int r) {
     for (int i = 0; i < pack_size; ++i) { idx(r)[i] = (r+2)*i; } // 2*i, 3*i, etc as rank increases
   });
 
