@@ -73,7 +73,7 @@ std::string ekat_config_string () {
 #endif
   ss << " #host threads: " <<
 #ifdef KOKKOS_ENABLE_OPENMP
-         Kokkos::OpenMP::concurrency()
+         Kokkos::OpenMP().concurrency()
 #elif defined _OPENMP
          omp_get_max_threads()
 #else

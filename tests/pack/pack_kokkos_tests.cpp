@@ -11,7 +11,7 @@
 namespace {
 
 template <typename View, int rank, typename T = void>
-using OnlyRank = typename std::enable_if<View::Rank == rank, T>::type;
+using OnlyRank = typename std::enable_if<View::rank == rank, T>::type;
 
 template <typename View>
 void fill(const View& a)
@@ -91,8 +91,8 @@ void do_index_test(const View& data)
   static constexpr int pack_size = Packn;
   using IdxPack = ekat::Pack<int, pack_size>;
   fill(data);
-  Kokkos::View<IdxPack[View::Rank]> idx("idx");
-  Kokkos::parallel_for(View::Rank, KOKKOS_LAMBDA(const int r) {
+  Kokkos::View<IdxPack[View::rank]> idx("idx");
+  Kokkos::parallel_for(View::rank, KOKKOS_LAMBDA(const int r) {
     for (int i = 0; i < pack_size; ++i) { idx(r)[i] = (r+2)*i; } // 2*i, 3*i, etc as rank increases
   });
 
@@ -836,9 +836,9 @@ TEST_CASE("host_device_packs_3d", "ekat::pack")
 
 TEST_CASE("index_and_shift", "ekat::pack")
 {
-  static constexpr int pack_size = 8;
-  static constexpr int num_ints = 100;
-  static constexpr int shift = 2;
+  constexpr int pack_size = 8;
+  constexpr int num_ints = 100;
+  constexpr int shift = 2;
   using IntPack = ekat::Pack<int, pack_size>;
 
   Kokkos::View<int*> data("data", num_ints);
@@ -858,8 +858,29 @@ TEST_CASE("index_and_shift", "ekat::pack")
       ++errs;
     }
   }, nerr);
-
   REQUIRE(nerr == 0);
+
+#ifndef NDEBUG
+  // Check index_and_shift sets output to invalid in debug mode
+  auto data_h = Kokkos::create_mirror_view(data);
+  Kokkos::deep_copy(data_h,data);
+
+  auto data_s = ekat::scalarize(data_h);
+
+  const int num_packs = ekat::npack<IntPack>(num_ints);
+  for (int ipack=0; ipack<num_packs; ++ipack) {
+    auto range = ekat::range<IntPack>(ipack*pack_size);
+    IntPack data_i, data_ips;
+    ekat::index_and_shift<shift>(data_h,range,data_i,data_ips);
+    for (int n=0; n<pack_size; ++n) {
+      if ((range[n]+shift)<num_ints) {
+        REQUIRE(data_ips[n]==data_s[ipack*pack_size+n+shift]);
+      } else {
+        REQUIRE (ekat::is_invalid(data_ips[n]));
+      }
+    }
+  }
+#endif
 }
 
 } // namespace
