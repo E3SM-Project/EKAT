@@ -223,7 +223,7 @@ struct ExeSpaceUtils {
   template<HostOrDevice HD = Device>
   static TeamPolicy get_default_team_policy (Int ni, Int /* nk */) {
 #ifdef EKAT_MIMIC_GPU
-    const int max_threads = ExeSpace::concurrency();
+    const int max_threads = ExeSpace().concurrency();
     const int team_size = max_threads < 7 ? max_threads : 7;
     return TeamPolicy(ni, team_size);
 #else
@@ -430,7 +430,7 @@ protected:
   template <typename TeamPolicy>
   TeamUtilsCommonBase(const TeamPolicy& policy)
   {
-    _max_threads = ExeSpace::concurrency();
+    _max_threads = ExeSpace().concurrency();
     if (!is_single_precision<ValueType>::value && OnGpu<ExeSpace>::value) {
       _max_threads /= 2;
     }
