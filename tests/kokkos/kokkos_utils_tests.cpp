@@ -613,7 +613,7 @@ TEST_CASE("multi-slice subviews") {
     Kokkos::deep_copy(diffs, 0);
     Kokkos::parallel_for(
         kt::RangePolicy(0, 1), KOKKOS_LAMBDA(int) {
-          int i1, i2, j1, j2, k1, k2, l1, l2, m1, m2, n1, n2;
+          int i1_, i2_, j1, j2, k1, k2, l1, l2, m1, m2, n1, n2;
 
           auto testv6(v6_0);
           auto testv5(v5_0);
@@ -624,8 +624,8 @@ TEST_CASE("multi-slice subviews") {
 
           int& ndiffs = diffs();
           for (int ens = 0; ens < 6; ens++) {
-            i1 = (ens == 0) ? idx0[0] : 0;
-            i2 = (ens == 0) ? idx1[0] : 7;
+            i1_ = (ens == 0) ? idx0[0] : 0;
+            i2_ = (ens == 0) ? idx1[0] : 7;
             if (ens == 0)
               testv6 = v6_0;
             j1 = (ens == 1) ? idx0[1] : 0;
@@ -653,8 +653,8 @@ TEST_CASE("multi-slice subviews") {
                 for (int l = l1; l < l2; l++)
                   for (int k = k1; k < k2; k++)
                     for (int j = j1; j < j2; j++)
-                      for (int i = i1; i < i2; i++) {
-                        if (v6(i, j, k, l, m, n) != testv6(i - i1, j - j1,
+                      for (int i = i1_; i < i2_; i++) {
+                        if (v6(i, j, k, l, m, n) != testv6(i - i1_, j - j1,
                                                            k - k1, l - l1,
                                                            m - m1, n - n1))
                           ++ndiffs;
