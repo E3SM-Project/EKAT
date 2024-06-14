@@ -77,17 +77,20 @@ template<int Shift, typename Array1, typename IdxPack> KOKKOS_INLINE_FUNCTION
 void
 index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_const_value_type, IdxPack::n>& index, Pack<typename Array1::non_const_value_type, IdxPack::n>& index_shift,
                  typename std::enable_if<Array1::rank == 1>::type* = nullptr) {
+#ifndef NDEBUG
+  // In debug, intialize index_shift to all invalids. This ensures errors will
+  // happen if client tries to use values that fall outside of valid range.
+  const auto invalid = ScalarTraits<typename Array1::non_const_value_type>::invalid();
+  index_shift = Pack<typename Array1::non_const_value_type, IdxPack::n>(invalid);
+#endif
   vector_simd for (int i = 0; i < IdxPack::n; ++i) {
     const auto i0i = i0[i];
-    index[i]       = a(i0i);
-#ifdef NDEBUG
-    // Unsafe: access view OOB, and "hope" we won't actually use that value
-    index_shift[i] = a(i0i + Shift);
-#else
-    // If i0i+Shift is OOB, use an invalid value
-    const auto invalid = ScalarTraits<typename Array1::non_const_value_type>::invalid();
-    index_shift[i] = (i0i+Shift)>=0 and (i0i+Shift)<static_cast<int>(a.size()) ? a(i0i + Shift) : invalid;
+#ifndef NDEBUG
+    // We don't want to trigger kokkos OOB errors if they are on
+    if ((i0i+Shift) < 0 || (i0i+Shift)>=static_cast<int>(a.size())) continue;
 #endif
+    index[i]       = a(i0i);
+    index_shift[i] = a(i0i + Shift);
   }
 }
 
