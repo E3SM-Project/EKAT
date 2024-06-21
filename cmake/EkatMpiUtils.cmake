@@ -35,13 +35,16 @@ macro (GetMpiDistributionName DISTRO_NAME)
 
     execute_process (COMMAND ${COMPILER} -show RESULT_VARIABLE SUPPORTS_SHOW OUTPUT_QUIET ERROR_QUIET)
     execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags RESULT_VARIABLE SUPPORTS_CRAY_PRINT_OPTS OUTPUT_QUIET ERROR_QUIET)
-    if (SUPPORTS_SHOW EQUAL 0)
-      # (mpicxx/mpicc/mpifort)-like MPI compiler
-      execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
-    elseif (SUPPORTS_CRAY_PRINT_OPTS EQUAL 0)
+    if (SUPPORTS_CRAY_PRINT_OPTS EQUAL 0)
+      # If cray print-opts works, we want that to take precedence over -show.
       # craype-like MPI wrapper compiler
       # Cray wrappers have different options from mpicxx
       execute_process (COMMAND ${COMPILER} --cray-print-opts=cflags OUTPUT_VARIABLE TEMP)
+
+    elseif (SUPPORTS_SHOW EQUAL 0)
+      # (mpicxx/mpicc/mpifort)-like MPI compiler
+      execute_process (COMMAND ${COMPILER} -show OUTPUT_VARIABLE TEMP)
+
     else()
       # unknow MPI compiler
       string (CONCAT msgs
