@@ -33,16 +33,19 @@ public:
 
   // Constructor(s) & Destructor
   ParameterList () = default;
+  ParameterList (const ParameterList& src);
   explicit ParameterList (const std::string& name) : m_name(name) {}
   ~ParameterList () = default;
 
-  ParameterList& operator= (const ParameterList&) = default;
+  ParameterList& operator= (const ParameterList&);
 
   // The name of the list
   const std::string& name () const { return m_name; }
 
   // Change the name of the list
   void rename (const std::string& name) { m_name = name; }
+
+  ParameterList soft_copy () const;
 
   // Parameters getters and setters
   template<typename T>
