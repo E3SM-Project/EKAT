@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 
+#include "ekat/ekat_parameter_list.hpp"
 #include "ekat/ekat_pack.hpp"
 #include "ekat/kokkos/ekat_kokkos_meta.hpp"
 #include "ekat/ekat_parameter_list.hpp"
@@ -9,6 +10,22 @@
 #include "ekat_test_config.h"
 
 namespace {
+
+TEST_CASE ("pl_copy") {
+  ekat::ParameterList pl;
+  auto& sub1 = pl.sublist("a");
+  sub1.set("int",0);
+
+  ekat::ParameterList pl2 = sub1;
+  sub1.get<int>("int") = 2;
+  REQUIRE (pl2.get<int>("int")==0);
+  pl2.set<int>("int",3);
+  REQUIRE (sub1.get<int>("int")==2);
+
+  auto pl3 = sub1.soft_copy();
+  sub1.set<int>("int",4);
+  REQUIRE (pl3.get<int>("int")==4);
+}
 
 TEST_CASE("precision", "util") {
   CHECK_FALSE(ekat::is_single_precision<double>::value);
