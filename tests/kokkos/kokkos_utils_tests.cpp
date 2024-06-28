@@ -290,7 +290,7 @@ void test_view_reduction(const int begin=0, const int end=TotalSize)
 
   Kokkos::View<Scalar*> results ("results", 1);
 
-  int team_size = ExeSpace::concurrency();
+  int team_size = ExeSpace().concurrency();
 #ifdef EKAT_ENABLE_GPU
   ExeSpace temp_space;
   #ifdef KOKKOS_ENABLE_SYCL

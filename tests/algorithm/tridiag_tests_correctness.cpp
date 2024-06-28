@@ -433,7 +433,7 @@ void run_test_configs (Fn& fn) {
         fn(tc);
       }
     } else {
-      const int concurrency = Kokkos::DefaultExecutionSpace::concurrency();
+      const int concurrency = Kokkos::DefaultExecutionSpace().concurrency();
       const int n_kokkos_thread = concurrency;
       for (const int n_kokkos_vec : {1, 2}) {
         tc.n_kokkos_thread = n_kokkos_thread;
