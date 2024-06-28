@@ -201,6 +201,7 @@ private:
                         + (comp1 ? 2 : 0)
                         + (comp2 ? 2 : 0);
     assert (size_out<UNITS_MAX_STR_LEN);
+    (void) size_out;
 
     int pos=0;
     if (comp1) {
