@@ -218,47 +218,59 @@ TEST_CASE("repack", "ekat::pack") {
   using ekat::Pack;
   using ekat::repack;
 
-  typedef Kokkos::View<Pack<double, 16>*> Array1;
-  typedef Kokkos::View<Pack<double, 32>**> Array2;
+  using Array1 = Kokkos::View<Pack<double, 16>*>;
+  using Array2 = Kokkos::View<Pack<double, 32>**>;
+  using CArray1 = Kokkos::View<Pack<double, 16>*>;
+  using CArray2 = Kokkos::View<Pack<double, 32>**>;
 
   {
     const Array1 a1("a1", 10);
     fill(a1);
 
-    const auto a2 = repack<8>(a1);
-    repack_test<8>(a1, a2);
+    auto run_test = [](const auto v1) {
+      const auto v2 = repack<8>(v1);
+      repack_test<8>(v1, v2);
 
-    const auto a3 = repack<4>(a2);
-    repack_test<4>(a2, a3);
+      const auto v3 = repack<4>(v2);
+      repack_test<4>(v2, v3);
 
-    const auto a4 = repack<2>(a3);
-    repack_test<2>(a3, a4);
+      const auto v4 = repack<2>(v3);
+      repack_test<2>(v3, v4);
 
-    const auto a5 = repack<2>(a1);
-    repack_test<2>(a1, a5);
+      const auto v5 = repack<2>(v1);
+      repack_test<2>(v1, v5);
 
-    const auto a6 = repack<16>(a1);
-    repack_test<16>(a1, a6);
+      const auto v6 = repack<16>(v1);
+      repack_test<16>(v1, v6);
+    };
+
+    run_test(a1);
+    run_test(CArray1(a1));
   }
 
   {
-    const Array2 a1("a1", 10, 4);
+    const Array2 a1("v1", 10, 4);
     fill(a1);
 
-    const auto a2 = repack<8>(a1);
-    repack_test<8>(a1, a2);
+    auto run_test = [](const auto v1) {
+      const auto v2 = repack<8>(v1);
+      repack_test<8>(v1, v2);
 
-    const auto a3 = repack<4>(a2);
-    repack_test<4>(a2, a3);
+      const auto v3 = repack<4>(v2);
+      repack_test<4>(v2, v3);
 
-    const auto a4 = repack<2>(a3);
-    repack_test<2>(a3, a4);
+      const auto v4 = repack<2>(v3);
+      repack_test<2>(v3, v4);
 
-    const auto a5 = repack<2>(a1);
-    repack_test<2>(a1, a5);
+      const auto v5 = repack<2>(v1);
+      repack_test<2>(v1, v5);
 
-    const auto a6 = repack<32>(a1);
-    repack_test<32>(a1, a6);
+      const auto v6 = repack<32>(v1);
+      repack_test<32>(v1, v6);
+    };
+
+    run_test(a1);
+    run_test(CArray2(a1));
   }
 }
 

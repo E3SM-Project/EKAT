@@ -233,7 +233,7 @@ template<int N, typename OldType>
 struct RepackType {
   using type =
     typename std::conditional<std::is_const<OldType>::value,
-                              const Pack<OldType,N>,
+                              const Pack<std::remove_const_t<OldType>,N>,
                               Pack<OldType,N>>::type;
 };
 
