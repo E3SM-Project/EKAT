@@ -29,4 +29,7 @@ using Real = float;
 // Whether fp model is strict
 #cmakedefine01 EKAT_TEST_STRICT_FP
 
+// Whether or not tests will be run with nvidia's compute-sanitizer tool
+#cmakedefine EKAT_ENABLE_COMPUTE_SANITIZER
+
 #endif

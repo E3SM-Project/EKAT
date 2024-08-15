@@ -122,7 +122,14 @@ static void unittest_workspace()
   using namespace ekat;
 
   unittest_workspace_overprovision();
+  
+#ifndef EKAT_ENABLE_COMPUTE_SANITIZER  
+  // This function executes a kernel over quite a large range, causing 
+  // the compute-sanitizer tool to take a long time (~25min).
+  // Disable in that case, all WSM functions will be run through 
+  // the sanitizer in the other kernels from this unit test.
   unittest_workspace_idx_lock();
+#endif
 
   static constexpr const int n_slots_per_team = 4;
   const int ni = 128;
