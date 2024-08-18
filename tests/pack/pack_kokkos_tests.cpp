@@ -11,7 +11,7 @@
 namespace {
 
 template <typename View, int rank, typename T = void>
-using OnlyRank = typename std::enable_if<View::Rank == rank, T>::type;
+using OnlyRank = typename std::enable_if<View::rank == rank, T>::type;
 
 template <typename View>
 void fill(const View& a)
@@ -91,8 +91,8 @@ void do_index_test(const View& data)
   static constexpr int pack_size = Packn;
   using IdxPack = ekat::Pack<int, pack_size>;
   fill(data);
-  Kokkos::View<IdxPack[View::Rank]> idx("idx");
-  Kokkos::parallel_for(View::Rank, KOKKOS_LAMBDA(const int r) {
+  Kokkos::View<IdxPack[View::rank]> idx("idx");
+  Kokkos::parallel_for(View::rank, KOKKOS_LAMBDA(const int r) {
     for (int i = 0; i < pack_size; ++i) { idx(r)[i] = (r+2)*i; } // 2*i, 3*i, etc as rank increases
   });
 
@@ -218,47 +218,59 @@ TEST_CASE("repack", "ekat::pack") {
   using ekat::Pack;
   using ekat::repack;
 
-  typedef Kokkos::View<Pack<double, 16>*> Array1;
-  typedef Kokkos::View<Pack<double, 32>**> Array2;
+  using Array1 = Kokkos::View<Pack<double, 16>*>;
+  using Array2 = Kokkos::View<Pack<double, 32>**>;
+  using CArray1 = Kokkos::View<Pack<double, 16>*>;
+  using CArray2 = Kokkos::View<Pack<double, 32>**>;
 
   {
     const Array1 a1("a1", 10);
     fill(a1);
 
-    const auto a2 = repack<8>(a1);
-    repack_test<8>(a1, a2);
+    auto run_test = [](const auto v1) {
+      const auto v2 = repack<8>(v1);
+      repack_test<8>(v1, v2);
 
-    const auto a3 = repack<4>(a2);
-    repack_test<4>(a2, a3);
+      const auto v3 = repack<4>(v2);
+      repack_test<4>(v2, v3);
 
-    const auto a4 = repack<2>(a3);
-    repack_test<2>(a3, a4);
+      const auto v4 = repack<2>(v3);
+      repack_test<2>(v3, v4);
 
-    const auto a5 = repack<2>(a1);
-    repack_test<2>(a1, a5);
+      const auto v5 = repack<2>(v1);
+      repack_test<2>(v1, v5);
 
-    const auto a6 = repack<16>(a1);
-    repack_test<16>(a1, a6);
+      const auto v6 = repack<16>(v1);
+      repack_test<16>(v1, v6);
+    };
+
+    run_test(a1);
+    run_test(CArray1(a1));
   }
 
   {
-    const Array2 a1("a1", 10, 4);
+    const Array2 a1("v1", 10, 4);
     fill(a1);
 
-    const auto a2 = repack<8>(a1);
-    repack_test<8>(a1, a2);
+    auto run_test = [](const auto v1) {
+      const auto v2 = repack<8>(v1);
+      repack_test<8>(v1, v2);
 
-    const auto a3 = repack<4>(a2);
-    repack_test<4>(a2, a3);
+      const auto v3 = repack<4>(v2);
+      repack_test<4>(v2, v3);
 
-    const auto a4 = repack<2>(a3);
-    repack_test<2>(a3, a4);
+      const auto v4 = repack<2>(v3);
+      repack_test<2>(v3, v4);
 
-    const auto a5 = repack<2>(a1);
-    repack_test<2>(a1, a5);
+      const auto v5 = repack<2>(v1);
+      repack_test<2>(v1, v5);
 
-    const auto a6 = repack<32>(a1);
-    repack_test<32>(a1, a6);
+      const auto v6 = repack<32>(v1);
+      repack_test<32>(v1, v6);
+    };
+
+    run_test(a1);
+    run_test(CArray2(a1));
   }
 }
 
@@ -836,9 +848,9 @@ TEST_CASE("host_device_packs_3d", "ekat::pack")
 
 TEST_CASE("index_and_shift", "ekat::pack")
 {
-  static constexpr int pack_size = 8;
-  static constexpr int num_ints = 100;
-  static constexpr int shift = 2;
+  constexpr int pack_size = 8;
+  constexpr int num_ints = 100;
+  constexpr int shift = 2;
   using IntPack = ekat::Pack<int, pack_size>;
 
   Kokkos::View<int*> data("data", num_ints);
@@ -858,8 +870,29 @@ TEST_CASE("index_and_shift", "ekat::pack")
       ++errs;
     }
   }, nerr);
-
   REQUIRE(nerr == 0);
+
+#ifndef NDEBUG
+  // Check index_and_shift sets output to invalid in debug mode
+  auto data_h = Kokkos::create_mirror_view(data);
+  Kokkos::deep_copy(data_h,data);
+
+  auto data_s = ekat::scalarize(data_h);
+
+  const int num_packs = ekat::npack<IntPack>(num_ints);
+  for (int ipack=0; ipack<num_packs; ++ipack) {
+    auto range = ekat::range<IntPack>(ipack*pack_size);
+    IntPack data_i, data_ips;
+    ekat::index_and_shift<shift>(data_h,range,data_i,data_ips);
+    for (int n=0; n<pack_size; ++n) {
+      if ((range[n]+shift)<num_ints) {
+        REQUIRE(data_ips[n]==data_s[ipack*pack_size+n+shift]);
+      } else {
+        REQUIRE (ekat::is_invalid(data_ips[n]));
+      }
+    }
+  }
+#endif
 }
 
 } // namespace

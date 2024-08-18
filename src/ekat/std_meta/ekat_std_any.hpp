@@ -32,6 +32,8 @@ class any {
     virtual const std::type_info& type () const = 0;
 
     virtual void print (std::ostream& os) const = 0;
+
+    virtual holder_base* clone () const = 0;
   };
 
   template <typename HeldType>
@@ -59,6 +61,10 @@ class any {
 
     HeldType& value () { return *m_value; }
     std::shared_ptr<HeldType> ptr () const { return m_value; }
+
+    holder_base* clone () const override {
+      return create(*m_value);
+    }
 
     void print (std::ostream& os) const {
       if (static_cast<bool>(m_value)) {
@@ -119,6 +125,12 @@ public:
   template<typename ConcreteType>
   bool isType () const {
     return std::type_index(content().type())==std::type_index(typeid(ConcreteType));
+  }
+
+  any clone() const {
+    any a;
+    a.m_content = std::shared_ptr<holder_base>(m_content->clone());
+    return a;
   }
 
   template<typename ConcreteType>

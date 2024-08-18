@@ -18,7 +18,7 @@ namespace ekat {
 template<typename Array1, typename IdxPack> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<IdxPack, Pack<typename Array1::non_const_value_type, IdxPack::n> >
 index (const Array1& a, const IdxPack& i0,
-       typename std::enable_if<Array1::Rank == 1>::type* = nullptr) {
+       typename std::enable_if<Array1::rank == 1>::type* = nullptr) {
   Pack<typename Array1::non_const_value_type, IdxPack::n> p;
   vector_simd for (int i = 0; i < IdxPack::n; ++i)
     p[i] = a(i0[i]);
@@ -28,7 +28,7 @@ index (const Array1& a, const IdxPack& i0,
 template<typename Array2, typename IdxPack> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<IdxPack, Pack<typename Array2::non_const_value_type, IdxPack::n> >
 index (const Array2& a, const IdxPack& i0, const IdxPack& i1,
-       typename std::enable_if<Array2::Rank == 2>::type* = nullptr) {
+       typename std::enable_if<Array2::rank == 2>::type* = nullptr) {
   Pack<typename Array2::non_const_value_type, IdxPack::n> p;
   vector_simd for (int i = 0; i < IdxPack::n; ++i)
     p[i] = a(i0[i], i1[i]);
@@ -38,7 +38,7 @@ index (const Array2& a, const IdxPack& i0, const IdxPack& i1,
 template<typename Array3, typename IdxPack> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<IdxPack, Pack<typename Array3::non_const_value_type, IdxPack::n> >
 index (const Array3& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2,
-       typename std::enable_if<Array3::Rank == 3>::type* = nullptr) {
+       typename std::enable_if<Array3::rank == 3>::type* = nullptr) {
   Pack<typename Array3::non_const_value_type, IdxPack::n> p;
   vector_simd for (int i = 0; i < IdxPack::n; ++i)
     p[i] = a(i0[i], i1[i], i2[i]);
@@ -48,7 +48,7 @@ index (const Array3& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2,
 template<typename Array4, typename IdxPack> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<IdxPack, Pack<typename Array4::non_const_value_type, IdxPack::n> >
 index (const Array4& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2, const IdxPack& i3,
-       typename std::enable_if<Array4::Rank == 4>::type* = nullptr) {
+       typename std::enable_if<Array4::rank == 4>::type* = nullptr) {
   Pack<typename Array4::non_const_value_type, IdxPack::n> p;
   vector_simd for (int i = 0; i < IdxPack::n; ++i)
     p[i] = a(i0[i], i1[i], i2[i], i3[i]);
@@ -58,7 +58,7 @@ index (const Array4& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2,
 template<typename Array5, typename IdxPack> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<IdxPack, Pack<typename Array5::non_const_value_type, IdxPack::n> >
 index (const Array5& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2, const IdxPack& i3, const IdxPack& i4,
-       typename std::enable_if<Array5::Rank == 5>::type* = nullptr) {
+       typename std::enable_if<Array5::rank == 5>::type* = nullptr) {
   Pack<typename Array5::non_const_value_type, IdxPack::n> p;
   vector_simd for (int i = 0; i < IdxPack::n; ++i)
     p[i] = a(i0[i], i1[i], i2[i], i3[i], i4[i]);
@@ -72,12 +72,23 @@ index (const Array5& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2,
 // which becomes
 //   index_and_shift<1>(y1, kpk, y1k, y1k1);
 //   y2(k2) = y1k + y1k1
+// Note: if k1+Shift is OOB, we use ScalarTraits<T>::invalid()
 template<int Shift, typename Array1, typename IdxPack> KOKKOS_INLINE_FUNCTION
 void
 index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_const_value_type, IdxPack::n>& index, Pack<typename Array1::non_const_value_type, IdxPack::n>& index_shift,
-                 typename std::enable_if<Array1::Rank == 1>::type* = nullptr) {
+                 typename std::enable_if<Array1::rank == 1>::type* = nullptr) {
+#ifndef NDEBUG
+  // In debug, intialize index_shift to all invalids. This ensures errors will
+  // happen if client tries to use values that fall outside of valid range.
+  const auto invalid = ScalarTraits<typename Array1::non_const_value_type>::invalid();
+  index_shift = Pack<typename Array1::non_const_value_type, IdxPack::n>(invalid);
+#endif
   vector_simd for (int i = 0; i < IdxPack::n; ++i) {
     const auto i0i = i0[i];
+#ifndef NDEBUG
+    // We don't want to trigger kokkos OOB errors if they are on
+    if ((i0i+Shift) < 0 || (i0i+Shift)>=static_cast<int>(a.size())) continue;
+#endif
     index[i]       = a(i0i);
     index_shift[i] = a(i0i + Shift);
   }
@@ -222,7 +233,7 @@ template<int N, typename OldType>
 struct RepackType {
   using type =
     typename std::conditional<std::is_const<OldType>::value,
-                              const Pack<OldType,N>,
+                              const Pack<std::remove_const_t<OldType>,N>,
                               Pack<OldType,N>>::type;
 };
 

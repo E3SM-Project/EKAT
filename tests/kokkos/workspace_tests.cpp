@@ -32,7 +32,7 @@ static void unittest_workspace_overprovision()
 
   using WSM = WorkspaceManager<Real, Device>;
 
-  const int max_threads = ExeSpace::concurrency();
+  const int max_threads = ExeSpace().concurrency();
   const int nk = OnGpu<ExeSpace>::value ? 128 : (max_threads < 7 ? max_threads : 7);
 
   const auto temp_policy = ExeSpaceUtils<ExeSpace>::get_team_policy_force_team_size(1, nk);
@@ -386,7 +386,7 @@ static void unittest_workspace()
   #ifdef WS_EXPENSIVE_TEST
       if (true)
   #else
-      if ( ExeSpace::concurrency() == 2 ) // the test below is expensive, we don't want all threads sweeps to run it
+      if ( ExeSpace().concurrency() == 2 ) // the test below is expensive, we don't want all threads sweeps to run it
   #endif
       {
         // Test weird take/release permutations.
