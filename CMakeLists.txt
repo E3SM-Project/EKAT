@@ -71,6 +71,7 @@ set(EKAT_VALGRIND_SUPPRESSION_FILE "" CACHE FILEPATH "Use this valgrind suppress
 # As an example, if you wanted to enable racecheck for ekat or scream, you'd add this to your cmake cmd:
 #   -DEKAT_ENABLE_COMPUTE_SANITIZER=On -DEKAT_COMPUTE_SANITIZER_OPTIONS="--tool racecheck"
 set (EKAT_COMPUTE_SANITIZER_OPTIONS "--tool memcheck" CACHE STRING "options to be passed to compute-sanitizer, does nothing if EKAT_ENABLE_COMPUTE_SANITIZER is OFF")
+set (EKAT_COMPUTE_SANITIZER_TASKSET_PREFIX "" CACHE STRING "Using taskset to pin threads to compute-sanitizer task. Use taskset -c t0-tx.")
 
 if (EKAT_ENABLE_COVERAGE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   message(FATAL_ERROR "Code coverage will only work with Debug build type")
