@@ -197,11 +197,8 @@ private:
     } else if (size2==0) {
       return lhs;
     }
-    const auto size_out = size1 + size2 + (sep=='\0' ? 0 : 1)
-                        + (comp1 ? 2 : 0)
-                        + (comp2 ? 2 : 0);
-    assert (size_out<UNITS_MAX_STR_LEN);
-    (void) size_out;
+
+    assert ( size1 + size2 + (sep == '\0' ? 0 : 1) + (comp1 ? 2 : 0) + (comp2 ? 2 : 0) < UNITS_MAX_STR_LEN );
 
     int pos=0;
     if (comp1) {
