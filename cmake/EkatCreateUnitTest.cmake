@@ -167,6 +167,20 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
   cmake_parse_arguments(ecutfe "${CUT_TEST_OPTIONS}" "${CUT_TEST_1V_ARGS}" "${CUT_TEST_MV_ARGS}" ${ARGN})
   CheckMacroArgs(EkatCreateUnitTestFromExec ecutfe "${CUT_TEST_OPTIONS}" "${CUT_TEST_1V_ARGS}" "${CUT_TEST_MV_ARGS}" ${ARGN})
 
+  # For catch2-based tests only, pass option to remove colours (doesn't play well with CTest log files)
+  get_target_property(LINKED_LIBS ${test_exec} LINK_LIBRARIES)
+  if (ekat_test_main IN_LIST LINKED_LIBS)
+    message ("${test_exec} links against catch")
+    if (NOT ecutfe_EXE_ARGS OR NOT "--use-colour no" IN_LIST ecutfe_EXE_ARGS)
+      message (" flag wasn't present")
+      list(APPEND ecutfe_EXE_ARGS "--use-colour no")
+    else()
+      message (" flag WAS present in ${ecutfe_EXE_ARGS}")
+    endif()
+  else()
+    message ("${test_exec} does NOT link against catch. LINKED_LIBS: ${LINKED_LIBS}")
+  endif()
+
   #--------------------------#
   # Setup MPI/OpenMP configs #
   #--------------------------#
@@ -443,11 +457,6 @@ function(EkatCreateUnitTest test_name test_srcs)
   #------------------------------#
   #      Create Tests Phase      #
   #------------------------------#
-
-  # For catch2-based tests, pass option to remove colours (doesn't play well with CTest log files)
-  if (NOT ecut_EXCLUDE_MAIN_CPP)
-    list (APPEND ecut_EXE_ARGS "--use-colour no")
-  endif()
 
   separate_cut_arguments(ecut "${CUT_TEST_OPTIONS}" "${CUT_TEST_1V_ARGS}" "${CUT_TEST_MV_ARGS}" options_TestPhase)
 
