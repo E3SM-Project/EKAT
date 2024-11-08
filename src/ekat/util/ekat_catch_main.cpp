@@ -16,6 +16,35 @@
 void ekat_initialize_test_session (int argc, char** argv, const bool print_config);
 void ekat_finalize_test_session ();
 
+struct Args {
+  std::vector<char*> catch2;
+  std::vector<char*> custom;
+};
+
+Args split_args (int argc, char** argv)
+{
+  Args args;
+
+  args.catch2.push_back(argv[0]); // the program name
+
+  // Parse the command line arguments
+  bool foundArgsFlag = false;
+  for (int i = 1; i < argc; ++i) { // Start from 1 to skip the program name
+    if (foundArgsFlag) {
+      // If we've already found --args, add the rest to customArgs
+      args.custom.push_back(argv[i]);
+    } else if (std::string(argv[i]) == "--args") {
+        foundArgsFlag = true;
+    } else {
+      args.catch2.push_back(argv[i]);
+    }
+  }
+
+  args.catch2.push_back(nullptr); // Catch2 expects a null-terminated array
+
+  return args;
+}
+
 int main (int argc, char **argv) {
 
 #ifdef EKAT_ENABLE_MPI
@@ -23,88 +52,33 @@ int main (int argc, char **argv) {
   MPI_Init(&argc,&argv);
 #endif
 
-  auto is_int = [] (const std::string& s)->bool {
-    std::istringstream is(s);
-    int d;
-    is >> d;
-    return !is.fail() && is.eof();
-  };
-
-  // Read possible ekat-specific arguments
-  auto const readCommaSeparatedParams = [] (const std::string& cmd_line_arg) {
-    if (cmd_line_arg=="") {
-      return;
-    }
-    auto& ts = ekat::TestSession::get();
-
-    std::stringstream input(cmd_line_arg);
-    std::string option;
-    while (getline(input,option,',')) {
-      // Split option according to key=val
-      auto pos = option.find('=');
-      EKAT_REQUIRE_MSG(pos!=std::string::npos, "Error! Badly formatted command line options.\n");
-      std::string key = option.substr(0,pos);
-      std::string val = option.substr(pos+1);
-      EKAT_REQUIRE_MSG(key!="", "Error! Empty key found in the list of command line options.\n");
-      EKAT_REQUIRE_MSG(val!="", "Error! Empty value for key '" + key + "'.\n");
-      ts.params[key] = val;
-    }
-  };
-  auto const readCommaSeparatedOptions = [] (const std::string& cmd_line_arg) {
-    if (cmd_line_arg=="") {
-      return;
-    }
-    auto& ts = ekat::TestSession::get();
-
-    std::stringstream input(cmd_line_arg);
-    std::string option;
-    while (getline(input,option,',')) {
-      // Split option according to key=val
-      ts.flags[option] = true;
-    }
-  };
+  auto& ts = ekat::TestSession::get();
   Catch::Session catch_session;
   auto cli = catch_session.cli();
-  auto& ts = ekat::TestSession::get();
-  auto& device = ts.params["kokkos-device-id"];
-  device = "-1";
-  cli |= Catch::clara::Opt(readCommaSeparatedParams, "key1=val1[,key2=val2[,...]]")
-             ["--ekat-test-params"]
-             ("list of parameters to forward to the test");
-  cli |= Catch::clara::Opt(device, "device")["--ekat-kokkos-device"]
+  int device = -1;
+  // If we are on a gpu build, we might have a test device id to use
+  cli |= Catch::clara::Opt(device, "device")["--kokkos-device-id"]
              ("The device to be used (for GPU runs only");
-  cli |= Catch::clara::Opt(readCommaSeparatedOptions, "option1[,option2[,...]]")
-             ["--flags"]
-             ("list of flags to forward to the test");
   catch_session.cli(cli);
 
-  EKAT_REQUIRE_MSG(catch_session.applyCommandLine(argc,argv)==0,
+  // Split args into those recognized by catch2, and everything else (which is stored in TestSession)
+  auto args = split_args (argc,argv);
+
+  // Parse test-specific args
+  ts.parse_test_args(args.custom);
+
+  // Parse catch2 args
+  EKAT_REQUIRE_MSG(catch_session.applyCommandLine(args.catch2.size()-1,
+                                                  const_cast<char**>(args.catch2.data()))==0,
                      "Error! Something went wrong while parsing command line.\n");
-
-  EKAT_REQUIRE_MSG (is_int(device), "Error! Please, specify an integer value for the device id.\n");
-
-  // If we are on a gpu build, we might have a test device id to use
-  // so start by creating a copy of argv that we can extend
-  std::vector<char*> args;
-  for (int i=0; i<argc; ++i) {
-    args.push_back(argv[i]);
-  }
 
   ekat::Comm comm(MPI_COMM_WORLD);
   bool am_i_root = comm.am_i_root();
 
-  //int dev_id = ekat::get_test_device(comm.rank());
-  // Create it outside the if, so its c_str pointer survives
-  std::string new_arg;
-  if (std::stoi(device) != -1) {
-    new_arg = "--kokkos-device-id=" + device;
-    args.push_back(const_cast<char*>(new_arg.c_str()));
-  }
-
   // Initialize test session (initializes kokkos and print config settings).
   // Ekat provides a default impl, but the user can choose
   // to not use it, and provide one instead.
-  ekat_initialize_test_session(args.size(),args.data(),am_i_root);
+  ekat_initialize_test_session(argc,argv,am_i_root);
 
 
 #ifndef NDEBUG

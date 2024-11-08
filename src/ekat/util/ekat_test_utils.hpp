@@ -4,6 +4,7 @@
 #include "ekat/ekat_pack.hpp"
 
 #include <map>
+#include <list>
 
 namespace ekat {
 
@@ -13,8 +14,16 @@ struct TestSession {
     return s;
   }
 
-  std::map<std::string,std::string> params;
-  std::map<std::string,bool>        flags;
+  void parse_test_args (const std::vector<char*>& args);
+
+  // These three store test args, but in different ways
+  //  - flags contains args of the form "-s" or "--p" (not followed by another string) as a map string->bool
+  //  - params contains args of the form "-p value"/"--param value"
+  //  - vec_params contains args of the form "-p val1 val2 val3"/"--param val1 val2 val3"
+  // Notice that, as such, params entries will ALWAYS be in vec_params as well (with legnth 1)
+  std::map<std::string,bool>                      flags;
+  std::map<std::string,std::string>               params;
+  std::map<std::string,std::vector<std::string>>  vec_params;
 private:
   TestSession() = default;
 };
