@@ -159,7 +159,7 @@ def run_test(buffer_output,print_omp_affinity,exec_args):
             # variable TEST_LAUNCHER_ON_GPU to either True or False
             if ${TEST_LAUNCHER_ON_GPU}:
                 expect (len(my_ids)==1, "Error! For GPU runs, each rank should use only one device.")
-                exec_args.append(" --ekat-kokkos-device {}".format(ids[0]))
+                exec_args.append(" --kokkos-device-id={}".format(ids[0]))
             else:
                 # Start placing on the correct cpu set
                 cmd += " taskset -c " + ",".join(my_ids)
