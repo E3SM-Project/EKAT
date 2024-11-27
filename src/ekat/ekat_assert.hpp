@@ -5,6 +5,7 @@
 #include <exception>
 #include <assert.h>
 #include <stdexcept>  // For std::logic_error
+#include <type_traits>
 
 #include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE
 
@@ -29,15 +30,20 @@
 // NOTE: the ... at the end is to allow using EKAT_REQUIRE with
 //       a variadic number of args, adding placeholders at the end
 //       to ensure that the call to IMPL_THROW matches the signature
-#define IMPL_THROW(condition, msg, exception_type, ...)  \
-  do {                                                  \
-    if ( ! (condition) ) {                              \
-      std::stringstream _ss_;                           \
-      _ss_ << "\n FAIL:\n" << #condition  << "\n";      \
-      _ss_ << EKAT_BACKTRACE;                           \
-      _ss_ << "\n" << msg;                              \
-      throw exception_type(_ss_.str());                 \
-    }                                                   \
+#define IMPL_THROW(condition, msg, exception_type, ...)                           \
+  do {                                                                            \
+    if ( ! (condition) ) {                                                        \
+      std::stringstream _ss_;                                                     \
+      _ss_ << "\n FAIL:\n" << #condition  << "\n";                                \
+      _ss_ << EKAT_BACKTRACE;                                                     \
+      _ss_ << "\n" << msg;                                                        \
+      if constexpr (std::is_constructible<exception_type, std::string>::value) {  \
+        throw exception_type(_ss_.str());                                         \
+      } else {                                                                    \
+        std::cerr << _ss_;                                                        \
+        throw exception_type();                                                   \
+      }                                                                           \
+    }                                                                             \
   } while(0)
 
 // SYCL cannot printf like the other backends quite yet
