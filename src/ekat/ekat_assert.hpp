@@ -2,6 +2,7 @@
 #define EKAT_ASSERT_HPP
 
 #include <sstream>
+#include <iostream>
 #include <exception>
 #include <assert.h>
 #include <stdexcept>  // For std::logic_error
@@ -26,24 +27,38 @@
 #define EKAT_BACKTRACE __FILE__ << ":" << __LINE__
 #endif
 
+// To be used in the following macro. We need template so that "if constepxr" can
+// effectively PREVENT the compilation of the wrong branch. Without template indirection,
+// the compiler will attempt to instantiate BOTH branches
+template<typename exception_type>
+void throw_exception(const std::string& msg)
+{
+  if constexpr (std::is_constructible<exception_type, const std::string&>::value) {
+    throw exception_type(msg);
+  } else if constexpr (std::is_default_constructible<exception_type>::value) {
+    std::cerr << msg;
+    throw exception_type();
+  } else {
+    std::cerr << msg << "\n";
+    std::cerr << "Cannot create exception of type\n";
+    std::cerr << "       " << typeid(exception_type).name() << "\n";
+    std::cerr << "The program will terminate\n";
+  }
+}
+
 // Internal do not call directly.
 // NOTE: the ... at the end is to allow using EKAT_REQUIRE with
 //       a variadic number of args, adding placeholders at the end
 //       to ensure that the call to IMPL_THROW matches the signature
-#define IMPL_THROW(condition, msg, exception_type, ...)                           \
-  do {                                                                            \
-    if ( ! (condition) ) {                                                        \
-      std::stringstream _ss_;                                                     \
-      _ss_ << "\n FAIL:\n" << #condition  << "\n";                                \
-      _ss_ << EKAT_BACKTRACE;                                                     \
-      _ss_ << "\n" << msg;                                                        \
-      if constexpr (std::is_constructible<exception_type, std::string>::value) {  \
-        throw exception_type(_ss_.str());                                         \
-      } else {                                                                    \
-        std::cerr << _ss_;                                                        \
-        throw exception_type();                                                   \
-      }                                                                           \
-    }                                                                             \
+#define IMPL_THROW(condition, msg, exception_type, ...)                                 \
+  do {                                                                                  \
+    if ( ! (condition) ) {                                                              \
+      std::stringstream _ss_;                                                           \
+      _ss_ << "\n FAIL:\n" << #condition  << "\n";                                      \
+      _ss_ << EKAT_BACKTRACE;                                                           \
+      _ss_ << "\n" << msg;                                                              \
+      throw_exception<exception_type>(_ss_.str());                                      \
+    }                                                                                   \
   } while(0)
 
 // SYCL cannot printf like the other backends quite yet
