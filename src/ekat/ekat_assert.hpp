@@ -2,9 +2,11 @@
 #define EKAT_ASSERT_HPP
 
 #include <sstream>
+#include <iostream>
 #include <exception>
 #include <assert.h>
 #include <stdexcept>  // For std::logic_error
+#include <type_traits>
 
 #include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE
 
@@ -25,16 +27,38 @@
 #define EKAT_BACKTRACE __FILE__ << ":" << __LINE__
 #endif
 
-// Internal do not call directly
-#define IMPL_THROW(condition, msg, exception_type)    \
-  do {                                                \
-    if ( ! (condition) ) {                            \
-      std::stringstream _ss_;                         \
-      _ss_ << "\n FAIL:\n" << #condition  << "\n";   \
-      _ss_ << EKAT_BACKTRACE;                         \
-      _ss_ << "\n" << msg;                            \
-      throw exception_type(_ss_.str());               \
-    }                                                 \
+// To be used in the following macro. We need template so that "if constepxr" can
+// effectively PREVENT the compilation of the wrong branch. Without template indirection,
+// the compiler will attempt to instantiate BOTH branches
+template<typename exception_type>
+void throw_exception(const std::string& msg)
+{
+  if constexpr (std::is_constructible<exception_type, const std::string&>::value) {
+    throw exception_type(msg);
+  } else if constexpr (std::is_default_constructible<exception_type>::value) {
+    std::cerr << msg;
+    throw exception_type();
+  } else {
+    std::cerr << msg << "\n";
+    std::cerr << "Cannot create exception of type\n";
+    std::cerr << "       " << typeid(exception_type).name() << "\n";
+    std::cerr << "The program will terminate\n";
+  }
+}
+
+// Internal do not call directly.
+// NOTE: the ... at the end is to allow using EKAT_REQUIRE with
+//       a variadic number of args, adding placeholders at the end
+//       to ensure that the call to IMPL_THROW matches the signature
+#define IMPL_THROW(condition, msg, exception_type, ...)                                 \
+  do {                                                                                  \
+    if ( ! (condition) ) {                                                              \
+      std::stringstream _ss_;                                                           \
+      _ss_ << "\n FAIL:\n" << #condition  << "\n";                                      \
+      _ss_ << EKAT_BACKTRACE;                                                           \
+      _ss_ << "\n" << msg;                                                              \
+      throw_exception<exception_type>(_ss_.str());                                      \
+    }                                                                                   \
   } while(0)
 
 // SYCL cannot printf like the other backends quite yet
@@ -58,19 +82,29 @@
 #endif
 
 #ifndef NDEBUG
-#define EKAT_ASSERT(condition)                      IMPL_THROW(condition, "",  std::logic_error)
 #define EKAT_ASSERT_MSG(condition, msg)             IMPL_THROW(condition, msg, std::logic_error)
-#define EKAT_KERNEL_ASSERT(condition)               IMPL_KERNEL_THROW(condition, "")
 #define EKAT_KERNEL_ASSERT_MSG(condition, msg)      IMPL_KERNEL_THROW(condition, msg)
 #else
-#define EKAT_ASSERT(condition)  ((void) (0))
 #define EKAT_ASSERT_MSG(condition, msg)  ((void) (0))
-#define EKAT_KERNEL_ASSERT(condition) ((void) (0))
 #define EKAT_KERNEL_ASSERT_MSG(condition, msg) ((void) (0))
 #endif
 
-#define EKAT_REQUIRE(condition)                       IMPL_THROW(condition, "", std::logic_error)
-#define EKAT_REQUIRE_MSG(condition, msg)              IMPL_THROW(condition, msg, std::logic_error)
+#define EKAT_ASSERT(condition)          EKAT_ASSERT_MSG(condition, "")
+#define EKAT_KERNEL_ASSERT(condition)   EKAT_KERNEL_ASSERT_MSG(condition, "")
+
+#define EKAT_COUNT_ARGS_IMPL(_1, _2, _3, N, ...) N
+#define EKAT_COUNT_ARGS(...)  EKAT_COUNT_ARGS_IMPL(__VA_ARGS__, 3, 2, 1, 0)
+
+// NOTE: in the else, if __VA_ARGS__ has length 2, std::logic_error will NOT be used
+#define EKAT_REQUIRE(condition,...) \
+  do { \
+    if (EKAT_COUNT_ARGS(__VA_ARGS__)==0) { \
+      IMPL_THROW(condition, "", std::logic_error); \
+    } else { \
+      IMPL_THROW(condition, __VA_ARGS__, std::logic_error); \
+    } \
+  } while(0)
+#define EKAT_REQUIRE_MSG(condition,msg) EKAT_REQUIRE (condition,msg)
 
 #define EKAT_KERNEL_REQUIRE(condition)                IMPL_KERNEL_THROW(condition, "")
 #define EKAT_KERNEL_REQUIRE_MSG(condition, msg)       IMPL_KERNEL_THROW(condition, msg)

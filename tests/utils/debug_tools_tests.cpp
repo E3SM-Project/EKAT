@@ -178,6 +178,14 @@ TEST_CASE ("fpes","") {
   }
 }
 
+class MyException : public std::exception {
+public:
+  MyException(const std::string& s) : msg(s) {}
+  const char* what() const noexcept override { return msg.c_str(); }
+
+  std::string msg;
+};
+
 TEST_CASE ("assert-macros") {
   printf ("*) testing assert macros...\n");
   auto test_req_msg = [](const bool test, const std::string& msg) {
@@ -186,11 +194,16 @@ TEST_CASE ("assert-macros") {
   auto test_err_msg = [](const std::string& msg) {
     EKAT_ERROR_MSG(msg);
   };
+  auto test_with_etype = [](const bool test, const std::string& msg) {
+    EKAT_REQUIRE (test,msg,MyException);
+  };
   REQUIRE_THROWS (test_req_msg(1>3,"Uh? I wonder what Sharkowsky would have to say about this...\n"));
 
   REQUIRE_NOTHROW (test_req_msg(3>1,"Uh? I wonder what Sharkowsky would have to say about this...\n"));
 
   REQUIRE_THROWS (test_err_msg("Hello world!\n"));
+
+  REQUIRE_THROWS_AS (test_with_etype(1>3,"What?"),MyException);
 }
 
 } // anonymous namespace
