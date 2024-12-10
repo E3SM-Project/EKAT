@@ -285,6 +285,7 @@ std::string write_param (const T& t) {
   s << std::boolalpha << t;
   return s.str();
 }
+
 template<>
 std::string write_param<double> (const double& t) {
   std::stringstream ss;
@@ -303,47 +304,88 @@ std::string write_param<char> (const char& t) {
   return (t ? "true" : "false");
 }
 
-void write_parameter_list (const ParameterList& params, std::ostream& out, int indent) {
-  std::string tab(indent,' ');
-
-  // Helper lambda, to try all possible value types
+void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
+  // Helper lambda, to try all possible value types, return whether we found the type
   auto try_values = [&](const std::string& pname) -> bool {
-    bool found = false;
-    TypeListFor<values_t>([&](auto t) ->bool {
-      using vtype = decltype(t);
-      if (params.isType<vtype>(pname)) {
-        auto v = params.get<vtype>(pname);
-        out << write_param(v) << '\n';
-        found = true;
-      }
-      return found;
-    });
-    return found;
+    if (params.isType<int>(pname)) {
+      auto v = params.get<int>(pname);
+      out << YAML::Key << pname << YAML::Value << v;
+    } else if (params.isType<bool>(pname)) {
+      auto v = params.get<bool>(pname);
+      out << YAML::Key << pname << YAML::Value << v;
+    } else if (params.isType<double>(pname)) {
+      auto v = params.get<double>(pname);
+      out << YAML::Key << pname << YAML::Value << v;
+    } else if (params.isType<std::string>(pname)) {
+      auto v = params.get<std::string>(pname);
+      out << YAML::Key << pname << YAML::Value;
+      if (v.find('\n') != std::string::npos)
+        out << YAML::Literal; // Use Literal for multiline
+      out << v;
+    } else {
+      // No match
+      return false;
+    }
+    return true;
   };
 
-  // Helper lambda, to try all possible sequence types
+  // Helper lambda, to try all possible sequence types, return whether we found the type
   auto try_sequences = [&](const std::string& pname) {
-    bool found = false;
-    TypeListFor<seq_values_t>([&](auto t) ->bool {
-      using vtype = std::vector<decltype(t)>;
-      if (params.isType<vtype>(pname)) {
-        auto v = params.get<vtype>(pname);
-        std::stringstream s;
-        for (const auto& it : v)
-          s << write_param(it) << ", ";
-        // Skip trailing ", " in s
-        out << "[" << s.str().substr(0,s.str().size()-2) << "]\n";
-        found = true;
+    std::vector<int> ivec;
+    std::vector<char> cvec;
+    std::vector<double> dvec;
+    std::vector<std::string> svec;
+    if (params.isType<std::vector<int>>(pname)) {
+      ivec = params.get<std::vector<int>>(pname);
+    } else if (params.isType<std::vector<char>>(pname)) {
+      cvec = params.get<std::vector<char>>(pname);
+    } else if (params.isType<std::vector<double>>(pname)) {
+      dvec = params.get<std::vector<double>>(pname);
+    } else if (params.isType<std::vector<std::string>>(pname)) {
+      svec = params.get<std::vector<std::string>>(pname);
+    } else {
+      // No match
+      return false;
+    }
+
+    // Note: all but one of the vectors above will be empty, so write will do nothing for all but one
+    auto write = [&](auto vec) {
+      for (auto e : vec) {
+        out << write_param(e);
       }
-      return found;
-    });
-    return found;
+    };
+
+    auto len = [&](auto vec) {
+      int ret = 0;
+      for (auto e : vec) {
+        ret += write_param(e).size();
+      }
+      ret += 2*(vec.size()-1); // due to ", " between items
+      return ret;
+    };
+
+    int seq_len = len(ivec)+len(cvec)+len(dvec)+len(svec);
+
+    out << YAML::Key << pname << YAML::Value;
+
+    // Format sequences inline only if reasonably short
+    if (seq_len<100)
+      out << YAML::Flow;
+    else
+      out << YAML::Block;
+    
+    out << YAML::BeginSeq;
+    write(ivec);
+    write(cvec);
+    write(dvec);
+    write(svec);
+    out << YAML::EndSeq;
+    return true;
   };
 
   // Write parameters
   for (auto it=params.params_names_cbegin(); it!=params.params_names_cend(); ++it) {
     const auto& pname = *it;
-    out << tab << pname << ": ";
     EKAT_REQUIRE_MSG (try_values(pname) or try_sequences(pname),
           "[write_yaml_file] Error! The writer function can only write the following types:\n\n"
           "  bool, int, double, std::string, \n"
@@ -353,26 +395,34 @@ void write_parameter_list (const ParameterList& params, std::ostream& out, int i
 
   // Write sublists
   for (auto it=params.sublists_names_cbegin(); it!=params.sublists_names_cend(); ++it) {
-    out << tab << *it << ":\n";
-    write_parameter_list(params.sublist(*it),out,indent+2);
+    out << YAML::Key << *it << YAML::Value << YAML::BeginMap;
+    write_parameter_list(params.sublist(*it),out);
+    out << YAML::EndMap;
   }
 }
 
 void write_yaml_file (const std::string& fname, const ParameterList& params) {
-  // YAML::Emitter emitter;
+  YAML::Emitter out;
 
-  // YAML::Node root = parameter_list_to_yaml_node(params);
+  // Start the YAML document
+  out << YAML::BeginMap;
+
+  // Write the parameter list
+  write_parameter_list (params,out);
+
+  // End the document
+  out << YAML::EndMap;
+
+  // Write to file
   std::ofstream ofile(fname);
+  EKAT_REQUIRE_MSG (ofile.is_open(),
+      "Error! Could not open file for writing.\n"
+      " - file name: " + fname + "\n");
 
-  // Header
   ofile << "%YAML 1.1\n"
-        << "---\n";
-
-  // Body
-  write_parameter_list (params,ofile,0);
-
-  // Footer
-  ofile << "...\n";
+        << "---\n"
+        << out.c_str() << "\n"
+        << "...\n";
 }
 
 } // namespace ekat
