@@ -26,17 +26,18 @@ struct Solver {
 
   static std::string convert (Enum e) {
     switch (e) {
-    case thomas_team_scalar: return "thomas_team_scalar";
-    case thomas_team_pack: return "thomas_team_pack";
-    case thomas_scalar: return "thomas_scalar";
-    case thomas_pack: return "thomas_pack";
-    case cr_scalar: return "cr_scalar";
-    case bfb: return "bfb";
+      case thomas_team_scalar: return "thomas_team_scalar";
+      case thomas_team_pack: return "thomas_team_pack";
+      case thomas_scalar: return "thomas_scalar";
+      case thomas_pack: return "thomas_pack";
+      case cr_scalar: return "cr_scalar";
+      case bfb: return "bfb";
 #ifdef EKAT_ENABLE_FORTRAN
-    case bfbf90: return "bfbf90";
+      case bfbf90: return "bfbf90";
 #endif
-    default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
+      default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
     }
+    return "";
   }
 
   static Enum convert (const std::string& s) {
