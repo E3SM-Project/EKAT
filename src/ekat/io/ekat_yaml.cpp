@@ -35,11 +35,14 @@ bool is_type<bool> (const std::string& s) {
 }
 template<>
 bool is_type<int> (const std::string& s) {
-  std::istringstream is(s);
-  int d;
-  is >> d;
-  return !is.fail() && is.eof();
+  if (s.size()==0) return false;
+  if (s[0]=='-') {
+    return is_type<int>(s.substr(1));
+  }
+
+  return s.find_first_not_of("0123456789")==std::string::npos;
 }
+
 template<>
 bool is_type<double> (const std::string& s) {
   std::istringstream is(s);
@@ -200,18 +203,19 @@ void parse_node<YAML::NodeType::Sequence> (
     TRY_TYPE_ON_NODE(std::string, std::string, node);
   } else {
     // YAY, the user is telling us how to interpret the values
-    if (tag=="!bools") {
+    if (tag=="!bools" or tag=="!!bools" or tag=="tag:yaml.org,2002:bools") {
       TRY_TYPE_ON_NODE(bool,char,node);
-    } else if (tag=="!ints") {
+    } else if (tag=="!ints" or tag=="!!ints" or tag=="tag:yaml.org,2002:ints") {
       TRY_TYPE_ON_NODE(int,int,node);
-    } else if (tag=="!floats") {
+    } else if (tag=="!floats" or tag=="!!floats" or tag=="tag:yaml.org,2002:floats") {
       TRY_TYPE_ON_NODE(double,double,node);
-    } else if (tag=="!strings") {
+    } else if (tag=="!strings" or tag=="!!strings" or tag=="tag:yaml.org,2002:strings") {
       TRY_TYPE_ON_NODE(std::string,std::string,node);
     } else {
-      EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag.\n"
+      EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag for sequence type.\n"
           "  tag: " + tag + "\n"
-          "  supported tags: !ints, !bools, !floats, !strings");
+          "  supported tags: !TYPE, !!TYPE, and tag:yaml.org,2002:TYPE\n"
+          "where TYPE can be 'int', 'bool', 'float', 'string'");
     }
     EKAT_ERROR_MSG ("Error! Tag '" + tag + "' was not compatible with the stored values.\n");
   }
@@ -287,17 +291,22 @@ std::string write_param (const T& t) {
 }
 
 template<>
-std::string write_param<double> (const double& t) {
+std::string write_param<double> (const double& d) {
   std::stringstream ss;
-  ss << std::showpoint << std::setprecision(14) << t;
-  std::string s = ss.str();
-  auto dot = s.find('.');
-  auto last_nz = s.find_last_not_of('0');
-  if (last_nz==dot) {
-    return s.substr(0,dot+2);
-  } else {
-    return s.substr(0,last_nz+1);
+  ss << std::showpoint << std::setprecision(14) << d;
+  if (d==static_cast<int>(d) and ss.str().find('.')==std::string::npos) {
+    ss << ".0";
   }
+
+  // Clip trailing 0's, but ensure that there is AT LEAST one decimal digit
+  auto s = ss.str();
+  auto start = s.find('.');
+  auto last_nnz = s.substr(start+2).find_last_not_of('0');
+  if (last_nnz==std::string::npos) {
+    // No nonzeros after the 1st decimal digit. Truncate
+    return s.substr(0,start+2);
+  }
+  return s.substr(0,start+2+last_nnz+1);
 }
 template<>
 std::string write_param<char> (const char& t) {
@@ -315,7 +324,7 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
       out << YAML::Key << pname << YAML::Value << v;
     } else if (params.isType<double>(pname)) {
       auto v = params.get<double>(pname);
-      out << YAML::Key << pname << YAML::Value << v;
+      out << YAML::Key << pname << YAML::Value << write_param(v);
     } else if (params.isType<std::string>(pname)) {
       auto v = params.get<std::string>(pname);
       out << YAML::Key << pname << YAML::Value;
@@ -335,14 +344,19 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
     std::vector<char> cvec;
     std::vector<double> dvec;
     std::vector<std::string> svec;
+    std::string tag;
     if (params.isType<std::vector<int>>(pname)) {
       ivec = params.get<std::vector<int>>(pname);
+      tag = "ints";
     } else if (params.isType<std::vector<char>>(pname)) {
       cvec = params.get<std::vector<char>>(pname);
+      tag = "bools";
     } else if (params.isType<std::vector<double>>(pname)) {
       dvec = params.get<std::vector<double>>(pname);
+      tag = "floats";
     } else if (params.isType<std::vector<std::string>>(pname)) {
       svec = params.get<std::vector<std::string>>(pname);
+      tag = "strings";
     } else {
       // No match
       return false;
@@ -366,7 +380,7 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
 
     int seq_len = len(ivec)+len(cvec)+len(dvec)+len(svec);
 
-    out << YAML::Key << pname << YAML::Value;
+    out << YAML::Key << pname << YAML::Value << YAML::_Tag("",tag,YAML::_Tag::Type::NamedHandle);
 
     // Format sequences inline only if reasonably short
     if (seq_len<100)
@@ -419,7 +433,7 @@ void write_yaml_file (const std::string& fname, const ParameterList& params) {
       "Error! Could not open file for writing.\n"
       " - file name: " + fname + "\n");
 
-  ofile << "%YAML 1.1\n"
+  ofile << "%YAML 1.2\n"
         << "---\n"
         << out.c_str() << "\n"
         << "...\n";
