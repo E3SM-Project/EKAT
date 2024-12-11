@@ -7,6 +7,49 @@
 
 namespace {
 
+template<typename T>
+void check_same_param (const ekat::ParameterList& p1,const ekat::ParameterList& p2, const std::string& name)
+{
+  if ( p1.isType<T>(name) ) {
+    if (not p2.isType<T>(name)) {
+      std::cout << "p2.isType<int>(" << name << "): " << p2.isType<int>(name) << "\n";
+      std::cout << "p2.isType<bool>(" << name << "): " << p2.isType<bool>(name) << "\n";
+      std::cout << "p2.isType<double>(" << name << "): " << p2.isType<double>(name) << "\n";
+      std::cout << "p2.isType<std::string>(" << name << "): " << p2.isType<std::string>(name) << "\n";
+      std::cout << "p2.isType<std::vector<int>>(" << name << "): " << p2.isType<std::vector<int>>(name) << "\n";
+      std::cout << "p2.isType<std::vector<char>>(" << name << "): " << p2.isType<std::vector<char>>(name) << "\n";
+      std::cout << "p2.isType<std::vector<double>>(" << name << "): " << p2.isType<std::vector<double>>(name) << "\n";
+      std::cout << "p2.isType<std::vector<std::string>>(" << name << "): " << p2.isType<std::vector<std::string>>(name) << "\n";
+    }
+    REQUIRE (p2.isType<T>(name));
+    REQUIRE (p1.get<T>(name)==p2.get<T>(name));
+  }
+}
+
+void check_superset (const ekat::ParameterList& super, const ekat::ParameterList& sub)
+{
+  for (auto it=super.sublists_names_cbegin(); it!=super.sublists_names_cend(); ++it) {
+    REQUIRE (sub.isSublist(*it));
+
+    check_superset(super.sublist(*it),sub.sublist(*it));
+  }
+
+  for (auto it=super.params_names_cbegin(); it!=super.params_names_cend(); ++it) {
+    REQUIRE (sub.isParameter(*it));
+
+    // We can't check EVERY possible type, but we can check the ones we use in this test
+    // Check that, if param has type T in super, it also has type T in sub, and values match
+    check_same_param<int>(super,sub,*it);
+    check_same_param<bool>(super,sub,*it);
+    check_same_param<double>(super,sub,*it);
+    check_same_param<std::string>(super,sub,*it);
+    check_same_param<std::vector<int>>(super,sub,*it);
+    check_same_param<std::vector<bool>>(super,sub,*it);
+    check_same_param<std::vector<double>>(super,sub,*it);
+    check_same_param<std::vector<std::string>>(super,sub,*it);
+  }
+}
+
 TEST_CASE ("yaml_parser","") {
   using namespace ekat;
 
@@ -78,20 +121,9 @@ TEST_CASE ("write_yaml") {
   write_yaml_file (ofile,params1);
   parse_yaml_file(ofile,params2);
 
-  // The two files might not match, since the order of yaml entries
-  // might not be preserved. So print param lists, split by line,
-  // and check that they have the same lines.
-  std::stringstream ss1,ss2;
-  params1.print(ss1);
-  params2.print(ss2);
-
-  auto lines1 = split(ss1.str(),'\n');
-  auto lines2 = split(ss2.str(),'\n');
-
-  REQUIRE (lines1.size()==lines2.size());
-  for (auto line : lines1) {
-    REQUIRE (contains(lines2,line));
-  }
+  // Ensure params in params1 are in params2 and viceversa
+  check_superset (params1,params2);
+  check_superset (params2,params1);
 }
 
 } // anonymous namespace
