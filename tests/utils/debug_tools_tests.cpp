@@ -204,6 +204,11 @@ TEST_CASE ("assert-macros") {
   REQUIRE_THROWS (test_err_msg("Hello world!\n"));
 
   REQUIRE_THROWS_AS (test_with_etype(1>3,"What?"),MyException);
+
+  // Make sure these compile
+  EKAT_REQUIRE (2>0);
+  EKAT_REQUIRE (2>0, "some string");
+  EKAT_REQUIRE (2>0, "some string", std::logic_error);
 }
 
 } // anonymous namespace

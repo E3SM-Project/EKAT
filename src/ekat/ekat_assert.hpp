@@ -5,7 +5,7 @@
 #include <iostream>
 #include <exception>
 #include <assert.h>
-#include <stdexcept>  // For std::logic_error
+#include <stdexcept>  // For std::runtime_error
 #include <type_traits>
 
 #include "ekat/ekat_config.h"  // for EKAT_CONSTEXPR_ASSERT and EKAT_ENABLE_FPE
@@ -50,15 +50,15 @@ void throw_exception(const std::string& msg)
 // NOTE: the ... at the end is to allow using EKAT_REQUIRE with
 //       a variadic number of args, adding placeholders at the end
 //       to ensure that the call to IMPL_THROW matches the signature
-#define IMPL_THROW(condition, msg, exception_type, ...)                                 \
-  do {                                                                                  \
-    if ( ! (condition) ) {                                                              \
-      std::stringstream _ss_;                                                           \
-      _ss_ << "\n FAIL:\n" << #condition  << "\n";                                      \
-      _ss_ << EKAT_BACKTRACE;                                                           \
-      _ss_ << "\n" << msg;                                                              \
-      throw_exception<exception_type>(_ss_.str());                                      \
-    }                                                                                   \
+#define IMPL_THROW(condition, msg, exception_type)  \
+  do {                                                  \
+    if ( ! (condition) ) {                              \
+      std::stringstream _ss_;                           \
+      _ss_ << "\n FAIL:\n" << #condition  << "\n";      \
+      _ss_ << EKAT_BACKTRACE;                           \
+      _ss_ << "\n" << msg;                              \
+      throw_exception<exception_type>(_ss_.str());      \
+    }                                                   \
   } while(0)
 
 // SYCL cannot printf like the other backends quite yet
@@ -82,7 +82,7 @@ void throw_exception(const std::string& msg)
 #endif
 
 #ifndef NDEBUG
-#define EKAT_ASSERT_MSG(condition, msg)             IMPL_THROW(condition, msg, std::logic_error)
+#define EKAT_ASSERT_MSG(condition, msg)             IMPL_THROW(condition, msg, std::runtime_error)
 #define EKAT_KERNEL_ASSERT_MSG(condition, msg)      IMPL_KERNEL_THROW(condition, msg)
 #else
 #define EKAT_ASSERT_MSG(condition, msg)  ((void) (0))
@@ -95,16 +95,17 @@ void throw_exception(const std::string& msg)
 #define EKAT_COUNT_ARGS_IMPL(_1, _2, _3, N, ...) N
 #define EKAT_COUNT_ARGS(...)  EKAT_COUNT_ARGS_IMPL(__VA_ARGS__, 3, 2, 1, 0)
 
-// NOTE: in the else, if __VA_ARGS__ has length 2, std::logic_error will NOT be used
-#define EKAT_REQUIRE(condition,...) \
-  do { \
-    if (EKAT_COUNT_ARGS(__VA_ARGS__)==0) { \
-      IMPL_THROW(condition, "", std::logic_error); \
-    } else { \
-      IMPL_THROW(condition, __VA_ARGS__, std::logic_error); \
-    } \
-  } while(0)
-#define EKAT_REQUIRE_MSG(condition,msg) EKAT_REQUIRE (condition,msg)
+
+// Define the EKAT_REQUIRE macros for different argument counts
+#define EKAT_REQUIRE_3(cond, msg, etype) IMPL_THROW(cond, msg, etype)
+#define EKAT_REQUIRE_2(cond, msg)        IMPL_THROW(cond, msg, std::runtime_error)
+#define EKAT_REQUIRE_1(cond)             IMPL_THROW(cond, "" , std::runtime_error)
+
+#define GET_MACRO(_1, _2, _3, NAME, ...) NAME
+#define EKAT_REQUIRE(...) GET_MACRO(__VA_ARGS__, EKAT_REQUIRE_3, EKAT_REQUIRE_2, EKAT_REQUIRE_1)(__VA_ARGS__)
+
+#define EKAT_REQUIRE_MSG(condition,msg) \
+  EKAT_REQUIRE (condition,msg)
 
 #define EKAT_KERNEL_REQUIRE(condition)                IMPL_KERNEL_THROW(condition, "")
 #define EKAT_KERNEL_REQUIRE_MSG(condition, msg)       IMPL_KERNEL_THROW(condition, msg)
