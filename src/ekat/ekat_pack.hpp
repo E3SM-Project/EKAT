@@ -126,6 +126,15 @@ Mask<n> operator ! (const Mask<n>& m) {
   return not_m;
 }
 
+// Compare masks
+template <int n> KOKKOS_INLINE_FUNCTION
+bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
+  Mask<n> out;
+  vector_simd for (int i=0; i<n; ++i)
+    out.set(i, m1[i]==m2[i]);
+  return out.all();
+}
+
 // Implementation detail for generating Pack assignment operators. _p means the
 // input is a Pack; _s means the input is a scalar.
 // NOTE: for volatile overload, you should return void. If not, if/when Kokkos
