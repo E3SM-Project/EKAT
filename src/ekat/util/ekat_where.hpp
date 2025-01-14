@@ -64,7 +64,7 @@ public:
   bool all  () const { return m_mask; }
   bool none () const { return !m_mask; }
 private:
-  const mask_t&  m_mask;
+  const mask_t   m_mask;
   value_t&       m_value;
 };
 
@@ -174,7 +174,7 @@ public:
   bool all  () const { return m_mask.all(); }
   bool none () const { return m_mask.none(); }
 private:
-  const mask_t&  m_mask;
+  const mask_t   m_mask;
   value_t&       m_value;
 };
 
