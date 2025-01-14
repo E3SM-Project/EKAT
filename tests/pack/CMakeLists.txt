@@ -24,3 +24,6 @@ endif ()
 
 # Test pack index arithmetics utils
 EkatCreateUnitTest(pack_utils pack_utils_tests.cpp LIBS ekat)
+
+# Thest the where construct
+EkatCreateUnitTest(pack_where pack_where.cpp LIBS ekat)
