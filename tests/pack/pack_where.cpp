@@ -47,60 +47,110 @@ void run_packed_tests ()
 
   PT p1;
   for (int i=0; i<N; ++i) {
-    p1[i] = i;
+    p1[i] = 2*(i+1);
   }
-  const T tgt = N/2;
+
   const int half = N/2;
+  ekat::Mask<N> m (false);
+  for (int i=0; i<half; ++i)
+    m.set(i,true);
 
   PT p2 = p1;
+  PT p3 = -p1;
 
-  auto small_p = where(p1<tgt,p2);
+  auto p_masked = where(m,p2);
 
-  REQUIRE (small_p.any()==(N>1));
-  REQUIRE (not small_p.all());
-  REQUIRE (small_p.none()==(N==1));
-  REQUIRE ((small_p.value()==p2).all());
-  REQUIRE (small_p.mask()==(p1<tgt));
+  REQUIRE ((p_masked.value()==p2).all());
+  REQUIRE (p_masked.mask()==m);
+  REQUIRE (p_masked.any()==(N>1));
+  REQUIRE (not p_masked.all());
+  REQUIRE (p_masked.none()==(N==1));
 
-  small_p = -1;
+  // Assignment
+  p2 = p1;
+  p_masked = -1;   // = scalar
   for (int i=0; i<N/2; ++i) {
     REQUIRE (p2[i]==-1);
   }
   for (int i=half; i<N; ++i) {
-    REQUIRE (p2[i]==i);
+    REQUIRE (p2[i]==p1[i]);
   }
-
   p2 = p1;
-  small_p += 10;
+  p_masked = p3;   // = pack
   for (int i=0; i<N/2; ++i) {
-    REQUIRE (p2[i]==(p1[i]+10));
+    REQUIRE (p2[i]==p3[i]);
   }
   for (int i=half; i<N; ++i) {
     REQUIRE (p2[i]==p1[i]);
   }
 
+  // operator +=
   p2 = p1;
-  small_p -= 10;
+  p_masked += 2;  // += scalar
   for (int i=0; i<N/2; ++i) {
-    REQUIRE (p2[i]==(p1[i]-10));
+    REQUIRE (p2[i]==(p1[i]+2));
+  }
+  for (int i=half; i<N; ++i) {
+    REQUIRE (p2[i]==p1[i]);
+  }
+  p2 = p1;
+  p_masked += p3;  // += pack
+  for (int i=0; i<N/2; ++i) {
+    REQUIRE (p2[i]==0);
   }
   for (int i=half; i<N; ++i) {
     REQUIRE (p2[i]==p1[i]);
   }
 
+  // operator -=
   p2 = p1;
-  small_p *= 10;
+  p_masked -= 2; // -= scalar
   for (int i=0; i<N/2; ++i) {
-    REQUIRE (p2[i]==(p1[i]*10));
+    REQUIRE (p2[i]==(p1[i]-2));
+  }
+  for (int i=half; i<N; ++i) {
+    REQUIRE (p2[i]==p1[i]);
+  }
+  p2 = p1;
+  p_masked -= p3; // -= pack
+  for (int i=0; i<N/2; ++i) {
+    REQUIRE (p2[i]==2*p1[i]); // b/c p3=-p1
   }
   for (int i=half; i<N; ++i) {
     REQUIRE (p2[i]==p1[i]);
   }
 
+  // opeartor *=
   p2 = p1;
-  small_p /= 10;
+  p_masked *= 2; // *= scalar
   for (int i=0; i<N/2; ++i) {
-    REQUIRE (p2[i]==(p1[i]/10));
+    REQUIRE (p2[i]==(p1[i]*2));
+  }
+  for (int i=half; i<N; ++i) {
+    REQUIRE (p2[i]==p1[i]);
+  }
+  p2 = p1;
+  p_masked *= p3; // *= pack
+  for (int i=0; i<N/2; ++i) {
+    REQUIRE (p2[i]==(-p1[i]*p1[i]));
+  }
+  for (int i=half; i<N; ++i) {
+    REQUIRE (p2[i]==p1[i]);
+  }
+
+  // opeartor /=
+  p2 = p1;
+  p_masked /= 2; // /= scalar
+  for (int i=0; i<N/2; ++i) {
+    REQUIRE (p2[i]==(p1[i]/2));
+  }
+  for (int i=half; i<N; ++i) {
+    REQUIRE (p2[i]==p1[i]);
+  }
+  p2 = p1;
+  p_masked /= p3; // /= pack
+  for (int i=0; i<N/2; ++i) {
+    REQUIRE (p2[i]==-1); // b/c p3=-p1
   }
   for (int i=half; i<N; ++i) {
     REQUIRE (p2[i]==p1[i]);
