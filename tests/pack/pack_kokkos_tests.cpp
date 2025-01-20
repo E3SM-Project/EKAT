@@ -13,6 +13,13 @@ namespace {
 template <typename View, int rank, typename T = void>
 using OnlyRank = typename std::enable_if<View::rank == rank, T>::type;
 
+template<typename ViewT>
+typename ViewT::HostMirror cmvc(const ViewT& v) {
+  auto vh = Kokkos::create_mirror_view(v);
+  Kokkos::deep_copy(vh,v);
+  return vh;
+}
+
 template <typename View>
 void fill(const View& a)
 {
@@ -893,6 +900,59 @@ TEST_CASE("index_and_shift", "ekat::pack")
     }
   }
 #endif
+}
+
+TEST_CASE("adj_diff", "ekat::pack")
+{
+  constexpr int N = 8;
+  using PT = ekat::Pack<int,N>;
+
+  for (int num_ints : {3*N, 3*N+1}) {
+
+    const auto num_packs = ekat::npack<PT>(num_ints);
+
+    Kokkos::View<int*> data_s("data", num_ints);
+    Kokkos::View<PT*>  data_p("data_p",num_packs);
+
+    // Fill inputs with square of integers
+    Kokkos::parallel_for(num_ints, KOKKOS_LAMBDA(const int i) {
+      data_s(i) = (i+1)*(i+1);
+      data_p(i/N)[i%N] = (i+1)*(i+1);
+    });
+    // Compute adj_differences. Notice that (i+1)^2 - i^2 = 2*i+1
+    Kokkos::View<int*> diff_fwd_s("diff_fwd_s", num_ints);
+    Kokkos::View<PT*>  diff_fwd_p("diff_fwd_p", num_packs);
+    Kokkos::View<int*> diff_bwd_s("diff_bwd_s", num_ints);
+    Kokkos::View<PT*>  diff_bwd_p("diff_bwd_p", num_packs);
+    auto f_s = KOKKOS_LAMBDA(const int i) {
+      diff_fwd_s(i) = ekat::adj_diff<true> (data_s,i);
+      diff_bwd_s(i) = ekat::adj_diff<false>(data_s,i);
+    };
+    auto f_p = KOKKOS_LAMBDA(const int i) {
+      diff_fwd_p(i) = ekat::adj_diff<true> (data_p,i);
+      diff_bwd_p(i) = ekat::adj_diff<false>(data_p,i);
+    };
+    Kokkos::parallel_for(num_ints, f_s);
+    Kokkos::parallel_for(num_packs, f_p);
+
+    auto diff_fwd_sh = cmvc(diff_fwd_s);
+    auto diff_fwd_ph = cmvc(diff_fwd_p);
+    auto diff_bwd_sh = cmvc(diff_bwd_s);
+    auto diff_bwd_ph = cmvc(diff_bwd_p);
+    auto diff_fwd_phs = ekat::scalarize(diff_fwd_ph);
+    auto diff_bwd_phs = ekat::scalarize(diff_bwd_ph);
+
+    REQUIRE (diff_fwd_sh(0)==3);
+    REQUIRE (diff_fwd_phs(0)==3);
+    for (int i=1; i<num_ints-1; ++i) {
+      REQUIRE(diff_fwd_sh(i)==2*(i+1)+1);
+      REQUIRE(diff_bwd_phs(i)==2*i+1);
+      REQUIRE(diff_fwd_phs(i)==2*(i+1)+1);
+      REQUIRE(diff_bwd_sh(i)==2*i+1);
+    }
+    REQUIRE (diff_bwd_sh (num_ints-1)==2*(num_ints-1)+1);
+    REQUIRE (diff_bwd_phs(num_ints-1)==2*(num_ints-1)+1);
+  }
 }
 
 } // namespace

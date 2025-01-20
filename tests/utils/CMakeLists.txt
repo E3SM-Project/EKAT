@@ -2,12 +2,10 @@ include(EkatCreateUnitTest)
 
 # Test catch main options
 
-# Note: the trick to match multiple lines of output follows solution
-#       found at https://stackoverflow.com/a/38173182/1093346
-#       This only works for *consecutive* lines
 EkatCreateUnitTest (catch_main_tests catch_main_tests.cpp
-  EXE_ARGS "--ekat-test-params 'a=1,b=2' --flags verbose,debug,skip"
-  PROPERTIES PASS_REGULAR_EXPRESSION "flags: debug skip verbose[\r\n]*params: a=1 b=2 kokkos-device-id=-1")
+  EXE_ARGS "--args -a 1 --b 2 3 -c=4,5 --d 6,7 -K -foo --bar"
+  PROPERTIES PASS_REGULAR_EXPRESSION
+  ".*flags: K bar foo, params: a=1, vec_params: a=1 b=2,3 c=4,5 d=6,7")
 
 # Test debug tools
 EkatCreateUnitTest(debug_tools debug_tools_tests.cpp

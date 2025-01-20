@@ -56,9 +56,7 @@ struct ScalingFactor {
     auto e_one = exp==RationalConstant::one();
 
     // If we have denominators or are negative, add parentheses, for clarity
-    int sz_out = sz1 + (e_one ? 0 : sz2+1 + (b_den_or_neg ? 2 : 0) + (e_den_or_neg ? 2 : 0));
-    assert ( sz_out<N );
-    (void) sz_out;
+    assert ( sz1 + (e_one ? 0 : sz2+1 + (b_den_or_neg ? 2 : 0) + (e_den_or_neg ? 2 : 0)) < N );
 
     std::array<char,N> out = {'\0'};
     int pos = 0;

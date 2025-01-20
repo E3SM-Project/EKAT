@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include "ekat/util/ekat_test_utils.hpp"
+#include "ekat/util/ekat_string_utils.hpp"
 
 namespace {
 
@@ -10,16 +11,21 @@ TEST_CASE ("flags_and_params") {
   const auto& f = ts.flags;
   std::cout << "flags:";
   for (const auto& it : f) {
-    std::cout << " " << it.first;
-    // All flags added should be added as true
-    REQUIRE (it.second);
+    if (it.second) {
+      std::cout << " " << it.first;
+    }
   }
-  std::cout << "\n";
 
   const auto& p = ts.params;
-  std::cout << "params:";
+  std::cout << ", params:";
   for (const auto& it : p) {
     std::cout << " " << it.first << "=" << it.second;
+  }
+
+  const auto& vp = ts.vec_params;
+  std::cout << ", vec_params:";
+  for (const auto& it : vp) {
+    std::cout << " " << it.first << "=" << ekat::join(it.second,",");
   }
   std::cout << "\n";
 }

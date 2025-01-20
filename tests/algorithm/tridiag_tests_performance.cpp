@@ -17,10 +17,11 @@ void expect_another_arg (int i, int argc) {
 
 std::string Solver::convert (Enum e) {
   switch (e) {
-  case thomas: return "thomas";
-  case cr: return "cr";
-  default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
+    case thomas: return "thomas";
+    case cr: return "cr";
+    default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
   }
+  return "";
 }
 
 Solver::Enum Solver::convert (const std::string& s) {
