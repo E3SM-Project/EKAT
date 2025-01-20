@@ -101,8 +101,8 @@ void throw_exception(const std::string& msg)
 #define EKAT_REQUIRE_2(cond, msg)        IMPL_THROW(cond, msg, std::runtime_error)
 #define EKAT_REQUIRE_1(cond)             IMPL_THROW(cond, "" , std::runtime_error)
 
-#define GET_MACRO(_1, _2, _3, NAME, ...) NAME
-#define EKAT_REQUIRE(...) GET_MACRO(__VA_ARGS__, EKAT_REQUIRE_3, EKAT_REQUIRE_2, EKAT_REQUIRE_1)(__VA_ARGS__)
+#define EKAT_GET_REQUIRE_MACRO(_1, _2, _3, NAME, ...) NAME
+#define EKAT_REQUIRE(...) EKAT_GET_REQUIRE_MACRO(__VA_ARGS__, EKAT_REQUIRE_3, EKAT_REQUIRE_2, EKAT_REQUIRE_1)(__VA_ARGS__)
 
 #define EKAT_REQUIRE_MSG(condition,msg) \
   EKAT_REQUIRE (condition,msg)
