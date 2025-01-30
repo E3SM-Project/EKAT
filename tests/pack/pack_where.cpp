@@ -38,6 +38,13 @@ void run_scalar_tests ()
   REQUIRE (v2==2);
   zero_w /= 2;
   REQUIRE (v2==1);
+
+  // max/min
+  v2 = 3;
+  REQUIRE (max(zero_w,2)==3);
+  REQUIRE (max(zero_w,4)==4);
+  REQUIRE (min(zero_w,2)==2);
+  REQUIRE (min(zero_w,4)==3);
 }
 
 template<typename T, int N>
@@ -155,6 +162,24 @@ void run_packed_tests ()
   for (int i=half; i<N; ++i) {
     REQUIRE (p2[i]==p1[i]);
   }
+
+  // max/min
+  ekat::Mask<N> even (false);
+  int min_even = 0, max_even = 0;
+  for (int i=0; i<N; ++i) {
+    p2[i] = i;
+    if (i % 2 == 0) {
+      even.set(i,true);
+      max_even = std::max(max_even,i);
+    }
+  }
+
+  auto p_even = where(even,p2);
+
+  REQUIRE (max(p_even,N)==N);
+  REQUIRE (max(p_even,-1)==max_even);
+  REQUIRE (min(p_even,-1)==-1);
+  REQUIRE (min(p_even,N)==min_even);
 }
 
 TEST_CASE("where") {
