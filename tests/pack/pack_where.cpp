@@ -165,21 +165,32 @@ void run_packed_tests ()
 
   // max/min
   ekat::Mask<N> even (false);
-  int min_even = 0, max_even = 0;
+  int min_at_even = 1, max_at_even = 0;
+  T sum_at_even = 0;
+  T prod_at_even = 1;
   for (int i=0; i<N; ++i) {
-    p2[i] = i;
+    p2[i] = i+1;
     if (i % 2 == 0) {
       even.set(i,true);
-      max_even = std::max(max_even,i);
+      max_at_even = std::max(max_at_even,i+1);
+      sum_at_even += p2[i];
+      prod_at_even *= p2[i];
     }
   }
 
-  auto p_even = where(even,p2);
+  auto p_at_even = where(even,p2);
 
-  REQUIRE (max(p_even,N)==N);
-  REQUIRE (max(p_even,-1)==max_even);
-  REQUIRE (min(p_even,-1)==-1);
-  REQUIRE (min(p_even,N)==min_even);
+  REQUIRE (max(p_at_even,N)==N);
+  REQUIRE (max(p_at_even,-1)==max_at_even);
+  REQUIRE (min(p_at_even,-1)==-1);
+  REQUIRE (min(p_at_even,N)==min_at_even);
+
+  // reductions
+  T sum = 0, prod = 1;
+  sum += p_at_even;
+  prod *= p_at_even;
+  REQUIRE (sum==sum_at_even);
+  REQUIRE (prod==prod_at_even);
 }
 
 TEST_CASE("where") {

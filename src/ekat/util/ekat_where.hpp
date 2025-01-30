@@ -24,7 +24,9 @@ public:
   { /* Nothing to do here */ }
 
   KOKKOS_FORCEINLINE_FUNCTION
-  value_t& value () { return m_value; }
+        value_t& value ()       { return m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION
+  const value_t& value () const { return m_value; }
 
   KOKKOS_FORCEINLINE_FUNCTION
   const mask_t& mask () const { return m_mask; }
@@ -99,10 +101,12 @@ public:
   { /* Nothing to do here */ }
 
   KOKKOS_FORCEINLINE_FUNCTION
-  value_t& value () { return m_value; }
+        value_t& value ()       { return m_value; }
+  KOKKOS_FORCEINLINE_FUNCTION
+  const value_t& value () const { return m_value; }
 
   KOKKOS_FORCEINLINE_FUNCTION
-  const mask_t& mask () { return m_mask; }
+  const mask_t& mask () const { return m_mask; }
 
   template<typename S>
   KOKKOS_FORCEINLINE_FUNCTION
@@ -205,6 +209,8 @@ private:
   value_t&       m_value;
 };
 
+// ----- Create where expressions from mask-like and value objects ------ //
+
 template<typename S, int N>
 where_expression<Mask<N>,Pack<S,N>>
 where (const Mask<N>& m, Pack<S,N>& p)
@@ -219,7 +225,10 @@ where (const bool& mask, S& scalar)
   return where_expression<bool,S>(mask,scalar);
 }
 
+// --------- Allow to do reductions between scalars and where expression ------- //
+
 template<typename M, typename V>
+KOKKOS_FORCEINLINE_FUNCTION
 typename where_expression<M,V>::scalar_t
 max (const where_expression<M,V>& w, const typename where_expression<M,V>::scalar_t& s)
 {
@@ -227,11 +236,40 @@ max (const where_expression<M,V>& w, const typename where_expression<M,V>::scala
 }
 
 template<typename M, typename V>
+KOKKOS_FORCEINLINE_FUNCTION
 typename where_expression<M,V>::scalar_t
 min (const where_expression<M,V>& w, const typename where_expression<M,V>::scalar_t& s)
 {
   return w.min(s);
 }
+
+#define scalar_where_update_op(op)                                        \
+template<typename V>                                                      \
+KOKKOS_FORCEINLINE_FUNCTION                                               \
+typename where_expression<bool,V>::scalar_t&                              \
+operator op (typename where_expression<bool,V>::scalar_t& lhs,            \
+             const where_expression<bool,V>& rhs)                         \
+{                                                                         \
+  if (rhs.mask()) lhs op rhs.value();                                     \
+  return lhs;                                                             \
+}                                                                         \
+template<typename V, int N>                                               \
+KOKKOS_FORCEINLINE_FUNCTION                                               \
+typename where_expression<Mask<N>,Pack<V,N>>::scalar_t&                   \
+operator op (typename where_expression<Mask<N>,Pack<V,N>>::scalar_t& lhs, \
+             const where_expression<Mask<N>,Pack<V,N>>& rhs)              \
+{                                                                         \
+  ekat_masked_loop(rhs.mask(),i)                                          \
+    lhs op rhs.value()[i];                                                \
+  return lhs;                                                             \
+}
+
+scalar_where_update_op(+=)
+scalar_where_update_op(-=)
+scalar_where_update_op(*=)
+scalar_where_update_op(/=)
+
+#undef scalar_where_update_op
 
 } // namespace ekat
 
