@@ -62,7 +62,6 @@ void initialize_kokkos () {
 #ifdef EKAT_ENABLE_MPI
     .set_map_device_id_by("mpi_rank")
 #endif
-    .set_num_devices(nd)
     .set_disable_warnings(true);
   Kokkos::initialize(settings);
 }
