@@ -544,7 +544,7 @@ TEST_CASE("subviews") {
   }
 }
 
-TEST_CASE("multi-slice subviews") {
+TEST_CASE("multi-slice-subviews") {
   using kt = ekat::KokkosTypes<ekat::DefaultDevice>;
 
   const int i0 = 5;
