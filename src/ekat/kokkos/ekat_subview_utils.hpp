@@ -345,7 +345,7 @@ subview(const ViewLR<ST**, Props...>& v,
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim < static_cast<int>(v.rank));
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second < v.extent_int(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
   } else {
@@ -364,7 +364,7 @@ subview(const ViewLR<ST***, Props...>& v,
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim < static_cast<int>(v.rank));
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second < v.extent_int(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST***,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL));
@@ -388,7 +388,7 @@ subview(const ViewLR<ST****, Props...>& v,
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim < static_cast<int>(v.rank));
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second < v.extent_int(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST****,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
@@ -415,7 +415,7 @@ subview(const ViewLR<ST*****, Props...>& v,
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim < static_cast<int>(v.rank));
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second < v.extent_int(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST*****,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
@@ -445,7 +445,7 @@ subview(const ViewLR<ST******, Props...>& v,
   assert(v.data() != nullptr);
   assert(idim >= 0 && idim < static_cast<int>(v.rank));
   assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second < v.extent_int(idim));
+         && kp0.second <= v.extent_int(idim));
   if (idim == 0) {
     return Unmanaged<ViewLS<ST******,Props...>>(
       Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
