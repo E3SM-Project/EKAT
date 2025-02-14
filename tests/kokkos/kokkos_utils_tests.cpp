@@ -544,7 +544,7 @@ TEST_CASE("subviews") {
   }
 }
 
-TEST_CASE("multi-slice subviews") {
+TEST_CASE("multi-slice-subviews") {
   using kt = ekat::KokkosTypes<ekat::DefaultDevice>;
 
   const int i0 = 5;
@@ -552,8 +552,8 @@ TEST_CASE("multi-slice subviews") {
   const int i2 = 3;
   const int i3 = 2;
   const int i4 = 1;
-  const int idx0[6] = {0, 3, 1, 0, 1, 0};
-  const int idx1[6] = {3, 5, 4, 2, 2, 1};
+  const int idx0[6] = {0, 4, 1, 0, 1, 0};
+  const int idx1[6] = {3, 6, 4, 2, 2, 1};
 
   auto p0 = Kokkos::make_pair<int, int>(idx0[0], idx1[0]);
   auto p1 = Kokkos::make_pair<int, int>(idx0[1], idx1[1]);
