@@ -584,10 +584,10 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
       int ws_idx_broadcast;
       Kokkos::single(Kokkos::PerTeam(team_member), [&] (int& ws_idx) {
         ws_idx = team_member.league_rank() % _num_ws_slots;
-        if ( ! Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1)) {
+        if ((flag_type) 0 != Kokkos::atomic_compare_exchange(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1)) {
           rnd_type rand_gen = _rand_pool.get_state(team_member.league_rank());
           ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
-          while ( ! Kokkos::atomic_compare_exchange_strong(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1))
+          while ((flag_type) 0 != Kokkos::atomic_compare_exchange(&_open_ws_slots(ws_idx), (flag_type) 0, (flag_type) 1))
             ws_idx = Kokkos::rand<rnd_type, int>::draw(rand_gen) % _num_ws_slots;
         }
         // The following memory fence is not strictly needed if the application
@@ -610,7 +610,7 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
     if (_need_ws_sharing) {
       team_member.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
-        // The 'volatile' declaration in atomic_compare_exchange_strong and in
+        // The 'volatile' declaration in atomic_compare_exchange and in
         // the following code means that all threads on the GPU will see the
         // correct value of the lock when they access it. But the values in
         // writes a thread makes to global memory are not necessarily seen by
