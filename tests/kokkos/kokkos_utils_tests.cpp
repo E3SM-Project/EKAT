@@ -50,7 +50,7 @@ TEST_CASE("team_policy", "[kokkos_utils]") {
     }
     else {
 #if defined EKAT_MIMIC_GPU && defined KOKKOS_ENABLE_OPENMP
-      REQUIRE((Kokkos::OpenMP::concurrency() == 1 || p.team_size() > 1));
+      REQUIRE((Kokkos::OpenMP().concurrency() == 1 || p.team_size() > 1));
 #endif
     }
   }
