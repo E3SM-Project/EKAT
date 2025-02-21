@@ -12,12 +12,12 @@ if [ $? -ne 0 ]; then
 fi
 
 # Query scream for machine info
-MPICXX=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE cxx_compiler)
-MPICC=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE c_compiler)
-MPIF90=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE f90_compiler)
-COMP_J=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE comp_j)
-TEST_J=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE test_j)
-ISCUDA=$(${SCREAM_SCRIPTS}/query-scream $SCREAM_MACHINE cuda)
+MPICXX=$(${SCREAM_SCRIPTS}/query-eamxx $SCREAM_MACHINE cxx_compiler)
+MPICC=$(${SCREAM_SCRIPTS}/query-eamxx $SCREAM_MACHINE c_compiler)
+MPIF90=$(${SCREAM_SCRIPTS}/query-eamxx $SCREAM_MACHINE f90_compiler)
+COMP_J=$(${SCREAM_SCRIPTS}/query-eamxx $SCREAM_MACHINE comp_j)
+TEST_J=$(${SCREAM_SCRIPTS}/query-eamxx $SCREAM_MACHINE test_j)
+ISCUDA=$(${SCREAM_SCRIPTS}/query-eamxx $SCREAM_MACHINE cuda)
 
 # We create separate builds for single precision (SP), double precision (DP),
 # DP with floating point exceptions enabled (FPE), and, on CUDA, DP with
