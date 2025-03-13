@@ -287,10 +287,10 @@ macro (SetOmpFlags targetName)
   if (Kokkos_ENABLE_OPENMP)
     set(options C CXX Fortran)
     set(args1v)
-    set(argsMv FLAGS FFLAGS CFLAGS CXXFLAGS)
+    set(argsMv)
     cmake_parse_arguments(OMP "${options}" "${args1v}" "${argsMv}" ${ARGN})
 
-    if (NOT OMP_C AND NOT OMP_CXX AND NOT_OMP_Fortran)
+    if (NOT OMP_C AND NOT OMP_CXX AND NOT OMP_Fortran)
       message (FATAL_ERROR "[SetOmpFlags] You need to specify at least one language")
     endif()
 
