@@ -296,7 +296,7 @@ void test_view_reduction(const int begin=0, const int end=TotalSize)
   #ifdef KOKKOS_ENABLE_SYCL
   auto num_sm = temp_space.impl_internal_space_instance()->m_queue->get_device().get_info<sycl::info::device::max_compute_units>();
   #else
-  auto num_sm = temp_space.impl_internal_space_instance()->m_multiProcCount;
+  auto num_sm = temp_space.cuda_device_prop().multiProcessorCount;
   #endif
   team_size /= (ekat::is_single_precision<Real>::value ? num_sm*64 : num_sm*32);
 #endif
