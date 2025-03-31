@@ -41,7 +41,8 @@ namespace ekat {
  */
 
 template<typename T>
-class enable_shared_from_this
+class [[deprecated("ekat::enable_shared_from_this will be removed in future releases; please, use std::enable_shared_from_this instead.")]]
+enable_shared_from_this
 {
 public:
 

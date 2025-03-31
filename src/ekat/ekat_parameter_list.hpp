@@ -1,11 +1,11 @@
 #ifndef EKAT_PARAMETER_LIST_HPP
 #define EKAT_PARAMETER_LIST_HPP
 
-#include "ekat/std_meta/ekat_std_any.hpp"
 #include "ekat/std_meta/ekat_std_map_key_iterator.hpp"
 #include "ekat_assert.hpp"
 
 #include <map>
+#include <any>
 
 namespace ekat {
 
@@ -45,8 +45,6 @@ public:
   // Change the name of the list
   void rename (const std::string& name) { m_name = name; }
 
-  ParameterList soft_copy () const;
-
   // Parameters getters and setters
   template<typename T>
   T& get (const std::string& name);
@@ -83,7 +81,7 @@ public:
   void import (const ParameterList& src);
 
   // Access const iterators to stored data
-  using params_names_const_iter   = map_key_const_iterator<std::map<std::string,any>>;
+  using params_names_const_iter   = map_key_const_iterator<std::map<std::string,std::any>>;
   using sublists_names_const_iter = map_key_const_iterator<std::map<std::string,ParameterList>>;
 
   params_names_const_iter   params_names_cbegin ()   const { return params_names_const_iter(m_params.cbegin()); }
@@ -95,7 +93,7 @@ public:
 private:
 
   std::string                           m_name;
-  std::map<std::string,any>             m_params;
+  std::map<std::string,std::any>        m_params;
   std::map<std::string,ParameterList>   m_sublists;
 };
 
@@ -106,15 +104,15 @@ inline T& ParameterList::get (const std::string& name) {
   // Check entry exists
   EKAT_REQUIRE_MSG ( isParameter(name),
       "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
-  auto p = m_params[name];
-  EKAT_REQUIRE_MSG ( p.isType<T>(),
+  auto& p = m_params[name];
+  EKAT_REQUIRE_MSG ( std::any_cast<T>(&p),
       "Error! Attempting to access parameter using the wrong type.\n"
       "   - list name : " + m_name + "\n"
       "   - param name: " + name + "\n"
-      "   - param type: " + std::string(p.content().type().name()) + "\n"
+      "   - param type: " + std::string(p.type().name()) + "\n"
       "   - input type: " + std::string(typeid(T).name()) + "'.\n");
 
-  return any_cast<T>(p);
+  return *std::any_cast<T>(&p);
 }
 
 template<typename T>
@@ -122,32 +120,28 @@ inline const T& ParameterList::get (const std::string& name) const {
   EKAT_REQUIRE_MSG ( isParameter(name),
       "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
-  auto p = m_params.at(name);
-  EKAT_REQUIRE_MSG ( p.isType<T>(),
+  const auto& p = m_params.at(name);
+  EKAT_REQUIRE_MSG ( std::any_cast<T>(&p),
       "Error! Attempting to access parameter using the wrong type.\n"
       "   - list name : " + m_name + "\n"
       "   - param name: " + name + "\n"
-      "   - param type: " + std::string(p.content().type().name()) + "\n"
-      "   - input type: " + std::string(typeid(T).name()) + ".\n");
+      "   - param type: " + std::string(p.type().name()) + "\n"
+      "   - input type: " + std::string(typeid(T).name()) + "'.\n");
 
-  return any_cast<T>(p);
+  return *std::any_cast<T>(&p);
 }
 
 template<typename T>
 inline T& ParameterList::get (const std::string& name, const T& def_value) {
   if ( !isParameter(name) ) {
-    m_params[name].template reset<T>(def_value);
+    set(name,def_value);
   }
   return get<T>(name);
 }
 
 template<typename T>
 inline void ParameterList::set (const std::string& name, const T& value) {
-  if ( !isParameter(name) ) {
-    m_params[name].template reset<T>(value);
-  } else {
-    get<T>(name) = value;
-  }
+  m_params[name] = value;
 }
 
 template<typename T>
@@ -156,7 +150,7 @@ inline bool ParameterList::isType (const std::string& name) const {
   EKAT_REQUIRE_MSG ( isParameter(name),
       "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
-  return m_params.at(name).isType<T>();
+  return std::any_cast<T>(&m_params.at(name));
 }
 
 } // namespace ekat

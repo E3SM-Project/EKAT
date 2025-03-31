@@ -22,7 +22,8 @@ namespace ekat {
 
 // ================ std::any ================= //
 
-class any {
+class [[deprecated("ekat::any will be removed in future releases; please, use std::any instead.")]]
+any {
 
   // Implementation detail of the any class
   class holder_base {
