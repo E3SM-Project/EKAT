@@ -21,10 +21,6 @@ TEST_CASE ("pl_copy") {
   REQUIRE (pl2.get<int>("int")==0);
   pl2.set<int>("int",3);
   REQUIRE (sub1.get<int>("int")==2);
-
-  auto pl3 = sub1.soft_copy();
-  sub1.set<int>("int",4);
-  REQUIRE (pl3.get<int>("int")==4);
 }
 
 TEST_CASE("precision", "util") {

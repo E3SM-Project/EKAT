@@ -33,17 +33,6 @@ ParameterList& ParameterList::operator= (const ParameterList& src)
   return *this;
 }
 
-ParameterList ParameterList::soft_copy () const
-{
-  ParameterList p;
-
-  p.m_name = m_name;
-  p.m_params = m_params;
-  p.m_sublists = m_sublists;
-
-  return p;
-}
-
 ParameterList& ParameterList::sublist (const std::string& name) {
   if (m_sublists.find(name)==m_sublists.end()) {
     ParameterList p(name);

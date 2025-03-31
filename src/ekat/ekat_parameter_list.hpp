@@ -45,8 +45,6 @@ public:
   // Change the name of the list
   void rename (const std::string& name) { m_name = name; }
 
-  ParameterList soft_copy () const;
-
   // Parameters getters and setters
   template<typename T>
   T& get (const std::string& name);
