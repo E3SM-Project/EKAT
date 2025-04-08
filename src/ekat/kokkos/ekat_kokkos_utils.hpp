@@ -225,15 +225,19 @@ struct ExeSpaceUtils {
 #ifdef EKAT_MIMIC_GPU
     const int max_threads = ExeSpace().concurrency();
     const int team_size = max_threads < 7 ? max_threads : 7;
-    return TeamPolicy(ni, team_size);
+    auto policy = TeamPolicy(ni, team_size);
 #else
-    return TeamPolicy(ni, 1);
+    auto policy = TeamPolicy(ni, 1);
 #endif
+   printf("TeamSize(get_default_team_policy-non-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+   return policy;
   }
 
   template<HostOrDevice HD = Device>
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
-    return TeamPolicy(ni, team_size);
+    auto policy = TeamPolicy(ni, team_size);
+    printf("TeamSize(get_team_policy_force_team_size-non-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    return policy;
   }
 
   template<HostOrDevice HD = Device>
@@ -334,13 +338,17 @@ struct ExeSpaceUtils<EkatGpuSpace> {
   template<HostOrDevice HD = Device>
   static policy_t<HD>
   get_default_team_policy (Int ni, Int  nk ) {
-    return get_policy_internal<HD>(ni, std::min(128, 32*((nk + 31)/32)));
+    auto policy = get_policy_internal<HD>(ni, std::min(128, 32*((nk + 31)/32)));
+    printf("TeamSize(get_default_team_policy-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    return policy;
   }
 
   template<HostOrDevice HD = Device>
   static policy_t<HD>
   get_team_policy_force_team_size (Int ni, Int team_size) {
-    return get_policy_internal<HD>(ni, team_size);
+    auto policy = get_policy_internal<HD>(ni, team_size);
+    printf("TeamSize(get_team_policy_force_team_size-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    return policy;
   }
 
   // On GPU, the team-level ||scan in column_ops only works for team sizes that are a power of 2.
@@ -356,7 +364,10 @@ struct ExeSpaceUtils<EkatGpuSpace> {
 
     const int pp2 = prev_pow_2(team_size_request);
     const int team_size = 32*num_warps(pp2);
-    return get_policy_internal<HD>(league_size, std::min(128, team_size));
+
+    auto policy = get_policy_internal<HD>(league_size, std::min(128, team_size));
+    printf("TeamSize(get_thread_range_parallel_scan_team_policy-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    return policy;
   }
 
   // NOTE: f<bool,T> and f<T,bool> are *guaranteed* to be different overloads.
@@ -622,7 +633,7 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
         // resource will be read by A as occurring before the write B makes to
         // the lock, thus assuring the global resource is truly free from A's
         // perspective when it acquires the lock.
-        Kokkos::memory_fence();                          
+        Kokkos::memory_fence();
         flag_type volatile* const e = &_open_ws_slots(ws_idx);
         *e = (flag_type) 0;
       });
