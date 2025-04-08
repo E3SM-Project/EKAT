@@ -229,14 +229,14 @@ struct ExeSpaceUtils {
 #else
     auto policy = TeamPolicy(ni, 1);
 #endif
-   printf("TeamSize(get_default_team_policy-non-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+   if (policy.team_size() > 1024) printf("TeamSize(get_default_team_policy-non-cuda): %d, %d\n", policy.league_size(), policy.team_size());
    return policy;
   }
 
   template<HostOrDevice HD = Device>
   static TeamPolicy get_team_policy_force_team_size (Int ni, Int team_size) {
     auto policy = TeamPolicy(ni, team_size);
-    printf("TeamSize(get_team_policy_force_team_size-non-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    if (policy.team_size() > 1024) printf("TeamSize(get_team_policy_force_team_size-non-cuda): %d, %d\n", policy.league_size(), policy.team_size());
     return policy;
   }
 
@@ -339,7 +339,7 @@ struct ExeSpaceUtils<EkatGpuSpace> {
   static policy_t<HD>
   get_default_team_policy (Int ni, Int  nk ) {
     auto policy = get_policy_internal<HD>(ni, std::min(128, 32*((nk + 31)/32)));
-    printf("TeamSize(get_default_team_policy-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    if (policy.team_size() > 1024) printf("TeamSize(get_default_team_policy-cuda): %d, %d\n", policy.league_size(), policy.team_size());
     return policy;
   }
 
@@ -347,7 +347,7 @@ struct ExeSpaceUtils<EkatGpuSpace> {
   static policy_t<HD>
   get_team_policy_force_team_size (Int ni, Int team_size) {
     auto policy = get_policy_internal<HD>(ni, team_size);
-    printf("TeamSize(get_team_policy_force_team_size-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    if (policy.team_size() > 1024) printf("TeamSize(get_team_policy_force_team_size-cuda): %d, %d\n", policy.league_size(), policy.team_size());
     return policy;
   }
 
@@ -366,7 +366,7 @@ struct ExeSpaceUtils<EkatGpuSpace> {
     const int team_size = 32*num_warps(pp2);
 
     auto policy = get_policy_internal<HD>(league_size, std::min(128, team_size));
-    printf("TeamSize(get_thread_range_parallel_scan_team_policy-cuda): %d, %d\n", policy.league_size(), policy.team_size());
+    if (policy.team_size() > 1024) printf("TeamSize(get_thread_range_parallel_scan_team_policy-cuda): %d, %d\n", policy.league_size(), policy.team_size());
     return policy;
   }
 
