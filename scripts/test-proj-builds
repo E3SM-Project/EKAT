@@ -58,6 +58,11 @@ OR
     parser.add_argument("--no-run", action="store_true",
             help="Only run config and build steps, skip tests (implies --no-build)")
 
+    parser.add_argument("--skip-config", action="store_true",
+            help="Skip cmake phase, pass directly to build (will fail if cmake phase never completed in work dir)")
+    parser.add_argument("--skip-build", action="store_true",
+            help="Skip buildcmake phase, pass directly to test (will fail if build phase never completed in work fir). Implies --skip-config)")
+
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print output of config/build/test phases as they would be printed by running them manually.")
 
