@@ -1,0 +1,190 @@
+# Configuration file for TestProjectBuilds (TPB)
+#
+# There are three main sections: project, machines build_types
+#   - project: contains basic info on the project
+#   - machines: contains a list of machines on which testing is allowed
+#   - build_types: contains a list of build types that can be built
+#
+# The machines and build_types sections CAN contain an entry "defaults", which
+# defines some defaults for all machines. Other entries will OVERWRITE anything
+# that is set in the default entry (if any). It is recommended to keep the default
+# entry, since it can be used to list ALL possible settings, for documentation purposes.
+#
+# Upon parsing the yaml file, TBP will create one Project, one Machine, and one or
+# more Build objects. These objects will contain members with *the same* name as the
+# configs in the yaml file. Notice the settings names are hard-coded, so you can't add
+# a new setting and hope that it gets set in the object.
+# The objects settings CAN be used in the yaml file to programmatically set options.
+# For instance, a build type can use properties of the machine to set a cmake var.
+# The syntax is ${machine.<prop_name>} and ${build.<prop_name>}, where the strings
+# "machine" and "build" are used by TPB to fetch the correct object. If you use
+# the ${..} syntax, we recommend that you wrap the entry in quotes, to avoid any
+# surprise with YAML parsers.
+
+project:
+    name: EAMxx
+    baseline_gen_label: baseline_gen
+    baseline_summary_file: baseline_list
+
+machines:
+    default:
+        mach_file: UNSET
+        cxx_compiler: mpicxx
+        c_compiler: mpicc
+        ftn_compiler: mpifort
+    groppello:
+        mach_file: "~/.cime/scream_mach_file.cmake"
+        env_setup: ['module load sems-openmpi', 'module load sems-netcdf-c/4.7.4', 'module load sems-netcdf-fortran/4.5.3']
+        baselines_dir: "~/workdir/e3sm/e3sm-data/baselines/scream/groppello"
+
+configurations:
+    default:
+        cmake_args:
+            SCREAM_BASELINES_DIR: "${machine.baselines_dir}/${build.longname}"
+    dbg:
+        longname: full_debug
+        description: "debug build with double precision"
+        cmake_args:
+            CMAKE_BUILD_TYPE: Debug
+            EKAT_DEFAULT_BFB: True
+            Kokkos_ENABLE_DEBUG_BOUNDS_CHECK: True
+    sp:
+        longname: full_sp_debug
+        description: "debug build with single precision"
+        cmake_args:
+            CMAKE_BUILD_TYPE: Debug
+            EKAT_DEFAULT_BFB: True
+            SCREAM_DOUBLE_PRECISION: False
+
+#     fpe:
+#         longname: debug_nopack_fpe
+#         description: "debug build, with double precision, packsize=1, and floating point exceptions enabled",
+#         cmake_args:
+#             - CMAKE_BUILD_TYPE: Debug
+#             - EKAT_DEFAULT_BFB: True
+#             - SCREAM_PACK_SIZE: 1
+#             - SCREAM_FPE: True
+#         uses_baselines: False
+#         on_by_default: "${machine.gpu_arch!='none'}"
+
+# ###############################################################################
+# class OPT(BuildType):
+# ###############################################################################
+
+#     def __init__(self, mach):
+#         BuildType.__init__(
+#             self,
+#             "release",
+#             "release",
+#             [("CMAKE_BUILD_TYPE", "Release")],
+#         )
+#         self.cmake_args.append(("SCREAM_BASELINES_DIR",f"{mach.baselines_dir}/{self.longname}"))
+
+# ###############################################################################
+# class COV(BuildType):
+# ###############################################################################
+
+#     def __init__(self, _):
+#         BuildType.__init__(
+#             self,
+#             "coverage",
+#             "debug coverage",
+#             [("CMAKE_BUILD_TYPE", "Debug"),
+#              ("EKAT_ENABLE_COVERAGE", "True"),
+#              ("SCREAM_TEST_SIZE","SHORT")],
+#             uses_baselines=False,
+#             on_by_default=False,
+#         )
+
+# ###############################################################################
+# class VALG(BuildType):
+# ###############################################################################
+
+#     def __init__(self, mach):
+#         BuildType.__init__(
+#             self,
+#             "valgrind",
+#             "Release build where tests run through valgrind",
+#             [("CMAKE_BUILD_TYPE", "RelWithDebInfo"),
+#              ("EKAT_ENABLE_VALGRIND", "True"),
+#              ("SCREAM_PACK_SIZE", "1"),
+#              ("SCREAM_TEST_MAX_THREADS", "2"),
+#              ("SCREAM_TEST_SIZE","SHORT")],
+#             uses_baselines=False,
+#             on_by_default=False,
+#         )
+
+#         # If a stored suppression file exists for this machine, use it
+#         if mach.valg_supp_file is not None:
+#             expect (Path(mach.valg_supp_file).exists(),
+#                     f"Cannot locate valg supp file '{mach.valg_supp_file}'")
+#             self.cmake_args.append( ("EKAT_VALGRIND_SUPPRESSION_FILE", str(mach.valg_supp_file)) )
+
+# ###############################################################################
+# class CSM(BuildType):
+# ###############################################################################
+
+#     def __init__(self, _):
+#         BuildType.__init__(
+#             self,
+#             "compute_sanitizer_memcheck",
+#             "debug with compute sanitizer memcheck",
+#             [("CMAKE_BUILD_TYPE", "Debug"),
+#              ("EKAT_ENABLE_COMPUTE_SANITIZER", "True"),
+#              ("EKAT_COMPUTE_SANITIZER_OPTIONS", "'--tool=memcheck'"),
+#              ("SCREAM_TEST_SIZE","SHORT")],
+#             uses_baselines=False,
+#             on_by_default=False,
+#         )
+
+# ###############################################################################
+# class CSR(BuildType):
+# ###############################################################################
+
+#     def __init__(self, _):
+#         BuildType.__init__(
+#             self,
+#             "compute_sanitizer_racecheck",
+#             "debug with compute sanitizer racecheck",
+#             [("CMAKE_BUILD_TYPE", "Debug"),
+#              ("EKAT_ENABLE_COMPUTE_SANITIZER", "True"),
+#              ("EKAT_COMPUTE_SANITIZER_OPTIONS", "'--tool=racecheck --racecheck-detect-level=error'"),
+#              ("SCREAM_TEST_SIZE","SHORT")],
+#             uses_baselines=False,
+#             on_by_default=False,
+#         )
+
+# ###############################################################################
+# class CSI(BuildType):
+# ###############################################################################
+
+#     def __init__(self, _):
+#         BuildType.__init__(
+#             self,
+#             "compute_sanitizer_initcheck",
+#             "debug with compute sanitizer initcheck",
+#             [("CMAKE_BUILD_TYPE", "Debug"),
+#              ("EKAT_ENABLE_COMPUTE_SANITIZER", "True"),
+#              ("EKAT_COMPUTE_SANITIZER_OPTIONS", "'--tool=initcheck'"),
+#              ("SCREAM_TEST_SIZE","SHORT")],
+#             uses_baselines=False,
+#             on_by_default=False,
+#         )
+
+# ###############################################################################
+# class CSS(BuildType):
+# ###############################################################################
+
+#     def __init__(self, _):
+#         BuildType.__init__(
+#             self,
+#             "compute_sanitizer_synccheck",
+#             "debug with compute sanitizer synccheck",
+#             [("CMAKE_BUILD_TYPE", "Debug"),
+#              ("EKAT_ENABLE_COMPUTE_SANITIZER", "True"),
+#              ("EKAT_COMPUTE_SANITIZER_OPTIONS", "'--tool=synccheck'"),
+#              ("SCREAM_TEST_SIZE","SHORT")],
+#             uses_baselines=False,
+#             on_by_default=False,
+#         )
+

@@ -5,51 +5,12 @@ Utilities
 import os
 import sys
 import re
-import signal
 import subprocess
 import psutil
 import site
 import argparse
 import importlib
 import importlib.util
-import inspect
-
-###############################################################################
-def module_from_path(module_filepath,module_name):
-###############################################################################
-    """
-    Imports and returns a module from a path and filename.
-    This leaves sys.path intact
-    """
-
-    # Create a module spec
-    spec = importlib.util.spec_from_file_location(module_name, module_filepath)
-
-    # Create a new module based on the spec
-    module = importlib.util.module_from_spec(spec)
-
-    # Execute the module in its own namespace
-    spec.loader.exec_module(module)
-
-    return module
-
-###########################################################################
-def objects_from_module(module,base_type,*args):
-###########################################################################
-    """
-    From a given module, create an instance of all types inheriting from base_type
-    The derived types must ALL be constructible from the input args
-    """
-
-    objects = []
-
-    for cls_name, cls in inspect.getmembers(module, inspect.isclass):
-        # Check if the class is a subclass of BuildType
-        if issubclass(cls, base_type) and cls is not base_type:
-            # Create an instance of the class
-            objects.append(cls(*args))
-
-    return objects
 
 ###############################################################################
 def expect(condition, error_msg, exc_type=SystemExit, error_prefix="ERROR:"):
@@ -97,7 +58,10 @@ def run_cmd(cmd, from_dir=None, verbose=None, dry_run=False, env_setup=None,
         arg_stdout = None
     else:
         arg_stdout = subprocess.PIPE
-    if error_to_screen:
+
+    if combine_output:
+        arg_stderr = subprocess.STDOUT
+    elif error_to_screen:
         arg_stderr = None
     else:
         arg_stderr = subprocess.PIPE
@@ -119,27 +83,21 @@ def run_cmd(cmd, from_dir=None, verbose=None, dry_run=False, env_setup=None,
 
     output, errput = proc.communicate()
 
-    if output is not None:
-        try:
-            output = output.decode('utf-8', errors='ignore')
-            output = output.strip()
-        except AttributeError:
-            pass
+    if output:
+        output = output.decode('utf-8', errors='ignore')
+        output = output.strip()
 
-        if output_file is not None:
-            with open(output_file,'w') as fd:
-                fd.write(output)
-    if errput is not None:
-        try:
-            errput = errput.decode('utf-8', errors='ignore')
-            errput = errput.strip()
-        except AttributeError:
-            pass
+    if errput:
+        errput = errput.decode('utf-8', errors='ignore')
+        errput = errput.strip()
 
-
-        if error_file is not None:
-            with open(error_file,'w') as fd:
-                fd.write(error)
+    # If we need to write to file, do so
+    if output_file:
+        with open(output_file,'w') as fd:
+            fd.write(output)
+    if not combine_output and error_file:
+        with open(error_file,'w') as fd:
+            fd.write(error)
 
     return proc.returncode, output, errput
 

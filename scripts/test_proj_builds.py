@@ -6,10 +6,12 @@ import psutil
 import json
 import re
 import itertools
+import yaml
 
+from project    import Project
 from machine    import Machine
 from build_type import BuildType
-from tpb_utils  import module_from_path, objects_from_module, expect, run_cmd
+from tpb_utils  import expect, run_cmd
 from git_utils  import get_current_ref, get_current_sha, is_git_repo
 
 ###############################################################################
@@ -17,7 +19,7 @@ class TestProjBuilds(object):
 ###############################################################################
 
     ###########################################################################
-    def __init__(self, config_folder=None, submit=False, parallel=False, generate=False,
+    def __init__(self, config_file=None, submit=False, parallel=False, generate=False,
                  baseline_dir=None, machine_name=None,
                  cmake_args=None, build_types=None,
                  work_dir=None, root_dir=None, no_build=False, no_run=False,
@@ -36,7 +38,6 @@ class TestProjBuilds(object):
         self._test_regex    = test_regex
         self._test_labels   = test_labels
         self._root_dir      = pathlib.Path(root_dir or os.getcwd()).absolute()
-        self._config_dir    = config_folder or self._root_dir / "scripts"
         self._machine       = None
         self._builds        = []
 
@@ -56,48 +57,15 @@ class TestProjBuilds(object):
             expect (ctest_config.exists(),
                     f"Cannot submit to cdash. CTestConfig.cmake was not found in root_dir={self._root_dir}")
 
-        #########################
-        #  Set the machine obj  #
-        #########################
+        ###################################
+        #  Parse the project config file  #
+        ###################################
 
-        mach_module    = module_from_path(self._config_dir / "project_machines.py","project_machines")
-        avail_machines = objects_from_module(mach_module,Machine)
+        config_file = pathlib.Path(config_file or self._root_dir / "scripts/test_proj_builds.yaml")
+        expect (config_file.exists(),
+                f"Could not find/open config file: {config_file}\n")
 
-        for m in avail_machines:
-            if m.name == machine_name:
-                self._machine = m
-
-        expect (self._machine is not None,
-                f"Could not locate machine '{machine_name}' in {self._config_dir}/project_machines.py")
-
-        #########################
-        #  Set the build types  #
-        #########################
-
-        builds_module = module_from_path(self._config_dir / "project_build_types.py","project_build_types")
-        avail_builds  = objects_from_module(builds_module,BuildType,self._machine)
-
-        if build_types:
-            for bt in build_types:
-                expect (bt in [b.shortname for b in avail_builds],
-                        "Could not locate build\n"
-                        f"  - requested build: '{bt}'\n"
-                        f"  - build types module: {self._config_dir}/project_build_types.py\n"
-                        f"  - available builds: '{','.join(b.shortname for b in avail_builds)}'")
-
-            for b in avail_builds:
-                if b.shortname in build_types:
-                    if not self._generate or b.uses_baselines:
-                        self._builds.append(b)
-                    else:
-                        print(f"Discarding build '{b.longname}, since it does not use baselines and -g was used")
-        else:
-            # Build all builds that are "on by default"
-            for b in avail_builds:
-                if b.on_by_default:
-                    # When generating, don't consider builds that don't use baselines
-                    if not self._generate or b.uses_baselines:
-                        self._builds.append(b)
+        self.parse_config_file(config_file,machine_name,build_types)
 
         ###################################
         #      Compute baseline info      #
@@ -168,9 +136,6 @@ class TestProjBuilds(object):
         builds_success = {
             build : False
             for build in self._builds}
-
-        mach_module   = module_from_path(self._config_dir / "project_machines.py","project_machines")
-        builds_module = module_from_path(self._config_dir / "project_build_types.py","project_build_types")
 
         num_workers = len(self._builds) if self._parallel else 1
 
@@ -274,7 +239,8 @@ class TestProjBuilds(object):
             return True
 
         cmd  = f"ctest -j{build.testing_res_count}"
-        cmd += f" -L {self._machine.baseline_gen_label}"
+        if self._project.baselines_gen_label:
+            cmd += f" -L {self._project.baselines_gen_label}"
         cmd += f" --resource-spec-file {build_dir}/ctest_resource_file.json"
         stat, _, err = run_cmd(cmd, output_to_screen=True,combine_output=True,
                                env_setup=env_setup, from_dir=build_dir, verbose=True)
@@ -452,7 +418,7 @@ class TestProjBuilds(object):
             result += f" -C {self._machine.mach_file}"
 
         # Build-specific cmake options
-        for key, value in build.cmake_args:
+        for key, value in build.cmake_args.items():
             result += f" -D{key}={value}"
 
         # Compilers
@@ -503,3 +469,40 @@ class TestProjBuilds(object):
 
         expect (len(missing)==0,
                 f"Re-run with -g to generate missing baselines for builds {missing}")
+
+    ###############################################################################
+    def parse_config_file(self,config_file,machine_name,builds_types):
+    ###############################################################################
+        content = yaml.load(open(config_file,"r"),Loader=yaml.SafeLoader)
+        expect (all(k in content.keys() for k in ['project','machines','configurations']),
+                "Missing section in configuration file\n"
+                f" - config file: {config_file}\n"
+                f" - requires sections: project, machines, configurations\n"
+                f" - sections found: {','.join(content.keys())}\n")
+
+        proj = content['project']
+        machs = content['machines']
+        configs = content['configurations']
+
+        # Build Project
+        self._project = Project(proj)
+
+        # Build Machine
+        self._machine = Machine(machine_name,machs)
+
+        # Get builds
+        if builds_types:
+            for name in builds_types:
+                build = BuildType(name,self._project,self._machine,configs)
+                # Skip non-baselines builds when generating baselines
+                if not self._generate or build.uses_baselines:
+                    self._builds.append(build)
+        else:
+            # Add all build types that are on by default
+            for name in configs.keys():
+                if name=='default':
+                    continue
+                build = BuildType(name,self._project,self._machine,configs)
+                # Skip non-baselines builds when generating baselines
+                if not self._generate or build.uses_baselines:
+                    self._builds.append(build)

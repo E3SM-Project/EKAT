@@ -16,31 +16,15 @@ OR
 {0} --help
 
 \033[1mEXAMPLES:\033[0m
-    \033[1;32m# Run all tests on machine FOO, using py modules in config-folder /bar current machine using the SCREAM-approved env for this machine \033[0m
+    \033[1;32m# Run all tests on machine FOO, using yaml config file /bar.yaml on machine 'mappy' \033[0m
     > cd $scream_repo/components/eamxx
-    > ./scripts/{0} -m mappy
-
-    \033[1;32m# Run all tests on current machine with defaut behavior except using your current shell env \033[0m
-    > cd $scream_repo/components/eamxx
-    > ./scripts/{0} --preserve-env -m mappy
-
-    \033[1;32m# Run all tests on current machine with default behavior except using non-default baselines \033[0m
-    > cd $scream_repo/components/eamxx
-    > ./scripts/{0} -m mappy --baseline-dir=PATH_TO_BASELINES
-
-    \033[1;32m# Run all tests on current machine with default behavior except using local baselines \033[0m
-    > cd $scream_repo/components/eamxx
-    > ./scripts/{0} -m mappy --baseline-dir=LOCAL
-
-    \033[1;32m# Run only the dbg test on current machine with default behavior otherwise\033[0m
-    > cd $scream_repo/components/eamxx
-    > ./scripts/{0} -m mappy -t dbg
+    > ./scripts/{0} -m mappy -f /bar.yaml
 """.format(pathlib.Path(args[0]).name),
         description=description,
         formatter_class=GoodFormatter
     )
 
-    parser.add_argument("-f","--config-folder", help="Folder where to find user-specific config files to be imported")
+    parser.add_argument("-f","--config-file", help="YAML file containing valid project/machine settings")
 
     parser.add_argument("-s", "--submit", action="store_true", help="Submit results to dashboad")
     parser.add_argument("-p", "--parallel", action="store_true",
