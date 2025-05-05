@@ -109,11 +109,14 @@ private:
   {
     // Check that we are not doing 0^0 or taking even roots of negative numbers.
     // If all good, adjust base and exp for x^0 case (b=1,e=1), and return what was requested.
-    return CONSTEXPR_ASSERT( !(b==RationalConstant::zero() && e==RationalConstant::zero()) ),
-           CONSTEXPR_ASSERT( !(b.num<0 && e.den%2==0) ),
-           (e==RationalConstant::zero()
-              ? base_and_exp{{RationalConstant::one(), RationalConstant::one()}}
-              : base_and_exp{{b,e}} );
+    constexpr auto zero = RationalConstant::zero();
+    constexpr auto one  = RationalConstant::one();
+    if (b==zero and e==zero)
+      throw std::invalid_argument("[ScalingFactor] Cannot compute 0^0");
+    else if (b.num<0 && e.den%2==0)
+      throw std::invalid_argument("[ScalingFactor] Cannot compute positive roots of negative numbers");
+
+    return e==zero ? base_and_exp{{one, one}} : base_and_exp{{b,e}};
   }
 };
 
