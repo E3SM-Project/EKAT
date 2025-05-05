@@ -91,7 +91,7 @@ endif()
 ############################################
 
 if (EKAT_STANDALONE)
-  set (EKAT_FPMODEL "" CACHE STIRNG "Floating-point model to use (precise, strict, fast, fast=1, fast=2)")
+  set (EKAT_FPMODEL "" CACHE STRING "Floating-point model to use (precise, strict, fast, fast=1, fast=2)")
   # Initialize flags
   include (EkatSetCompilerFlags)
   ResetFlags()
