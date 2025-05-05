@@ -2,11 +2,11 @@ include(GNUInstallDirs)
 
 option(EKAT_AUTO_ENABLE_DEPENDENCIES  "Automatically enable EKAT packages if needed" OFF)
 
-option(EKAT_ENABLE_ALGORITHM  "Enable EKAT algorithm utilities" OFF)
-option(EKAT_ENABLE_KOKKOS     "Enable EKAT kokkos utilities" OFF)
-option(EKAT_ENABLE_LOGGING    "Enable EKAT spdlog utilities" OFF)
-option(EKAT_ENABLE_PACK       "Enable EKAT packs utilities" OFF)
-option(EKAT_ENABLE_PARSER     "Enable EKAT yaml parsing utilities" OFF)
+option(EKAT_ENABLE_ALGORITHM    "Enable EKAT algorithm utilities" OFF)
+option(EKAT_ENABLE_KOKKOS       "Enable EKAT kokkos utilities" OFF)
+option(EKAT_ENABLE_LOGGING      "Enable EKAT spdlog utilities" OFF)
+option(EKAT_ENABLE_PACK         "Enable EKAT packs utilities" OFF)
+option(EKAT_ENABLE_YAML_PARSER  "Enable EKAT yaml parsing utilities" OFF)
 
 # Perform some checks.
 macro (EkatCompatibleOptions Option Requires)
@@ -43,7 +43,7 @@ endif()
 if (EKAT_ENABLE_PACK)
   add_subdirectory(pack)
 endif()
-if (EKAT_ENABLE_PARSER)
+if (EKAT_ENABLE_YAML_PARSER)
   add_subdirectory(parser)
 endif()
 
