@@ -20,8 +20,10 @@ TEST_CASE("units_framework", "") {
     REQUIRE(one/two == half);
     REQUIRE(half*half == quarter);
     REQUIRE(pow(half,2)==quarter);
-#if defined(EKAT_CONSTEXPR_ASSERT) && !defined(NDEBUG)
-    const RationalConstant zero(0);
+#ifndef NDEBUG
+    constexpr RationalConstant zero(0);
+    // NOTE: even though one/zero CAN be evaluated at compile time,
+    // Catch2's impl will defer evaluation of expression until runtime...somehow.
     REQUIRE_THROWS(one/zero);
     REQUIRE_THROWS(pow(zero,zero));
     REQUIRE_THROWS(pow(-one,half));
@@ -48,7 +50,7 @@ TEST_CASE("units_framework", "") {
     REQUIRE(root2.to_string()=="2^(1/2)");
     REQUIRE(root2.to_string(Format::Float)=="2^0.5");
 
-#if defined(EKAT_CONSTEXPR_ASSERT) && !defined(NDEBUG)
+#ifndef NDEBUG
     const RationalConstant three(3);
     REQUIRE_THROWS(sqrt(-three));
 #endif
