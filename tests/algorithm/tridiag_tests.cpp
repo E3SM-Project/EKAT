@@ -1,9 +1,9 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
-#include "tridiag_tests.hpp"
-#include "ekat/ekat_session.hpp"
 #include "ekat_test_config.h"
+#include "tridiag_tests.hpp"
+#include "ekat_session.hpp"
 
 int main (int argc, char **argv) {
   int num_failed = 0;
