@@ -38,7 +38,7 @@ endif()
 add_library(YamlParser
   ekat_yaml.cpp
 )
-target_link_libraries(YamlParser PUBLIC Core Utils)
+target_link_libraries(YamlParser PUBLIC Core)
 target_link_libraries(YamlParser PRIVATE yaml-cpp::yaml-cpp)
 
 target_include_directories(YamlParser INTERFACE

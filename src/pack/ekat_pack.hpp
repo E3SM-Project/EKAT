@@ -1,5 +1,5 @@
-#ifndef INCLUDE_EKAT_PACK
-#define INCLUDE_EKAT_PACK
+#ifndef EKAT_PACK_HPP
+#define EKAT_PACK_HPP
 
 //TODO
 // - bounds checking define
@@ -655,4 +655,4 @@ struct reduction_identity<ekat::Pack<S,N>> {
 #undef ekat_mask_gen_bin_op_mm
 #undef ekat_mask_gen_bin_op_mb
 
-#endif // INCLUDE_EKAT_PACK
+#endif // EKAT_PACK_HPP
