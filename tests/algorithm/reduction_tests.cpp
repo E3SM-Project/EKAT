@@ -65,7 +65,7 @@ void test_view_reduction(const int begin=0, const int end=TotalSize)
   using Device = ekat::DefaultDevice;
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
-  using ReductionUtils = ekat::ReductionUtils<ExeSpace>;
+  using ReductionUtils = ekat::ReductionUtils<ExeSpace,Serialize>;
   using PolicyFactory = ekat::PolicyFactory<ExeSpace>;
 
   using PackType = ekat::Pack<Scalar, VectorSize>;
