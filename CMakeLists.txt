@@ -195,5 +195,5 @@ install (FILES
   ${EKAT_CMAKE_PATH}/EkatUtils.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
 
-# install (DIRECTORY ${EKAT_CMAKE_PATH}/tpls
-#          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
+install (DIRECTORY ${EKAT_CMAKE_PATH}/tpls
+         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
