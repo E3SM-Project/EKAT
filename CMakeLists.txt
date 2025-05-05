@@ -43,10 +43,6 @@ message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 # TODO: this is never used in EKAT src folder, so it should be removed.
 #       Downstream projects should handle bfb logic autonomously
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
-option (EKAT_ENABLE_FPE "Whether to enable support for floating point exceptions" ON)
-if (EKAT_ENABLE_FPE)
-  option (EKAT_ENABLE_FPE_DEFAULT_MASK "Whether ekat should set a 'reasonable' FPE mask at startup" OFF)
-endif()
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
 option (EKAT_ENABLE_COMPUTE_SANITIZER "Whether to run tests with nvidia's compute-sanitizer" OFF)
@@ -95,6 +91,7 @@ endif()
 ############################################
 
 if (EKAT_STANDALONE)
+  set (EKAT_FPMODEL "" CACHE STIRNG "Floating-point model to use (precise, strict, fast, fast=1, fast=2)")
   # Initialize flags
   include (EkatSetCompilerFlags)
   ResetFlags()
