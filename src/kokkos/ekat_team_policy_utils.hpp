@@ -1,5 +1,5 @@
-#ifndef EKAT_KOKKOS_UTILS_HPP
-#define EKAT_KOKKOS_UTILS_HPP
+#ifndef EKAT_TEAM_POLICY_UTILS_HPP
+#define EKAT_TEAM_POLICY_UTILS_HPP
 
 #include "ekat_kokkos_types.hpp"
 #include "ekat_type_traits.hpp"
@@ -333,4 +333,4 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
 
 } // namespace ekat
 
-#endif // EKAT_KOKKOS_UTILS_HPP
+#endif // EKAT_TEAM_POLICY_UTILS_HPP

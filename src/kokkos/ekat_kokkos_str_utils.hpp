@@ -1,7 +1,7 @@
 #ifndef EKAT_KOKKOS_STR_UTILS_HPP
 #define EKAT_KOKKOS_STR_UTILS_HPP
 
-#include "ekat_assert.hpp"
+#include "ekat_kernel_assert.hpp"
 
 #include <Kokkos_Core.hpp>
 
