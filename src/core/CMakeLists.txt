@@ -27,6 +27,28 @@ if (EKAT_ENABLE_MPI)
   set(EKAT_MPI_THREAD_FLAG "" CACHE STRING "The mpirun flag for designating the number of threads")
 endif()
 
+# Boost stacktrace is an OPTIONAL dependency of Core
+
+# Always looking for stacktrace can cause problems when cross compiling
+# Hence, avoid finding boost if user didn't ask for it.
+option (EKAT_ENABLE_BOOST_STACKTRACE "Whether to enable Boost stacktrace" OFF)
+if (EKAT_ENABLE_BOOST_STACKTRACE)
+  message (STATUS "Looking for boost::stacktrace ...")
+  # Stacktrace is available with Boost>=1.65
+  find_package(Boost 1.65.0 REQUIRED
+    COMPONENTS stacktrace_addr2line
+  )
+
+  if (Boost_STACKTRACE_ADDR2LINE_FOUND)
+    message (STATUS "Looking for boost::stacktrace ... Found")
+    message ("    -> EKAT's assert macros will provide a stacktrace.")
+    set (EKAT_HAS_STACKTRACE TRUE)
+  endif()
+else()
+  message (STATUS "EKAT_ENABLE_BOOST_STACKTRACE: OFF")
+  message ("    -> EKAT's assert macros will NOT provide a stacktrace.")
+endif()
+
 # Create the library, and set all its properties
 add_library(Core
   ekat_arch.cpp
@@ -48,6 +70,7 @@ endif()
 if (EKAT_MPI_ERRORS_ARE_FATAL)
   target_compile_definitions(Core PUBLIC EKAT_MPI_ERRORS_ARE_FATAL)
 endif()
+
 if (EKAT_HAS_STACKTRACE)
   target_link_libraries(Core PUBLIC ${Boost_LIBRARIES})
   target_compile_definitions(Core PRIVATE EKAT_HAS_STACKTRACE)
