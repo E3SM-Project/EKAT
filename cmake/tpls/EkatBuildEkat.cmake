@@ -51,7 +51,6 @@ macro (BuildEkat)
     set(oneValueArgs
       PREFIX
       MPI_ERRORS_ARE_FATAL
-      CONSTEXPR_ASSERT
       MIMIC_GPU
       ENABLE_FPE
       ENABLE_FPE_DEFAULT_MASK

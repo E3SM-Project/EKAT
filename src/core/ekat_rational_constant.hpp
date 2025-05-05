@@ -152,13 +152,15 @@ private:
 
   // These two are used to help reduce a/b to lowest terms
   static constexpr iType fix_num(const iType n, const iType d) {
-    return CONSTEXPR_ASSERT(d!=0),
-             n==0 ? n : n / gcd(abs(n),abs(d));
+    if (d==0)
+      throw std::invalid_argument("[RationalConstant] Cannot divide by 0");
+    return n==0 ? n : n / gcd(abs(n),abs(d));
   }
 
   static constexpr iType fix_den(const iType n, const iType d) {
-    return CONSTEXPR_ASSERT(d!=0),
-            d<0 ? fix_den(n,-d) : d / gcd(abs(n),abs(d));
+    if (d==0)
+      throw std::invalid_argument("[RationalConstant] Cannot divide by 0");
+    return d<0 ? fix_den(n,-d) : d / gcd(abs(n),abs(d));
   }
 };
 
@@ -203,9 +205,16 @@ pow (const RationalConstant& x, const IntType p) {
   //  - p=0: base case, return 1 if x!=0, throw if x==0
   //  - recursion step: x^p = x * x^{p-1}
   // Note: recall that expressions like "blah1, blah2" executes both blah1 and blah2 and return blah2.
-  return p<0 ? pow(1/x,-p)
-             : (p==0 ? CONSTEXPR_ASSERT(x.num!=0), RationalConstant::one()
-                     : ( (p&1)!=0 ? x*pow(x*x,p>>1) : pow(x*x,p>>1)));
+  if (p<0) {
+    return pow(1/x, -p);
+  } else if (p==0) {
+    if (x.num==0)
+      throw std::invalid_argument("[RationalConstant] Cannot compute 0^0.");
+
+    return RationalConstant::one();
+  } else {
+    return p&1!=0 ? x*pow(x*x,p>>1) : pow(x*x,p>>1);
+  }
 }
 
 inline std::ostream& operator<< (std::ostream& out, const RationalConstant& rat) {
