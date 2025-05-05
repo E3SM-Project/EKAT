@@ -36,12 +36,6 @@ set (EKAT_VERSION_PATCH 0)
 # Report the installation prefix.
 message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 
-###########################
-###      EKAT TPLS      ###
-###########################
-
-# include (EkatTPLs)
-
 ############################
 ###  EKAT CONFIG OPTIONS ###
 ############################
