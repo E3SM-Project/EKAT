@@ -1,10 +1,9 @@
 #ifndef EKAT_STD_ENABLE_SHARED_FROM_THIS_HPP
 #define EKAT_STD_ENABLE_SHARED_FROM_THIS_HPP
 
-
 #include <memory>
 
-#include "ekat/ekat_assert.hpp"
+#include "ekat_assert.hpp"
 
 namespace ekat {
 

@@ -3,7 +3,6 @@
 
 #include "ekat_team_policy_utils.hpp"
 #include "ekat_kokkos_types.hpp"
-// #include "ekat_std_utils.hpp"
 
 namespace unit_test {
 struct UnitWrap;
