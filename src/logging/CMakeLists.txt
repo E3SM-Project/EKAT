@@ -23,7 +23,7 @@ endif()
 # Create the library, and set all its properties
 # NOTE: since there are NO .cpp files, we must declare the target as INTERFACE
 add_library(Logging INTERFACE)
-target_link_libraries(Logging PUBLIC Core Utils)
+target_link_libraries(Logging PUBLIC Core)
 target_link_libraries(ekat PUBLIC spdlog::spdlog)
 
 target_include_directories(Logging PUBLIC

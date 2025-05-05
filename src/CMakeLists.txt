@@ -2,15 +2,11 @@ include(GNUInstallDirs)
 
 option(EKAT_AUTO_ENABLE_DEPENDENCIES  "Automatically enable EKAT packages if needed" OFF)
 
-option(EKAT_ENABLE_ALGORITHM   "Enable EKAT algorithm utilities" OFF)
-option(EKAT_ENABLE_KOKKOS      "Enable EKAT kokkos utilities" OFF)
-option(EKAT_ENABLE_LOGGING     "Enable EKAT spdlog utilities" OFF)
-option(EKAT_ENABLE_MPI_COMM    "Enable EKAT mpi comm wrapping" OFF)
-option(EKAT_ENABLE_PACK        "Enable EKAT packs utilities" OFF)
-option(EKAT_ENABLE_TEST_UTILS  "Enable EKAT testing utilities" ${EKAT_ENABLE_TEST})
-option(EKAT_ENABLE_UNITS       "Enable EKAT units utilities" OFF)
-option(EKAT_ENABLE_UTILS       "Enable EKAT generic utilities" OFF)
-option(EKAT_ENABLE_YAML_PARSER "Enable EKAT parsing utilities" OFF)
+option(EKAT_ENABLE_ALGORITHM  "Enable EKAT algorithm utilities" OFF)
+option(EKAT_ENABLE_KOKKOS     "Enable EKAT kokkos utilities" OFF)
+option(EKAT_ENABLE_LOGGING    "Enable EKAT spdlog utilities" OFF)
+option(EKAT_ENABLE_PACK       "Enable EKAT packs utilities" OFF)
+option(EKAT_ENABLE_PARSER     "Enable EKAT yaml parsing utilities" OFF)
 
 # Perform some checks.
 macro (EkatCompatibleOptions Option Requires)
@@ -30,41 +26,25 @@ macro (EkatCompatibleOptions Option Requires)
   endforeach()
 endmacro()
 
-# If testing is enabled, we need EKAT_ENABLE_TEST_UTILS ON
-EkatCompatibleOptions(TESTS "TEST_UTILS")
-
 # Check packages interdeps
 EkatCompatibleOptions(ALGORITHM "PACK;KOKKOS")
-EkatCompatibleOptions(KOKKOS "UTILS")
 EkatCompatibleOptions(PACK "KOKKOS")
-EkatCompatibleOptions(UNITS "UTILS")
-EkatCompatibleOptions(YAML_PARSER "UTILS")
     
 # Core is ALWAYS enabled
 add_subdirectory(core)
 
-# Process sub-pacakges as requested
+# Process optional sub-pacakges as requested
 if (EKAT_ENABLE_ALGORITHM)
   add_subdirectory(algorithm)
 endif()
 if (EKAT_ENABLE_KOKKOS)
   add_subdirectory(kokkos)
 endif()
-if (EKAT_ENABLE_MPI_COMM)
-  add_subdirectory(mpi)
-endif()
 if (EKAT_ENABLE_PACK)
   add_subdirectory(pack)
 endif()
-if (EKAT_ENABLE_YAML_PARSER)
-  add_subdirectory(yaml)
+if (EKAT_ENABLE_PARSER)
+  add_subdirectory(parser)
 endif()
-if (EKAT_ENABLE_TEST_UTILS)
-  add_subdirectory(test-utils)
-endif()
-if (EKAT_ENABLE_UNITS)
-  add_subdirectory(units)
-endif()
-if (EKAT_ENABLE_UTILS)
-  add_subdirectory(utils)
-endif()
+
+add_subdirectory(catch-main)

@@ -1,8 +1,49 @@
 include(GNUInstallDirs)
 
-# Create the library, and set all its properties
-add_library(Core ekat_fpe.cpp)
+# MPI is an OPTIONAL dependency of Core (but ON by default)
+option (EKAT_ENABLE_MPI "Whether EKAT requires MPI." ON)
+if (EKAT_ENABLE_MPI)
+  find_package(MPI REQUIRED)
 
+  # NOTE: may be an overkill, but depending on which FindMPI module is called,
+  #       if _FIND_REQUIRED is not checked, we may not get a fatal error
+  #       if the required components are not found. So check the _FOUND var.
+  if (NOT MPI_C_FOUND)
+    message (FATAL_ERROR "EKAT *requires* the C component of MPI to be found")
+  endif()
+
+  # We should avoid cxx bindings in mpi; they are already deprecated,
+  # and can cause headaches at link time, cause they require -lmpi_cxx
+  # (openpmi) or -lmpicxx (mpich) flags.
+  include(EkatMpiUtils)
+  DisableMpiCxxBindings()
+
+  # MPI-related options
+  option (EKAT_MPI_ERRORS_ARE_FATAL " Whether EKAT should crash when MPI errors happen." ON)
+
+  set(EKAT_MPIRUN_EXE "mpiexec" CACHE STRING "The executable name for mpirun")
+  set(EKAT_MPI_EXTRA_ARGS "--bind-to core" CACHE STRING "Options for mpirun")
+  set(EKAT_MPI_NP_FLAG "--map-by" CACHE STRING "The mpirun flag for designating the total number of ranks")
+  set(EKAT_MPI_THREAD_FLAG "" CACHE STRING "The mpirun flag for designating the number of threads")
+endif()
+
+# Create the library, and set all its properties
+add_library(Core
+  ekat_arch.cpp
+  ekat_fpe.cpp
+  ekat_parameter_list.cpp
+  ekat_string_utils.cpp
+  ekat_test_utils.cpp
+)
+
+# Add the correct ekat::Comm impl file, depending on whether MPI is ON/OFF.
+if (EKAT_ENABLE_MPI)
+  target_sources(Core PRIVATE ekat_comm.cpp)
+  target_compile_definitions(Core PUBLIC EKAT_ENABLE_MPI)
+  target_link_libraries(Core PUBLIC MPI::MPI_C)
+else()
+  target_sources(Core PRIVATE ekat_comm_serial.cpp)
+endif()
 if (EKAT_HAS_STACKTRACE)
   target_link_libraries(Core PUBLIC ${Boost_LIBRARIES})
   target_compile_definitions(Core PRIVATE EKAT_HAS_STACKTRACE)
@@ -24,8 +65,25 @@ endif()
 
 set (HEADERS
   ekat.hpp
+  ekat_arch.hpp
   ekat_assert.hpp
+  ekat_comm.hpp
+  ekat_factory.hpp
   ekat_fpe.hpp
+  ekat_meta_utils.hpp
+  ekat_parameter_list.hpp
+  ekat_rational_constant.hpp
+  ekat_scalar_traits.hpp
+  ekat_scaling_factor.hpp
+  ekat_std_any.hpp
+  ekat_std_enable_shared_from_this.hpp
+  ekat_std_map_key_iterator.hpp
+  ekat_std_type_traits.hpp
+  ekat_std_utils.hpp
+  ekat_string_utils.hpp
+  ekat_test_utils.hpp
+  ekat_type_traits.hpp
+  ekat_units.hpp
 )
 
 # Set the PUBLIC_HEADER property
