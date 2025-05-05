@@ -1,4 +1,4 @@
-#include <Kokkos_Core.hpp>
+#include "ekat_kokkos_types.hpp"
 
 #include <cstdio>
 
@@ -14,10 +14,6 @@ void initialize_kokkos () {
   Kokkos::initialize(settings);
 }
 } // namespace ekat_impl
-
-void initialize_kokkos_session (bool print_config) {
-  initialize_kokkos_session(0,nullptr, print_config);
-}
 
 void initialize_kokkos_session (int argc, char **argv, bool print_config) {
 
@@ -59,7 +55,11 @@ void initialize_kokkos_session (int argc, char **argv, bool print_config) {
   }
 }
 
-void finalize_ekat_session () {
+void initialize_kokkos_session (bool print_config) {
+  initialize_kokkos_session(0,nullptr, print_config);
+}
+
+void finalize_kokkos_session () {
   if (Kokkos::is_initialized()) {
     Kokkos::finalize();
   }

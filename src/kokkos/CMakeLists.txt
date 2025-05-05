@@ -20,8 +20,9 @@ endif()
 add_library(KokkosUtils
   ekat_kokkos_session.cpp
 )
-target_link_libraries(KokkosUtils PUBLIC Core Utils)
+target_link_libraries(KokkosUtils PUBLIC Core)
 target_link_libraries(KokkosUtils PUBLIC kokkos)
+target_compile_definitions(KokkosUtils PUBLIC EKAT_HAS_KOKKOS)
 
 # A shortcut var, to handle GPU-specific (but backend-agnostic) stuff
 if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)

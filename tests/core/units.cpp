@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/ekat_units.hpp"
+#include "ekat_units.hpp"
 
 #include <iostream>
 

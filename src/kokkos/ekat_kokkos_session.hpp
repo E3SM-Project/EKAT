@@ -3,10 +3,10 @@
 
 namespace ekat {
 
-void initialize_kokkos(bool print_config = true);
-void initialize_kokkos(int argc, char **argv, bool print_config = true);
+void initialize_kokkos_session(bool print_config = true);
+void initialize_kokkos_session(int argc, char **argv, bool print_config = true);
 
-void finalize_kokkos();
+void finalize_kokkos_session();
 
 } // namespace ekat
 

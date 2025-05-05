@@ -1,5 +1,5 @@
-#ifndef INCLUDE_EKAT_PACK
-#define INCLUDE_EKAT_PACK
+#ifndef EKAT_PACK_HPP
+#define EKAT_PACK_HPP
 
 //TODO
 // - bounds checking define
@@ -590,21 +590,7 @@ struct ScalarTraits<Pack<T,N>> {
   // This seems funky. But write down a pow of 2 and a non-pow of 2 in binary (both positive), and you'll see why it works
   static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
 
-  // Roll our own (hopefully verbose enough) name for this type.
-  static std::string name () {
-    return "Pack<" + inner_traits::name() + "," + std::to_string(N) + ">";
-  }
   static constexpr bool is_simd = true;
-
-  KOKKOS_INLINE_FUNCTION
-  static const value_type quiet_NaN () {
-    return value_type(inner_traits::quiet_NaN());
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static const value_type invalid () {
-    return value_type(inner_traits::invalid());
-  }
 };
 
 template <typename PackType>
@@ -655,4 +641,4 @@ struct reduction_identity<ekat::Pack<S,N>> {
 #undef ekat_mask_gen_bin_op_mm
 #undef ekat_mask_gen_bin_op_mb
 
-#endif // INCLUDE_EKAT_PACK
+#endif // EKAT_PACK_HPP
