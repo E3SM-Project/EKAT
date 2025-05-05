@@ -6,7 +6,7 @@ include(EkatUtils) # To check macro args
 #       the directory from where the function is called
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/Catch2/single_include)
 
-set(CUT_EXEC_OPTIONS EXCLUDE_MAIN_CPP EXCLUDE_TEST_SESSION)
+set(CUT_EXEC_OPTIONS EXCLUDE_MAIN_CPP USER_DEFINED_TEST_SESSION)
 set(CUT_EXEC_1V_ARGS)
 set(CUT_EXEC_MV_ARGS
   INCLUDE_DIRS
@@ -35,7 +35,7 @@ set(CUT_TEST_MV_ARGS DEP EXE_ARGS MPI_RANKS THREADS LABELS PROPERTIES
 # This function takes the following mandatory arguments:
 #    - exec_name: the name of the test executable that will be created.
 #    - exec_srcs: a list of src files for the executable.
-#      Note: no need to include ekat_catch_main; this macro will add it (if needed).
+#      Note: no need to include ekat_catch_main.cpp; this macro will add it (if needed).
 # The following optional arguments can be passed as ARG_NAME "ARG_VAL":
 #    - INCLUDE_DIRS: a list of directories to add to the include search path
 #    - COMPILE_[C_|CXX_|F_]DEFS: a list of additional (possibly language-specific) defines for the compiler
@@ -96,11 +96,14 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   endforeach()
 
   # Link flags/libs
+  target_link_libraries(${target_name} PUBLIC TestUtils)
   if (NOT ecute_EXCLUDE_MAIN_CPP)
-    target_link_libraries(${target_name} PUBLIC ekat_test_main)
+    target_link_libraries(${target_name} PUBLIC CatchMain)
   endif ()
-  if (NOT ecute_EXCLUDE_TEST_SESSION)
-    target_link_libraries(${target_name} PUBLIC ekat_test_session)
+  if (ecute_USER_DEFINED_TEST_SESSION)
+    target_compile_options(${target_name} PRIVATE USER_DEFINED_TEST_SESSION)
+  else ()
+    target_link_libraries(${target_name} PUBLIC Session)
   endif ()
   if (ecute_LIBS)
     target_link_libraries(${target_name} PUBLIC "${ecute_LIBS}")

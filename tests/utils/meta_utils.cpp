@@ -1,8 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/ekat_meta_utils.hpp"
-
-#include <iostream>
+#include "ekat_meta_utils.hpp"
 
 // We can't define template alias inside the TEST_CASE block,
 // since, upon macro expansion, those blocks are at function scope.

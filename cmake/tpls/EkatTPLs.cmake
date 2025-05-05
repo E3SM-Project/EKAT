@@ -4,8 +4,6 @@
 
 message (STATUS " *** Begin processing EKAT's TPLs ***")
 
-option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when compiling TPLs." OFF)
-
 # WARNING: you CANNOT do list(APPEND var item1 ... item2) if var is a CACHE variable!
 # Therefore, use an internal var during tpl parsing, then set a cache var ONCE at the end
 

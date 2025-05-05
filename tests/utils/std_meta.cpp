@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/std_meta/ekat_std_any.hpp"
+#include "ekat_std_any.hpp"
 
 #include <vector>
 

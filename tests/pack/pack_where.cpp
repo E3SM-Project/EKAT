@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 
-#include "ekat/util/ekat_where.hpp"
+#include "ekat_pack_where.hpp"
 
 template<typename T>
 void run_scalar_tests ()

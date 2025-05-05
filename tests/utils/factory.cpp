@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/util/ekat_factory.hpp"
+#include "ekat_factory.hpp"
 
 namespace {
 

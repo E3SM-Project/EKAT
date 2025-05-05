@@ -40,7 +40,7 @@ message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 ###      EKAT TPLS      ###
 ###########################
 
-include (EkatTPLs)
+# include (EkatTPLs)
 
 ############################
 ###  EKAT CONFIG OPTIONS ###
@@ -60,6 +60,8 @@ option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
 option (EKAT_TEST_LAUNCHER_BUFFER "Whether test-launcher should buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently" OFF)
 option (EKAT_TEST_LAUNCHER_MANAGE_RESOURCES "Whether test-launcher should try to manage thread distribution. Requires a ctest resource file to be effective." OFF)
 set (EKAT_PROFILING_TOOL "NONE" CACHE STRING "Profiling tool to be used")
+option (EKAT_ENABLE_TESTS "Whether tests should be built." ON)
+option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when compiling TPLs." OFF)
 
 # Path to valgrind suppression file. If none is provided, EKAT will generate one
 # for you. The generated ones are OK but there's an element of nondeterminism
@@ -106,12 +108,6 @@ if (EKAT_STANDALONE)
   SetProfilingFlags(PROFILER ${EKAT_PROFILING_TOOL} COVERAGE ${EKAT_ENABLE_COVERAGE})
 endif()
 
-include(CheckCXXSymbolExists)
-# Most of the FPE stuff was defined in C99, but gnu has some additional non-std
-# functions that are helpful (such as feeenableexcept) --- Apple stopped including these
-# in 2005, so we have to drop-in replacements for them.
-check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
-
 ##################################
 ##    EKAT VALGRIND SUPPORT    ###
 ##################################
@@ -121,10 +117,10 @@ if (EKAT_ENABLE_VALGRIND)
 endif()
 
 ############################
-###    EKAT LIBRARIES    ###
+###    EKAT PACKAGES     ###
 ############################
 
-add_subdirectory(src/ekat)
+add_subdirectory(src)
 
 ############################
 ###     EKAT TESTING     ###
@@ -156,9 +152,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/test-launcher
 include(GNUInstallDirs)
 install (PROGRAMS ${CMAKE_BINARY_DIR}/bin/test-launcher
          DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-# By default, we DO build ekat tests. This may change in the future
-option (EKAT_ENABLE_TESTS "Whether tests should be built." ON)
 
 if (EKAT_ENABLE_TESTS)
   enable_testing()
@@ -197,6 +190,8 @@ install(FILES
 
 # Install cmake targets
 install(EXPORT EkatTargets
+        FILE EkatTargets.cmake
+        NAMESPACE ekat::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat)
 
 ###########################################
@@ -209,5 +204,5 @@ install (FILES
   ${EKAT_CMAKE_PATH}/EkatUtils.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
 
-install (DIRECTORY ${EKAT_CMAKE_PATH}/tpls
-         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)
+# install (DIRECTORY ${EKAT_CMAKE_PATH}/tpls
+#          DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules)

@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
-#include "ekat/mpi/ekat_comm.hpp"
+
+#include "ekat_comm.hpp"
 
 // Instantiate get_mpi_type for a user defined type
 // to check that the user can extend comm functionalities

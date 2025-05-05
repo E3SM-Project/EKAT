@@ -1,10 +1,10 @@
 #include <chrono>
 
+#include "ekat_pack_kokkos.hpp"
+#include "ekat_test_utils.hpp"
+#include "ekat_assert.hpp"
+
 #include "tridiag_tests.hpp"
-
-#include "ekat/util/ekat_test_utils.hpp"
-
-#include "ekat_test_config.h"
 
 namespace ekat {
 namespace test {
@@ -19,7 +19,7 @@ std::string Solver::convert (Enum e) {
   switch (e) {
     case thomas: return "thomas";
     case cr: return "cr";
-    default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << e);
+    default: EKAT_REQUIRE_MSG(false, "Not a valid solver: " << static_cast<int>(e));
   }
   return "";
 }
@@ -138,8 +138,8 @@ void run (const Input& in) {
   using ekat::npack;
   using TeamPolicy = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
   using MT = typename TeamPolicy::member_type;
-  using APack = ekat::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
-  using DataPack = ekat::Pack<Real, EKAT_TEST_SMALL_PACK_SIZE>;
+  using APack = ekat::Pack<Real, EKAT_TEST_PACK_SIZE>;
+  using DataPack = ekat::Pack<Real, EKAT_TEST_PACK_SIZE>;
 
   const auto gettime = [&] () {
     return std::chrono::steady_clock::now();
