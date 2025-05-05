@@ -19,15 +19,15 @@ std::string active_avx_string () {
 std::string compiler_id_string ()
 {
 #if defined __INTEL_COMPILER
-  return "Intel\n";
+  return "Intel";
 #elif defined __INTEL_LLVM_COMPILER
-  return "IntelLLVM\n";
+  return "IntelLLVM";
 #elif defined __HIPCC__
-  return "AMD Clang\n";
+  return "AMD Clang";
 #elif defined __GNUG__
-  return "GCC\n";
+  return "GCC";
 #else
-  return "unknown\n";
+  return "unknown";
 #endif
 }
 
