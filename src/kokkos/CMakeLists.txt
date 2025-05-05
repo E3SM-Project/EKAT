@@ -30,6 +30,11 @@ if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
   target_compile_definitions(KokkosUtils PUBLIC EKAT_ENABLE_GPU)
 endif ()
 
+option (EKAT_MIMIC_GPU "Whether team policies on host should be built with large teams" OFF)
+if (EKAT_MIMIC_GPU)
+  target_compile_definitions(KokkosUtils PUBLIC EKAT_MIMIC_GPU)
+endif()
+
 target_include_directories(KokkosUtils PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
