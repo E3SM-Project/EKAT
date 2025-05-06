@@ -930,10 +930,10 @@ TEST_CASE("adj_diff", "ekat::pack")
     Kokkos::parallel_for(num_ints, f_s);
     Kokkos::parallel_for(num_packs, f_p);
 
-    auto diff_fwd_sh = ekat::cmvdc(diff_fwd_s);
-    auto diff_fwd_ph = ekat::cmvdc(diff_fwd_p);
-    auto diff_bwd_sh = ekat::cmvdc(diff_bwd_s);
-    auto diff_bwd_ph = ekat::cmvdc(diff_bwd_p);
+    auto diff_fwd_sh = ekat::create_mirror_view_and_copy(diff_fwd_s);
+    auto diff_fwd_ph = ekat::create_mirror_view_and_copy(diff_fwd_p);
+    auto diff_bwd_sh = ekat::create_mirror_view_and_copy(diff_bwd_s);
+    auto diff_bwd_ph = ekat::create_mirror_view_and_copy(diff_bwd_p);
     auto diff_fwd_phs = ekat::scalarize(diff_fwd_ph);
     auto diff_bwd_phs = ekat::scalarize(diff_bwd_ph);
 

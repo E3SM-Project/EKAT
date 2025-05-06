@@ -48,7 +48,8 @@ genRandArray(ViewType view, rngAlg &engine, PDF &&pdf) {
 }
 
 template<typename ViewType>
-typename ViewType::HostMirror cmvdc (const ViewType& v)
+typename ViewType::HostMirror
+create_mirror_view_and_copy (const ViewType& v)
 {
   auto vh = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(vh,v);
