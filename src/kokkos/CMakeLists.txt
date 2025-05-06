@@ -2,7 +2,7 @@ include(GNUInstallDirs)
 
 # Kokkos is a REQUIRED dep of this package
 
-option (EKAT_SKIP_FIND_KOKKOS "Skip find_package for Kokkos, and  build directly from submodule" OFF)
+option (EKAT_SKIP_FIND_KOKKOS "Skip find_package for Kokkos, and build directly from submodule" OFF)
 if (EKAT_SKIP_FIND_KOKKOS)
   # The user does not want to accidentally get an existing installation,
   # and instead wants to force a build from the internal submodule

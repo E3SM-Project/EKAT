@@ -43,7 +43,7 @@ void test_parallel_reduce()
       });
   });
 
-  const auto results_h = ekat::cmvdc(results);
+  const auto results_h = ekat::create_mirror_view_and_copy(results);
 
   // If serial computation, check bfb vs serial_result, else check to a tolerance
   if (Serialize) {
@@ -122,7 +122,7 @@ void test_view_reduction(const int begin=0, const int end=TotalSize)
     }
   });
 
-  const auto results_h = ekat::cmvdc(results);
+  const auto results_h = ekat::create_mirror_view_and_copy(results);
   // If serial computation, check bfb vs serial_result, else check to a tolerance
   if (Serialize) {
     REQUIRE(results_h(0)== serial_result);

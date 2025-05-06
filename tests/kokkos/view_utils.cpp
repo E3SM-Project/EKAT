@@ -6,7 +6,7 @@
 
 namespace {
 
-TEST_CASE("cmvdc", "[kokkos_utils]") {
+TEST_CASE("create_mirror_view_and_copy") {
   using namespace ekat;
 
   // Check utility that creates a host mirror and deep copies
@@ -14,13 +14,13 @@ TEST_CASE("cmvdc", "[kokkos_utils]") {
   auto fill = KOKKOS_LAMBDA(int i) { v(i) = i; };
   Kokkos::parallel_for(Kokkos::RangePolicy<>(0,100),fill);
 
-  auto vh = cmvdc(v);
+  auto vh = create_mirror_view_and_copy(v);
   for (int i=0; i<100; ++i) {
     REQUIRE (vh(i)==i);
   }
 }
 
-TEST_CASE("reshape", "[kokkos_utils]") {
+TEST_CASE("reshape") {
   using namespace ekat;
 
   // Check util that allows to reshape a view
