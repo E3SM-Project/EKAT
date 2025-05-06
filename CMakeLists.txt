@@ -36,12 +36,6 @@ set (EKAT_VERSION_PATCH 0)
 # Report the installation prefix.
 message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 
-###########################
-###      EKAT TPLS      ###
-###########################
-
-include (EkatTPLs)
-
 ############################
 ###  EKAT CONFIG OPTIONS ###
 ############################
@@ -49,10 +43,6 @@ include (EkatTPLs)
 # TODO: this is never used in EKAT src folder, so it should be removed.
 #       Downstream projects should handle bfb logic autonomously
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
-option (EKAT_ENABLE_FPE "Whether to enable support for floating point exceptions" ON)
-if (EKAT_ENABLE_FPE)
-  option (EKAT_ENABLE_FPE_DEFAULT_MASK "Whether ekat should set a 'reasonable' FPE mask at startup" OFF)
-endif()
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
 option (EKAT_ENABLE_COMPUTE_SANITIZER "Whether to run tests with nvidia's compute-sanitizer" OFF)
@@ -60,6 +50,8 @@ option (EKAT_ENABLE_COVERAGE "Whether to enable code coverage" OFF)
 option (EKAT_TEST_LAUNCHER_BUFFER "Whether test-launcher should buffer all out and print all at once. Useful for avoiding interleaving output when multiple tests are running concurrently" OFF)
 option (EKAT_TEST_LAUNCHER_MANAGE_RESOURCES "Whether test-launcher should try to manage thread distribution. Requires a ctest resource file to be effective." OFF)
 set (EKAT_PROFILING_TOOL "NONE" CACHE STRING "Profiling tool to be used")
+option (EKAT_ENABLE_TESTS "Whether tests should be built." ON)
+option (EKAT_DISABLE_TPL_WARNINGS "Whether we should suppress warnings when compiling TPLs." OFF)
 
 # Path to valgrind suppression file. If none is provided, EKAT will generate one
 # for you. The generated ones are OK but there's an element of nondeterminism
@@ -99,18 +91,13 @@ endif()
 ############################################
 
 if (EKAT_STANDALONE)
+  set (EKAT_FPMODEL "" CACHE STRING "Floating-point model to use (precise, strict, fast, fast=1, fast=2)")
   # Initialize flags
   include (EkatSetCompilerFlags)
   ResetFlags()
   SetCommonFlags()
   SetProfilingFlags(PROFILER ${EKAT_PROFILING_TOOL} COVERAGE ${EKAT_ENABLE_COVERAGE})
 endif()
-
-include(CheckCXXSymbolExists)
-# Most of the FPE stuff was defined in C99, but gnu has some additional non-std
-# functions that are helpful (such as feeenableexcept) --- Apple stopped including these
-# in 2005, so we have to drop-in replacements for them.
-check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
 
 ##################################
 ##    EKAT VALGRIND SUPPORT    ###
@@ -121,10 +108,10 @@ if (EKAT_ENABLE_VALGRIND)
 endif()
 
 ############################
-###    EKAT LIBRARIES    ###
+###    EKAT PACKAGES     ###
 ############################
 
-add_subdirectory(src/ekat)
+add_subdirectory(src)
 
 ############################
 ###     EKAT TESTING     ###
@@ -156,9 +143,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/test-launcher
 include(GNUInstallDirs)
 install (PROGRAMS ${CMAKE_BINARY_DIR}/bin/test-launcher
          DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-# By default, we DO build ekat tests. This may change in the future
-option (EKAT_ENABLE_TESTS "Whether tests should be built." ON)
 
 if (EKAT_ENABLE_TESTS)
   enable_testing()
@@ -197,6 +181,8 @@ install(FILES
 
 # Install cmake targets
 install(EXPORT EkatTargets
+        FILE EkatTargets.cmake
+        NAMESPACE ekat::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ekat)
 
 ###########################################
