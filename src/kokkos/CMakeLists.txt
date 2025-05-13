@@ -43,12 +43,13 @@ target_include_directories(KokkosUtils PUBLIC
 set (HEADERS
   ekat_kernel_assert.hpp
   ekat_kokkos_meta.hpp
+  ekat_kokkos_session.hpp
   ekat_kokkos_types.hpp
-  ekat_kokkos_utils.hpp
   ekat_math_utils.hpp
-  ekat_scalar_traits.hpp
   ekat_subview_utils.hpp
+  ekat_team_policy_utils.hpp
   ekat_upper_bound.hpp
+  ekat_view_utils.hpp
   ekat_workspace.hpp
   ekat_workspace_impl.hpp
 )
