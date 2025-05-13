@@ -97,7 +97,7 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
 
   # Link flags/libs
   if (NOT ecute_EXCLUDE_MAIN_CPP)
-    target_link_libraries(${target_name} PUBLIC CatchMain)
+    target_link_libraries(${target_name} PUBLIC ekat::CatchMain)
   endif ()
   if (ecute_USER_DEFINED_TEST_SESSION)
     target_compile_options(${target_name} PRIVATE USER_DEFINED_TEST_SESSION)
@@ -169,7 +169,7 @@ function(EkatCreateUnitTestFromExec test_name test_exec)
 
   # For catch2-based tests only, pass option to remove colours (doesn't play well with CTest log files)
   get_target_property(LINKED_LIBS ${test_exec} LINK_LIBRARIES)
-  if (ekat_test_main IN_LIST LINKED_LIBS)
+  if (ekat_catchmain IN_LIST LINKED_LIBS)
     if (NOT ecutfe_EXE_ARGS OR NOT "--use-colour no" IN_LIST ecutfe_EXE_ARGS)
       list(PREPEND ecutfe_EXE_ARGS "--use-colour no")
     endif()

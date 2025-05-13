@@ -2,23 +2,23 @@ include(EkatCreateUnitTest)
 
 # Test upper_bound
 EkatCreateUnitTest(upper_bound upper_bound.cpp
-  LIBS KokkosUtils)
+  LIBS ekat::KokkosUtils)
 
 # Test math utils
 EkatCreateUnitTest(math_utils math_utils.cpp
-  LIBS KokkosUtils)
+  LIBS ekat::KokkosUtils)
 
 # Test view utils
 EkatCreateUnitTest(view_utils view_utils.cpp
-  LIBS KokkosUtils)
+  LIBS ekat::KokkosUtils)
 
 # Test subview utils
 EkatCreateUnitTest(subview_utils subview_utils.cpp
-  LIBS KokkosUtils)
+  LIBS ekat::KokkosUtils)
 
 # Test team policy utils
 EkatCreateUnitTest(team_policy_utils team_policy_utils.cpp
-  LIBS KokkosUtils
+  LIBS ekat::KokkosUtils
   PRINT_OMP_AFFINITY
   THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC}
 )
@@ -34,7 +34,7 @@ else ()
 endif()
 
 EkatCreateUnitTest(workspace_mgr workspace_mgr.cpp
-  LIBS KokkosUtils
+  LIBS ekat::KokkosUtils
   PRINT_OMP_AFFINITY
   THREADS 1 ${max_thr} ${thr_inc})
 

@@ -7,13 +7,13 @@ set (LIN_INTERP_SRCS
 
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(lin_interp${DP_POSTFIX} "${LIN_INTERP_SRCS}"
-    LIBS Algorithm
+    LIBS ekat::Algorithm
     COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
     THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC})
 endif()
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(lin_interp${SP_POSTFIX} "${LIN_INTERP_SRCS}"
-    LIBS Algorithm
+    LIBS ekat::Algorithm
     COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
     THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC})
 endif()
@@ -27,14 +27,14 @@ set (TRIDIAG_SRCS
 
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(tridiag${DP_POSTFIX} "${TRIDIAG_SRCS}"
-    LIBS Algorithm
+    LIBS ekat::Algorithm
     COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
     THREADS ${EKAT_TEST_MAX_THREADS}
     EXCLUDE_MAIN_CPP)
 endif()
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(tridiag${SP_POSTFIX} "${TRIDIAG_SRCS}"
-    LIBS Algorithm
+    LIBS ekat::Algorithm
     COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
     THREADS ${EKAT_TEST_MAX_THREADS}
     EXCLUDE_MAIN_CPP)
@@ -57,10 +57,10 @@ EkatCreateUnitTestFromExec(tridiag_invalid_flags ${invalid_flags_exec}
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(reduction${DP_POSTFIX} reduction_tests.cpp
     COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
-    LIBS Algorithm)
+    LIBS ekat::Algorithm)
 endif()
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(reduction${SP_POSTFIX} reduction_tests.cpp
     COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
-    LIBS Algorithm)
+    LIBS ekat::Algorithm)
 endif()

@@ -2,10 +2,10 @@ include(EkatCreateUnitTest)
 
 # Test basic logger capabilities
 EkatCreateUnitTest(serial_file_log serial_file_log_tests.cpp
-  LIBS Logging)
+  LIBS ekat::Logging)
 
 EkatCreateUnitTest(mpi_file_log_tests mpi_file_log_tests.cpp
-  LIBS Logging
+  LIBS ekat::Logging
   MPI_RANKS 1 ${EKAT_TEST_MAX_RANKS}
   PROPERTIES FAIL_REGULAR_EXPRESSION "rank1"
 )
@@ -23,7 +23,7 @@ foreach(RANK RANGE 1 ${EKAT_TEST_MAX_RANKS})
 endforeach()
 
 EkatCreateUnitTest(console_only_log console_only_log_tests.cpp
-  LIBS Logging
+  LIBS ekat::Logging
   MPI_RANKS ${EKAT_TEST_MAX_RANKS}
   PROPERTIES PASS_REGULAR_EXPRESSION ${pass}
   PROPERTIES FAIL_REGULAR_EXPRESSION ${fail}
