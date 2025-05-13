@@ -35,13 +35,13 @@ else()
 endif()
 
 # Create the library, and set all its properties
-add_library(YamlParser
+add_library(ekat_yamlparser
   ekat_yaml.cpp
 )
-target_link_libraries(YamlParser PUBLIC Core)
-target_link_libraries(YamlParser PRIVATE yaml-cpp::yaml-cpp)
+target_link_libraries(ekat_yamlparser PUBLIC ekat::Core)
+target_link_libraries(ekat_yamlparser PRIVATE yaml-cpp::yaml-cpp)
 
-target_include_directories(YamlParser INTERFACE
+target_include_directories(ekat_yamlparser INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat>)
 
@@ -50,12 +50,23 @@ target_include_directories(YamlParser INTERFACE
 set (HEADERS
   ekat_yaml.hpp
 )
-set_target_properties (YamlParser PROPERTIES PUBLIC_HEADER "${HEADERS}")
+set_target_properties (ekat_yamlparser PROPERTIES PUBLIC_HEADER "${HEADERS}")
+
+# Set the name to be used when exportin the target
+# This, together with the NAMESPACE property set in the main CMakeLists.txt
+# install call, will force user to link ekat::YamlParser
+set_target_properties(ekat_yamlparser PROPERTIES
+  EXPORT_NAME YamlParser
+  PUBLIC_HEADER "${HEADERS}")
 
 # Install the package
-install (TARGETS YamlParser
+install (TARGETS ekat_yamlparser
          EXPORT EkatTargets
          RUNTIME       DESTINATION ${CMAKE_INSTALL_BINDIR}
          LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
          ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
          PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ekat)
+
+# Regardless of whether we use INSTALLED ekat, or BUILT (via add_subdirectory),
+# we want to be able to access ekat's targets via ekat::TARGET
+add_library(ekat::YamlParser ALIAS ekat_yamlparser)

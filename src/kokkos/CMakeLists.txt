@@ -17,25 +17,25 @@ else()
 endif()
 
 # Create the library, and set all its properties
-add_library(KokkosUtils
+add_library(ekat_kokkosutils
   ekat_kokkos_session.cpp
 )
-target_link_libraries(KokkosUtils PUBLIC Core)
-target_link_libraries(KokkosUtils PUBLIC kokkos)
-target_compile_definitions(KokkosUtils PUBLIC EKAT_HAS_KOKKOS)
+target_link_libraries(ekat_kokkosutils PUBLIC ekat::Core)
+target_link_libraries(ekat_kokkosutils PUBLIC Kokkos::kokkos)
+target_compile_definitions(ekat_kokkosutils PUBLIC EKAT_HAS_KOKKOS)
 
 # A shortcut var, to handle GPU-specific (but backend-agnostic) stuff
 if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
   set (EKAT_ENABLE_GPU TRUE)
-  target_compile_definitions(KokkosUtils PUBLIC EKAT_ENABLE_GPU)
+  target_compile_definitions(ekat_kokkosutils PUBLIC EKAT_ENABLE_GPU)
 endif ()
 
 option (EKAT_MIMIC_GPU "Whether team policies on host should be built with large teams" OFF)
 if (EKAT_MIMIC_GPU)
-  target_compile_definitions(KokkosUtils PUBLIC EKAT_MIMIC_GPU)
+  target_compile_definitions(ekat_kokkosutils PUBLIC EKAT_MIMIC_GPU)
 endif()
 
-target_include_directories(KokkosUtils PUBLIC
+target_include_directories(ekat_kokkosutils PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat>)
 
@@ -53,12 +53,23 @@ set (HEADERS
   ekat_workspace.hpp
   ekat_workspace_impl.hpp
 )
-set_target_properties(KokkosUtils PROPERTIES PUBLIC_HEADER "${HEADERS}")
+set_target_properties(ekat_kokkosutils PROPERTIES PUBLIC_HEADER "${HEADERS}")
+
+# Set the name to be used when exportin the target
+# This, together with the NAMESPACE property set in the main CMakeLists.txt
+# install call, will force user to link ekat::KokkosUtils
+set_target_properties(ekat_kokkosutils PROPERTIES
+  EXPORT_NAME KokkosUtils
+  PUBLIC_HEADER "${HEADERS}")
 
 # Install the package
-install (TARGETS KokkosUtils
+install (TARGETS ekat_kokkosutils
          EXPORT EkatTargets
          RUNTIME       DESTINATION ${CMAKE_INSTALL_BINDIR}
          LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
          ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
          PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ekat)
+
+# Regardless of whether we use INSTALLED ekat, or BUILT (via add_subdirectory),
+# we want to be able to access ekat's targets via ekat::TARGET
+add_library(ekat::KokkosUtils ALIAS ekat_kokkosutils)

@@ -50,7 +50,7 @@ else()
 endif()
 
 # Create the library, and set all its properties
-add_library(Core
+add_library(ekat_core
   ekat_arch.cpp
   ekat_fpe.cpp
   ekat_parameter_list.cpp
@@ -59,27 +59,27 @@ add_library(Core
 )
 
 # EKAT requires c++17 features
-target_compile_features(Core PUBLIC cxx_std_17)
+target_compile_features(ekat_core PUBLIC cxx_std_17)
 
 # Add the correct ekat::Comm impl file, depending on whether MPI is ON/OFF.
 if (EKAT_ENABLE_MPI)
-  target_sources(Core PRIVATE ekat_comm.cpp)
-  target_compile_definitions(Core PUBLIC EKAT_ENABLE_MPI)
-  target_link_libraries(Core PUBLIC MPI::MPI_C)
+  target_sources(ekat_core PRIVATE ekat_comm.cpp)
+  target_compile_definitions(ekat_core PUBLIC EKAT_ENABLE_MPI)
+  target_link_libraries(ekat_core PUBLIC MPI::MPI_C)
 else()
-  target_sources(Core PRIVATE ekat_comm_serial.cpp)
+  target_sources(ekat_core PRIVATE ekat_comm_serial.cpp)
 endif()
 
 if (EKAT_MPI_ERRORS_ARE_FATAL)
-  target_compile_definitions(Core PUBLIC EKAT_MPI_ERRORS_ARE_FATAL)
+  target_compile_definitions(ekat_core PUBLIC EKAT_MPI_ERRORS_ARE_FATAL)
 endif()
 
 if (EKAT_HAS_STACKTRACE)
-  target_link_libraries(Core PUBLIC ${Boost_LIBRARIES})
-  target_compile_definitions(Core PRIVATE EKAT_HAS_STACKTRACE)
+  target_link_libraries(ekat_core PUBLIC ${Boost_LIBRARIES})
+  target_compile_definitions(ekat_core PRIVATE EKAT_HAS_STACKTRACE)
 endif()
 
-target_include_directories(Core PUBLIC
+target_include_directories(ekat_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat>)
 
@@ -90,9 +90,10 @@ include(CheckCXXSymbolExists)
 check_cxx_symbol_exists(feenableexcept "fenv.h" EKAT_HAVE_FEENABLEEXCEPT)
 if (EKAT_HAVE_FEENABLEEXCEPT)
   # This is needed internally by ekat, so let's keep it private
-  target_compile_definitions (Core PRIVATE EKAT_HAVE_FEENABLEEXCEPT)
+  target_compile_definitions (ekat_core PRIVATE EKAT_HAVE_FEENABLEEXCEPT)
 endif()
 
+# Set the PUBLIC_HEADER property
 set (HEADERS
   ekat.hpp
   ekat_arch.hpp
@@ -115,14 +116,23 @@ set (HEADERS
   ekat_type_traits.hpp
   ekat_units.hpp
 )
+set_target_properties(ekat_core PROPERTIES PUBLIC_HEADER "${HEADERS}")
 
-# Set the PUBLIC_HEADER property
-set_target_properties(Core PROPERTIES PUBLIC_HEADER "${HEADERS}")
+# Set the name to be used when exportin the target
+# This, together with the NAMESPACE property set in the main CMakeLists.txt
+# install call, will force user to link ekat::Core
+set_target_properties(ekat_core PROPERTIES
+  EXPORT_NAME Core
+  PUBLIC_HEADER "${HEADERS}")
 
 # Install the package
-install (TARGETS Core
+install (TARGETS ekat_core
          EXPORT EkatTargets
          RUNTIME       DESTINATION ${CMAKE_INSTALL_BINDIR}
          LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
          ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
          PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ekat)
+
+# Regardless of whether we use INSTALLED ekat, or BUILT (via add_subdirectory),
+# we want to be able to access ekat's targets via ekat::TARGET
+add_library(ekat::Core ALIAS ekat_core)

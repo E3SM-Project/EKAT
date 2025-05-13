@@ -2,7 +2,7 @@ include(EkatCreateUnitTest)
 
 # Test debug tools
 EkatCreateUnitTest(debug_tools debug_tools_tests.cpp
-  LIBS Core)
+  LIBS ekat::Core)
 
 # Test the framework that checks asserts
 if (EKAT_IS_DEBUG_BUILD)
@@ -31,7 +31,7 @@ EkatCreateUnitTest (catch_main_tests catch_main_tests.cpp
 # Test that failure are indeed spotted. Also, verify that redirection
 # of input is not parsed as test filter, by fwding a file
 EkatCreateUnitTest(regress_fail regress_fail.cpp
-  LIBS Core
+  LIBS ekat::Core
   EXE_ARGS " < CTestTestfile.cmake"
   WILL_FAIL
   LABELS "MustFail"
@@ -46,34 +46,34 @@ EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
 
 # Comm tests
 EkatCreateUnitTest(comm comm.cpp
-  LIBS Core
+  LIBS ekat::Core
   MPI_RANKS 1 ${EKAT_TEST_MAX_RANKS}
 )
 
 # Test units framework
 EkatCreateUnitTest(units units.cpp
-  LIBS Core)
+  LIBS ekat::Core)
 
 # Test std_meta stuff
 EkatCreateUnitTest(std_meta std_meta.cpp
-  LIBS Core)
+  LIBS ekat::Core)
 
 # Test meta utilities
 EkatCreateUnitTest(meta_utils meta_utils.cpp
-  LIBS Core)
+  LIBS ekat::Core)
 
 # Test parameter list
 EkatCreateUnitTest(parameter_list parameter_list.cpp
-  LIBS Core)
+  LIBS ekat::Core)
 
 # Test type traits
 EkatCreateUnitTest(type_traits_utils type_traits_utils.cpp
-  LIBS Core)
+  LIBS ekat::Core)
 
 # Test string utilities
 EkatCreateUnitTest(string_utils string_utils.cpp
-  LIBS Core)
+  LIBS ekat::Core)
 
 # Test factory
 EkatCreateUnitTest(factory factory.cpp
-  LIBS Core)
+  LIBS ekat::Core)
