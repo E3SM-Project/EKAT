@@ -6,7 +6,7 @@
 
 namespace {
 
-TEST_CASE("create_mirror_view_and_copy") {
+TEST_CASE("create_host_mirror_and_copy") {
   using namespace ekat;
 
   // Check utility that creates a host mirror and deep copies
@@ -14,7 +14,7 @@ TEST_CASE("create_mirror_view_and_copy") {
   auto fill = KOKKOS_LAMBDA(int i) { v(i) = i; };
   Kokkos::parallel_for(Kokkos::RangePolicy<>(0,100),fill);
 
-  auto vh = create_mirror_view_and_copy(v);
+  auto vh = create_host_mirror_and_copy(v);
   for (int i=0; i<100; ++i) {
     REQUIRE (vh(i)==i);
   }
