@@ -163,7 +163,7 @@ void test_utils_large_ni(const double saturation_multiplier)
     tu.release_workspace_idx(team_member, wi);
   }, Kokkos::Max<int>(max_workspace_idx));
 
-  const auto test_data_h = ekat::create_mirror_view_and_copy(test_data);
+  const auto test_data_h = ekat::create_host_mirror_and_copy(test_data);
 
   int sum = 0;
   for(int i = 0; i < tu.get_num_ws_slots(); ++i) {
