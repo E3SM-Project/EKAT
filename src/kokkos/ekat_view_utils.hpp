@@ -41,7 +41,7 @@ template <typename ViewType, typename rngAlg, typename PDF>
 typename std::enable_if<Kokkos::is_view<ViewType>::value, void>::type
 genRandArray(ViewType view, rngAlg &engine, PDF &&pdf) {
   auto mirror = Kokkos::create_mirror_view(view);
-  for (int i = 0; i < mirror.size(); ++i) {
+  for (size_t i = 0; i < mirror.size(); ++i) {
     mirror.data()[i] = pdf(engine);
   }
   Kokkos::deep_copy(view, mirror);
