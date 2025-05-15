@@ -41,18 +41,26 @@ void initialize_kokkos_session (int argc, char **argv, bool print_config) {
   }
 
   if (print_config) {
-    printf(" Default Execution Space name: %s\n", DefaultDevice::execution_space::name());
-    printf(" Default Execution Space initialized: %s\n", DefaultDevice::execution_space::impl_is_initialized() ? "yes" : "no");
+    printf("%s",kokkos_config_string().c_str());
+  }
+}
+
+std::string kokkos_config_string ()
+{
+  std::string cfg;
+  cfg += " Default Execution Space name: " + std::string(DefaultDevice::execution_space::name()) + "\n";
+  cfg += " Default Execution Space initialized: " + std::string(DefaultDevice::execution_space::impl_is_initialized() ? "yes" : "no") + "\n";
 
 #ifdef KOKKOS_ENABLE_OPENMP
-    int num_host_threads = Kokkos::OpenMP().concurrency();
+  int num_host_threads = Kokkos::OpenMP().concurrency();
 #elif defined _OPENMP
-    int num_host_threads = omp_get_max_threads();
+  int num_host_threads = omp_get_max_threads();
 #else
-    int num_host_threads = 1;
+  int num_host_threads = 1;
 #endif
-    printf(" #host threads: %d\n", num_host_threads);
-  }
+  cfg += " #host threads: " + std::to_string(num_host_threads) + "\n";
+
+  return cfg;
 }
 
 void initialize_kokkos_session (bool print_config) {
