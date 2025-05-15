@@ -70,3 +70,6 @@ install (TARGETS ekat_yamlparser
 # Regardless of whether we use INSTALLED ekat, or BUILT (via add_subdirectory),
 # we want to be able to access ekat's targets via ekat::TARGET
 add_library(ekat::YamlParser ALIAS ekat_yamlparser)
+
+# Link to the all libs target
+target_link_libraries(ekat_all_libs INTERFACE ekat_yamlparser)

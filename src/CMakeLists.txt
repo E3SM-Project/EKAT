@@ -30,6 +30,14 @@ endmacro()
 EkatCompatibleOptions(ALGORITHM "PACK;KOKKOS")
 EkatCompatibleOptions(PACK "KOKKOS")
     
+# A "rule them all" target, so users can just link against this
+add_library(ekat_all_libs INTERFACE)
+set_target_properties(ekat_all_libs PROPERTIES
+  EXPORT_NAME AllLibs)
+# Regardless of whether we use INSTALLED ekat, or BUILT (via add_subdirectory),
+# we want to be able to access ekat's targets via ekat::TARGET
+add_library(ekat::AllLibs ALIAS ekat_all_libs)
+
 # Core is ALWAYS enabled
 add_subdirectory(core)
 
