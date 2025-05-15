@@ -14,7 +14,7 @@ namespace ekat {
  * A class to create team policies
  */
 template <typename ExeSpace>
-struct PolicyFactory {
+struct TeamPolicyFactory {
   using TeamPolicy = Kokkos::TeamPolicy<ExeSpace>;
 
   // Note: for non-Cuda exec spaces, the template arg does nothing.
@@ -48,7 +48,7 @@ struct PolicyFactory {
  */
 #ifdef EKAT_ENABLE_GPU
 template <>
-struct PolicyFactory<EkatGpuSpace> {
+struct TeamPolicyFactory<EkatGpuSpace> {
   using TeamPolicy = Kokkos::TeamPolicy<EkatGpuSpace>;
   using HostTeamPolicy = Kokkos::TeamPolicy<Kokkos::Serial>;
 

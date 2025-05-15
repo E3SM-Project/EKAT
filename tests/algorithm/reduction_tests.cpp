@@ -15,7 +15,7 @@ void test_parallel_reduce()
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
   using ReductionUtils = ekat::ReductionUtils<ExeSpace,Serialize>;
-  using PolicyFactory = ekat::PolicyFactory<ExeSpace>;
+  using TeamPolicyFactory = ekat::TeamPolicyFactory<ExeSpace>;
 
   // Each entry is given by data(k) = 1/(k+1)
   Scalar serial_result = Scalar();
@@ -32,7 +32,7 @@ void test_parallel_reduce()
   Kokkos::View<Scalar*> results ("results", 1);
 
   // parallel_for over 1 team, i.e. call parallel_reduce once
-  const auto policy = PolicyFactory::get_default_team_policy(1, length);
+  const auto policy = TeamPolicyFactory::get_default_team_policy(1, length);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
 
     const int begin = 0;
@@ -66,7 +66,7 @@ void test_view_reduction(const int begin=0, const int end=TotalSize)
   using MemberType = typename ekat::KokkosTypes<Device>::MemberType;
   using ExeSpace = typename ekat::KokkosTypes<Device>::ExeSpace;
   using ReductionUtils = ekat::ReductionUtils<ExeSpace,Serialize>;
-  using PolicyFactory = ekat::PolicyFactory<ExeSpace>;
+  using TeamPolicyFactory = ekat::TeamPolicyFactory<ExeSpace>;
 
   using PackType = ekat::Pack<Scalar, VectorSize>;
   using ViewType = Kokkos::View<PackType*,ExeSpace>;
@@ -110,7 +110,7 @@ void test_view_reduction(const int begin=0, const int end=TotalSize)
 #endif
 
   // parallel_for over 1 team, i.e. call view_reduction once
-  const auto policy = PolicyFactory::get_team_policy_force_team_size(1, team_size);
+  const auto policy = TeamPolicyFactory::get_team_policy_force_team_size(1, team_size);
   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const MemberType& team) {
     if (UseLambda) {
       auto lambda = [&] (const int k) -> PackType {
