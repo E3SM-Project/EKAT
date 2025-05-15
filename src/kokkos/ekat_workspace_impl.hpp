@@ -163,7 +163,7 @@ void WorkspaceManager<T, D>::reset_internals()
   Kokkos::deep_copy(m_next_slot, 0);
 #endif
 
-  auto policy = PolicyFactory<ExeSpace>::get_default_team_policy(m_max_ws_idx, m_max_used);
+  auto policy = TeamPolicyFactory<ExeSpace>::get_default_team_policy(m_max_ws_idx, m_max_used);
   Kokkos::parallel_for(
     "WorkspaceManager reset",
     policy,
@@ -191,7 +191,7 @@ void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Wor
 template <typename T, typename D>
 void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int max_used)
 {
-  auto policy = PolicyFactory<ExeSpace>::get_default_team_policy(max_ws_idx, max_used);
+  auto policy = TeamPolicyFactory<ExeSpace>::get_default_team_policy(max_ws_idx, max_used);
 
   Kokkos::parallel_for(
     "WorkspaceManager setup",

@@ -35,7 +35,7 @@ static void unittest_workspace_overprovision()
   const int max_threads = ExeSpace().concurrency();
   const int nk = OnGpu<ExeSpace>::value ? 128 : (max_threads < 7 ? max_threads : 7);
 
-  const auto temp_policy = PolicyFactory<ExeSpace>::get_team_policy_force_team_size(1, nk);
+  const auto temp_policy = TeamPolicyFactory<ExeSpace>::get_team_policy_force_team_size(1, nk);
   TeamUtils<double,ExeSpace> tu_temp(temp_policy);
   const int num_conc = tu_temp.get_max_concurrent_threads() / temp_policy.team_size();
 
@@ -49,7 +49,7 @@ static void unittest_workspace_overprovision()
   const int ni_over    = num_conc * (explicit_op_fact + .5);
 
   for (const int ni_item : {ni_under, ni_conc, ni_between, ni_exact, ni_over}) {
-    auto policy = PolicyFactory<ExeSpace>::get_team_policy_force_team_size(ni_item, nk);
+    auto policy = TeamPolicyFactory<ExeSpace>::get_team_policy_force_team_size(ni_item, nk);
     WSM wsm(4, 4, policy);
 
     if (ni_item <= ni_exact) {
@@ -64,7 +64,7 @@ static void unittest_workspace_overprovision()
   }
 
   for (const int ni_item : {ni_under, ni_conc, ni_between, ni_exact, ni_over}) {
-    auto policy = PolicyFactory<ExeSpace>::get_team_policy_force_team_size(ni_item, nk);
+    auto policy = TeamPolicyFactory<ExeSpace>::get_team_policy_force_team_size(ni_item, nk);
     WSM wsm(4, 4, policy, explicit_op_fact);
 
     if (ni_item <= ni_exact) {
@@ -90,7 +90,7 @@ static void unittest_workspace_idx_lock()
   const int ni = 100000;
   const int nk = 128;
 
-  auto policy = PolicyFactory<ExeSpace>::get_default_team_policy(ni, nk);
+  auto policy = TeamPolicyFactory<ExeSpace>::get_default_team_policy(ni, nk);
   WorkspaceManager<double, Device> wsm(nk, n_slots_per_team, policy);
 
   const auto f = KOKKOS_LAMBDA(const MemberType& team, int& err) {
@@ -128,7 +128,7 @@ static void unittest_workspace()
   const int ni = 128;
   const int nk = 128;
 
-  auto policy = PolicyFactory<ExeSpace>::get_default_team_policy(ni, nk);
+  auto policy = TeamPolicyFactory<ExeSpace>::get_default_team_policy(ni, nk);
 
   {
     const int slot_length = 17;
@@ -250,7 +250,7 @@ static void unittest_workspace()
   // Test host-explicit WorkspaceMgr
   {
     using HostDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
-    auto policy_host = PolicyFactory<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk);
+    auto policy_host = TeamPolicyFactory<typename KokkosTypes<HostDevice>::ExeSpace>::get_default_team_policy(ni, nk);
     WorkspaceManager<short, HostDevice> wsmh(16, n_slots_per_team, policy_host);
     wsmh.m_data(0, 0) = 0; // check on cuda machine
   }
