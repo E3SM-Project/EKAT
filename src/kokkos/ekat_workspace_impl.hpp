@@ -237,9 +237,9 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
 #ifndef NDEBUG
   T invalid = {};
   if constexpr (std::is_floating_point<T>::value) {
-    invalid = Kokkos::Experimental::quiet_NaN_v<T>;
+    invalid = ekat::quiet_NaN<T>();
   } else {
-    invalid = Kokkos::Experimental::finite_max_v<T>;
+    invalid = ekat::finite_max<T>();
   }
   for (size_t k=0; k<space.size(); ++k) {
     space(k) = invalid;

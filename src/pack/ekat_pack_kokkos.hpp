@@ -84,9 +84,9 @@ index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_c
   using scalar_t = typename Array1::non_const_value_type;
   scalar_t invalid = {};
   if constexpr (std::is_floating_point<scalar_t>::value) {
-    invalid = Kokkos::Experimental::quiet_NaN_v<scalar_t>;
+    invalid = quiet_NaN<scalar_t>();
   } else {
-    invalid = Kokkos::Experimental::finite_max_v<scalar_t>;
+    invalid = finite_max<scalar_t>();
   }
   index_shift = Pack<scalar_t, IdxPack::n>(invalid);
 #endif

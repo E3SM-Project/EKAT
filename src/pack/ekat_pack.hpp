@@ -173,6 +173,10 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
 // The Pack type. Mask was defined first since it's used in Pack.
 template <typename ScalarType, int PackSize>
 struct Pack {
+
+  // Dummy struct used to trigger constexpr constructor. See comment below
+  struct ConstexprTag {};
+
   // Pack's tag for type checking.
   enum { packtag = true };
   // Number of slots in the Pack.
@@ -182,10 +186,22 @@ struct Pack {
   typedef typename std::remove_const<ScalarType>::type scalar;
 
   KOKKOS_FORCEINLINE_FUNCTION
-  constexpr Pack ()
+  Pack ()
    : Pack (scalar(0))
   {
     // Nothing to do here
+  }
+
+  // Init all slots to scalar v.
+  // NOTE: other ctors are NOT, in fact, constexpr, since the simd macro
+  //       makes them NOT usable in a constexpr. In C++20, we can use the
+  //       utility std::is_constant_evaluated with if constexpr, to switch
+  //       implementation based on the context in which the Pack is built.
+  //       With C++17, our only hope is to have a SEPARATE constexpr ctor,
+  //       and pass this helper tag when trying to build a pack at compile time
+  KOKKOS_FORCEINLINE_FUNCTION
+  constexpr Pack (const scalar& v, const ConstexprTag&) : d{} {
+    for (int i=0; i<n; ++i) d[i] = v;
   }
 
   // Init all slots to scalar v.
@@ -203,13 +219,13 @@ struct Pack {
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  constexpr Pack (const Pack& src) {
+  Pack (const Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  constexpr Pack (const volatile Pack& src) {
+  Pack (const volatile Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
   }
 
@@ -602,6 +618,14 @@ operator << (std::ostream& os, const PackType& p) {
   return os;
 }
 
+template<typename T, int N>
+struct NumericTraitsHelper<Pack<T,N>> {
+  using PT = ekat::Pack<T,N>;
+  using CT = typename PT::ConstexprTag;
+
+  static constexpr PT quiet_NaN {quiet_NaN<T>(),CT{}};
+  static constexpr PT finite_max {finite_max<T>(),CT{}};
+};
 
 } // namespace ekat
 

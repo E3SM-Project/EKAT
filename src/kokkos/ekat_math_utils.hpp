@@ -74,6 +74,23 @@ Real rel_diff (const Real& a, const Real& b) {
 
 } // namespace impl
 
+template<typename T>
+struct NumericTraitsHelper {
+  static constexpr T quiet_NaN = Kokkos::Experimental::quiet_NaN_v<T>;
+  static constexpr T finite_max = Kokkos::Experimental::finite_max_v<T>;
+};
+
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+constexpr T quiet_NaN () {
+  return NumericTraitsHelper<T>::quiet_NaN;
+}
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+constexpr T finite_max () {
+  return NumericTraitsHelper<T>::finite_max;
+}
+
 struct TransposeDirection {
   enum Enum { c2f, f2c };
 };
