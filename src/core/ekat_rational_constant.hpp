@@ -213,7 +213,7 @@ pow (const RationalConstant& x, const IntType p) {
 
     return RationalConstant::one();
   } else {
-    return p&1!=0 ? x*pow(x*x,p>>1) : pow(x*x,p>>1);
+    return (p&1)!=0 ? x*pow(x*x,p>>1) : pow(x*x,p>>1);
   }
 }
 
