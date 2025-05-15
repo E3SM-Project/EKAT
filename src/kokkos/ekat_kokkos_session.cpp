@@ -1,3 +1,4 @@
+#include "ekat_kokkos_session.hpp"
 #include "ekat_kokkos_types.hpp"
 
 #include <cstdio>
