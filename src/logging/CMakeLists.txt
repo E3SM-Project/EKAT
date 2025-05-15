@@ -23,10 +23,10 @@ endif()
 # Create the library, and set all its properties
 # NOTE: since there are NO .cpp files, we must declare the target as INTERFACE
 add_library(ekat_logging INTERFACE)
-target_link_libraries(ekat_logging PUBLIC ekat::Core)
-target_link_libraries(ekat_logging PUBLIC spdlog::spdlog)
+target_link_libraries(ekat_logging INTERFACE ekat::Core)
+target_link_libraries(ekat_logging INTERFACE spdlog::spdlog)
 
-target_include_directories(ekat_logging PUBLIC
+target_include_directories(ekat_logging INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ekat>)
 
