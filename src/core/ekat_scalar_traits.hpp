@@ -37,6 +37,9 @@ struct ScalarTraits {
 
   // Whether this type is a simd-like type
   static constexpr bool is_simd = false;
+
+  // Whether it's a floating point scalar
+  static constexpr bool is_floating_point = std::is_floating_point<T>::value;
 };
 
 // Partial specialization, so that if T has cv qualifiers or reference,

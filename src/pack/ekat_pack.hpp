@@ -607,6 +607,8 @@ struct ScalarTraits<Pack<T,N>> {
   static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
 
   static constexpr bool is_simd = true;
+
+  static constexpr bool is_floating_point = inner_traits::is_floating_point;
 };
 
 template <typename PackType>
