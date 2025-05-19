@@ -58,4 +58,4 @@ if (EKAT_ENABLE_YAML_PARSER)
   add_subdirectory(parser)
 endif()
 
-add_subdirectory(catch-main)
+add_subdirectory(testing-support)
