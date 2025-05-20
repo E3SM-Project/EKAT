@@ -1,6 +1,8 @@
 #ifndef EKAT_UPPER_BOUND_HPP
 #define EKAT_UPPER_BOUND_HPP
 
+#include <Kokkos_Core.hpp>
+
 #ifndef EKAT_ENABLE_GPU
 # include <algorithm>
 #endif
