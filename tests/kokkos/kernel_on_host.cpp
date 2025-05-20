@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/kokkos/ekat_kokkos_utils.hpp"
+#include "ekat_kokkos_utils.hpp"
 
 namespace {
 

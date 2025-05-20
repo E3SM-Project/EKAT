@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
-#include "ekat/logging/ekat_logger.hpp"
-#include "ekat/mpi/ekat_comm.hpp"
+#include "ekat_logger.hpp"
+#include "ekat_comm.hpp"
 
 #include <fstream>
 
