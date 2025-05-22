@@ -473,10 +473,11 @@ TEST_CASE("isnan", "ekat::pack") {
 
   pvt zero("",1), nan("",1);
   mvt mzero("",1), mnan("",1);
+  auto nan_v = Kokkos::Experimental::quiet_NaN_v<Real>;
   Kokkos::parallel_for(Kokkos::RangePolicy<>(0,1),
                        KOKKOS_LAMBDA(int) {
     zero(0) = pt();  // Ctor inits pack to 0
-    nan(0)  = Kokkos::Experimental::quiet_NaN_v<Real>;
+    nan(0)  = nan_v;
 
     const pt& z = zero(0);
     const pt& n = nan(0);
