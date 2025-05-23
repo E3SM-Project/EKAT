@@ -73,7 +73,7 @@ index (const Array5& a, const IdxPack& i0, const IdxPack& i1, const IdxPack& i2,
 // which becomes
 //   index_and_shift<1>(y1, kpk, y1k, y1k1);
 //   y2(k2) = y1k + y1k1
-// Note: if k1+Shift is OOB, we use ScalarTraits<T>::invalid()
+// Note: if k1+Shift is OOB, we use ekat::invalid<T>() where T is the array valye type
 template<int Shift, typename Array1, typename IdxPack> KOKKOS_INLINE_FUNCTION
 void
 index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_const_value_type, IdxPack::n>& index, Pack<typename Array1::non_const_value_type, IdxPack::n>& index_shift,
@@ -82,13 +82,7 @@ index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_c
   // In debug, intialize index_shift to all invalids. This ensures errors will
   // happen if client tries to use values that fall outside of valid range.
   using scalar_t = typename Array1::non_const_value_type;
-  scalar_t invalid = {};
-  if constexpr (std::is_floating_point<scalar_t>::value) {
-    invalid = Kokkos::Experimental::quiet_NaN_v<scalar_t>;
-  } else {
-    invalid = Kokkos::Experimental::finite_max_v<scalar_t>;
-  }
-  index_shift = Pack<scalar_t, IdxPack::n>(invalid);
+  index_shift = Pack<scalar_t, IdxPack::n>(invalid<scalar_t>());
 #endif
   vector_simd for (int i = 0; i < IdxPack::n; ++i) {
     const auto i0i = i0[i];
