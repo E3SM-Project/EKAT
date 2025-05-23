@@ -1,12 +1,14 @@
 #ifndef EKAT_MATH_UTILS_HPP
 #define EKAT_MATH_UTILS_HPP
 
+#include <ekat_scalar_traits.hpp>
+
+#include <Kokkos_Core.hpp>
+
 #ifndef EKAT_ENABLE_GPU
 # include <cmath>
 # include <algorithm>
 #endif
-
-#include <Kokkos_Core.hpp>
 
 namespace ekat {
 
@@ -73,6 +75,17 @@ Real rel_diff (const Real& a, const Real& b) {
 }
 
 } // namespace impl
+
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+constexpr std::enable_if_t<!ScalarTraits<T>::specialized,T>
+invalid () {
+  if constexpr (ScalarTraits<T>::is_floating_point) {
+    return Kokkos::Experimental::quiet_NaN_v<T>;
+  } else {
+    return Kokkos::Experimental::finite_max_v<T>;
+  }
+}
 
 struct TransposeDirection {
   enum Enum { c2f, f2c };

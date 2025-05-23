@@ -8,6 +8,7 @@
 #include "ekat_kernel_assert.hpp"
 #include "ekat_kokkos_str_utils.hpp"
 #include "ekat_std_utils.hpp"
+#include "ekat_math_utils.hpp"
 #include "ekat_assert.hpp"
 
 #include <map>
@@ -235,14 +236,8 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
     m_size :
     (m_size*sizeof(T))/sizeof(S));
 #ifndef NDEBUG
-  T invalid = {};
-  if constexpr (std::is_floating_point<T>::value) {
-    invalid = Kokkos::Experimental::quiet_NaN_v<T>;
-  } else {
-    invalid = Kokkos::Experimental::finite_max_v<T>;
-  }
   for (size_t k=0; k<space.size(); ++k) {
-    space(k) = invalid;
+    space(k) = invalid<S>();
   }
 #endif
   return space;

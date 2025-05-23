@@ -591,7 +591,24 @@ struct ScalarTraits<Pack<T,N>> {
   static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
 
   static constexpr bool is_simd = true;
+
+  static constexpr bool is_floating_point = inner_traits::is_floating_point;
+
+  static constexpr bool specialized = true;
 };
+
+template<typename PackT>
+KOKKOS_INLINE_FUNCTION
+constexpr OnlyPack<PackT> invalid () {
+  using scalar_t = typename ScalarTraits<PackT>::scalar_type;
+  if constexpr (ScalarTraits<PackT>::is_floating_point) {
+    constexpr auto s = Kokkos::Experimental::quiet_NaN_v<scalar_t>;
+    return PackT{s};
+  } else {
+    constexpr auto s = Kokkos::Experimental::finite_max_v<scalar_t>;
+    return PackT{s};
+  }
+}
 
 template <typename PackType>
 inline typename std::enable_if<PackType::packtag, std::ostream&>::type
@@ -601,7 +618,6 @@ operator << (std::ostream& os, const PackType& p) {
   }
   return os;
 }
-
 
 } // namespace ekat
 
@@ -617,6 +633,7 @@ struct reduction_identity<ekat::Pack<S,N>> {
     return PackType (reduction_identity<S>::sum());
   }
 };
+
 } // namespace Kokkos
 
 #include "ekat_pack_math.hpp"

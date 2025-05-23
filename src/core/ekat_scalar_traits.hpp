@@ -37,6 +37,14 @@ struct ScalarTraits {
 
   // Whether this type is a simd-like type
   static constexpr bool is_simd = false;
+
+  // Whether it's a floating point scalar
+  static constexpr bool is_floating_point = std::is_floating_point<T>::value;
+
+  // If some utility fcn are templated, and we want to avoid clashing the
+  // base templated impl with some specialization, we can make sure to only
+  // enable the base impl for non-specialized scalar traits
+  static constexpr bool specialized = false;
 };
 
 // Partial specialization, so that if T has cv qualifiers or reference,
