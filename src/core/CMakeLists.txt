@@ -70,6 +70,7 @@ else()
   target_sources(ekat_core PRIVATE ekat_comm_serial.cpp)
 endif()
 
+# Set CPP defs and link libs, depending on CMake options
 if (EKAT_MPI_ERRORS_ARE_FATAL)
   target_compile_definitions(ekat_core PUBLIC EKAT_MPI_ERRORS_ARE_FATAL)
 endif()
@@ -77,6 +78,10 @@ endif()
 if (EKAT_HAS_STACKTRACE)
   target_link_libraries(ekat_core PUBLIC ${Boost_LIBRARIES})
   target_compile_definitions(ekat_core PRIVATE EKAT_HAS_STACKTRACE)
+endif()
+
+if (EKAT_DEFAULT_BFB)
+  target_compile_definitions(ekat_core PUBLIC EKAT_DEFAULT_BFB)
 endif()
 
 target_include_directories(ekat_core PUBLIC
