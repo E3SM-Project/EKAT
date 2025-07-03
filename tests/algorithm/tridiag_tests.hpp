@@ -1,10 +1,7 @@
 #ifndef EKAT_TRIDIAG_TESTS_HPP
 #define EKAT_TRIDIAG_TESTS_HPP
 
-#include "ekat/util/ekat_tridiag.hpp"
-#include "ekat/util/ekat_arch.hpp"
-#include "ekat/ekat_pack.hpp"
-#include "ekat/ekat_pack_kokkos.hpp"
+#include "ekat_tridiag.hpp"
 
 #include "ekat_test_config.h"
 
