@@ -50,14 +50,16 @@ void ParameterList::print(std::ostream& out, const int indent, const int indent_
     out << tab << name << ": ";
 
     // Try a few common types
-         if (std::any_cast<int>(&p))     out << std::any_cast<int>(p);
-    else if (std::any_cast<float>(&p))   out << std::showpoint << std::any_cast<float>(p);
-    else if (std::any_cast<double>(&p))  out << std::showpoint << std::any_cast<double>(p);
-    else if (std::any_cast<bool>(&p))    out << std::boolalpha << std::any_cast<bool>(p);
-    else if (std::any_cast<std::vector<int>>(&p))     out << std::any_cast<std::vector<int>>(p);
-    else if (std::any_cast<std::vector<float>>(&p))   out << std::showpoint << std::any_cast<std::vector<float>>(p);
-    else if (std::any_cast<std::vector<double>>(&p))  out << std::showpoint << std::any_cast<std::vector<double>>(p);
-    else if (std::any_cast<std::vector<bool>>(&p))    out << std::boolalpha << std::any_cast<std::vector<bool>>(p);
+         if (std::any_cast<int>(&p))          out << std::any_cast<int>(p);
+    else if (std::any_cast<float>(&p))        out << std::showpoint << std::any_cast<float>(p);
+    else if (std::any_cast<double>(&p))       out << std::showpoint << std::any_cast<double>(p);
+    else if (std::any_cast<bool>(&p))         out << std::boolalpha << std::any_cast<bool>(p);
+    else if (std::any_cast<std::string>(&p))  out << std::any_cast<std::string>(p);
+    else if (std::any_cast<std::vector<int>>(&p))         out << std::any_cast<std::vector<int>>(p);
+    else if (std::any_cast<std::vector<float>>(&p))       out << std::showpoint << std::any_cast<std::vector<float>>(p);
+    else if (std::any_cast<std::vector<double>>(&p))      out << std::showpoint << std::any_cast<std::vector<double>>(p);
+    else if (std::any_cast<std::vector<bool>>(&p))        out << std::boolalpha << std::any_cast<std::vector<bool>>(p);
+    else if (std::any_cast<std::vector<std::string>>(&p)) out << std::any_cast<std::vector<std::string>>(p);
     else out << " (Cannot print type '" << p.type().name() << "')";
 
     out << std::endl;
