@@ -1,48 +1,42 @@
 include(EkatCreateUnitTest)
 
-if (EKAT_TEST_DOUBLE_PRECISION)
-  # Test kokkos utils
-  EkatCreateUnitTest(kokkos_utils${DP_POSTFIX} kokkos_utils_tests.cpp
-    LIBS ekat
-    PRINT_OMP_AFFINITY
-    COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
-    THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC}
-  )
+# Test upper_bound
+EkatCreateUnitTest(upper_bound upper_bound.cpp
+  LIBS ekat::KokkosUtils)
 
-  # Test workspace manager
-  if (EKAT_ENABLE_VALGRIND)
-    # wsm multithead test is extremely slow when valgrind is on
-    EkatCreateUnitTest(wsm${DP_POSTFIX} workspace_tests.cpp
-      LIBS ekat
-      PRINT_OMP_AFFINITY
-      COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
-      THREADS 1 1)
-  else()
-    EkatCreateUnitTest(wsm${DP_POSTFIX} workspace_tests.cpp
-      LIBS ekat
-      PRINT_OMP_AFFINITY
-      COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
-      THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC})
-  endif()
-endif ()
+# Test math utils
+EkatCreateUnitTest(math_utils math_utils.cpp
+  LIBS ekat::KokkosUtils)
 
-if (EKAT_TEST_SINGLE_PRECISION)
-  # Test kokkos utils
-  EkatCreateUnitTest(kokkos_utils${SP_POSTFIX} kokkos_utils_tests.cpp
-    LIBS ekat
-    PRINT_OMP_AFFINITY
-    COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
-    THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC}
-  )
+# Test view utils
+EkatCreateUnitTest(view_utils view_utils.cpp
+  LIBS ekat::KokkosUtils)
 
-  # Test workspace manager
-  EkatCreateUnitTest(wsm${SP_POSTFIX} workspace_tests.cpp
-    LIBS ekat
-    PRINT_OMP_AFFINITY
-    COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
-    THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC}
-  )
-endif ()
+# Test subview utils
+EkatCreateUnitTest(subview_utils subview_utils.cpp
+  LIBS ekat::KokkosUtils)
+
+# Test team policy utils
+EkatCreateUnitTest(team_policy_utils team_policy_utils.cpp
+  LIBS ekat::KokkosUtils
+  PRINT_OMP_AFFINITY
+  THREADS 1 ${EKAT_TEST_MAX_THREADS} ${EKAT_TEST_THREAD_INC}
+)
+
+# Test workspace manager
+# wsm multithead test is extremely slow when valgrind is on
+if (EKAT_ENABLE_VALGRIND)
+  set (max_thr 1)
+  set (thr_inc 1)
+else ()
+  set (max_thr ${EKAT_TEST_MAX_THREADS})
+  set (thr_inc ${EKAT_TEST_THREAD_INC})
+endif()
+
+EkatCreateUnitTest(workspace_mgr workspace_mgr.cpp
+  LIBS ekat::KokkosUtils
+  PRINT_OMP_AFFINITY
+  THREADS 1 ${max_thr} ${thr_inc})
 
 if (Kokkos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA_UVM)
   # Test ability to move a kernel to host

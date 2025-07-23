@@ -11,12 +11,14 @@ if (@EKAT_ENABLE_MPI@)
   find_dependency(MPI REQUIRED QUIET COMPONENTS C)
 endif()
 
-# Kokkos
-if (@Kokkos_FOUND@)
-  find_dependency(Kokkos REQUIRED QUIET HINTS @Kokkos_DIR@)
-else()
-  # We're installing Kokkos alongside ekat
-  find_dependency(Kokkos REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+if (@EKAT_ENABLE_KOKKOS@)
+  # Kokkos
+  if (@Kokkos_FOUND@)
+    find_dependency(Kokkos REQUIRED QUIET HINTS @Kokkos_DIR@)
+  else()
+    # We're installing Kokkos alongside ekat
+    find_dependency(Kokkos REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+  endif()
 endif()
 
 # yaml-cpp
@@ -29,11 +31,13 @@ if (@EKAT_ENABLE_YAML_PARSER@)
   endif()
 endif()
 
-# spdlog
-if (@spdlog_FOUND@)
-  find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
-else()
-  find_dependency(spdlog REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+if (@EKAT_ENABLE_LOGGING@)
+  # spdlog
+  if (@spdlog_FOUND@)
+    find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
+  else()
+    find_dependency(spdlog REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+  endif()
 endif()
 
 # Boost stacktrace library
