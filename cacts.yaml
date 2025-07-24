@@ -103,7 +103,7 @@ configurations:
       EKAT_ENABLE_PACK: True
       EKAT_ENABLE_YAML_PARSER: True
       EKAT_TEST_THREAD_INC: ${2 if machine.gpu_arch is None else 1}
-      EKAT_TEST_MAX_THREADS: ${macine.num_run_res if machine.gpu_arch is None else 1}
+      EKAT_TEST_MAX_THREADS: ${machine.num_run_res if machine.gpu_arch is None else 1}
       EKAT_DEFAULT_BFB: True
       EKAT_TEST_DOUBLE_PRECISION: True
       EKAT_TEST_SINGLE_PRECISION: True
