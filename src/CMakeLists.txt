@@ -19,7 +19,7 @@ endmacro()
 # Check packages interdeps
 EkatEnableDeps(PACK "KOKKOS")
 EkatEnableDeps(ALGORITHM "PACK;KOKKOS")
-    
+
 # A "rule them all" target, so users can just link against this
 add_library(ekat_all_libs INTERFACE)
 set_target_properties(ekat_all_libs PROPERTIES
