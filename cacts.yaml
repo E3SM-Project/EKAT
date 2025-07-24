@@ -50,7 +50,7 @@ machines:
     cxx_compiler: mpicxx
     c_compiler: mpicc
     ftn_compiler: mpifort
-    mach_file: "${project.root_dir}/cmake/machine-files/${machine.name}.cmake"
+    mach_file: "${str(project.root_dir) + '/cmake/machine-files/' + machine.name + '.cmake'}"
     gpu_arch: null
     batch: null
     num_bld_res: null
@@ -104,9 +104,11 @@ configurations:
       EKAT_ENABLE_YAML_PARSER: True
       EKAT_TEST_THREAD_INC: ${2 if machine.gpu_arch is None else 1}
       EKAT_TEST_MAX_THREADS: ${machine.num_run_res if machine.gpu_arch is None else 1}
+      EKAT_DISABLE_TPL_WARNINGS: True
       EKAT_DEFAULT_BFB: True
       EKAT_TEST_DOUBLE_PRECISION: True
       EKAT_TEST_SINGLE_PRECISION: True
+      EKAT_SKIP_FIND_YAML_CPP: True
 
   debug:
     longname: debug
