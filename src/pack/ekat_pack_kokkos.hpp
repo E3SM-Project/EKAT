@@ -613,39 +613,39 @@ host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& dat
 }
 
 // Sugar for when size is uniform (1d)
-template <typename SizeT, typename ViewT>
+template <typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
-                    const SizeT size,
+                    const size_t size,
                     std::vector<ViewT>& views)
 {
-  std::vector<SizeT> sizes(data.size(), size);
+  std::vector<size_t> sizes(data.size(), size);
   host_to_device(data, sizes, views);
 }
 
 // Sugar for when size is uniform (2d)
 template <typename TransposeDirection::Enum direction = TransposeDirection::f2c,
-          typename SizeT, typename ViewT>
+          typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
-               const SizeT dim1_size, const SizeT dim2_size,
+               const size_t dim1_size, const size_t dim2_size,
                std::vector<ViewT>& views,
                bool do_transpose=false)
 {
-  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
   host_to_device<direction>(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
 // Sugar for when size is uniform (3d)
 template <typename TransposeDirection::Enum direction = TransposeDirection::f2c,
-          typename SizeT, typename ViewT>
+          typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
-               const SizeT dim1_size, const SizeT dim2_size, const SizeT dim3_size,
+               const size_t dim1_size, const size_t dim2_size, const size_t dim3_size,
                std::vector<ViewT>& views,
                bool do_transpose=false)
 {
-  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
   host_to_device<direction>(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 
@@ -699,6 +699,43 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
 
   std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
   host_to_device<direction>(data, dim1_sizes, dim2_sizes, dim3_sizes, views_fake, do_transpose);
+}
+
+// Sugar for when size is uniform (1d) and data is unpacked
+template <typename ViewT>
+typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
+                    const size_t size,
+                    std::vector<ViewT>& views)
+{
+  std::vector<size_t> sizes(data.size(), size);
+  host_to_device(data, sizes, views);
+}
+
+// Sugar for when size is uniform (2d) and data is unpacked
+template <typename TransposeDirection::Enum direction = TransposeDirection::f2c,
+          typename ViewT>
+typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
+               const size_t dim1_size, const size_t dim2_size,
+               std::vector<ViewT>& views,
+               bool do_transpose=false)
+{
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
+  host_to_device<direction>(data, dim1_sizes, dim2_sizes, views, do_transpose);
+}
+
+//Sugar for when size is uniform (3d) and data is unpacked
+template <typename TransposeDirection::Enum direction = TransposeDirection::f2c,
+          typename ViewT>
+typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
+               const size_t dim1_size, const size_t dim2_size, const size_t dim3_size,
+               std::vector<ViewT>& views,
+               bool do_transpose=false)
+{
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
+  host_to_device<direction>(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 
 //
@@ -838,39 +875,39 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type::scalar*>&
 }
 
 // Sugar for when size is uniform (1d)
-template <typename SizeT, typename ViewT>
+template <typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 device_to_host(const std::vector<typename ViewT::non_const_value_type::scalar*>& data,
-               const SizeT size,
+               const size_t size,
                const std::vector<ViewT>& views)
 {
-  std::vector<SizeT> sizes(data.size(), size);
+  std::vector<size_t> sizes(data.size(), size);
   device_to_host(data, sizes, views);
 }
 
 // Sugar for when size is uniform (2d)
 template <typename TransposeDirection::Enum direction = TransposeDirection::c2f,
-          typename SizeT, typename ViewT>
+          typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 device_to_host(const std::vector<typename ViewT::non_const_value_type::scalar*>& data,
-               const SizeT dim1_size, const SizeT dim2_size,
+               const size_t dim1_size, const size_t dim2_size,
                const std::vector<ViewT>& views,
                bool do_transpose=false)
 {
-  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
   device_to_host<direction>(data, dim1_sizes, dim2_sizes, views, do_transpose);
 }
 
 // Sugar for when size is uniform (3d)
 template <typename TransposeDirection::Enum direction = TransposeDirection::c2f,
-          typename SizeT, typename ViewT>
+          typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 device_to_host(const std::vector<typename ViewT::non_const_value_type::scalar*>& data,
-               const SizeT dim1_size, const SizeT dim2_size, const SizeT dim3_size,
+               const size_t dim1_size, const size_t dim2_size, const size_t dim3_size,
                const std::vector<ViewT>& views,
                bool do_transpose=false)
 {
-  std::vector<SizeT> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
   device_to_host<direction>(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 
@@ -915,7 +952,7 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
                const std::vector<SizeT>& dim1_sizes,
                const std::vector<SizeT>& dim2_sizes,
                const std::vector<SizeT>& dim3_sizes,
-               std::vector<ViewT>& views,
+               const std::vector<ViewT>& views,
                bool do_transpose=false)
 {
   using ScalarT = typename ViewT::value_type;
@@ -924,6 +961,43 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
 
   const std::vector<ViewFakePackT>& views_fake = reinterpret_cast<const std::vector<ViewFakePackT>&>(views);
   device_to_host<direction>(data, dim1_sizes, dim2_sizes, dim3_sizes, views_fake, do_transpose);
+}
+
+// Sugar for when size is uniform (1d) and unpacked
+template <typename ViewT>
+typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
+device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
+               const size_t size,
+               const std::vector<ViewT>& views)
+{
+  std::vector<size_t> sizes(data.size(), size);
+  device_to_host(data, sizes, views);
+}
+
+// Sugar for when size is uniform (2d) and unpacked
+template <typename TransposeDirection::Enum direction = TransposeDirection::c2f,
+          typename ViewT>
+typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
+device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
+               const size_t dim1_size, const size_t dim2_size,
+               const std::vector<ViewT>& views,
+               bool do_transpose=false)
+{
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
+  device_to_host<direction>(data, dim1_sizes, dim2_sizes, views, do_transpose);
+}
+
+// Sugar for when size is uniform (3d) and unpacked
+template <typename TransposeDirection::Enum direction = TransposeDirection::c2f,
+          typename ViewT>
+typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
+device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
+               const size_t dim1_size, const size_t dim2_size, const size_t dim3_size,
+               const std::vector<ViewT>& views,
+               bool do_transpose=false)
+{
+  std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
+  device_to_host<direction>(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose);
 }
 
 } // namespace ekat
