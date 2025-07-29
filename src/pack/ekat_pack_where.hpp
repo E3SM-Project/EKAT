@@ -79,8 +79,11 @@ public:
     return m_value;
   }
 
+  KOKKOS_FORCEINLINE_FUNCTION
   bool any  () const { return m_mask; }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool all  () const { return m_mask; }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool none () const { return !m_mask; }
 private:
   const mask_t   m_mask;
@@ -203,8 +206,11 @@ public:
     return ekat::min(m_mask,v,m_value);
   }
 
+  KOKKOS_FORCEINLINE_FUNCTION
   bool any  () const { return m_mask.any(); }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool all  () const { return m_mask.all(); }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool none () const { return m_mask.none(); }
 private:
   const mask_t   m_mask;
