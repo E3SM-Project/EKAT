@@ -2,6 +2,9 @@
 
 include(CMakeFindDependencyMacro)
 
+# Make the install prefix available
+set (EKAT_PREFIX @CMAKE_INSTALL_PREFIX@)
+
 ###############################
 #      TPLs dependencies      #
 ###############################
