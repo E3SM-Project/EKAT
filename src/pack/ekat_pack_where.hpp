@@ -214,6 +214,7 @@ private:
 // ----- Create where expressions from mask-like and value objects ------ //
 
 template<typename S, int N>
+KOKKOS_FORCEINLINE_FUNCTION
 where_expression<Mask<N>,Pack<S,N>>
 where (const Mask<N>& m, Pack<S,N>& p)
 {
@@ -221,6 +222,7 @@ where (const Mask<N>& m, Pack<S,N>& p)
 }
 
 template<typename S>
+KOKKOS_FORCEINLINE_FUNCTION
 where_expression<bool,S>
 where (const bool& mask, S& scalar)
 {
