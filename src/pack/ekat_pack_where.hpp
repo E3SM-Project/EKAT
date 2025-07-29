@@ -19,6 +19,7 @@ public:
   using value_t = V;
   using scalar_t = typename ekat::ScalarTraits<value_t>::scalar_type;
 
+  KOKKOS_FORCEINLINE_FUNCTION
   where_expression (const bool& m, V& v)
    : m_mask (m) , m_value (v)
   { /* Nothing to do here */ }
@@ -96,6 +97,7 @@ public:
   using value_t = Pack<V,N>;
   using scalar_t = typename ekat::ScalarTraits<value_t>::scalar_type;
 
+  KOKKOS_FORCEINLINE_FUNCTION
   where_expression (const mask_t& m, value_t& v)
    : m_mask (m) , m_value (v)
   { /* Nothing to do here */ }
