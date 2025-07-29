@@ -1,10 +1,17 @@
 include(GNUInstallDirs)
 
-option(EKAT_ENABLE_ALGORITHM    "Enable EKAT algorithm utilities" OFF)
-option(EKAT_ENABLE_KOKKOS       "Enable EKAT kokkos utilities" OFF)
-option(EKAT_ENABLE_LOGGING      "Enable EKAT spdlog utilities" OFF)
-option(EKAT_ENABLE_PACK         "Enable EKAT packs utilities" OFF)
-option(EKAT_ENABLE_YAML_PARSER  "Enable EKAT yaml parsing utilities" OFF)
+option(EKAT_ENABLE_ALL_PACKAGES "Enable ALL EKAT sub-packages" OFF)
+if(EKAT_ENABLE_ALL_PACKAGES)
+  set (PKG_DEFAULT ON)
+else()
+  set (PKG_DEFAULT OFF)
+endif()
+
+option(EKAT_ENABLE_ALGORITHM    "Enable EKAT algorithm utilities" ${PKG_DEFAULT})
+option(EKAT_ENABLE_KOKKOS       "Enable EKAT kokkos utilities" ${PKG_DEFAULT})
+option(EKAT_ENABLE_LOGGING      "Enable EKAT spdlog utilities" ${PKG_DEFAULT})
+option(EKAT_ENABLE_PACK         "Enable EKAT packs utilities" ${PKG_DEFAULT})
+option(EKAT_ENABLE_YAML_PARSER  "Enable EKAT yaml parsing utilities" ${PKG_DEFAULT})
 
 # Automatically enable pkg A if pkg B is ON and it requires pkg A
 macro (EkatEnableDeps Option Requires)
