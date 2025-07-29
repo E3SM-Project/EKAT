@@ -2,6 +2,9 @@
 
 include(CMakeFindDependencyMacro)
 
+# Make the install prefix available
+set (EKAT_PREFIX @CMAKE_INSTALL_PREFIX@)
+
 ###############################
 #      TPLs dependencies      #
 ###############################
@@ -47,3 +50,17 @@ if (@EKAT_HAS_STACKTRACE@)
 endif()
 
 include (${CMAKE_CURRENT_LIST_DIR}/EkatTargets.cmake)
+
+# Handle components
+foreach(_comp IN LISTS Ekat_FIND_COMPONENTS)
+  # Check if the component was found
+  if(NOT TARGET ekat::${_comp})
+    # If a required component is missing, set Ekat_FOUND to FALSE
+    if(Ekat_FIND_REQUIRED_${_comp}) # This checks if the user requested it as REQUIRED
+      set(Ekat_FOUND FALSE)
+      # Provide a reason why Ekat was not found
+      set(Ekat_NOT_FOUND_MESSAGE "Required component ${_comp} not found.")
+      break() # Stop checking other components as the package is already considered not found
+    endif()
+  endif()
+endforeach()
