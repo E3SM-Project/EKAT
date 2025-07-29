@@ -49,3 +49,6 @@ if (EKAT_ENABLE_YAML_PARSER)
 endif()
 
 add_subdirectory(testing-support)
+
+install (TARGETS ekat_all_libs
+         EXPORT  EkatTargets)
