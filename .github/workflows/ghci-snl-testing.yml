@@ -29,6 +29,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# WARNING: if you change machines where this workflow can run, you may have to adjust the
+#          location of the certificate file (possibly on a per-job basis). For now, since
+#          all ghci-snl-XYZ machines have the same certificates, this can be set at
+#          the workflow level
+env:
+  NODE_EXTRA_CA_CERTS: /etc/pki/tls/certs/ca-bundle.crt
+
 jobs:
   gcc-openmp:
     if: |
