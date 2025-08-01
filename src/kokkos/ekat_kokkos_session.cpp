@@ -54,8 +54,6 @@ std::string kokkos_config_string ()
 
 #ifdef KOKKOS_ENABLE_OPENMP
   int num_host_threads = Kokkos::OpenMP().concurrency();
-#elif defined _OPENMP
-  int num_host_threads = omp_get_max_threads();
 #else
   int num_host_threads = 1;
 #endif
