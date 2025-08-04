@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace scream {
+namespace {
 
 TEST_CASE("force_fpe")
 {

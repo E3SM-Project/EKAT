@@ -1,0 +1,186 @@
+name: ghci-snl-testing
+
+on:
+  # Runs on PRs against master
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, ready_for_review, reopened]
+
+  # Manual run is used to bless
+  workflow_dispatch:
+    inputs:
+      job_to_run:
+        description: 'Job to run'
+        required: true
+        type: choice
+        options:
+          - gcc-openmp
+          - gcc-cuda
+          - all
+
+  # Add schedule trigger for nightly runs at midnight MT (Standard Time)
+  schedule:
+    - cron: '0 7 * * *'  # Runs at 7 AM UTC, which is midnight MT during Standard Time
+
+concurrency:
+  # Two runs are in the same group if they are testing the same git ref
+  #  - if trigger=pull_request, the ref is refs/pull/<PR_NUMBER>/merge
+  #  - for other triggers, the ref is the branch tested
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# WARNING: if you change machines where this workflow can run, you may have to adjust the
+#          location of the certificate file (possibly on a per-job basis). For now, since
+#          all ghci-snl-XYZ machines have the same certificates, this can be set at
+#          the workflow level
+env:
+  NODE_EXTRA_CA_CERTS: /etc/pki/tls/certs/ca-bundle.crt
+
+jobs:
+  gcc-openmp:
+    if: |
+      ${{
+        github.event_name != 'workflow_dispatch' ||
+        (
+          github.event.inputs.job_to_run == 'gcc-openmp' ||
+          github.event.inputs.job_to_run == 'all'
+        )
+      }}
+    runs-on:  [self-hosted, ghci-snl-cpu, gcc]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [debug, release]
+    name: gcc-openmp / ${{ matrix.build_type }}
+    steps:
+      - name: Show action trigger
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const eventName = context.eventName;
+            const actor = context.actor || 'unknown';  // Default to 'unknown' if actor is not defined
+            let eventAction = 'N/A';
+
+            // Determine the event action based on the event type
+            if (eventName === 'pull_request') {
+              eventAction = context.payload.action || 'N/A';
+            } else if (eventName === 'pull_request_review') {
+              eventAction = context.payload.review.state || 'N/A';
+            } else if (eventName === 'workflow_dispatch') {
+              eventAction = 'manual trigger';
+            } else if (eventName === 'schedule') {
+              eventAction = 'scheduled trigger';
+            }
+            console.log(`The job was triggered by a ${eventName} event.`);
+            console.log(`  - Event action: ${eventAction}`);
+            console.log(`  - Triggered by: ${actor}`);
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Ensure CACTS is installed
+        run: |
+          python3 -m pip install --user --upgrade --trusted-host pypi.org cacts
+      - name: Run tests
+        run: |
+          cmd="cacts -m ghci-snl-cpu -t ${{ matrix.build_type }} -r ./"
+          echo "CACTS call: $cmd"
+          $cmd
+      - name: Upload files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-files-${{ matrix.build_type }}-ghci-snl-cpu
+          path: |
+            ctest-build/*/Testing/Temporary/Last*.log
+            ctest-build/*/ctest_resource_file.json
+            ctest-build/*/ctest_script.cmake
+            ctest-build/*/CMakeCache.txt
+  gcc-cuda:
+    if: |
+      ${{
+        github.event_name != 'workflow_dispatch' ||
+        (
+          github.event.inputs.job_to_run == 'gcc-cuda' ||
+          github.event.inputs.job_to_run == 'all'
+        )
+      }}
+    runs-on:  [self-hosted, ghci-snl-cuda, cuda, gcc]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [debug, release]
+    name: gcc-cuda / ${{ matrix.build_type }}
+    steps:
+      - name: Show action trigger
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const eventName = context.eventName;
+            const actor = context.actor || 'unknown';  // Default to 'unknown' if actor is not defined
+            let eventAction = 'N/A';
+
+            // Determine the event action based on the event type
+            if (eventName === 'pull_request') {
+              eventAction = context.payload.action || 'N/A';
+            } else if (eventName === 'pull_request_review') {
+              eventAction = context.payload.review.state || 'N/A';
+            } else if (eventName === 'workflow_dispatch') {
+              eventAction = 'manual trigger';
+            } else if (eventName === 'schedule') {
+              eventAction = 'scheduled trigger';
+            }
+            console.log(`The job was triggered by a ${eventName} event.`);
+            console.log(`  - Event action: ${eventAction}`);
+            console.log(`  - Triggered by: ${actor}`);
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Get CUDA Arch
+        run: |
+          # Ensure nvidia-smi is available
+          if ! command -v nvidia-smi &> /dev/null; then
+              echo "nvidia-smi could not be found. Please ensure you have Nvidia drivers installed."
+              exit 1
+          fi
+
+          # Get the GPU model from nvidia-smi, and set env for next step
+          gpu_model=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n 1)
+          case "$gpu_model" in
+              *"H100"*)
+                  echo "ARCH=HOPPER90" >> $GITHUB_ENV
+                  ;;
+              *"A100"*)
+                  echo "ARCH=AMPERE80" >> $GITHUB_ENV
+                  ;;
+              *"V100"*)
+                  echo "ARCH=VOLTA70" >> $GITHUB_ENV
+                  ;;
+              *)
+                  echo "Unsupported GPU model: $gpu_model"
+                  exit 1
+                  ;;
+          esac
+      - name: Ensure CACTS is installed
+        run: |
+          python3 -m pip install --user --upgrade --trusted-host pypi.org cacts
+      - name: Run tests
+        run: |
+          cmd="cacts -m ghci-snl-cuda -t ${{ matrix.build_type }} -r ./ -c Kokkos_ARCH_${{ env.ARCH }}=ON"
+          echo "CACTS call: $cmd"
+          $cmd
+      - name: Upload files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-files-${{ matrix.build_type }}-ghci-snl-cuda
+          path: |
+            ctest-build/*/Testing/Temporary/Last*.log
+            ctest-build/*/ctest_resource_file.json
+            ctest-build/*/ctest_script.cmake
+            ctest-build/*/CMakeCache.txt
