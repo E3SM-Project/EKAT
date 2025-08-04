@@ -19,6 +19,7 @@ public:
   using value_t = V;
   using scalar_t = typename ekat::ScalarTraits<value_t>::scalar_type;
 
+  KOKKOS_FORCEINLINE_FUNCTION
   where_expression (const bool& m, V& v)
    : m_mask (m) , m_value (v)
   { /* Nothing to do here */ }
@@ -78,8 +79,11 @@ public:
     return m_value;
   }
 
+  KOKKOS_FORCEINLINE_FUNCTION
   bool any  () const { return m_mask; }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool all  () const { return m_mask; }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool none () const { return !m_mask; }
 private:
   const mask_t   m_mask;
@@ -96,6 +100,7 @@ public:
   using value_t = Pack<V,N>;
   using scalar_t = typename ekat::ScalarTraits<value_t>::scalar_type;
 
+  KOKKOS_FORCEINLINE_FUNCTION
   where_expression (const mask_t& m, value_t& v)
    : m_mask (m) , m_value (v)
   { /* Nothing to do here */ }
@@ -201,8 +206,11 @@ public:
     return ekat::min(m_mask,v,m_value);
   }
 
+  KOKKOS_FORCEINLINE_FUNCTION
   bool any  () const { return m_mask.any(); }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool all  () const { return m_mask.all(); }
+  KOKKOS_FORCEINLINE_FUNCTION
   bool none () const { return m_mask.none(); }
 private:
   const mask_t   m_mask;
@@ -212,6 +220,7 @@ private:
 // ----- Create where expressions from mask-like and value objects ------ //
 
 template<typename S, int N>
+KOKKOS_FORCEINLINE_FUNCTION
 where_expression<Mask<N>,Pack<S,N>>
 where (const Mask<N>& m, Pack<S,N>& p)
 {
@@ -219,6 +228,7 @@ where (const Mask<N>& m, Pack<S,N>& p)
 }
 
 template<typename S>
+KOKKOS_FORCEINLINE_FUNCTION
 where_expression<bool,S>
 where (const bool& mask, S& scalar)
 {
