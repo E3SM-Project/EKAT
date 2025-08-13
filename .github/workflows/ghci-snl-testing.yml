@@ -35,6 +35,7 @@ concurrency:
 #          the workflow level
 env:
   NODE_EXTRA_CA_CERTS: /etc/pki/tls/certs/ca-bundle.crt
+  REQUESTS_CA_BUNDLE: /etc/pki/tls/certs/ca-bundle.crt
 
 jobs:
   gcc-openmp:
