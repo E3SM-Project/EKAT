@@ -47,6 +47,7 @@ set (HEADERS
   ekat_kokkos_types.hpp
   ekat_math_utils.hpp
   ekat_subview_utils.hpp
+  ekat_kokkos_str_utils.hpp
   ekat_team_policy_utils.hpp
   ekat_upper_bound.hpp
   ekat_view_utils.hpp
