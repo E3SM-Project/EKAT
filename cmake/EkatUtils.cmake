@@ -91,13 +91,13 @@ macro (EkatConfigFile CONFIG_FILE_IN CONFIG_FILE_C)
     if (EKAT_CONFIGURE_FILE_F90_FILE)
       # run sed to change '/*...*/' comments into '!/*...*/'
       execute_process(COMMAND sed "s;^/;!/;g"
-                      WORKING_DIRECTORY ${EKAT_BINARY_DIR}
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                       INPUT_FILE ${CONFIG_FILE_C}
                       OUTPUT_FILE ${EKAT_CONFIGURE_FILE_F90_FILE})
 
       # do the same for '//...' comments (turn them into '! ...'
       execute_process(COMMAND sed "s;^//;!;g"
-                      WORKING_DIRECTORY ${EKAT_BINARY_DIR}
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                       INPUT_FILE ${CONFIG_FILE_C}
                       OUTPUT_FILE ${EKAT_CONFIGURE_FILE_F90_FILE})
     endif()
