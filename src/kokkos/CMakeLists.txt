@@ -7,12 +7,16 @@ if (EKAT_SKIP_FIND_KOKKOS)
   # The user does not want to accidentally get an existing installation,
   # and instead wants to force a build from the internal submodule
   include (EkatBuildKokkos)
+  set (EKAT_BUILDS_KOKKOS ON CACHE BOOL "Whether Ekat builds kokkos" FORCE)
 else()
   # We first try to use find_package (unless told to skip this phase).
   # If that doesn't work, build from submodule
   include (EkatFindKokkos)
   if (NOT Kokkos_FOUND)
     include (EkatBuildKokkos)
+    set (EKAT_BUILDS_KOKKOS ON CACHE BOOL "Whether Ekat builds kokkos" FORCE)
+  else()
+    set (EKAT_BUILDS_KOKKOS OFF CACHE BOOL "Whether Ekat builds kokkos" FORCE)
   endif()
 endif()
 

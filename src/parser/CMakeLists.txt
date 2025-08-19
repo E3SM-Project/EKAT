@@ -6,6 +6,7 @@ if (EKAT_SKIP_FIND_YAML_CPP)
   # The user does not want to accidentally get an existing installation,
   # and instead wants to force a build from the internal submodule
   include (EkatBuildYamlCpp)
+  set (EKAT_BUILDS_YAMLCPP ON CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
 else()
   # I am having issues getting the env var YAML_CPP_ROOT being picked up
   # by cmake. I suspect this has to do with the presence of the hyphen
@@ -21,7 +22,9 @@ else()
   if (NOT yaml-cpp_FOUND)
     message (STATUS "Looking for yaml-cpp ... NOT FOUND")
     include(EkatBuildYamlCpp)
+    set (EKAT_BUILDS_YAMLCPP ON CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
   else()
+    set (EKAT_BUILDS_YAMLCPP OFF CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
     message (STATUS "Looking for yaml-cpp ... FOUND")
     message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
     # It is possible that the installation provides the yaml-cpp target, but not the yaml-cpp::yaml-cpp target. If so, define the alias target
