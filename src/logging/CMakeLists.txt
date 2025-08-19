@@ -7,6 +7,7 @@ if (EKAT_SKIP_FIND_SPDLOG)
   # The user does not want to accidentally get an existing installation,
   # and instead wants to force a build from the internal submodule
   include (EkatBuildSpdlog)
+  set (EKAT_BUILDS_SPDLOG ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
 else()
   # We first try to use find_XYZ. If that doesn't work, build from submodule
   message (STATUS "Looking for spdlog ...")
@@ -14,9 +15,11 @@ else()
   if (NOT spdlog_FOUND)
     message (STATUS "Looking for spdlog ... NOT FOUND")
     include(EkatBuildSpdlog)
+    set (EKAT_BUILDS_SPDLOG ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
   else()
     message (STATUS "Looking for spdlog ... FOUND")
     message (STATUS "  spdlog_DIR: ${spdlog_DIR}")
+    set (EKAT_BUILDS_SPDLOG OFF CACHE BOOL "Whether Ekat builds spdlog" FORCE)
   endif()
 endif()
 

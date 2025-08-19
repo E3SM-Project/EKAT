@@ -16,30 +16,31 @@ endif()
 
 if (@EKAT_ENABLE_KOKKOS@)
   # Kokkos
-  if (@Kokkos_FOUND@)
-    find_dependency(Kokkos REQUIRED QUIET HINTS @Kokkos_DIR@)
-  else()
+  if (@EKAT_BUILDS_KOKKOS@)
     # We're installing Kokkos alongside ekat
     find_dependency(Kokkos REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+  else()
+    find_dependency(Kokkos REQUIRED QUIET HINTS @Kokkos_DIR@)
   endif()
 endif()
 
 # yaml-cpp
 if (@EKAT_ENABLE_YAML_PARSER@)
-  if (@yaml-cpp_FOUND@)
-    find_dependency(yaml-cpp REQUIRED QUIET HINTS @yaml-cpp_DIR@)
-  else()
+  if (@EKAT_BUILDS_YAMLCPP@)
     # We're installing yaml-cpp alongside ekat
     find_dependency(yaml-cpp REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+  else()
+    find_dependency(yaml-cpp REQUIRED QUIET HINTS @yaml-cpp_DIR@)
   endif()
 endif()
 
 if (@EKAT_ENABLE_LOGGING@)
   # spdlog
-  if (@spdlog_FOUND@)
-    find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
-  else()
+  if (@EKAT_BUILDS_SPDLOG@)
+    # We're installing yaml-cpp alongside ekat
     find_dependency(spdlog REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+  else()
+    find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
   endif()
 endif()
 
