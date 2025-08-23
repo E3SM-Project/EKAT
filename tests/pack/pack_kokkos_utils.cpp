@@ -983,39 +983,57 @@ TEST_CASE("adj_diff", "ekat::pack")
       data_s(i) = (i+1)*(i+1);
       data_p(i/N)[i%N] = (i+1)*(i+1);
     });
-    // Compute adj_differences. Notice that (i+1)^2 - i^2 = 2*i+1
-    Kokkos::View<int*> diff_fwd_s("diff_fwd_s", num_ints);
-    Kokkos::View<PT*>  diff_fwd_p("diff_fwd_p", num_packs);
-    Kokkos::View<int*> diff_bwd_s("diff_bwd_s", num_ints);
-    Kokkos::View<PT*>  diff_bwd_p("diff_bwd_p", num_packs);
-    auto f_s = KOKKOS_LAMBDA(const int i) {
-      diff_fwd_s(i) = ekat::adj_diff<true> (data_s,i);
-      diff_bwd_s(i) = ekat::adj_diff<false>(data_s,i);
-    };
-    auto f_p = KOKKOS_LAMBDA(const int i) {
-      diff_fwd_p(i) = ekat::adj_diff<true> (data_p,i);
-      diff_bwd_p(i) = ekat::adj_diff<false>(data_p,i);
-    };
-    Kokkos::parallel_for(num_ints, f_s);
-    Kokkos::parallel_for(num_packs, f_p);
+    for (bool use_lambda : {false,true}) {
+      // Compute adj_differences. Notice that (i+1)^2 - i^2 = 2*i+1
+      Kokkos::View<int*> diff_fwd_s("diff_fwd_s", num_ints);
+      Kokkos::View<PT*>  diff_fwd_p("diff_fwd_p", num_packs);
+      Kokkos::View<int*> diff_bwd_s("diff_bwd_s", num_ints);
+      Kokkos::View<PT*>  diff_bwd_p("diff_bwd_p", num_packs);
+      auto f_s = KOKKOS_LAMBDA(const int i) {
+        if (use_lambda) {
+          auto provider = [&](int k) {
+            return data_s(k);
+          };
+          diff_fwd_s(i) = ekat::adj_diff<true> (provider,i,data_s.size());
+          diff_bwd_s(i) = ekat::adj_diff<false>(provider,i,data_s.size());
+        } else {
+          diff_fwd_s(i) = ekat::adj_diff<true> (data_s,i);
+          diff_bwd_s(i) = ekat::adj_diff<false>(data_s,i);
+        }
+      };
+      auto f_p = KOKKOS_LAMBDA(const int i) {
+        if (use_lambda) {
+          auto provider = [&](int k) {
+            return data_p(k);
+          };
+          diff_fwd_p(i) = ekat::adj_diff<true> (provider,i,data_p.size());
+          diff_bwd_p(i) = ekat::adj_diff<false>(provider,i,data_p.size());
+        } else {
+          diff_fwd_p(i) = ekat::adj_diff<true> (data_p,i);
+          diff_bwd_p(i) = ekat::adj_diff<false>(data_p,i);
+        }
+      };
+      Kokkos::parallel_for(num_ints, f_s);
+      Kokkos::parallel_for(num_packs, f_p);
 
-    auto diff_fwd_sh = ekat::create_host_mirror_and_copy(diff_fwd_s);
-    auto diff_fwd_ph = ekat::create_host_mirror_and_copy(diff_fwd_p);
-    auto diff_bwd_sh = ekat::create_host_mirror_and_copy(diff_bwd_s);
-    auto diff_bwd_ph = ekat::create_host_mirror_and_copy(diff_bwd_p);
-    auto diff_fwd_phs = ekat::scalarize(diff_fwd_ph);
-    auto diff_bwd_phs = ekat::scalarize(diff_bwd_ph);
+      auto diff_fwd_sh = ekat::create_host_mirror_and_copy(diff_fwd_s);
+      auto diff_fwd_ph = ekat::create_host_mirror_and_copy(diff_fwd_p);
+      auto diff_bwd_sh = ekat::create_host_mirror_and_copy(diff_bwd_s);
+      auto diff_bwd_ph = ekat::create_host_mirror_and_copy(diff_bwd_p);
+      auto diff_fwd_phs = ekat::scalarize(diff_fwd_ph);
+      auto diff_bwd_phs = ekat::scalarize(diff_bwd_ph);
 
-    REQUIRE (diff_fwd_sh(0)==3);
-    REQUIRE (diff_fwd_phs(0)==3);
-    for (int i=1; i<num_ints-1; ++i) {
-      REQUIRE(diff_fwd_sh(i)==2*(i+1)+1);
-      REQUIRE(diff_bwd_phs(i)==2*i+1);
-      REQUIRE(diff_fwd_phs(i)==2*(i+1)+1);
-      REQUIRE(diff_bwd_sh(i)==2*i+1);
+      REQUIRE (diff_fwd_sh(0)==3);
+      REQUIRE (diff_fwd_phs(0)==3);
+      for (int i=1; i<num_ints-1; ++i) {
+        REQUIRE(diff_fwd_sh(i)==2*(i+1)+1);
+        REQUIRE(diff_bwd_phs(i)==2*i+1);
+        REQUIRE(diff_fwd_phs(i)==2*(i+1)+1);
+        REQUIRE(diff_bwd_sh(i)==2*i+1);
+      }
+      REQUIRE (diff_bwd_sh (num_ints-1)==2*(num_ints-1)+1);
+      REQUIRE (diff_bwd_phs(num_ints-1)==2*(num_ints-1)+1);
     }
-    REQUIRE (diff_bwd_sh (num_ints-1)==2*(num_ints-1)+1);
-    REQUIRE (diff_bwd_phs(num_ints-1)==2*(num_ints-1)+1);
   }
 }
 
