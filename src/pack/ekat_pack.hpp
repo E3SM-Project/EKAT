@@ -375,7 +375,11 @@ struct IsPack : std::false_type {};
 template<typename T, int N>
 struct IsPack<Pack<T,N>> : std::true_type {};
 template<typename T, int N>
+struct IsPack<Pack<T,N>&> : std::true_type {};
+template<typename T, int N>
 struct IsPack<const Pack<T,N>> : std::true_type {};
+template<typename T, int N>
+struct IsPack<const Pack<T,N>&> : std::true_type {};
 
 // Later, we might support type promotion. For now, caller must explicitly
 // promote a pack's scalar type in mixed-type arithmetic.
