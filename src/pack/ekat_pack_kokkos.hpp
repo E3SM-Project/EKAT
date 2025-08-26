@@ -106,19 +106,21 @@ index_and_shift (const Array1& a, const IdxPack& i0, Pack<typename Array1::non_c
 //     is OOB, the corresponding value is taken to be 0. The diff
 //     is not well defined there, so the user is responsible for using
 //     the returned value in a meaningful way (i.e., discard those entries)
+//   - index_end is the first index after the last valid index for v.
+//     E.g., if v is a view, index_last=v.size().
 //   - The input 'index' refers to the index space of the view. That is,
 //     for ScalarT=Pack, it should be the PACK index, not the index in
 //     a scalarized view.
-template<bool Forward, typename ScalarT, typename... Props>
+template<bool Forward, typename InputProvider>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if<IsPack<ScalarT>::value,
-                        typename std::remove_cv<ScalarT>::type>::type
-adj_diff(const Kokkos::View<ScalarT*,Props...>& v, int index)
+auto adj_diff(const InputProvider& v, int index, int index_end)
+ -> std::enable_if_t<IsPack<decltype(v(0))>::value,
+                     std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>>
 {
+  using ScalarT = std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>;
   ScalarT ret = v(index);
   if constexpr (Forward) {
-    const int last_idx = v.size()-1;
-    auto fill_right = index<last_idx ? v(index+1)[0] : 0;
+    auto fill_right = index<(index_end-1) ? v(index+1)[0] : 0;
     ret.update(ekat::shift_left(fill_right,ret),1,-1);
   } else {
     constexpr auto N = ScalarT::n;
@@ -128,16 +130,16 @@ adj_diff(const Kokkos::View<ScalarT*,Props...>& v, int index)
   return ret;
 }
 
-template<bool Forward, typename ScalarT, typename... Props>
+template<bool Forward, typename InputProvider>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if<not IsPack<ScalarT>::value,
-                        typename std::remove_cv<ScalarT>::type>::type
-adj_diff(const Kokkos::View<ScalarT*,Props...>& v, int index)
+auto adj_diff(const InputProvider& v, int index, int index_end)
+ -> std::enable_if_t<not IsPack<decltype(v(0))>::value,
+                     std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>>
 {
+  using ScalarT = std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>;
   ScalarT ret;
   if constexpr (Forward) {
-    const int last_idx = v.size()-1;
-    if (index<last_idx)
+    if (index<(index_end-1))
       ret = v(index+1);
     ret -= v(index);
   } else {
@@ -146,6 +148,17 @@ adj_diff(const Kokkos::View<ScalarT*,Props...>& v, int index)
       ret -= v(index-1);
   }
   return ret;
+}
+
+// For bwd compatibility, offer an overload of adj_diff taking a view
+// without the index_last arg, which calls the above overloads with
+// index_last=v.size()-1
+template<bool Forward, typename ScalarT, typename... Props>
+KOKKOS_INLINE_FUNCTION
+std::remove_const_t<ScalarT>
+adj_diff(const Kokkos::View<ScalarT*,Props...>& v, int index)
+{
+  return adj_diff<Forward>(v,index,v.size());
 }
 
 // Turn a View of Packs into a View of scalars.
