@@ -83,6 +83,14 @@ protected:
  int coeff[8];
 };
 
+
+template<typename ToView,typename FromView>
+ViewBroadcast<ToView> broadcast (const FromView& from,
+                                 const std::vector<int>& extents)
+{
+  return ViewBroadcast<ToView>(from,extents);
+}
+
 } // namespace ekat
 
 #endif // EKAT_BROADCAST_VIEW_HPP
