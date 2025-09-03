@@ -32,6 +32,7 @@ endif()
 # Always looking for stacktrace can cause problems when cross compiling
 # Hence, avoid finding boost if user didn't ask for it.
 option (EKAT_ENABLE_BOOST_STACKTRACE "Whether to enable Boost stacktrace" OFF)
+
 if (EKAT_ENABLE_BOOST_STACKTRACE)
   message (STATUS "Looking for boost::stacktrace ...")
   # Stacktrace is available with Boost>=1.65
@@ -77,7 +78,7 @@ endif()
 
 if (EKAT_HAS_STACKTRACE)
   target_link_libraries(ekat_core PUBLIC ${Boost_LIBRARIES})
-  target_compile_definitions(ekat_core PRIVATE EKAT_HAS_STACKTRACE)
+  target_compile_definitions(ekat_core PRIVATE EKAT_HAS_STACKTRACE BOOST_STACKTRACE_USE_ADDR2LINE)
 endif()
 
 if (EKAT_DEFAULT_BFB)

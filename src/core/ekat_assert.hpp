@@ -33,13 +33,14 @@ void throw_exception(const std::string& msg)
   if constexpr (std::is_constructible<exception_type, const std::string&>::value) {
     throw exception_type(msg);
   } else if constexpr (std::is_default_constructible<exception_type>::value) {
-    std::cerr << msg;
+    std::cerr << msg << "\n";
     throw exception_type();
   } else {
     std::cerr << msg << "\n";
     std::cerr << "Cannot create exception of type\n";
     std::cerr << "       " << typeid(exception_type).name() << "\n";
-    std::cerr << "The program will terminate\n";
+    std::cerr << "Throwing std::runtime_error instead...\n";
+    throw std::runtime_error(msg);
   }
 }
 
@@ -47,14 +48,15 @@ void throw_exception(const std::string& msg)
 
 // Internal do not call directly.
 #define IMPL_THROW(condition, msg, exception_type)  \
-  do {                                                    \
-    if ( ! (condition) ) {                                \
-      std::stringstream _ss_;                             \
-      _ss_ << "\n FAIL:\n" << #condition  << "\n";        \
-      _ss_ << EKAT_BACKTRACE;                             \
-      _ss_ << "\n" << msg;                                \
-      ekat::throw_exception<exception_type>(_ss_.str());  \
-    }                                                     \
+  do {                                                                \
+    if ( ! (condition) ) {                                            \
+      std::cerr << "\nFAILED CONDITION: '" << #condition  << "'\n\n"; \
+      std::cerr << "BACKTRACE:\n";                                    \
+      std::cerr << EKAT_BACKTRACE << "\n";                            \
+      std::stringstream ss;                                           \
+      ss << msg;                                                      \
+      ekat::throw_exception<exception_type>(ss.str());                \
+    }                                                                 \
   } while(0)
 
 // Define the EKAT_REQUIRE macros for different argument counts
