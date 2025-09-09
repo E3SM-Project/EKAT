@@ -12,6 +12,10 @@ EkatCreateUnitTest(math_utils math_utils.cpp
 EkatCreateUnitTest(view_utils view_utils.cpp
   LIBS ekat::KokkosUtils)
 
+# Test view broadcast
+EkatCreateUnitTest(view_broadcast view_broadcast.cpp
+  LIBS ekat::KokkosUtils)
+
 # Test subview utils
 EkatCreateUnitTest(subview_utils subview_utils.cpp
   LIBS ekat::KokkosUtils)
