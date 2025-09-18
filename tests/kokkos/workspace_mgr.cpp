@@ -39,7 +39,7 @@ static void unittest_workspace_overprovision()
   TeamUtils<double,ExeSpace> tu_temp(temp_policy);
   const int num_conc = tu_temp.get_max_concurrent_threads() / temp_policy.team_size();
 
-  constexpr double op_fact = WSM::GPU_DEFAULT_OVERPROVISION_FACTOR;
+  constexpr double op_fact = WSM_GPU_DEFAULT_OVERPROVISION_FACTOR;
   constexpr double explicit_op_fact = op_fact * 2.0;
 
   const int ni_under   = (num_conc / 2) + 1;

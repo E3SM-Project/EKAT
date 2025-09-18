@@ -72,7 +72,9 @@ class WorkspaceManager
   //
 
   // Default overprov factor for large GPU problems, testing has shown 1.25 is optimal
-  static constexpr double GPU_DEFAULT_OVERPROVISION_FACTOR = 1.25;
+  // Some linkers were having trouble with the code below, so just define it
+  //static inline constexpr double GPU_DEFAULT_OVERPROVISION_FACTOR = 1.25;
+#define WSM_GPU_DEFAULT_OVERPROVISION_FACTOR 1.25
 
   //
   // ------- public API ---------
@@ -87,7 +89,7 @@ class WorkspaceManager
   //   policy: The team policy for Kokkos kernels using this WorkspaceManager
   //   overprov_factor: How many workspace slots to overprovision (only applies to GPU for large problems)
   WorkspaceManager(int size, int max_used, TeamPolicy policy,
-                   const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+                   const double& overprov_factor=WSM_GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   // Constructor, call from host
   //   Same as above, but here the user initializes the data.
@@ -97,14 +99,14 @@ class WorkspaceManager
   //   data is available, for which the get_total_slots_to_be_used()
   //   function can be helpful.
   WorkspaceManager(T* data, int size, int max_used, TeamPolicy policy,
-                   const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+                   const double& overprov_factor=WSM_GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   // Helper functions which return the number of bytes that will be reserved for a given
   // set of constructor inputs. Note, this does not actually create an instance of the WSM,
   // but is useful for when memory needs to be reserved in a different scope than the
   // WSM is created.
   static int get_total_bytes_needed(int size, int max_used, TeamPolicy policy,
-                                    const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+                                    const double& overprov_factor=WSM_GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   // call from host.
   //
@@ -116,14 +118,14 @@ class WorkspaceManager
   //
   // Setup routine for the WSM if the user used the empty constructor
   void setup(int size, int max_used, TeamPolicy policy,
-             const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+             const double& overprov_factor=WSM_GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   // call from host.
   //
   // Setup routine for the WSM if the user used the empty constructor.
   // Same as above, but here the user initializes the data.
   void setup(T* data, int size, int max_used, TeamPolicy policy,
-             const double& overprov_factor=GPU_DEFAULT_OVERPROVISION_FACTOR);
+             const double& overprov_factor=WSM_GPU_DEFAULT_OVERPROVISION_FACTOR);
 
   // call from host.
   //
@@ -376,9 +378,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator() (const MemberType& team) const;
 }; // class WorkspaceManager
-
-template <typename T, typename D>
-constexpr double WorkspaceManager<T, D>::GPU_DEFAULT_OVERPROVISION_FACTOR;
 
 } // namespace ekat
 
