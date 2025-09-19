@@ -258,6 +258,7 @@ class TeamUtils<ValueType,EkatGpuSpace> : public TeamUtilsCommonBase<ValueType,E
     _open_ws_slots("open_ws_slots", _need_ws_sharing ? _num_ws_slots : 0),
     _rand_pool()
   {
+    EKAT_REQUIRE_MSG(overprov_factor >= 1.0, "Makes no sense to have an overprov < 1");
     if (_need_ws_sharing) {
       _rand_pool = RandomGenerator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
