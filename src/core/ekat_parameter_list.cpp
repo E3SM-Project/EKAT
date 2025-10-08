@@ -80,4 +80,24 @@ void ParameterList::import (const ParameterList& src)
   }
 }
 
+std::vector<std::string>
+ParameterList::param_names () const
+{
+  std::vector<std::string> names;
+  for (const auto& it : m_params) {
+    names.push_back(it.first);
+  }
+  return names;
+}
+
+std::vector<std::string>
+ParameterList::sublist_names () const
+{
+  std::vector<std::string> names;
+  for (const auto& it : m_sublists) {
+    names.push_back(it.first);
+  }
+  return names;
+}
+
 } // namespace ekat

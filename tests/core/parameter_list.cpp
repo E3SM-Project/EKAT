@@ -50,13 +50,14 @@ TEST_CASE("parameter_list", "") {
   REQUIRE (dst.sublist("sl").isParameter("d"));
   REQUIRE (dst.sublist("sl").get<double>("d")==1.0);
 
-  auto sl_begin = src.sublists_names_cbegin();
-  auto sl_end   = src.sublists_names_cend();
-  REQUIRE (std::next(sl_begin,1)==sl_end); // Only one sublist
+  auto p_names = src.param_names();
+  REQUIRE (p_names.size()==2); // Two params
+  REQUIRE (p_names[0]=="i");
+  REQUIRE (p_names[1]=="j");
 
-  auto p_begin = src.params_names_cbegin();
-  auto p_end   = src.params_names_cend();
-  REQUIRE (std::next(p_begin,2)==p_end); // Two params
+  auto s_names = src.sublist_names();
+  REQUIRE (s_names.size()==1); // One sublist
+  REQUIRE (s_names[0]=="sl");
 }
 
 TEST_CASE ("pl_copy") {

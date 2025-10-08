@@ -26,25 +26,25 @@ void check_same_param (const ekat::ParameterList& p1,const ekat::ParameterList& 
 
 void check_superset (const ekat::ParameterList& super, const ekat::ParameterList& sub)
 {
-  for (auto it=super.sublists_names_cbegin(); it!=super.sublists_names_cend(); ++it) {
-    REQUIRE (sub.isSublist(*it));
+  for (const auto& sname : super.sublist_names()) {
+    REQUIRE (sub.isSublist(sname));
 
-    check_superset(super.sublist(*it),sub.sublist(*it));
+    check_superset(super.sublist(sname),sub.sublist(sname));
   }
 
-  for (auto it=super.params_names_cbegin(); it!=super.params_names_cend(); ++it) {
-    REQUIRE (sub.isParameter(*it));
+  for (const auto& pname : super.param_names()) {
+    REQUIRE (sub.isParameter(pname));
 
     // We can't check EVERY possible type, but we can check the ones we use in this test
     // Check that, if param has type T in super, it also has type T in sub, and values match
-    check_same_param<int>(super,sub,*it);
-    check_same_param<bool>(super,sub,*it);
-    check_same_param<double>(super,sub,*it);
-    check_same_param<std::string>(super,sub,*it);
-    check_same_param<std::vector<int>>(super,sub,*it);
-    check_same_param<std::vector<bool>>(super,sub,*it);
-    check_same_param<std::vector<double>>(super,sub,*it);
-    check_same_param<std::vector<std::string>>(super,sub,*it);
+    check_same_param<int>(super,sub,pname);
+    check_same_param<bool>(super,sub,pname);
+    check_same_param<double>(super,sub,pname);
+    check_same_param<std::string>(super,sub,pname);
+    check_same_param<std::vector<int>>(super,sub,pname);
+    check_same_param<std::vector<bool>>(super,sub,pname);
+    check_same_param<std::vector<double>>(super,sub,pname);
+    check_same_param<std::vector<std::string>>(super,sub,pname);
   }
 }
 
