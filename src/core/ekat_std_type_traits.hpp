@@ -12,6 +12,7 @@
  *  we try to emulate here.
  */
 
+#include <vector>
 #include <type_traits>
 
 namespace ekat {
@@ -49,6 +50,14 @@ template<typename T>
 struct DataND<T,0> {
   using type = T;
 };
+
+template<typename T>
+struct is_vector : std::false_type {};
+template<typename S>
+struct is_vector<std::vector<S>> : std::true_type {};
+template<typename T>
+constexpr auto is_vector_v = is_vector<T>::value;
+
 
 } // namespace ekat
 
