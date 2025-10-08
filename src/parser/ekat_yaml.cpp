@@ -1,6 +1,5 @@
 #include "ekat_yaml.hpp"
 #include "ekat_string_utils.hpp"
-#include "ekat_meta_utils.hpp"
 #include "ekat_assert.hpp"
 
 #include <yaml-cpp/yaml.h>
@@ -10,12 +9,6 @@
 #include <iomanip>
 
 namespace ekat {
-
-// These are the values we can parse.
-using values_t     = TypeList<bool,int,double,std::string>;
-
-// These are the vector<T> values we can store. char is to store bool.
-using seq_values_t = TypeList<char,int,double,std::string>;
 
 // =============================== READ ============================ //
 
@@ -114,14 +107,16 @@ void parse_node<YAML::NodeType::Scalar> (
   if (tag=="?") {
     // There's no tag annotation regarding the node type,
     // so we just try in order bool, int, double, string
-    TypeListFor<values_t>([&](auto t) -> bool{
-      using vtype = decltype(t);
-      if (is_type<vtype>(str)) {
-        list.set(key,str2type<vtype>(str));
-        return true;
-      }
-      return false;
-    });
+    if (is_type<bool>(str)) {
+      list.set(key,str2type<bool>(str));
+    } else if (is_type<int>(str)) {
+      list.set(key,str2type<int>(str));
+    } else if (is_type<double>(str)) {
+      list.set(key,str2type<double>(str));
+    } else {
+      // Nothing worked, so just use string type
+      list.set(key,str);
+    }
   } else {
     // YAY, the user is telling us how to interpret the values
     if (tag=="!!bool" or tag=="tag:yaml.org,2002:bool") {
@@ -154,72 +149,36 @@ void parse_node<YAML::NodeType::Sequence> (
   EKAT_REQUIRE_MSG (node.Type()==YAML::NodeType::Sequence,
                       "Error! Actual node type incompatible with template parameter.\n");
 
-  // The following fancy typemap/typelist code defeats the nvcc compiler(s)
-  // available on Summit, so we're backpedaling for now. The code below this
-  // block comment does the same thing. -JNJ, 5/27/2022
-  /*
-  // Loop over the value types, just to find the one corresponding to seq_type
-  using val_to_seq_val = TypeMap<values_t,seq_values_t>;
-  int n = node.size();
-  TypeListFor<values_t>([&](auto t)->bool {
-    using vtype = decltype(t);
-    if (is_seq<vtype>(node)) {
-      // Once we know the value type, create the proper std::vector, fill it, and set it in the list
-      using seq_val_t = val_to_seq_val::at_t<vtype>;
-      std::vector<seq_val_t> vec(n);
-      for (int i=0; i<n; ++i) {
-        std::string str = node[i].as<std::string>();
-        vec[i] = str2type<seq_val_t>(str);
-      }
-      list.set(key,vec);
-      // Returning true allows to immediately break from the TypeListFor
-      return true;
-    }
-    return false;
-  });
-  */
-  // Yes, I know. The C preprocessor! Too bad the fancy C++ template stuff
-  // isn't up to the task. Here we encode a value type and its related sequence
-  // type in the first two arguments in this macro, which we then call on all
-  // types in the typelist.
-#define TRY_TYPE_ON_NODE(vtype, seq_val_t, node) \
-  if (is_seq<vtype>(node)) { \
-    int n = node.size(); \
-    std::vector<seq_val_t> vec(n); \
-    for (int i=0; i<n; ++i) { \
-      std::string str = node[i].as<std::string>(); \
-      vec[i] = str2type<seq_val_t>(str); \
-    } \
-    list.set(key,vec); \
-    return; \
+  // For empty sequences, use the parameter list placeholder EmptySeq
+  if (node.size()==0) {
+    list.set(key,ekat::ParameterList::EmptySeq());
+    return;
   }
-  const auto& tag = node.Tag();
-  if (tag=="?") {
-    // There's no tag annotation regarding the node type,
-    // so we just try in order bool, int, double, string
-    TRY_TYPE_ON_NODE(bool, char, node);
-    TRY_TYPE_ON_NODE(int, int, node);
-    TRY_TYPE_ON_NODE(double, double, node);
-    TRY_TYPE_ON_NODE(std::string, std::string, node);
+
+  auto set_vec = [&](auto t) {
+    using seq_val_t = decltype(t);
+    int n = node.size();
+    std::vector<seq_val_t> vec(n);
+    for (int i=0; i<n; ++i) {
+      std::string str = node[i].as<std::string>();
+      vec[i] = str2type<seq_val_t>(str);
+    }
+    list.set(key,vec);
+  };
+
+  // There's no tag annotation to specify what the list entries are.
+  // So we just try in order bool, int, double, string. We choose this
+  // order as string would recognize any entry (everything is a string),
+  // and double would accept integer inputs too
+  if (is_seq<bool>(node)) {
+    set_vec('a');
+  } else if (is_seq<int>(node)) {
+    set_vec(0);
+  } else if (is_seq<double>(node)) {
+    set_vec(0.0);
   } else {
-    // YAY, the user is telling us how to interpret the values
-    if (tag=="!bools" or tag=="!!bools" or tag=="tag:yaml.org,2002:bools") {
-      TRY_TYPE_ON_NODE(bool,char,node);
-    } else if (tag=="!ints" or tag=="!!ints" or tag=="tag:yaml.org,2002:ints") {
-      TRY_TYPE_ON_NODE(int,int,node);
-    } else if (tag=="!floats" or tag=="!!floats" or tag=="tag:yaml.org,2002:floats") {
-      TRY_TYPE_ON_NODE(double,double,node);
-    } else if (tag=="!strings" or tag=="!!strings" or tag=="tag:yaml.org,2002:strings") {
-      TRY_TYPE_ON_NODE(std::string,std::string,node);
-    } else {
-      EKAT_ERROR_MSG ("Error! Unrecognized/unsupported node tag for sequence type.\n"
-          "  tag: " + tag + "\n"
-          "  supported tags: !TYPE, !!TYPE, and tag:yaml.org,2002:TYPE\n"
-          "where TYPE can be 'int', 'bool', 'float', 'string'");
-    }
-    EKAT_ERROR_MSG ("Error! Tag '" + tag + "' was not compatible with the stored values.\n");
+    set_vec(std::string(""));
   }
-#undef TRY_TYPE_ON_NODE
 }
 
 template<>
@@ -237,7 +196,7 @@ void parse_node<YAML::NodeType::Map> (
     std::string item_key = it.first.as<std::string>();
     const auto& item = it.second;
 
-    switch (it.second.Type()) {
+    switch (item.Type()) {
       case YNT::Null:
         printf("Null node\n");
         break;
@@ -345,18 +304,16 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
     std::vector<double> dvec;
     std::vector<std::string> svec;
     std::string tag;
-    if (params.isType<std::vector<int>>(pname)) {
+    if (params.isType<ekat::ParameterList::EmptySeq>(pname)) {
+      // Nothing to do
+    } else if (params.isType<std::vector<int>>(pname)) {
       ivec = params.get<std::vector<int>>(pname);
-      tag = "ints";
     } else if (params.isType<std::vector<char>>(pname)) {
       cvec = params.get<std::vector<char>>(pname);
-      tag = "bools";
     } else if (params.isType<std::vector<double>>(pname)) {
       dvec = params.get<std::vector<double>>(pname);
-      tag = "floats";
     } else if (params.isType<std::vector<std::string>>(pname)) {
       svec = params.get<std::vector<std::string>>(pname);
-      tag = "strings";
     } else {
       // No match
       return false;
@@ -380,7 +337,7 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
 
     int seq_len = len(ivec)+len(cvec)+len(dvec)+len(svec);
 
-    out << YAML::Key << pname << YAML::Value << YAML::_Tag("",tag,YAML::_Tag::Type::NamedHandle);
+    out << YAML::Key << pname << YAML::Value;
 
     // Format sequences inline only if reasonably short
     if (seq_len<100)
@@ -398,8 +355,7 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
   };
 
   // Write parameters
-  for (auto it=params.params_names_cbegin(); it!=params.params_names_cend(); ++it) {
-    const auto& pname = *it;
+  for (const auto& pname : params.param_names()) {
     EKAT_REQUIRE_MSG (try_values(pname) or try_sequences(pname),
           "[write_yaml_file] Error! The writer function can only write the following types:\n\n"
           "  bool, int, double, std::string, \n"
@@ -408,9 +364,9 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
   }
 
   // Write sublists
-  for (auto it=params.sublists_names_cbegin(); it!=params.sublists_names_cend(); ++it) {
-    out << YAML::Key << *it << YAML::Value << YAML::BeginMap;
-    write_parameter_list(params.sublist(*it),out);
+  for (const auto& sname : params.sublist_names()) {
+    out << YAML::Key << sname << YAML::Value << YAML::BeginMap;
+    write_parameter_list(params.sublist(sname),out);
     out << YAML::EndMap;
   }
 }
