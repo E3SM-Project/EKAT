@@ -28,7 +28,7 @@ endif ()
 EkatCreateUnitTest(unmanaged unmanaged.cpp
   LIBS ekat::Pack)
 
-# Thest the where construct
+# Test the where construct
 EkatCreateUnitTest(pack_where pack_where.cpp
   LIBS ekat::Pack)
 
