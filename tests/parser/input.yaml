@@ -1,7 +1,7 @@
 %YAML 1.1
 ---
-ints_as_strings: !strings [1,2]
-empty_as_doubles: !floats []
+ints: [1,2]
+empty_list: []
 Constants:
   One Double: 9.8
   Three Doubles: [1.024e3, .1 , -1.0E-2]

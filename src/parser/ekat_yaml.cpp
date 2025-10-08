@@ -304,18 +304,16 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
     std::vector<double> dvec;
     std::vector<std::string> svec;
     std::string tag;
-    if (params.isType<std::vector<int>>(pname)) {
+    if (params.isType<ekat::ParameterList::EmptySeq>(pname)) {
+      // Nothing to do
+    } else if (params.isType<std::vector<int>>(pname)) {
       ivec = params.get<std::vector<int>>(pname);
-      tag = "ints";
     } else if (params.isType<std::vector<char>>(pname)) {
       cvec = params.get<std::vector<char>>(pname);
-      tag = "bools";
     } else if (params.isType<std::vector<double>>(pname)) {
       dvec = params.get<std::vector<double>>(pname);
-      tag = "floats";
     } else if (params.isType<std::vector<std::string>>(pname)) {
       svec = params.get<std::vector<std::string>>(pname);
-      tag = "strings";
     } else {
       // No match
       return false;
@@ -339,7 +337,7 @@ void write_parameter_list (const ParameterList& params, YAML::Emitter& out) {
 
     int seq_len = len(ivec)+len(cvec)+len(dvec)+len(svec);
 
-    out << YAML::Key << pname << YAML::Value << YAML::_Tag("",tag,YAML::_Tag::Type::NamedHandle);
+    out << YAML::Key << pname << YAML::Value;
 
     // Format sequences inline only if reasonably short
     if (seq_len<100)

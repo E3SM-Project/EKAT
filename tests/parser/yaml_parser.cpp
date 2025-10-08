@@ -50,16 +50,17 @@ void check_superset (const ekat::ParameterList& super, const ekat::ParameterList
 
 TEST_CASE ("yaml_parser","") {
   using namespace ekat;
+  using empty_t = ParameterList::EmptySeq;
 
   std::string fname = "input.yaml";
   ParameterList params("parameters");
   parse_yaml_file(fname,params);
 
-  REQUIRE (params.isParameter ("ints_as_strings"));
-  REQUIRE (params.isType<std::vector<std::string>> ("ints_as_strings"));
-  REQUIRE (params.isParameter ("empty_as_doubles"));
-  REQUIRE (params.isType<std::vector<double>> ("empty_as_doubles"));
-  REQUIRE (params.get<std::vector<double>> ("empty_as_doubles").size()==0);
+  REQUIRE (params.isParameter ("ints"));
+  REQUIRE (params.isType<std::vector<int>> ("ints"));
+  REQUIRE (params.isParameter ("empty_list"));
+  REQUIRE (params.isType<empty_t> ("empty_list"));
+  REQUIRE (params.get<std::vector<double>> ("empty_list").size()==0);
 
   // Check some of the loaded parameters.
   // NOTE: if you change input.yaml, you may have to
