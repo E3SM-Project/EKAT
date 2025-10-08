@@ -1,6 +1,7 @@
 #ifndef EKAT_PARAMETER_LIST_HPP
 #define EKAT_PARAMETER_LIST_HPP
 
+#include "ekat_std_type_traits.hpp"
 #include "ekat_assert.hpp"
 
 #include <map>
@@ -99,6 +100,11 @@ inline T& ParameterList::get (const std::string& name) {
   EKAT_REQUIRE_MSG ( isParameter(name),
       "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
   auto& p = m_params[name];
+  if constexpr (is_vector_v<T>) {
+    if (p.type()==typeid(EmptySeq)) {
+      p = std::make_any<T>();
+    }
+  }
   EKAT_REQUIRE_MSG ( std::any_cast<T>(&p),
       "Error! Attempting to access parameter using the wrong type.\n"
       "   - list name : " + m_name + "\n"
@@ -115,6 +121,14 @@ inline const T& ParameterList::get (const std::string& name) const {
       "Error! Key '" + name + "' not found in parameter list '" + m_name + "'.\n");
 
   const auto& p = m_params.at(name);
+  if constexpr (is_vector_v<T>) {
+    if (p.type()==typeid(EmptySeq)) {
+      // Since we return a const T&, we won't be modifying it, and we can
+      // just return a ref to a static vector
+      static T empty;
+      return empty;
+    }
+  }
   EKAT_REQUIRE_MSG ( std::any_cast<T>(&p),
       "Error! Attempting to access parameter using the wrong type.\n"
       "   - list name : " + m_name + "\n"

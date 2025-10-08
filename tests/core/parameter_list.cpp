@@ -72,4 +72,21 @@ TEST_CASE ("pl_copy") {
   REQUIRE (sub1.get<int>("int")==2);
 }
 
+TEST_CASE ("pl_empty_seq") {
+  using ES = ekat::ParameterList::EmptySeq;
+  ekat::ParameterList pl;
+  pl.set("seq",ES());
+  const auto pl2 = pl;
+
+  auto v1 = pl.get<std::vector<char>>("seq");
+  REQUIRE (v1.size()==0);
+  REQUIRE_THROWS (pl.get<std::vector<int>>("seq")); // Cannot change type anymore
+
+  // On const param lists, the get method returns a ref to a static var
+  const auto& v2 = pl2.get<std::vector<int>>("seq");
+  const auto& v3 = pl2.get<std::vector<double>>("seq");
+  REQUIRE (v2.size()==0);
+  REQUIRE (v3.size()==0);
+}
+
 } // empty namespace
