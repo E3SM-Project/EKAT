@@ -662,4 +662,7 @@ struct reduction_identity<ekat::Pack<S,N>> {
 #undef ekat_mask_gen_bin_op_mm
 #undef ekat_mask_gen_bin_op_mb
 
+// Specialization of where_expression for Pack types
+#include "ekat_pack_where.hpp"
+
 #endif // EKAT_PACK_HPP

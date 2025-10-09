@@ -45,5 +45,9 @@ EkatCreateUnitTest(workspace_mgr workspace_mgr.cpp
 if (Kokkos_ENABLE_CUDA AND Kokkos_ENABLE_CUDA_UVM)
   # Test ability to move a kernel to host
   EkatCreateUnitTest (kernel_on_host kernel_on_host.cpp
-    LIBS ekat)
+    LIBS ekat::KokkosUtils)
 endif()
+
+# Test the where construct (for scalar types)
+EkatCreateUnitTest(where where.cpp
+  LIBS ekat::KokkosUtils)
