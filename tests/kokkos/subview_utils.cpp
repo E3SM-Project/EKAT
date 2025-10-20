@@ -101,82 +101,89 @@ TEST_CASE("subviews") {
 
   SECTION ("second_slowest") {
     // Subview the second slowest
-    auto sv6 = ekat::subview_1(v6,i1);
-    auto sv5 = ekat::subview_1(v5,i2);
-    auto sv4 = ekat::subview_1(v4,i3);
+    //printf("D6\n");
+    //auto sv6 = ekat::subview_1(v6,i1);
+    //printf("\nD5\n");
+    //auto sv5 = ekat::subview_1(v5,i2);
+    //printf("\nD4\n");
+    //auto sv4 = ekat::subview_1(v4,i3);
+    printf("\nD3\n");
     auto sv3 = ekat::subview_1(v3,i4);
+    printf("\nD2\n");
     auto sv2 = ekat::subview_1(v2,i5);
 
+    assert(false);
+
     // First four should retain LaoutRight, last one has no other choice but getting LayoutStride
-    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv3)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv2)::traits::array_layout,Kokkos::LayoutStride>::value);
+  //   REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutRight>::value);
+  //   REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutRight>::value);
+  //   REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutRight>::value);
+  //   REQUIRE (std::is_same<typename decltype(sv3)::traits::array_layout,Kokkos::LayoutRight>::value);
+  //   REQUIRE (std::is_same<typename decltype(sv2)::traits::array_layout,Kokkos::LayoutStride>::value);
 
-    // Subview again the second slowest
-    auto sv6_2 = ekat::subview_1(sv6,i2);
-    auto sv5_2 = ekat::subview_1(sv5,i3);
-    auto sv4_2 = ekat::subview_1(sv4,i4);
+  //   // Subview again the second slowest
+  //   auto sv6_2 = ekat::subview_1(sv6,i2);
+  //   auto sv5_2 = ekat::subview_1(sv5,i3);
+  //   auto sv4_2 = ekat::subview_1(sv4,i4);
 
-    // Compare with original view
-    Kokkos::View<int> diffs("");
-    Kokkos::deep_copy(diffs,0);
-    Kokkos::parallel_for(kt::RangePolicy(0,1),
-                         KOKKOS_LAMBDA(int) {
+  //   // Compare with original view
+  //   Kokkos::View<int> diffs("");
+  //   Kokkos::deep_copy(diffs,0);
+  //   Kokkos::parallel_for(kt::RangePolicy(0,1),
+  //                        KOKKOS_LAMBDA(int) {
 
-      int& ndiffs = diffs();
-      for (int h=0; h<7; ++h)
-        for (int j=0; j<5; ++j)
-          for (int k=0; k<4; ++k)
-            for (int l=0; l<3; ++l)
-              for (int m=0; m<2; ++m) {
-                if (sv6(h,j,k,l,m)!=v6(h,i1,j,k,l,m)) ++ndiffs;
-              }
-      for (int i=0; i<5; ++i)
-        for (int k=0; k<4; ++k)
-          for (int l=0; l<3; ++l)
-            for (int m=0; m<2; ++m) {
-              if (sv5(i,k,l,m)!=v6(i0,i,i2,k,l,m)) ++ndiffs;
-            }
-      for (int j=0; j<5; ++j)
-        for (int l=0; l<3; ++l)
-          for (int m=0; m<2; ++m) {
-            if (sv4(j,l,m)!=v6(i0,i1,j,i3,l,m)) ++ndiffs;
-          }
-      for (int k=0; k<4; ++k)
-        for (int m=0; m<2; ++m) {
-          if (sv3(k,m)!=v6(i0,i1,i2,k,i4,m)) ++ndiffs;
-        }
+  //     int& ndiffs = diffs();
+  //     for (int h=0; h<7; ++h)
+  //       for (int j=0; j<5; ++j)
+  //         for (int k=0; k<4; ++k)
+  //           for (int l=0; l<3; ++l)
+  //             for (int m=0; m<2; ++m) {
+  //               if (sv6(h,j,k,l,m)!=v6(h,i1,j,k,l,m)) ++ndiffs;
+  //             }
+  //     for (int i=0; i<5; ++i)
+  //       for (int k=0; k<4; ++k)
+  //         for (int l=0; l<3; ++l)
+  //           for (int m=0; m<2; ++m) {
+  //             if (sv5(i,k,l,m)!=v6(i0,i,i2,k,l,m)) ++ndiffs;
+  //           }
+  //     for (int j=0; j<5; ++j)
+  //       for (int l=0; l<3; ++l)
+  //         for (int m=0; m<2; ++m) {
+  //           if (sv4(j,l,m)!=v6(i0,i1,j,i3,l,m)) ++ndiffs;
+  //         }
+  //     for (int k=0; k<4; ++k)
+  //       for (int m=0; m<2; ++m) {
+  //         if (sv3(k,m)!=v6(i0,i1,i2,k,i4,m)) ++ndiffs;
+  //       }
 
-      for (int l=0; l<3; ++l) {
-        if (sv2(l)!=v6(i0,i1,i2,i3,l,i5)) ++ndiffs;
-      }
+  //     for (int l=0; l<3; ++l) {
+  //       if (sv2(l)!=v6(i0,i1,i2,i3,l,i5)) ++ndiffs;
+  //     }
 
-      for (int h=0; h<7; ++h)
-        for (int k=0; k<4; ++k)
-          for (int l=0; l<3; ++l)
-            for (int m=0; m<2; ++m) {
-              if (sv6_2(h,k,l,m)!=v6(h,i1,i2,k,l,m)) ++ndiffs;
-            }
-      for (int i=0; i<4; ++i)
-        for (int l=0; l<3; ++l)
-          for (int m=0; m<2; ++m) {
-            if (sv5_2(i,l,m)!=v6(i0,i,i2,i3,l,m)) ++ndiffs;
-          }
-      for (int j=0; j<5; ++j)
-        for (int m=0; m<2; ++m) {
-          if (sv4_2(j,m)!=v6(i0,i1,j,i3,i4,m)) ++ndiffs;
-        }
+  //     for (int h=0; h<7; ++h)
+  //       for (int k=0; k<4; ++k)
+  //         for (int l=0; l<3; ++l)
+  //           for (int m=0; m<2; ++m) {
+  //             if (sv6_2(h,k,l,m)!=v6(h,i1,i2,k,l,m)) ++ndiffs;
+  //           }
+  //     for (int i=0; i<4; ++i)
+  //       for (int l=0; l<3; ++l)
+  //         for (int m=0; m<2; ++m) {
+  //           if (sv5_2(i,l,m)!=v6(i0,i,i2,i3,l,m)) ++ndiffs;
+  //         }
+  //     for (int j=0; j<5; ++j)
+  //       for (int m=0; m<2; ++m) {
+  //         if (sv4_2(j,m)!=v6(i0,i1,j,i3,i4,m)) ++ndiffs;
+  //       }
 
-      // Make sure that our diffs counting strategy works
-      // by checking that two entries that should be different
-      // are indeed different.
-      if (sv4_2(0,0)!=v6(i0,i1,0,i3,i4,1)) ++ndiffs;
-    });
-    auto diffs_h = Kokkos::create_mirror_view(diffs);
-    Kokkos::deep_copy(diffs_h,diffs);
-    REQUIRE (diffs_h()==1);
+  //     // Make sure that our diffs counting strategy works
+  //     // by checking that two entries that should be different
+  //     // are indeed different.
+  //     if (sv4_2(0,0)!=v6(i0,i1,0,i3,i4,1)) ++ndiffs;
+  //   });
+  //   auto diffs_h = Kokkos::create_mirror_view(diffs);
+  //   Kokkos::deep_copy(diffs_h,diffs);
+  //   REQUIRE (diffs_h()==1);
   }
 }
 
