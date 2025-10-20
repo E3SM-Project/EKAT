@@ -137,7 +137,7 @@ auto adj_diff(const InputProvider& v, int index, int index_end)
                      std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>>
 {
   using ScalarT = std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>;
-  ScalarT ret;
+  ScalarT ret(0);
   if constexpr (Forward) {
     if (index<(index_end-1))
       ret = v(index+1);
