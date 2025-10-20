@@ -147,8 +147,8 @@ struct TestPack {
       REQUIRE(min(p) == -1);
       REQUIRE(min(m, p.n, p) == -1);
       p[i] = p.n;
-      REQUIRE(max(p) == p.n);
-      REQUIRE(max(m, -1, p) == p.n);
+      REQUIRE(max(p) == (int)p.n);
+      REQUIRE(max(m, -1, p) == (int)p.n);
     }
   }
 
@@ -156,7 +156,7 @@ struct TestPack {
     Pack p_ref;
 
     // Make p_ref = [1 3 1 3 ... ]
-    vector_novec 
+    vector_novec
     for (int i = 0; i < PACKN; ++i) {
       p_ref[i] = 3-2*(i%2);
     }
@@ -199,7 +199,7 @@ struct TestPack {
     Pack p_ref;
 
     // Make p_ref = [1 3 1 3 ... ]
-    vector_novec 
+    vector_novec
     for (int i = 0; i < PACKN; ++i) {
       p_ref[i] = 3-2*(i%2);
     }

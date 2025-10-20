@@ -32,7 +32,7 @@ using Unmanaged =
                  MemoryTraitsMask<View>::value |
                  // ... |ed with the one we want, whether or not it's
                  // already there.
-                 Kokkos::Unmanaged> >;
+                 unsigned(Kokkos::Unmanaged)> >;
 
 } // namespace ekat
 
