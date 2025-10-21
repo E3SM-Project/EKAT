@@ -137,7 +137,7 @@ auto adj_diff(const InputProvider& v, int index, int index_end)
                      std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>>
 {
   using ScalarT = std::remove_cv_t<std::remove_reference_t<decltype(v(0))>>;
-  ScalarT ret;
+  ScalarT ret(0);
   if constexpr (Forward) {
     if (index<(index_end-1))
       ret = v(index+1);
@@ -322,8 +322,8 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
     Unmanaged<Kokkos::View<NewPackT**,ViewProps...>>
 >::type
 repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
-  constexpr auto new_pack_size = NewPackT::n;
-  constexpr auto old_pack_size = OldPackT::n;
+  constexpr int new_pack_size = NewPackT::n;
+  constexpr int old_pack_size = OldPackT::n;
   static_assert(new_pack_size > 0, "New pack size must be positive");
 
   // It's overly restrictive to check compatibility between pack sizes.
@@ -347,8 +347,8 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
     Unmanaged<Kokkos::View<NewPackT**,ViewProps...>>
 >::type
 repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
-  constexpr auto new_pack_size = NewPackT::n;
-  constexpr auto old_pack_size = OldPackT::n;
+  constexpr int new_pack_size = NewPackT::n;
+  constexpr int old_pack_size = OldPackT::n;
   static_assert(new_pack_size > 0, "New pack size must be positive");
   // It's not enough to check that the new pack is a multiple of the old pack.
   // We actually need to check that the new pack size divides the last extent
@@ -402,8 +402,8 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
     Unmanaged<Kokkos::View<NewPackT*,ViewProps...>>
 >::type
 repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
-  constexpr auto new_pack_size = NewPackT::n;
-  constexpr auto old_pack_size = OldPackT::n;
+  constexpr int new_pack_size = NewPackT::n;
+  constexpr int old_pack_size = OldPackT::n;
   static_assert(new_pack_size > 0, "New pack size must be positive");
 
   // It's overly restrictive to check compatibility between pack sizes.
@@ -426,8 +426,8 @@ typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
     Unmanaged<Kokkos::View<NewPackT*,ViewProps...>>
 >::type
 repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
-  constexpr auto new_pack_size = NewPackT::n;
-  constexpr auto old_pack_size = OldPackT::n;
+  constexpr int new_pack_size = NewPackT::n;
+  constexpr int old_pack_size = OldPackT::n;
   static_assert(new_pack_size > 0, "New pack size must be positive");
 
   // It's not enough to check that the new pack is a multiple of the old pack.

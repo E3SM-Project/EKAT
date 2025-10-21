@@ -157,7 +157,7 @@ void test_utils_large_ni(const double saturation_multiplier)
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
       int volatile* const data = &test_data(wi);
-      *data += 1;
+      *data = *data + 1;
     });
 
     tu.release_workspace_idx(team_member, wi);
