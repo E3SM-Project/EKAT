@@ -109,6 +109,17 @@ void transpose(const Scalar* sv, Scalar* dv, int ni, int nk) {
   }
 }
 
+// Sugar for when direction is not known at compile time
+template <typename Scalar>
+void transpose(const Scalar* sv, Scalar* dv, int ni, int nk, const TransposeDirection::Enum direction) {
+  if (direction == TransposeDirection::c2f) {
+    transpose<TransposeDirection::c2f>(sv, dv, ni, nk);
+  }
+  else {
+    transpose<TransposeDirection::f2c>(sv, dv, ni, nk);
+  }
+}
+
 template <TransposeDirection::Enum direction, typename Scalar>
 void transpose(const Scalar* sv, Scalar* dv, int ni, int nk, int nj) {
   for (int j = 0; j < nj; ++j) {
@@ -125,6 +136,17 @@ void transpose(const Scalar* sv, Scalar* dv, int ni, int nk, int nj) {
       }
     }
   }
+}
+
+template <typename Scalar>
+void transpose(const Scalar* sv, Scalar* dv, int ni, int nk, int nj, const TransposeDirection::Enum direction) {
+  if (direction == TransposeDirection::c2f) {
+    transpose<TransposeDirection::c2f>(sv, dv, ni, nk, nj);
+  }
+  else {
+    transpose<TransposeDirection::f2c>(sv, dv, ni, nk, nj);
+  }
+
 }
 
 } // namespace ekat
