@@ -496,12 +496,13 @@ struct HTDVectorT<bool>
 };
 
 // 1d
-template <bool IsAlloc=false, typename SizeT, typename ViewT>
-typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
-host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+template <bool IsAlloc=false, typename SizeT, typename VectorT>
+typename std::enable_if<IsPack<typename VectorT::value_type::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
                const std::vector<SizeT>& sizes,
-               std::vector<ViewT>& views)
+               VectorT& views)
 {
+  using ViewT = typename VectorT::value_type;
   using PackT = typename ViewT::value_type;
 
   EKAT_ASSERT(data.size() == sizes.size());
@@ -584,26 +585,27 @@ host_to_device(const std::vector<typename VectorT::value_type::value_type::scala
 }
 
 // 3d - set do_transpose to true if host data is coming from fortran
-template <bool IsAlloc=false, typename SizeT, typename ViewT>
-typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
-host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+template <bool IsAlloc=false, typename SizeT, typename VectorT>
+typename std::enable_if<IsPack<typename VectorT::value_type::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
                const std::vector<SizeT>& dim1_sizes,
                const std::vector<SizeT>& dim2_sizes,
                const std::vector<SizeT>& dim3_sizes,
-               std::vector<ViewT>& views,
+               VectorT& views,
                const bool do_transpose=false,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
+  using ViewT = typename VectorT::value_type;
   using PackT = typename ViewT::value_type;
   using ScalarT = typename PackT::scalar;
-  using VectorT = typename HTDVectorT<ScalarT>::type;
+  using HVectorT = typename HTDVectorT<ScalarT>::type;
 
   EKAT_ASSERT(data.size() == dim1_sizes.size());
   EKAT_ASSERT(data.size() == dim2_sizes.size());
   EKAT_ASSERT(data.size() == dim3_sizes.size());
   EKAT_ASSERT(data.size() == views.size());
 
-  std::vector<VectorT> tdata;
+  std::vector<HVectorT> tdata;
   for (size_t n = 0; n < data.size(); ++n) {
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
