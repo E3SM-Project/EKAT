@@ -205,8 +205,8 @@ subview(const ViewLR<ST******,Props...>& v,
 
 // ================ Subviews along 2nd dimension ======================= //
 
-// Note: if input rank>2, these subviews can retain LayoutRight.
-//       However, Kokkos::subview only works if the output rank is <=2,
+// Note: if input rank>3, these subviews can retain LayoutRight.
+//       However, Kokkos::subview only works if the output rank is <=3,
 //       so for higher ranks, we manually build the output view
 //       instead of relying on Kokkos::subview.
 //       See https://github.com/kokkos/kokkos/issues/3757
@@ -235,17 +235,8 @@ subview_1(const ViewLR<ST***,Props...>& v,
   assert(v.data() != nullptr);
   assert(i1>=0 && i1 < v.extent_int(1));
 
-  using vt = Unmanaged<ViewLR<ST**,Props...>>;
-  // Figure out where the data starts, and create a tmp view with correct extents
-  auto offset = v.impl_map().m_impl_offset(0,i1,0);
-  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2));
-
-  // The view tmp has still the wrong stride_0 (the prod of the following dims).
-  // Since we are keeping the first dimension, the stride is unchanged.
-  auto vm = tmp.impl_map();
-  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      v.impl_track(),vm);
+  auto sv = Kokkos::subview(v,Kokkos::ALL,i1,Kokkos::ALL);
+  return Unmanaged<ViewLR<ST**,Props...>>(sv);
 }
 
 // --- Rank4 --- //
