@@ -711,6 +711,53 @@ TEST_CASE("host_device_packs_2d", "ekat::pack")
   host_device_packs_2d<int, int>(true);
 }
 
+TEST_CASE("host_device_packs_2d_basic", "ekat::pack")
+{
+  static constexpr int pack_size = 4;
+
+  using KT = ekat::KokkosTypes<ekat::DefaultDevice>;
+  using T  = int;
+  using VT = std::vector<T>;
+  using PackT = ekat::Pack<T, pack_size>;
+  using view_t = typename KT::template view_2d<PackT>;
+  using VV = std::vector<view_t>;
+
+  const int dim1 = 3;
+  const int dim2 = 4;
+
+  // place to store raw data
+  VT raw_data(dim1 * dim2 * pack_size);
+
+  for (int i = 0; i < dim1; ++i) {
+    for (int j = 0; j < dim2; ++j) {
+      for (int p = 0; p < pack_size; ++p) {
+        raw_data[i*dim2*pack_size + j*pack_size + p] = i*100 * j*10 + p;
+      }
+    }
+  }
+
+  // Normal use
+  std::vector<view_t> vv(1);
+  ekat::host_to_device( {raw_data.data()}, dim1, dim2*pack_size, vv);
+  auto vv_h = Kokkos::create_mirror_view(vv[0]);
+  Kokkos::deep_copy(vv_h, vv[0]);
+
+  // Using a view that already exists
+  view_t view("view", dim1, dim2);
+  ekat::host_to_device( {raw_data.data()}, dim1, dim2*pack_size, VV{view});
+  auto view_h = Kokkos::create_mirror_view(view);
+  Kokkos::deep_copy(view_h, view);
+
+  for (int i = 0; i < dim1; ++i) {
+    for (int j = 0; j < dim2; ++j) {
+      for (int p = 0; p < pack_size; ++p) {
+        REQUIRE(vv_h(i, j)[p] == raw_data[i*dim2*pack_size + j*pack_size + p]);
+        REQUIRE(vv_h(i, j)[p] == view_h(i, j)[p]);
+      }
+    }
+  }
+}
+
 template <typename T, typename SizeT=int>
 void host_device_packs_3d(bool transpose)
 {
