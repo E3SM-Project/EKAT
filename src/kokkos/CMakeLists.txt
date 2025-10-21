@@ -55,6 +55,7 @@ set (HEADERS
   ekat_team_policy_utils.hpp
   ekat_upper_bound.hpp
   ekat_view_utils.hpp
+  ekat_where.hpp
   ekat_workspace.hpp
   ekat_workspace_impl.hpp
 )
