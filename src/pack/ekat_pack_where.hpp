@@ -2,6 +2,7 @@
 #define EKAT_PACK_WHERE_HPP
 
 #include "ekat_where.hpp"
+#include "ekat_pack.hpp"
 
 namespace ekat
 {
