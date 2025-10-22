@@ -295,6 +295,7 @@ scalarize (const Kokkos::View<ValueT*, Parms...>& v)
 // Turn a View of Pack<T,M>s into a View of Pack<T,N>s,
 // or a View of T into a View of Pack<T,N> (provided T is not a Pack itself)
 template<int N, typename DT, typename... Props>
+KOKKOS_INLINE_FUNCTION
 auto repack (const Kokkos::View<DT,Props...>& src)
 {
   using src_view_t   = Kokkos::View<DT,Props...>;
@@ -315,10 +316,8 @@ auto repack (const Kokkos::View<DT,Props...>& src)
   using dst_view_t = Unmanaged<Kokkos::View<dst_data_type,Props...>>;
   int packed_dim = rank-1;
 
-  EKAT_REQUIRE_MSG (src.extent(packed_dim) % N == 0,
-      "Error! Cannot pack input view, as the pack size does not divide the last dimension.\n"
-      " - last extent: " + std::to_string(src.extent(packed_dim)) + "\n"
-      " - pack size  : " + std::to_string(N) + "\n");
+  EKAT_KERNEL_REQUIRE_MSG (src.extent(packed_dim) % N == 0,
+      "Error! Cannot pack input view, as the pack size does not divide the last dimension.\n");
 
   auto data = src.data();
   auto packed_data = reinterpret_cast<dst_value_t*>(data);
