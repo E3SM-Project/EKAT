@@ -495,11 +495,16 @@ struct HTDVectorT<bool>
   using type = char;
 };
 
+// Only for hacky stuff in host_to_device
+namespace impl {
+
 template <typename KokkosT, typename ViewT>
 auto&
 reinterpret_scalar_view(std::vector<ViewT>& views)
 {
   using ViewFakePackT = Kokkos::View<KokkosT, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
+  static_assert(ViewFakePackT::rank == ViewT::rank);
+  static_assert(sizeof(typename ViewFakePackT::value_type) == sizeof(typename ViewT::value_type));
 
   std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
   return views_fake;
@@ -510,11 +515,14 @@ const auto&
 reinterpret_scalar_view(const std::vector<ViewT>& views)
 {
   using ViewFakePackT = Kokkos::View<KokkosT, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
+  static_assert(ViewFakePackT::rank == ViewT::rank);
+  static_assert(sizeof(typename ViewFakePackT::value_type) == sizeof(typename ViewT::value_type));
 
   const std::vector<ViewFakePackT>& views_fake = reinterpret_cast<const std::vector<ViewFakePackT>&>(views);
   return views_fake;
 }
 
+}
 
 // 1d
 template <typename SizeT, typename VectorT>
@@ -749,7 +757,7 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                std::vector<ViewT>& views)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  host_to_device_impl(data, sizes, reinterpret_scalar_view<PackT*>(views));
+  host_to_device_impl(data, sizes, impl::reinterpret_scalar_view<PackT*>(views));
 }
 
 // Sugar for unpacked data (2d)
@@ -763,7 +771,7 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  host_to_device_impl(data, dim1_sizes, dim2_sizes, reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, impl::reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
 }
 
 // Sugar for unpacked data (3d)
@@ -778,7 +786,7 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, impl::reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
 }
 
 // Sugar for when size is uniform (1d) and data is unpacked
@@ -902,7 +910,7 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const std::vector<ViewT>& views)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  host_to_device_impl(data, sizes, reinterpret_scalar_view<PackT*>(views));
+  host_to_device_impl(data, sizes, impl::reinterpret_scalar_view<PackT*>(views));
 }
 
 // Sugar for unpacked data (2d)
@@ -916,7 +924,7 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  host_to_device_impl(data, dim1_sizes, dim2_sizes, reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, impl::reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
 }
 
 // Sugar for unpacked data (3d)
@@ -931,7 +939,7 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, impl::reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
 }
 
 // Sugar for when size is uniform (1d) and data is unpacked
@@ -1152,7 +1160,7 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
                const std::vector<ViewT>& views)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  device_to_host(data, sizes, reinterpret_scalar_view<PackT*>(views));
+  device_to_host(data, sizes, impl::reinterpret_scalar_view<PackT*>(views));
 }
 
 // Sugar for unpacked data
@@ -1166,7 +1174,7 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
                const TransposeDirection::Enum direction = TransposeDirection::c2f)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  device_to_host(data, dim1_sizes, dim2_sizes, reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
+  device_to_host(data, dim1_sizes, dim2_sizes, impl::reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
 }
 
 // Sugar for unpacked data
@@ -1181,7 +1189,7 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
                typename TransposeDirection::Enum direction = TransposeDirection::c2f)
 {
   using PackT = Pack<typename ViewT::value_type, 1>;
-  device_to_host(data, dim1_sizes, dim2_sizes, dim3_sizes, reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
+  device_to_host(data, dim1_sizes, dim2_sizes, dim3_sizes, impl::reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
 }
 
 // Sugar for when size is uniform (1d) and unpacked
