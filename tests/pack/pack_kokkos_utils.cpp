@@ -720,7 +720,9 @@ TEST_CASE("host_device_packs_2d_basic", "ekat::pack")
   using VT = std::vector<T>;
   using PackT = ekat::Pack<T, pack_size>;
   using view_t = typename KT::template view_2d<PackT>;
+  using sview_t = typename KT::template view_2d<T>;
   using VV = std::vector<view_t>;
+  using SVV = std::vector<sview_t>;
 
   const int dim1 = 3;
   const int dim2 = 4;
@@ -756,6 +758,21 @@ TEST_CASE("host_device_packs_2d_basic", "ekat::pack")
       }
     }
   }
+
+  // Trying unpacked
+  sview_t sview = ekat::scalarize(view);
+  ekat::host_to_device( {raw_data.data()}, dim1, dim2*pack_size, SVV{sview});
+  auto sview_h = Kokkos::create_mirror_view(sview);
+  Kokkos::deep_copy(sview_h, sview);
+
+  for (int i = 0; i < dim1; ++i) {
+    for (int j = 0; j < dim2; ++j) {
+      for (int p = 0; p < pack_size; ++p) {
+        REQUIRE(sview_h(i, j*pack_size + p) == raw_data[i*dim2*pack_size + j*pack_size + p]);
+      }
+    }
+  }
+
 }
 
 template <typename T, typename SizeT=int>
