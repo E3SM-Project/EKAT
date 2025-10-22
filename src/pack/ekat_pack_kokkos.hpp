@@ -495,12 +495,41 @@ struct HTDVectorT<bool>
   using type = char;
 };
 
+// Only for hacky stuff in host_to_device
+namespace impl {
+
+template <typename KokkosT, typename ViewT>
+auto&
+reinterpret_scalar_view(std::vector<ViewT>& views)
+{
+  using ViewFakePackT = Kokkos::View<KokkosT, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
+  static_assert(ViewFakePackT::rank == ViewT::rank);
+  static_assert(sizeof(typename ViewFakePackT::value_type) == sizeof(typename ViewT::value_type));
+
+  std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
+  return views_fake;
+}
+
+template <typename KokkosT, typename ViewT>
+const auto&
+reinterpret_scalar_view(const std::vector<ViewT>& views)
+{
+  using ViewFakePackT = Kokkos::View<KokkosT, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
+  static_assert(ViewFakePackT::rank == ViewT::rank);
+  static_assert(sizeof(typename ViewFakePackT::value_type) == sizeof(typename ViewT::value_type));
+
+  const std::vector<ViewFakePackT>& views_fake = reinterpret_cast<const std::vector<ViewFakePackT>&>(views);
+  return views_fake;
+}
+
+}
+
 // 1d
-template <bool IsAlloc=false, typename SizeT, typename VectorT>
+template <typename SizeT, typename VectorT>
 typename std::enable_if<IsPack<typename VectorT::value_type::value_type>::value, void>::type // void
-host_to_device(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
-               const std::vector<SizeT>& sizes,
-               VectorT& views)
+host_to_device_impl(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
+                    const std::vector<SizeT>& sizes,
+                    VectorT& views)
 {
   using ViewT = typename VectorT::value_type;
   using PackT = typename ViewT::value_type;
@@ -511,7 +540,7 @@ host_to_device(const std::vector<typename VectorT::value_type::value_type::scala
   for (size_t i = 0; i < data.size(); ++i) {
     const size_t size = static_cast<size_t>(sizes[i]);
     const size_t npack = (size + PackT::n - 1) / PackT::n;
-    if constexpr (!IsAlloc) {
+    if constexpr (!std::is_const_v<VectorT>) {
       views[i] = ViewT("", npack);
     }
     else {
@@ -529,14 +558,14 @@ host_to_device(const std::vector<typename VectorT::value_type::value_type::scala
 }
 
 // 2d - set do_transpose to true if host data is coming from fortran
-template <bool IsAlloc=false, typename SizeT, typename VectorT>
+template <typename SizeT, typename VectorT>
 typename std::enable_if<IsPack<typename VectorT::value_type::value_type>::value, void>::type // void
-host_to_device(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
-               const std::vector<SizeT>& dim1_sizes,
-               const std::vector<SizeT>& dim2_sizes,
-               VectorT& views,
-               const bool do_transpose=false,
-               const TransposeDirection::Enum direction = TransposeDirection::f2c)
+host_to_device_impl(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
+                    const std::vector<SizeT>& dim1_sizes,
+                    const std::vector<SizeT>& dim2_sizes,
+                    VectorT& views,
+                    const bool do_transpose=false,
+                    const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   using ViewT = typename VectorT::value_type;
   using PackT = typename ViewT::value_type;
@@ -552,7 +581,7 @@ host_to_device(const std::vector<typename VectorT::value_type::value_type::scala
     const size_t dim1_size = static_cast<size_t>(dim1_sizes[n]);
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
     const size_t npack = (dim2_size + PackT::n - 1) / PackT::n;
-    if constexpr (!IsAlloc) {
+    if constexpr (!std::is_const_v<VectorT>) {
       views[n] = ViewT("", dim1_size, npack);
     }
     else {
@@ -585,15 +614,15 @@ host_to_device(const std::vector<typename VectorT::value_type::value_type::scala
 }
 
 // 3d - set do_transpose to true if host data is coming from fortran
-template <bool IsAlloc=false, typename SizeT, typename VectorT>
+template <typename SizeT, typename VectorT>
 typename std::enable_if<IsPack<typename VectorT::value_type::value_type>::value, void>::type // void
-host_to_device(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
-               const std::vector<SizeT>& dim1_sizes,
-               const std::vector<SizeT>& dim2_sizes,
-               const std::vector<SizeT>& dim3_sizes,
-               VectorT& views,
-               const bool do_transpose=false,
-               const TransposeDirection::Enum direction = TransposeDirection::f2c)
+host_to_device_impl(const std::vector<typename VectorT::value_type::value_type::scalar const*>& data,
+                    const std::vector<SizeT>& dim1_sizes,
+                    const std::vector<SizeT>& dim2_sizes,
+                    const std::vector<SizeT>& dim3_sizes,
+                    VectorT& views,
+                    const bool do_transpose=false,
+                    const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   using ViewT = typename VectorT::value_type;
   using PackT = typename ViewT::value_type;
@@ -611,14 +640,13 @@ host_to_device(const std::vector<typename VectorT::value_type::value_type::scala
     const size_t dim2_size = static_cast<size_t>(dim2_sizes[n]);
     const size_t dim3_size = static_cast<size_t>(dim3_sizes[n]);
     const size_t npack = (dim3_size + PackT::n - 1) / PackT::n;
-    if constexpr (!IsAlloc) {
+    if constexpr (!std::is_const_v<VectorT>) {
       views[n] = ViewT("", dim1_size, dim2_size, npack);
     }
     else {
       EKAT_ASSERT(views[n].extent(0) == dim1_size);
       EKAT_ASSERT(views[n].extent(1) == dim2_size);
       EKAT_ASSERT(views[n].extent(2) == npack);
-
     }
     auto host_view = Kokkos::create_mirror_view(views[n]);
 
@@ -647,6 +675,43 @@ host_to_device(const std::vector<typename VectorT::value_type::value_type::scala
   }
 }
 
+// Basic 1d call, no sugar
+template <typename SizeT, typename ViewT>
+typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+               const std::vector<SizeT>& sizes,
+               std::vector<ViewT>& views)
+{
+  host_to_device_impl(data, sizes, views);
+}
+
+// Basic 2d call, no sugar
+template <typename SizeT, typename ViewT>
+typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+               const std::vector<SizeT>& dim1_sizes,
+               const std::vector<SizeT>& dim2_sizes,
+               std::vector<ViewT>& views,
+               const bool do_transpose=false,
+               const TransposeDirection::Enum direction = TransposeDirection::f2c)
+{
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
+}
+
+// Basic 3d call, no sugar
+template <typename SizeT, typename ViewT>
+typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+               const std::vector<SizeT>& dim1_sizes,
+               const std::vector<SizeT>& dim2_sizes,
+               const std::vector<SizeT>& dim3_sizes,
+               std::vector<ViewT>& views,
+               const bool do_transpose=false,
+               const TransposeDirection::Enum direction = TransposeDirection::f2c)
+{
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
+}
+
 // Sugar for when size is uniform (1d)
 template <typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
@@ -655,7 +720,7 @@ host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& dat
                std::vector<ViewT>& views)
 {
   std::vector<size_t> sizes(data.size(), size);
-  host_to_device(data, sizes, views);
+  host_to_device_impl(data, sizes, views);
 }
 
 // Sugar for when size is uniform (2d)
@@ -668,7 +733,7 @@ host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& dat
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
-  host_to_device(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
 }
 
 // sugar for when size is uniform (3d)
@@ -681,25 +746,21 @@ host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& dat
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
-  host_to_device(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
 }
 
-// Sugar for unpacked data
+// Sugar for unpacked data (1d)
 template <typename SizeT, typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const std::vector<SizeT>& sizes,
                std::vector<ViewT>& views)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT*, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
-  host_to_device(data, sizes, views_fake);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  host_to_device_impl(data, sizes, impl::reinterpret_scalar_view<PackT*>(views));
 }
 
-// Sugar for unpacked data
+// Sugar for unpacked data (2d)
 template <typename SizeT, typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
@@ -709,15 +770,11 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const bool do_transpose=false,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT**, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
-  host_to_device(data, dim1_sizes, dim2_sizes, views_fake, do_transpose, direction);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, impl::reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
 }
 
-// Sugar for unpacked data
+// Sugar for unpacked data (3d)
 template <typename SizeT, typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
@@ -728,20 +785,16 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const bool do_transpose=false,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT***, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
-  host_to_device(data, dim1_sizes, dim2_sizes, dim3_sizes, views_fake, do_transpose, direction);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, impl::reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
 }
 
 // Sugar for when size is uniform (1d) and data is unpacked
 template <typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
-                    const size_t size,
-                    std::vector<ViewT>& views)
+               const size_t size,
+               std::vector<ViewT>& views)
 {
   std::vector<size_t> sizes(data.size(), size);
   host_to_device(data, sizes, views);
@@ -773,10 +826,46 @@ host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
   host_to_device(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
 }
 
+// Repeat all but for const views. This supports the case where view are already allocated
 
-//////ds/fds/fd
+// Basic 1d call, no sugar
+template <typename SizeT, typename ViewT>
+typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+               const std::vector<SizeT>& sizes,
+               const std::vector<ViewT>& views)
+{
+  host_to_device_impl(data, sizes, views);
+}
 
-// Sugar for when size is uniform (1d) and views are already allocated
+// Basic 2d call, no sugar
+template <typename SizeT, typename ViewT>
+typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+               const std::vector<SizeT>& dim1_sizes,
+               const std::vector<SizeT>& dim2_sizes,
+               const std::vector<ViewT>& views,
+               const bool do_transpose=false,
+               const TransposeDirection::Enum direction = TransposeDirection::f2c)
+{
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
+}
+
+// Basic 3d call, no sugar
+template <typename SizeT, typename ViewT>
+typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
+host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
+               const std::vector<SizeT>& dim1_sizes,
+               const std::vector<SizeT>& dim2_sizes,
+               const std::vector<SizeT>& dim3_sizes,
+               const std::vector<ViewT>& views,
+               const bool do_transpose=false,
+               const TransposeDirection::Enum direction = TransposeDirection::f2c)
+{
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
+}
+
+// Sugar for when size is uniform (1d)
 template <typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
@@ -784,10 +873,10 @@ host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& dat
                const std::vector<ViewT>& views)
 {
   std::vector<size_t> sizes(data.size(), size);
-  host_to_device<true>(data, sizes, views);
+  host_to_device_impl(data, sizes, views);
 }
 
-// Sugar for when size is uniform (2d) and views are already allocated
+// Sugar for when size is uniform (2d)
 template <typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
@@ -797,10 +886,10 @@ host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& dat
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
-  host_to_device<true>(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
 }
 
-// sugar for when size is uniform (3d) and views are already allocated
+// sugar for when size is uniform (3d)
 template <typename ViewT>
 typename std::enable_if<IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& data,
@@ -810,25 +899,21 @@ host_to_device(const std::vector<typename ViewT::value_type::scalar const*>& dat
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
-  host_to_device<true>(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
 }
 
-// Sugar for unpacked data and views are already allocated
+// Sugar for unpacked data (1d)
 template <typename SizeT, typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const std::vector<SizeT>& sizes,
                const std::vector<ViewT>& views)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT*, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
-  host_to_device<true>(data, sizes, views_fake);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  host_to_device_impl(data, sizes, impl::reinterpret_scalar_view<PackT*>(views));
 }
 
-// Sugar for unpacked data and views are already allocated
+// Sugar for unpacked data (2d)
 template <typename SizeT, typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
@@ -838,15 +923,11 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const bool do_transpose=false,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT**, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
-  host_to_device<true>(data, dim1_sizes, dim2_sizes, views_fake, do_transpose, direction);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, impl::reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
 }
 
-// Sugar for unpacked data and views are already allocated
+// Sugar for unpacked data (3d)
 template <typename SizeT, typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
@@ -857,15 +938,11 @@ host_to_device(const std::vector<typename ViewT::const_value_type*>& data,
                const bool do_transpose=false,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT***, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  std::vector<ViewFakePackT>& views_fake = reinterpret_cast<std::vector<ViewFakePackT>&>(views);
-  host_to_device<true>(data, dim1_sizes, dim2_sizes, dim3_sizes, views_fake, do_transpose, direction);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  host_to_device_impl(data, dim1_sizes, dim2_sizes, dim3_sizes, impl::reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
 }
 
-// Sugar for when size is uniform (1d) and data is unpacked and views are already allocated
+// Sugar for when size is uniform (1d) and data is unpacked
 template <typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
@@ -873,10 +950,10 @@ host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
                const std::vector<ViewT>& views)
 {
   std::vector<size_t> sizes(data.size(), size);
-  host_to_device<true>(data, sizes, views);
+  host_to_device(data, sizes, views);
 }
 
-// Sugar for when size is uniform (2d) and data is unpacked and views are already allocated
+// Sugar for when size is uniform (2d) and data is unpacked
 template <typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
@@ -886,10 +963,10 @@ host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size);
-  host_to_device<true>(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
+  host_to_device(data, dim1_sizes, dim2_sizes, views, do_transpose, direction);
 }
 
-//Sugar for when size is uniform (3d) and data is unpacked and views are already allocated
+//Sugar for when size is uniform (3d) and data is unpacked
 template <typename ViewT>
 typename std::enable_if<!IsPack<typename ViewT::value_type>::value, void>::type // void
 host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
@@ -899,7 +976,7 @@ host_to_device(const std::vector<typename ViewT::const_value_type const*>& data,
                const TransposeDirection::Enum direction = TransposeDirection::f2c)
 {
   std::vector<size_t> dim1_sizes(data.size(), dim1_size), dim2_sizes(data.size(), dim2_size), dim3_sizes(data.size(), dim3_size);
-  host_to_device<true>(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
+  host_to_device(data, dim1_sizes, dim2_sizes, dim3_sizes, views, do_transpose, direction);
 }
 
 //
@@ -1082,12 +1159,8 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
                const std::vector<SizeT>& sizes,
                const std::vector<ViewT>& views)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT*, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  const std::vector<ViewFakePackT>& views_fake = reinterpret_cast<const std::vector<ViewFakePackT>&>(views);
-  device_to_host(data, sizes, views_fake);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  device_to_host(data, sizes, impl::reinterpret_scalar_view<PackT*>(views));
 }
 
 // Sugar for unpacked data
@@ -1100,12 +1173,8 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
                const bool do_transpose=false,
                const TransposeDirection::Enum direction = TransposeDirection::c2f)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT**, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  const std::vector<ViewFakePackT>& views_fake = reinterpret_cast<const std::vector<ViewFakePackT>&>(views);
-  device_to_host(data, dim1_sizes, dim2_sizes, views_fake, do_transpose, direction);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  device_to_host(data, dim1_sizes, dim2_sizes, impl::reinterpret_scalar_view<PackT**>(views), do_transpose, direction);
 }
 
 // Sugar for unpacked data
@@ -1119,12 +1188,8 @@ device_to_host(const std::vector<typename ViewT::non_const_value_type*>& data,
                const bool do_transpose=false,
                typename TransposeDirection::Enum direction = TransposeDirection::c2f)
 {
-  using ScalarT = typename ViewT::value_type;
-  using PackT = Pack<ScalarT, 1>;
-  using ViewFakePackT = Kokkos::View<PackT***, typename ViewT::array_layout, typename ViewT::memory_space, typename ViewT::memory_traits>;
-
-  const std::vector<ViewFakePackT>& views_fake = reinterpret_cast<const std::vector<ViewFakePackT>&>(views);
-  device_to_host(data, dim1_sizes, dim2_sizes, dim3_sizes, views_fake, do_transpose, direction);
+  using PackT = Pack<typename ViewT::value_type, 1>;
+  device_to_host(data, dim1_sizes, dim2_sizes, dim3_sizes, impl::reinterpret_scalar_view<PackT***>(views), do_transpose, direction);
 }
 
 // Sugar for when size is uniform (1d) and unpacked
