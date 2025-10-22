@@ -308,7 +308,7 @@ auto repack (const Kokkos::View<DT,Props...>& src)
   constexpr int rank = src_view_t::rank();
 
   using nonconst_dst_value_t = ekat::Pack<src_scalar_t,N>;
-  using dst_value_t = std::conditional_t<std::is_const_v<src_scalar_t>,
+  using dst_value_t = std::conditional_t<std::is_const_v<src_value_t>,
                                          std::add_const_t<nonconst_dst_value_t>,
                                          nonconst_dst_value_t>;
   using dst_data_type = typename ekat::DataND<dst_value_t,rank>::type;
