@@ -2,8 +2,10 @@
 #define EKAT_PACK_KOKKOS_HPP
 
 #include "ekat_pack.hpp"
+#include "ekat_pack_utils.hpp"
 #include "ekat_kokkos_meta.hpp"
 #include "ekat_kernel_assert.hpp"
+#include "ekat_scalar_traits.hpp"
 #include "ekat_assert.hpp"
 
 #include <vector>
@@ -290,187 +292,44 @@ scalarize (const Kokkos::View<ValueT*, Parms...>& v)
   return ScalarizeHelper<ValueT>::scalarize(v);
 }
 
-// Turn a View of Pack<T,N>s into a View of Pack<T,M>s.
-// Requirement: the smaller number must divide the larger one:
-//     max(M,N) % min(M,N) == 0.
-// Example: const auto b = repack<4>(a);
+// Turn a View of Pack<T,M>s into a View of Pack<T,N>s,
+// or a View of T into a View of Pack<T,N> (provided T is not a Pack itself)
+template<int N, typename DT, typename... Props>
+auto repack (const Kokkos::View<DT,Props...>& src)
+{
+  using src_view_t   = Kokkos::View<DT,Props...>;
+  using src_value_t  = typename src_view_t::traits::value_type;
+  using src_scalar_t = typename ScalarTraits<src_value_t>::scalar_type;
+  using array_layout = typename src_view_t::traits::array_layout;
 
-// Helper struct
-template<int N, typename OldType>
-struct RepackType {
-  using type =
-    typename std::conditional<std::is_const<OldType>::value,
-                              const Pack<std::remove_const_t<OldType>,N>,
-                              Pack<OldType,N>>::type;
-};
+  if constexpr (ekat::ScalarTraits<src_value_t>::is_simd) {
+    return repack<N>(scalarize(src));
+  }
+  constexpr int rank = src_view_t::rank();
 
-template<int N, typename T, int M>
-struct RepackType <N,Pack<T,M>>{
-  using type = Pack<T,N>;
-};
-template<int N, typename T, int M>
-struct RepackType <N,const Pack<T,M>>{
-  using type = const Pack<T,N>;
-};
+  using nonconst_dst_value_t = ekat::Pack<src_scalar_t,N>;
+  using dst_value_t = std::conditional_t<std::is_const_v<src_scalar_t>,
+                                         std::add_const_t<nonconst_dst_value_t>,
+                                         nonconst_dst_value_t>;
+  using dst_data_type = typename ekat::DataND<dst_value_t,rank>::type;
+  using dst_view_t = Unmanaged<Kokkos::View<dst_data_type,Props...>>;
+  int packed_dim = rank-1;
 
-// 2d shrinking
-template <typename NewPackT, typename OldPackT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
-    std::is_same<typename NewPackT::scalar,typename OldPackT::scalar>::value &&
-    (OldPackT::n > NewPackT::n),
-    Unmanaged<Kokkos::View<NewPackT**,ViewProps...>>
->::type
-repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
-  constexpr int new_pack_size = NewPackT::n;
-  constexpr int old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0, "New pack size must be positive");
+  EKAT_REQUIRE_MSG (src.extent(packed_dim) % N == 0,
+      "Error! Cannot pack input view, as the pack size does not divide the last dimension.\n"
+      " - last extent: " + std::to_string(src.extent(packed_dim)) + "\n"
+      " - pack size  : " + std::to_string(N) + "\n");
 
-  // It's overly restrictive to check compatibility between pack sizes.
-  // What really matters is that the new pack size divides the last extent
-  // of the "scalarized" view.
-  // This MUST be a runtime check.
-  assert ( (vp.extent_int(1)*old_pack_size) % new_pack_size == 0);
+  auto data = src.data();
+  auto packed_data = reinterpret_cast<dst_value_t*>(data);
 
-  return Unmanaged<Kokkos::View<NewPackT**, ViewProps...> >(
-    reinterpret_cast<NewPackT*>(vp.data()),
-    vp.extent_int(0),
-    (old_pack_size / new_pack_size) * vp.extent_int(1));
-}
-
-// 2d growing
-template <typename NewPackT, typename OldPackT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
-    std::is_same<typename NewPackT::scalar,typename OldPackT::scalar>::value &&
-    (OldPackT::n < NewPackT::n),
-    Unmanaged<Kokkos::View<NewPackT**,ViewProps...>>
->::type
-repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
-  constexpr int new_pack_size = NewPackT::n;
-  constexpr int old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0, "New pack size must be positive");
-  // It's not enough to check that the new pack is a multiple of the old pack.
-  // We actually need to check that the new pack size divides the last extent
-  // of the "scalarized" view.
-  // This MUST be a runtime check.
-  assert ( (vp.extent_int(1)*old_pack_size) % new_pack_size == 0);
-
-  return Unmanaged<Kokkos::View<NewPackT**, ViewProps...> >(
-    reinterpret_cast<NewPackT*>(vp.data()),
-    vp.extent_int(0),
-    vp.extent_int(1) / (new_pack_size / old_pack_size) );
-}
-
-// 2d staying the same
-template <typename NewPackT, typename OldPackT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
-    std::is_same<typename NewPackT::scalar,typename OldPackT::scalar>::value &&
-    (OldPackT::n == NewPackT::n),
-    Unmanaged<Kokkos::View<NewPackT**,ViewProps...>>
->::type
-repack_impl (const Kokkos::View<OldPackT**, ViewProps...>& vp) {
-  return vp;
-}
-
-// General access point for repack (calls one of the three above)
-template <int N, typename OldValueT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<typename RepackType<N,OldValueT>::type**,ViewProps...>>
-repack (const Kokkos::View<OldValueT**, ViewProps...>& v) {
-  using OldPackT =
-    typename std::conditional<IsPack<OldValueT>::value,
-                              OldValueT,
-                              typename RepackType<1,OldValueT>::type
-                             >::type;
-
-  // We are not changing the layout of the view, since
-  //  - if OldValueT was a pack, OldPackT=OldValueT
-  //  - if OldValueT was NOT a pack, OldPackT has size 1
-  Kokkos::View<OldPackT**,ViewProps...> vp(
-      reinterpret_cast<OldPackT*>(v.data()),v.extent(0),v.extent(1));
-  return repack_impl<typename RepackType<N,OldPackT>::type>(vp);
-}
-
-// 1d shrinking
-template <typename NewPackT, typename OldPackT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
-    std::is_same<typename NewPackT::scalar,typename OldPackT::scalar>::value &&
-    (OldPackT::n > NewPackT::n),
-    Unmanaged<Kokkos::View<NewPackT*,ViewProps...>>
->::type
-repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
-  constexpr int new_pack_size = NewPackT::n;
-  constexpr int old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0, "New pack size must be positive");
-
-  // It's overly restrictive to check compatibility between pack sizes.
-  // What really matters is that the new pack size divides the last extent
-  // of the "scalarized" view.
-  // This MUST be a runtime check.
-  assert ( (vp.extent_int(0)*old_pack_size) % new_pack_size == 0);
-
-  return Unmanaged<Kokkos::View<NewPackT*, ViewProps...> >(
-    reinterpret_cast<NewPackT*>(vp.data()),
-    (old_pack_size / new_pack_size) * vp.extent_int(0));
-}
-
-// 1d growing
-template <typename NewPackT, typename OldPackT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
-    std::is_same<typename NewPackT::scalar,typename OldPackT::scalar>::value &&
-    (OldPackT::n < NewPackT::n),
-    Unmanaged<Kokkos::View<NewPackT*,ViewProps...>>
->::type
-repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
-  constexpr int new_pack_size = NewPackT::n;
-  constexpr int old_pack_size = OldPackT::n;
-  static_assert(new_pack_size > 0, "New pack size must be positive");
-
-  // It's not enough to check that the new pack is a multiple of the old pack.
-  // We actually need to check that the new pack size divides the last extent
-  // of the "scalarized" view.
-  // This MUST be a runtime check.
-  assert ( (vp.extent_int(0)*old_pack_size) % new_pack_size == 0);
-
-  EKAT_KERNEL_ASSERT(vp.extent_int(0) % (new_pack_size / old_pack_size) == 0);
-  return Unmanaged<Kokkos::View<NewPackT*, ViewProps...> >(
-    reinterpret_cast<NewPackT*>(vp.data()),
-    vp.extent_int(0) / (new_pack_size / old_pack_size));
-}
-
-// 1d staying the same
-template <typename NewPackT, typename OldPackT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<NewPackT::packtag && OldPackT::packtag &&
-    std::is_same<typename NewPackT::scalar,typename OldPackT::scalar>::value &&
-    (OldPackT::n == NewPackT::n),
-    Unmanaged<Kokkos::View<NewPackT*,ViewProps...>>
->::type
-repack_impl (const Kokkos::View<OldPackT*, ViewProps...>& vp) {
-  return vp;
-}
-
-// General access point for repack (calls one of the three above)
-template <int N, typename OldValueT, typename... ViewProps>
-KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<Kokkos::View<typename RepackType<N,OldValueT>::type*,ViewProps...>>
-repack (const Kokkos::View<OldValueT*, ViewProps...>& v) {
-  using OldPackT =
-    typename std::conditional<IsPack<OldValueT>::value,
-                              OldValueT,
-                              typename RepackType<1,OldValueT>::type
-                             >::type;
-
-  // We are not changing the layout of the view, since
-  //  - if OldValueT was a pack, OldPackT=OldValueT
-  //  - if OldValueT was NOT a pack, OldPackT has size 1
-  Kokkos::View<OldPackT*,ViewProps...> vp(
-      reinterpret_cast<OldPackT*>(v.data()),v.extent(0));
-  return repack_impl<typename RepackType<N,OldPackT>::type>(vp);
+  array_layout layout;
+  for (int i=0; i<rank-1; ++i) {
+    layout.dimension[i] = src.extent(i);
+  }
+  layout.dimension[rank-1] = ekat::PackInfo<N>::num_packs(src.extent(rank-1));
+  
+  return dst_view_t(packed_data,layout);
 }
 
 //
