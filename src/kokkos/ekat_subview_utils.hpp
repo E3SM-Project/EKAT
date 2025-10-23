@@ -203,15 +203,13 @@ subview(const ViewLR<ST******,Props...>& v,
       &v.impl_map().reference(i0, i1, i2, i3, i4, 0),v.extent(5));
 }
 
-// ================ Subviews along 2nd dimension ======================= //
+// ================ Subviews along 2nd dimension of a LayoutRight view ======================= //
 
-// Note: if input rank>3, these subviews can retain LayoutRight.
-//       However, Kokkos::subview only works if the output rank is <=3,
-//       so for higher ranks, we manually build the output view
-//       instead of relying on Kokkos::subview.
-//       See https://github.com/kokkos/kokkos/issues/3757
-//       If the input view has rank=2, then the output view MUST have
-//       LayoutStride (there is no alternative).
+// Note: If the input view has rank=2, then the output view MUST have LayoutStride (there
+//       is no alternative), and, for input rank=3, Kokkos::subview will return a LayoutRight view
+//       (using padded layout). For input rank>3, these subviews can, in theory, retain LayoutRight.
+//       However, Kokkos::subview only returns LayoutStride and we do not currently have a way to
+//       work around this. See https://github.com/kokkos/kokkos/issues/3757.
 
 // --- Rank2 --- //
 template <typename ST, typename... Props>
@@ -242,67 +240,40 @@ subview_1(const ViewLR<ST***,Props...>& v,
 // --- Rank4 --- //
 template <typename ST, typename... Props>
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
+Unmanaged<ViewLS<ST***,Props...>>
 subview_1(const ViewLR<ST****,Props...>& v,
           const int i1) {
   assert(v.data() != nullptr);
   assert(i1>=0 && i1 < v.extent_int(1));
 
-  using vt = Unmanaged<ViewLR<ST***,Props...>>;
-  // Figure out where the data starts, and create a tmp view with correct extents
-  auto offset = v.impl_map().m_impl_offset(0,i1,0,0);
-  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2),v.extent(3));
-
-  // The view tmp has still the wrong stride_0 (the prod of the following dims).
-  // Since we are keeping the first dimension, the stride is unchanged.
-  auto vm = tmp.impl_map();
-  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      v.impl_track(),vm);
+  auto sv = Kokkos::subview(v,Kokkos::ALL,i1,Kokkos::ALL,Kokkos::ALL);
+  return Unmanaged<ViewLS<ST***,Props...>>(sv);
 }
 
 // --- Rank5 --- //
 template <typename ST, typename... Props>
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST****,Props...>>
+Unmanaged<ViewLS<ST****,Props...>>
 subview_1(const ViewLR<ST*****,Props...>& v,
           const int i1) {
   assert(v.data() != nullptr);
   assert(i1>=0 && i1 < v.extent_int(1));
 
-  using vt = Unmanaged<ViewLR<ST****,Props...>>;
-  // Figure out where the data starts, and create a tmp view with correct extents
-  auto offset = v.impl_map().m_impl_offset(0,i1,0,0,0);
-  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2),v.extent(3),v.extent(4));
-
-  // The view tmp has still the wrong stride_0 (the prod of the following dims).
-  // Since we are keeping the first dimension, the stride is unchanged.
-  auto vm = tmp.impl_map();
-  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  return Unmanaged<ViewLR<ST****,Props...>>(
-      v.impl_track(),vm);
+  auto sv = Kokkos::subview(v,Kokkos::ALL,i1,Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
+  return Unmanaged<ViewLS<ST****,Props...>>(sv);
 }
 
 // --- Rank6 --- //
 template <typename ST, typename... Props>
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*****,Props...>>
+Unmanaged<ViewLS<ST*****,Props...>>
 subview_1(const ViewLR<ST******,Props...>& v,
           const int i1) {
   assert(v.data() != nullptr);
   assert(i1>=0 && i1 < v.extent_int(1));
 
-  using vt = Unmanaged<ViewLR<ST*****,Props...>>;
-  // Figure out where the data starts, and create a tmp view with correct extents
-  auto offset = v.impl_map().m_impl_offset(0,i1,0,0,0,0);
-  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2),v.extent(3),v.extent(4),v.extent(5));
-
-  // The view tmp has still the wrong stride_0 (the prod of the following dims).
-  // Since we are keeping the first dimension, the stride is unchanged.
-  auto vm = tmp.impl_map();
-  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  return Unmanaged<ViewLR<ST*****,Props...>>(
-      v.impl_track(),vm);
+  auto sv = Kokkos::subview(v,Kokkos::ALL,i1,Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
+  return Unmanaged<ViewLS<ST*****,Props...>>(sv);
 }
 
 // ================ Multi-sliced Subviews ======================= //

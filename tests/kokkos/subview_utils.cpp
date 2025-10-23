@@ -108,16 +108,14 @@ TEST_CASE("subviews") {
     auto sv2 = ekat::subview_1(v2,i5);
 
     // First four should retain LaoutRight, last one has no other choice but getting LayoutStride
-    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutRight>::value);
+    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutStride>::value);
     REQUIRE (std::is_same<typename decltype(sv3)::traits::array_layout,Kokkos::LayoutRight>::value);
     REQUIRE (std::is_same<typename decltype(sv2)::traits::array_layout,Kokkos::LayoutStride>::value);
 
-    // Subview again the second slowest
-    auto sv6_2 = ekat::subview_1(sv6,i2);
-    auto sv5_2 = ekat::subview_1(sv5,i3);
-    auto sv4_2 = ekat::subview_1(sv4,i4);
+    // Subview again the second slowest of the only LayoutRight subview
+    auto sv3_2 = ekat::subview_1(sv3,i5);
 
     // Compare with original view
     Kokkos::View<int> diffs("");
@@ -153,26 +151,14 @@ TEST_CASE("subviews") {
         if (sv2(l)!=v6(i0,i1,i2,i3,l,i5)) ++ndiffs;
       }
 
-      for (int h=0; h<7; ++h)
-        for (int k=0; k<4; ++k)
-          for (int l=0; l<3; ++l)
-            for (int m=0; m<2; ++m) {
-              if (sv6_2(h,k,l,m)!=v6(h,i1,i2,k,l,m)) ++ndiffs;
-            }
-      for (int i=0; i<4; ++i)
-        for (int l=0; l<3; ++l)
-          for (int m=0; m<2; ++m) {
-            if (sv5_2(i,l,m)!=v6(i0,i,i2,i3,l,m)) ++ndiffs;
-          }
-      for (int j=0; j<5; ++j)
-        for (int m=0; m<2; ++m) {
-          if (sv4_2(j,m)!=v6(i0,i1,j,i3,i4,m)) ++ndiffs;
-        }
+      for (int k=0; k<4; ++k) {
+        if (sv3_2(k)!=v6(i0,i1,i2,k,i4,i5)) ++ndiffs;
+      }
 
       // Make sure that our diffs counting strategy works
       // by checking that two entries that should be different
       // are indeed different.
-      if (sv4_2(0,0)!=v6(i0,i1,0,i3,i4,1)) ++ndiffs;
+      if (sv3_2(0)!=v6(i0,i1,1,i3,i4,i5)) ++ndiffs;
     });
     auto diffs_h = Kokkos::create_mirror_view(diffs);
     Kokkos::deep_copy(diffs_h,diffs);
