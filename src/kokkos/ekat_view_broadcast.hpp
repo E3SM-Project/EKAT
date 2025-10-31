@@ -22,6 +22,15 @@ public:
   using view_type  = Unmanaged<ToView>;
   using reference_type = typename view_type::reference_type;
 
+  ViewBroadcast () = default;
+
+  template<typename FromView>
+  ViewBroadcast (const FromView& from_v,
+                 const std::vector<int>& extents)
+  {
+    setup(from_v,extents);
+  }
+
   // Broadcast an input view to the type provided by the class template arg
   //  - from_v: view to be broadcasted
   //  - extents: list of extents of the outfacing view (of type ToView).
@@ -29,8 +38,8 @@ public:
   //    that are <=0, which signal that those dimensions' extents will be
   //    retrieved from the input view.
   template<typename FromView>
-  ViewBroadcast (const FromView& from_v,
-                 const std::vector<int>& extents)
+  void setup (const FromView& from_v,
+              const std::vector<int>& extents)
   {
     constexpr int from_rank = FromView::rank();
     constexpr int to_rank = ToView::rank();
