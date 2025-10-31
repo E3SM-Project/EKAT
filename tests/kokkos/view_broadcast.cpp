@@ -45,7 +45,8 @@ TEST_CASE("view_broadcast") {
       SECTION ("along d0") {
         d0 = 4;
         d1 = n;
-        auto b2d = broadcast<view_2d>(orig,{d0,-1});
+        ViewBroadcast<view_2d> b2d;
+        b2d.setup(orig,{d0,-1});
 
         int err = 0;
         auto lambda = KOKKOS_LAMBDA (int idx, int& l_err) {
