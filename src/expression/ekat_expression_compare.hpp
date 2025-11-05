@@ -23,11 +23,11 @@ class CmpExpression : public Expression<CmpExpression<ELeft,ERight>> {
 public:
   using ret_t = int;
 
-  static constexpr bool scalar_left  = std::is_arithmetic_v<ELeft>;
-  static constexpr bool scalar_right = std::is_arithmetic_v<ERight>;
+  static constexpr bool expr_l = is_expr_v<ELeft>;
+  static constexpr bool expr_r = is_expr_v<ERight>;
 
-  static_assert(not scalar_left or not scalar_right,
-      "[CmpExpression] One between ELeft and ERight must be non-arithmetic.\n");
+  static_assert(expr_l or expr_r
+    "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
   CmpExpression (const ELeft& left, const ERight& right, Comparison CMP)
     : m_left(left)
@@ -53,7 +53,7 @@ public:
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
   ret_t eval(Args... args) const {
-    if constexpr (scalar_left) {
+    if constexpr (not expr_l) {
       switch (m_cmp) {
         case Comparison::EQ: return m_left == m_right.eval(args...);
         case Comparison::NE: return m_left != m_right.eval(args...);
@@ -64,7 +64,7 @@ public:
         default:
           EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
       }
-    } else if constexpr (scalar_right) {
+    } else if constexpr (not expr_r) {
       switch (m_cmp) {
         case Comparison::EQ: return m_left.eval(args...) == m_right;
         case Comparison::NE: return m_left.eval(args...) != m_right;

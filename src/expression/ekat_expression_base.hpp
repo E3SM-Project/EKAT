@@ -23,8 +23,17 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   const Derived& cast () const { return static_cast<const Derived&>(*this); }
-        Derived& cast ()       { return static_cast<      Derived&>(*this); }
 };
+
+// Some meta-utilities that will prove useful in derived classes
+
+// Detect if a type is an Expression
+template<typename T>
+struct is_expr : std::false_type {};
+template<typename D>
+struct is_expr<Expression<D>> : std::true_type {};
+template<typename T>
+constexpr bool is_expr_v = is_expr<T>::value;
 
 } // namespace ekat
 

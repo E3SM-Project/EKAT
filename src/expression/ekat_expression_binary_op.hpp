@@ -17,11 +17,11 @@ enum class BinOp {
 template<typename ELeft, typename ERight, BinOp OP>
 class BinaryExpression : public Expression<BinaryExpression<ELeft,ERight,OP>>{
 public:
-  static constexpr bool scalar_l = std::is_arithmetic_v<ELeft>;
-  static constexpr bool scalar_r = std::is_arithmetic_v<ERight>;
+  static constexpr bool expr_l = is_expr<ELeft>;
+  static constexpr bool expr_r = is_expr<ERight>;
 
-  static_assert (not (scalar_l and scalar_r),
-    "[BinaryExpression] Error! At least one of the two terms must be an Expression instance.\n");
+  static_assert (expr_l or expr_r,
+    "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
   BinaryExpression (const ELeft& left, const ERight& right)
     : m_left(left)
@@ -35,9 +35,9 @@ public:
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
   auto eval(Args... args) const {
-    if constexpr (scalar_l) {
+    if constexpr (not expr_l) {
       return eval_impl(m_left,m_right.eval(args...));
-    } else if constexpr (scalar_r) {
+    } else if constexpr (not expr_r) {
       return eval_impl(m_left.eval(args...),m_right);
     } else {
       return eval_impl(m_left.eval(args...),m_right.eval(args...));
