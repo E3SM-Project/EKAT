@@ -26,7 +26,7 @@ public:
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
 
-  static_assert(expr_l or expr_r
+  static_assert(expr_l or expr_r,
     "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
   CmpExpression (const ELeft& left, const ERight& right, Comparison CMP)
@@ -41,9 +41,9 @@ public:
   }
 
   int num_indices () const {
-    if constexpr (scalar_left) {
+    if constexpr (not expr_l) {
       return m_right.num_indices();
-    } else if constexpr (scalar_right) {
+    } else if constexpr (not expr_r) {
       return m_left.num_indices();
     } else {
       return std::max(m_left.num_indices(),m_right.num_indices());
@@ -98,130 +98,50 @@ protected:
   Comparison m_cmp;
 };
 
+template<typename ELeft, typename ERight>
+struct is_expr<CmpExpression<ELeft,ERight>> : std::true_type {};
+
 // Overload cmp operators for Expression types
-
 template<typename ELeft, typename ERight>
-CmpExpression<ELeft,ERight> operator== (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
+operator== (const ELeft& l, const ERight& r)
 {
-  return CmpExpression<ELeft,ERight>(l.cast(),r.cast(),Comparison::EQ);
-}
-
-template<typename ELeft, typename ERight>
-CmpExpression<ELeft,ERight> operator!= (const Expression<ELeft>& l, const Expression<ERight>& r)
-{
-  return CmpExpression<ELeft,ERight>(l.cast(),r.cast(),Comparison::NE);
+  return CmpExpression<ELeft,ERight>(l,r,Comparison::EQ);
 }
 
 template<typename ELeft, typename ERight>
-CmpExpression<ELeft,ERight> operator> (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
+operator!= (const ELeft& l, const ERight& r)
 {
-  return CmpExpression<ELeft,ERight>(l.cast(),r.cast(),Comparison::GT);
+  return CmpExpression<ELeft,ERight>(l,r,Comparison::NE);
 }
 
 template<typename ELeft, typename ERight>
-CmpExpression<ELeft,ERight> operator>= (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
+operator> (const ELeft& l, const ERight& r)
 {
-  return CmpExpression<ELeft,ERight>(l.cast(),r.cast(),Comparison::GE);
+  return CmpExpression<ELeft,ERight>(l,r,Comparison::GT);
 }
 
 template<typename ELeft, typename ERight>
-CmpExpression<ELeft,ERight> operator< (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
+operator>= (const ELeft& l, const ERight& r)
 {
-  return CmpExpression<ELeft,ERight>(l.cast(),r.cast(),Comparison::LT);
+  return CmpExpression<ELeft,ERight>(l,r,Comparison::GE);
 }
 
 template<typename ELeft, typename ERight>
-CmpExpression<ELeft,ERight> operator<= (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
+operator< (const ELeft& l, const ERight& r)
 {
-  return CmpExpression<ELeft,ERight>(l.cast(),r.cast(),Comparison::LE);
+  return CmpExpression<ELeft,ERight>(l,r,Comparison::LT);
 }
 
-// Overload cmp operators for LHS=Expression and RHS=scalar
-
-template<typename ELeft, typename ST>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
-operator== (const Expression<ELeft>& l, const ST r)
+template<typename ELeft, typename ERight>
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
+operator<= (const ELeft& l, const ERight& r)
 {
-  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::EQ);
-}
-
-template<typename ELeft, typename ST>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
-operator!= (const Expression<ELeft>& l, const ST r)
-{
-  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::NE);
-}
-
-template<typename ELeft, typename ST>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
-operator> (const Expression<ELeft>& l, const ST r)
-{
-  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::GT);
-}
-
-template<typename ELeft, typename ST>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
-operator>= (const Expression<ELeft>& l, const ST r)
-{
-  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::GE);
-}
-
-template<typename ELeft, typename ST>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
-operator< (const Expression<ELeft>& l, const ST r)
-{
-  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::LT);
-}
-
-template<typename ELeft, typename ST>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
-operator<= (const Expression<ELeft>& l, const ST r)
-{
-  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::LE);
-}
-
-// Overload cmp operators for LHS=scalar and RHS=Expression
-
-template<typename ST, typename ERight>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
-operator== (const ST l, const Expression<ERight>& r)
-{
-  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::EQ);
-}
-
-template<typename ST, typename ERight>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
-operator!= (const ST l, const Expression<ERight>& r)
-{
-  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::NE);
-}
-
-template<typename ST, typename ERight>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
-operator> (const ST l, const Expression<ERight>& r)
-{
-  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::GT);
-}
-
-template<typename ST, typename ERight>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
-operator>= (const ST l, const Expression<ERight>& r)
-{
-  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::GE);
-}
-
-template<typename ST, typename ERight>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
-operator< (const ST l, const Expression<ERight>& r)
-{
-  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::LT);
-}
-
-template<typename ST, typename ERight>
-std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
-operator<= (const ST l, const Expression<ERight>& r)
-{
-  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::LE);
+  return CmpExpression<ELeft,ERight>(l,r,Comparison::LE);
 }
 
 } // namespace ekat

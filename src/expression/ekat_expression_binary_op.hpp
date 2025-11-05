@@ -17,8 +17,8 @@ enum class BinOp {
 template<typename ELeft, typename ERight, BinOp OP>
 class BinaryExpression : public Expression<BinaryExpression<ELeft,ERight,OP>>{
 public:
-  static constexpr bool expr_l = is_expr<ELeft>;
-  static constexpr bool expr_r = is_expr<ERight>;
+  static constexpr bool expr_l = is_expr_v<ELeft>;
+  static constexpr bool expr_r = is_expr_v<ERight>;
 
   static_assert (expr_l or expr_r,
     "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
@@ -30,7 +30,15 @@ public:
     // Nothing to do here
   }
 
-  int num_indices () const { return std::max(m_left.num_indices(),m_right.num_indices()); }
+  int num_indices () const {
+    if constexpr (not expr_l) {
+      return m_right.num_indices();
+    } else if constexpr (not expr_r) {
+      return m_left.num_indices();
+    } else {
+      return std::max(m_left.num_indices(),m_right.num_indices());
+    }
+  }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
@@ -69,6 +77,9 @@ protected:
   ERight   m_right;
 };
 
+template<typename ELeft, typename ERight, BinOp OP>
+struct is_expr<BinaryExpression<ELeft,ERight,OP>> : std::true_type {};
+
 // Unary minus implemented as -1*expr
 template<typename ERight>
 BinaryExpression<int,ERight,BinOp::Mult>
@@ -79,47 +90,46 @@ operator- (const Expression<ERight>& r)
 
 // Overload arithmetic operators
 template<typename ELeft, typename ERight>
-BinaryExpression<ELeft,ERight,BinOp::Plus>
-operator+ (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Plus>>
+operator+ (const ELeft& l, const ERight& r)
 {
-  return BinaryExpression<ELeft,ERight,BinOp::Plus>(l.cast(),r.cast());
+  return BinaryExpression<ELeft,ERight,BinOp::Plus>(l,r);
 }
 
 template<typename ELeft, typename ERight>
-BinaryExpression<ELeft,ERight,BinOp::Minus>
-operator- (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Minus>>
+operator- (const ELeft& l, const ERight& r)
 {
-  return BinaryExpression<ELeft,ERight,BinOp::Minus>(l.cast(),r.cast());
+  return BinaryExpression<ELeft,ERight,BinOp::Minus>(l,r);
 }
 
 template<typename ELeft, typename ERight>
-BinaryExpression<ELeft,ERight,BinOp::Mult>
-operator* (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Mult>>
+operator* (const ELeft& l, const ERight& r)
 {
-  return BinaryExpression<ELeft,ERight,BinOp::Mult>(l.cast(),r.cast());
+  return BinaryExpression<ELeft,ERight,BinOp::Mult>(l,r);
 }
 
 template<typename ELeft, typename ERight>
-BinaryExpression<ELeft,ERight,BinOp::Div>
-operator/ (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Div>>
+operator/ (const ELeft& l, const ERight& r)
 {
-  return BinaryExpression<ELeft,ERight,BinOp::Div>(l.cast(),r.cast());
+  return BinaryExpression<ELeft,ERight,BinOp::Div>(l,r);
 }
 
 // Overload max/min functions
-
 template<typename ELeft, typename ERight>
-BinaryExpression<ELeft,ERight,BinOp::Div>
-max (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Max>>
+max (const ELeft& l, const ERight& r)
 {
-  return BinaryExpression<ELeft,ERight,BinOp::Max>(l.cast(),r.cast());
+  return BinaryExpression<ELeft,ERight,BinOp::Max>(l,r);
 }
 
 template<typename ELeft, typename ERight>
-BinaryExpression<ELeft,ERight,BinOp::Div>
-min (const Expression<ELeft>& l, const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Min>>
+min (const ELeft& l, const ERight& r)
 {
-  return BinaryExpression<ELeft,ERight,BinOp::Min>(l.cast(),r.cast());
+  return BinaryExpression<ELeft,ERight,BinOp::Min>(l,r);
 }
 
 } // namespace ekat
