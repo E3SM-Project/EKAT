@@ -34,6 +34,9 @@ protected:
 };
 
 template<typename ViewT>
+struct is_expr<ViewExpression<ViewT>> : std::true_type {};
+
+template<typename ViewT>
 std::enable_if_t<Kokkos::is_view_v<ViewT>,ViewExpression<ViewT>>
 view_expression(const ViewT& v)
 {

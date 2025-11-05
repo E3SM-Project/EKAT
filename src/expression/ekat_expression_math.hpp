@@ -63,6 +63,9 @@ protected:
 };
 
 template<typename EBase, typename EExp>
+struct is_expr<PowExpression<EBase,EExp>> : std::true_type {};
+
+template<typename EBase, typename EExp>
 PowExpression<EBase,EExp>
 pow (const Expression<EBase>& b, const Expression<EExp>& e)
 {
@@ -114,7 +117,10 @@ pow (const ST b, const Expression<EExp>& e)
   impl (const Expression<EArg>& arg)                                    \
   {                                                                     \
     return name##Expression<EArg>(arg.cast());                          \
-  }
+  }                                                                     \
+                                                                        \
+  template<typename EArg>                                               \
+  struct is_expr<name##Expression<EArg>> : std::true_type {};
 
 UNARY_MATH_EXPRESSION (sqrt,Sqrt)
 UNARY_MATH_EXPRESSION (exp,Exp)
