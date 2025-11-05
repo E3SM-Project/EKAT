@@ -1,8 +1,10 @@
 #include <catch2/catch.hpp>
 
 #include "ekat_expression_view.hpp"
+#include "ekat_expression_binary_op.hpp"
+#include "ekat_expression_compare.hpp"
 #include "ekat_expression_conditional.hpp"
-#include "ekat_expression_helpers.hpp"
+#include "ekat_expression_math.hpp"
 #include "ekat_expression_eval.hpp"
 #include "ekat_expression_base.hpp"
 
