@@ -5,9 +5,6 @@
 
 namespace ekat {
 
-// For now. Later, template on return type maybe?
-using Real = double;
-
 template<typename Derived>
 class Expression {
 public:
@@ -16,7 +13,7 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(Args... args) const {
+  auto eval(Args... args) const {
     static_assert(std::conjunction_v<std::is_integral<Args>...>,
                   "[Expression] All arguments must be integral types!");
     static_assert(sizeof...(Args) <= 7,

@@ -73,6 +73,8 @@ void conditionals (const ViewT& x, const ViewT& y, const ViewT& z)
 
 TEST_CASE("expressions", "") {
 
+  using Real = double;
+
   std::random_device rdev;
   const int catchRngSeed = Catch::rngSeed();
   int seed = catchRngSeed==0 ? rdev()/2 : catchRngSeed;

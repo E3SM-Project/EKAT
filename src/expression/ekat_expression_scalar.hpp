@@ -5,7 +5,6 @@
 
 namespace ekat {
 
-// TODO: support 4+ dim. Also 0d?
 template<typename ST>
 class ScalarExpression : public Expression<ScalarExpression<ST>> {
 public:
@@ -18,10 +17,11 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(Args...) const {
+  ST eval(Args...) const {
     return m_value;
   }
 
+  static ST ret_type () { return 0; }
 protected:
 
   ST m_value;

@@ -5,13 +5,11 @@
 
 namespace ekat {
 
-// TODO: support 4+ dim. Also 0d?
 template<typename ViewT>
 class ViewExpression : public Expression<ViewExpression<ViewT>> {
 public:
   using view_t = ViewT;
-  static_assert(view_t::rank >=1 and view_t::rank <=3,
-      "Unsupported rank for ViewExpression");
+  using value_t = typename ViewT::element_type;
 
   ViewExpression (const view_t& v)
    : m_view(v)
@@ -23,9 +21,12 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(Args... args) const {
+  value_t eval(Args... args) const {
+    static_assert(sizeof...(Args)==ViewT::rank, "Something is off...\n");
     return m_view(args...);
   }
+
+  static value_t ret_type () { return 0; }
 
 protected:
 

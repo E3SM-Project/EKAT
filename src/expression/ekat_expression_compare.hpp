@@ -21,6 +21,8 @@ enum class Comparison : int {
 template<typename ELeft, typename ERight>
 class CmpExpression : public Expression<CmpExpression<ELeft,ERight>> {
 public:
+  using ret_t = int;
+
   static constexpr bool scalar_left  = std::is_arithmetic_v<ELeft>;
   static constexpr bool scalar_right = std::is_arithmetic_v<ERight>;
   static_assert(not scalar_left or not scalar_right,
@@ -49,7 +51,7 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(Args... args) const {
+  ret_t eval(Args... args) const {
     if constexpr (scalar_left) {
       switch (m_cmp) {
         case Comparison::EQ: return m_left == m_right.eval(args...);
@@ -85,6 +87,8 @@ public:
       }
     }
   }
+
+  static int ret_type () { return 0; }
 protected:
 
   ELeft    m_left;

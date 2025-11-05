@@ -22,11 +22,20 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(Args... args) const {
+  auto eval(Args... args) const
+   -> std::common_type_t<decltype(ELeft::ret_type()),decltype(ERight::ret_type())>
+  {
     if (m_cmp.eval(args...))
       return m_left.eval(args...);
     else
       return m_right.eval(args...);
+  }
+
+  static auto ret_type () {
+    auto ret_l = ELeft::ret_type();
+    auto ret_r = ERight::ret_type();
+    using type = std::common_type_t<decltype(ret_l),decltype(ret_r)>;
+    return type(0);
   }
 protected:
 

@@ -17,6 +17,7 @@ enum class BinOp {
 template<typename ELeft, typename ERight, BinOp OP>
 class BinaryExpression : public Expression<BinaryExpression<ELeft,ERight,OP>>{
 public:
+
   BinaryExpression (const ELeft& left, const ERight& right)
     : m_left(left)
     , m_right(right)
@@ -28,7 +29,7 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(Args... args) const {
+  auto eval(Args... args) const {
     if constexpr (OP==BinOp::Plus) {
       return m_left.eval(args...) + m_right.eval(args...);
     } else if constexpr (OP==BinOp::Minus) {
@@ -43,6 +44,8 @@ public:
       return Kokkos::min(m_left.eval(args...),m_right.eval(args...));
     }
   }
+
+  static auto ret_type () { return ELeft::ret_type() + ERight::ret_type(); }
 protected:
 
   ELeft    m_left;
