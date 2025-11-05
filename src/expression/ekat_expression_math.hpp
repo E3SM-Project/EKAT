@@ -69,6 +69,21 @@ pow (const Expression<EBase>& b, const Expression<EExp>& e)
   return PowExpression<EBase,EExp>(b.cast(),e.cast());
 }
 
+// Pow from scalars
+template<typename EBase,typename ST>
+std::enable_if_t<std::is_arithmetic_v<ST>,PowExpression<EBase,ST>>
+pow (const Expression<EBase>& b, const ST e)
+{
+  return PowExpression<EBase,ST>(b.cast(),e);
+}
+
+template<typename ST,typename EExp>
+std::enable_if_t<std::is_arithmetic_v<ST>,PowExpression<ST,EExp>>
+pow (const ST b, const Expression<EExp>& e)
+{
+  return PowExpression<ST,EExp>(b,e.cast());
+}
+
 // ----------------- Unary math fcns ------------------- //
 
 #define UNARY_MATH_EXPRESSION(impl,name) \
