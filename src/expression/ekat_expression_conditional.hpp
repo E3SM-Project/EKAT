@@ -20,26 +20,13 @@ public:
     return std::max(m_cmp.num_indices(),std::max(m_left.num_indices(),m_right.num_indices()));
   }
 
+  template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval (int i) const {
-    if (m_cmp.eval(i))
-      return m_left.eval(i);
+  Real eval(Args... args) const {
+    if (m_cmp.eval(args...))
+      return m_left.eval(args...);
     else
-      return m_right.eval(i);
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval (int i, int j) const {
-    if (m_cmp.eval(i,j))
-      return m_left.eval(i,j);
-    else
-      return m_right.eval(i,j);
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval (int i, int j, int k) const {
-    if (m_cmp.eval(i,j,k))
-      return m_left.eval(i,j,k);
-    else
-      return m_right.eval(i,j,k);
+      return m_right.eval(args...);
   }
 protected:
 

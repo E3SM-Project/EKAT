@@ -16,16 +16,9 @@ public:
 
   int num_indices () const { return 0; }
 
+  template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(int) const {
-    return m_value;
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval(int,int) const {
-    return m_value;
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval(int,int,int) const {
+  Real eval(Args...) const {
     return m_value;
   }
 

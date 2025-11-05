@@ -21,17 +21,10 @@ public:
 
   int num_indices () const { return ViewT::rank; }
 
+  template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval(int i) const {
-    return m_view(i);
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval(int i,int j) const {
-    return m_view(i,j);
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval(int i,int j,int k) const {
-    return m_view(i,j,k);
+  Real eval(Args... args) const {
+    return m_view(args...);
   }
 
 protected:

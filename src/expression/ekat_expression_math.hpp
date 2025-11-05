@@ -32,34 +32,15 @@ public:
     }
   }
 
+  template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval (int i) const {
+  Real eval(Args... args) const {
     if constexpr (scalar_base) {
-      return Kokkos::pow(m_base,m_exp.eval(i));
+      return Kokkos::pow(m_base,m_exp.eval(args...));
     } else if constexpr (scalar_exp) {
-      return Kokkos::pow(m_base.eval(i),m_exp);
+      return Kokkos::pow(m_base.eval(args...),m_exp);
     } else {
-      return Kokkos::pow(m_base.eval(i),m_exp.eval(i));
-    }
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval (int i, int j) const {
-    if constexpr (scalar_base) {
-      return Kokkos::pow(m_base,m_exp.eval(i,j));
-    } else if constexpr (scalar_exp) {
-      return Kokkos::pow(m_base.eval(i,j),m_exp);
-    } else {
-      return Kokkos::pow(m_base.eval(i,j),m_exp.eval(i,j));
-    }
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval (int i, int j, int k) const {
-    if constexpr (scalar_base) {
-      return Kokkos::pow(m_base,m_exp.eval(i,j,k));
-    } else if constexpr (scalar_exp) {
-      return Kokkos::pow(m_base.eval(i,j,k),m_exp);
-    } else {
-      return Kokkos::pow(m_base.eval(i,j,k),m_exp.eval(i,j,k));
+      return Kokkos::pow(m_base.eval(args...),m_exp.eval(args...));
     }
   }
 protected:
@@ -89,17 +70,10 @@ pow (const Expression<EBase>& b, const Expression<EExp>& e)
                                                                         \
     int num_indices () const { return m_arg.num_indices(); }            \
                                                                         \
+    template<typename... Args>                                          \
     KOKKOS_INLINE_FUNCTION                                              \
-    Real eval (int i) const {                                           \
-      return Kokkos::impl(m_arg.eval(i));                               \
-    }                                                                   \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Real eval (int i,int j) const {                                     \
-      return Kokkos::impl(m_arg.eval(i,j));                             \
-    }                                                                   \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Real eval (int i,int j,int k) const {                               \
-      return Kokkos::impl(m_arg.eval(i,j,k));                           \
+    Real eval(Args... args) const {                                     \
+      return Kokkos::impl(m_arg.eval(args...));                         \
     }                                                                   \
   protected:                                                            \
                                                                         \

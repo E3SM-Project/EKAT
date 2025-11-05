@@ -47,112 +47,39 @@ public:
     }
   }
 
+  template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  Real eval (int i) const {
+  Real eval(Args... args) const {
     if constexpr (scalar_left) {
       switch (m_cmp) {
-        case Comparison::EQ: return m_left == m_right.eval(i);
-        case Comparison::NE: return m_left != m_right.eval(i);
-        case Comparison::GT: return m_left >  m_right.eval(i);
-        case Comparison::GE: return m_left >= m_right.eval(i);
-        case Comparison::LT: return m_left <  m_right.eval(i);
-        case Comparison::LE: return m_left <= m_right.eval(i);
+        case Comparison::EQ: return m_left == m_right.eval(args...);
+        case Comparison::NE: return m_left != m_right.eval(args...);
+        case Comparison::GT: return m_left >  m_right.eval(args...);
+        case Comparison::GE: return m_left >= m_right.eval(args...);
+        case Comparison::LT: return m_left <  m_right.eval(args...);
+        case Comparison::LE: return m_left <= m_right.eval(args...);
         default:
           EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
       }
     } else if constexpr (scalar_right) {
       switch (m_cmp) {
-        case Comparison::EQ: return m_left.eval(i) == m_right;
-        case Comparison::NE: return m_left.eval(i) != m_right;
-        case Comparison::GT: return m_left.eval(i) >  m_right;
-        case Comparison::GE: return m_left.eval(i) >= m_right;
-        case Comparison::LT: return m_left.eval(i) <  m_right;
-        case Comparison::LE: return m_left.eval(i) <= m_right;
+        case Comparison::EQ: return m_left.eval(args...) == m_right;
+        case Comparison::NE: return m_left.eval(args...) != m_right;
+        case Comparison::GT: return m_left.eval(args...) >  m_right;
+        case Comparison::GE: return m_left.eval(args...) >= m_right;
+        case Comparison::LT: return m_left.eval(args...) <  m_right;
+        case Comparison::LE: return m_left.eval(args...) <= m_right;
         default:
           EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
       }
     } else {
       switch (m_cmp) {
-        case Comparison::EQ: return m_left.eval(i) == m_right.eval(i);
-        case Comparison::NE: return m_left.eval(i) != m_right.eval(i);
-        case Comparison::GT: return m_left.eval(i) >  m_right.eval(i);
-        case Comparison::GE: return m_left.eval(i) >= m_right.eval(i);
-        case Comparison::LT: return m_left.eval(i) <  m_right.eval(i);
-        case Comparison::LE: return m_left.eval(i) <= m_right.eval(i);
-        default:
-          EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
-      }
-    }
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval (int i,int j) const {
-    if constexpr (scalar_left) {
-      switch (m_cmp) {
-        case Comparison::EQ: return m_left == m_right.eval(i,j);
-        case Comparison::NE: return m_left != m_right.eval(i,j);
-        case Comparison::GT: return m_left >  m_right.eval(i,j);
-        case Comparison::GE: return m_left >= m_right.eval(i,j);
-        case Comparison::LT: return m_left <  m_right.eval(i,j);
-        case Comparison::LE: return m_left <= m_right.eval(i,j);
-        default:
-          EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
-      }
-    } else if constexpr (scalar_right) {
-      switch (m_cmp) {
-        case Comparison::EQ: return m_left.eval(i,j) == m_right;
-        case Comparison::NE: return m_left.eval(i,j) != m_right;
-        case Comparison::GT: return m_left.eval(i,j) >  m_right;
-        case Comparison::GE: return m_left.eval(i,j) >= m_right;
-        case Comparison::LT: return m_left.eval(i,j) <  m_right;
-        case Comparison::LE: return m_left.eval(i,j) <= m_right;
-        default:
-          EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
-      }
-    } else {
-      switch (m_cmp) {
-        case Comparison::EQ: return m_left.eval(i,j) == m_right.eval(i,j);
-        case Comparison::NE: return m_left.eval(i,j) != m_right.eval(i,j);
-        case Comparison::GT: return m_left.eval(i,j) >  m_right.eval(i,j);
-        case Comparison::GE: return m_left.eval(i,j) >= m_right.eval(i,j);
-        case Comparison::LT: return m_left.eval(i,j) <  m_right.eval(i,j);
-        case Comparison::LE: return m_left.eval(i,j) <= m_right.eval(i,j);
-        default:
-          EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
-      }
-    }
-  }
-  KOKKOS_INLINE_FUNCTION
-  Real eval (int i, int j, int k) const {
-    if constexpr (scalar_left) {
-      switch (m_cmp) {
-        case Comparison::EQ: return m_left == m_right.eval(i,j,k);
-        case Comparison::NE: return m_left != m_right.eval(i,j,k);
-        case Comparison::GT: return m_left >  m_right.eval(i,j,k);
-        case Comparison::GE: return m_left >= m_right.eval(i,j,k);
-        case Comparison::LT: return m_left <  m_right.eval(i,j,k);
-        case Comparison::LE: return m_left <= m_right.eval(i,j,k);
-        default:
-          EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
-      }
-    } else if constexpr (scalar_right) {
-      switch (m_cmp) {
-        case Comparison::EQ: return m_left.eval(i,j,k) == m_right;
-        case Comparison::NE: return m_left.eval(i,j,k) != m_right;
-        case Comparison::GT: return m_left.eval(i,j,k) >  m_right;
-        case Comparison::GE: return m_left.eval(i,j,k) >= m_right;
-        case Comparison::LT: return m_left.eval(i,j,k) <  m_right;
-        case Comparison::LE: return m_left.eval(i,j,k) <= m_right;
-        default:
-          EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
-      }
-    } else {
-      switch (m_cmp) {
-        case Comparison::EQ: return m_left.eval(i,j,k) == m_right.eval(i,j,k);
-        case Comparison::NE: return m_left.eval(i,j,k) != m_right.eval(i,j,k);
-        case Comparison::GT: return m_left.eval(i,j,k) >  m_right.eval(i,j,k);
-        case Comparison::GE: return m_left.eval(i,j,k) >= m_right.eval(i,j,k);
-        case Comparison::LT: return m_left.eval(i,j,k) <  m_right.eval(i,j,k);
-        case Comparison::LE: return m_left.eval(i,j,k) <= m_right.eval(i,j,k);
+        case Comparison::EQ: return m_left.eval(args...) == m_right.eval(args...);
+        case Comparison::NE: return m_left.eval(args...) != m_right.eval(args...);
+        case Comparison::GT: return m_left.eval(args...) >  m_right.eval(args...);
+        case Comparison::GE: return m_left.eval(args...) >= m_right.eval(args...);
+        case Comparison::LT: return m_left.eval(args...) <  m_right.eval(args...);
+        case Comparison::LE: return m_left.eval(args...) <= m_right.eval(args...);
         default:
           EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
       }
