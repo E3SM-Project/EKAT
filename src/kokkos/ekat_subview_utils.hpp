@@ -235,6 +235,10 @@ subview_1(const ViewLR<ST***,Props...>& v,
   assert(v.data() != nullptr);
   assert(i1>=0 && i1 < v.extent_int(1));
 
+  printf("%s(%d,%d,%d): i1: %d, OFFSET: %d, STRIDE0: %d\n", v.label().c_str(),
+  v.extent_int(0), v.extent_int(1), v.extent_int(2),
+  i1, v.impl_map().m_impl_offset(0,i1,0), v.impl_map().stride_0());
+
   auto sv = Kokkos::subview(v,Kokkos::ALL,i1,Kokkos::ALL);
   return Unmanaged<ViewLR<ST**,Props...>>(sv);
 }
@@ -257,6 +261,13 @@ subview_1(const ViewLR<ST****,Props...>& v,
   // Since we are keeping the first dimension, the stride is unchanged.
   auto vm = tmp.impl_map();
   vm.m_impl_offset.m_stride = v.impl_map().stride_0();
+
+
+  printf("%s(%d,%d,%d,%d): i1: %d, OFFSET: %d, STRIDE0: %d\n", v.label().c_str(),
+    v.extent_int(0), v.extent_int(1), v.extent_int(2), v.extent_int(3),
+    i1, offset, vm.m_impl_offset.m_stride);
+
+
   return Unmanaged<ViewLR<ST***,Props...>>(
       v.impl_track(),vm);
 }
