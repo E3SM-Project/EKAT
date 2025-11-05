@@ -14,7 +14,6 @@ set (HEADERS
   ekat_expression_compare.hpp
   ekat_expression_conditional.hpp
   ekat_expression_eval.hpp
-  ekat_expression_helpers.hpp
   ekat_expression_math.hpp
   ekat_expression_view.hpp
 )

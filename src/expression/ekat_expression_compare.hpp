@@ -25,6 +25,7 @@ public:
 
   static constexpr bool scalar_left  = std::is_arithmetic_v<ELeft>;
   static constexpr bool scalar_right = std::is_arithmetic_v<ERight>;
+
   static_assert(not scalar_left or not scalar_right,
       "[CmpExpression] One between ELeft and ERight must be non-arithmetic.\n");
 
@@ -97,12 +98,7 @@ protected:
   Comparison m_cmp;
 };
 
-template<typename ELeft, typename ERight>
-CmpExpression<ELeft,ERight>
-cmp_expression (const ELeft& l, const ERight& r, const Comparison CMP)
-{
-  return CmpExpression<ELeft,ERight>(l,r,CMP);
-}
+// Overload cmp operators for Expression types
 
 template<typename ELeft, typename ERight>
 CmpExpression<ELeft,ERight> operator== (const Expression<ELeft>& l, const Expression<ERight>& r)
@@ -138,6 +134,94 @@ template<typename ELeft, typename ERight>
 CmpExpression<ELeft,ERight> operator<= (const Expression<ELeft>& l, const Expression<ERight>& r)
 {
   return CmpExpression<ELeft,ERight>(l.cast(),r.cast(),Comparison::LE);
+}
+
+// Overload cmp operators for LHS=Expression and RHS=scalar
+
+template<typename ELeft, typename ST>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
+operator== (const Expression<ELeft>& l, const ST r)
+{
+  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::EQ);
+}
+
+template<typename ELeft, typename ST>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
+operator!= (const Expression<ELeft>& l, const ST r)
+{
+  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::NE);
+}
+
+template<typename ELeft, typename ST>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
+operator> (const Expression<ELeft>& l, const ST r)
+{
+  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::GT);
+}
+
+template<typename ELeft, typename ST>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
+operator>= (const Expression<ELeft>& l, const ST r)
+{
+  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::GE);
+}
+
+template<typename ELeft, typename ST>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
+operator< (const Expression<ELeft>& l, const ST r)
+{
+  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::LT);
+}
+
+template<typename ELeft, typename ST>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ELeft,ST>>
+operator<= (const Expression<ELeft>& l, const ST r)
+{
+  return CmpExpression<ELeft,ST>(l.cast(),r,Comparison::LE);
+}
+
+// Overload cmp operators for LHS=scalar and RHS=Expression
+
+template<typename ST, typename ERight>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
+operator== (const ST l, const Expression<ERight>& r)
+{
+  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::EQ);
+}
+
+template<typename ST, typename ERight>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
+operator!= (const ST l, const Expression<ERight>& r)
+{
+  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::NE);
+}
+
+template<typename ST, typename ERight>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
+operator> (const ST l, const Expression<ERight>& r)
+{
+  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::GT);
+}
+
+template<typename ST, typename ERight>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
+operator>= (const ST l, const Expression<ERight>& r)
+{
+  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::GE);
+}
+
+template<typename ST, typename ERight>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
+operator< (const ST l, const Expression<ERight>& r)
+{
+  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::LT);
+}
+
+template<typename ST, typename ERight>
+std::enable_if_t<std::is_arithmetic_v<ST,CmpExpression<ST,ERight>>
+operator<= (const ST l, const Expression<ERight>& r)
+{
+  return CmpExpression<ST,ERight>(l.cast(),r,Comparison::LE);
 }
 
 } // namespace ekat
