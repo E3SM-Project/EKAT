@@ -16,7 +16,9 @@ namespace ekat {
 template<typename ViewT>
 void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
 {
-  auto expression = x*y - 1/y + 2*x;
+  auto xe = view_expression(x);
+  auto ye = view_expression(y);
+  auto expression = xe*ye - 1/ye + 2*xe;
 
   evaluate(expression,z);
 
@@ -35,7 +37,9 @@ void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
 template<typename ViewT>
 void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
 {
-  auto expression = 2*exp(-x)*sin(x)*log(y)-sqrt(x)+pow(y,2)+pow(3,x);
+  auto xe = view_expression(x);
+  auto ye = view_expression(y);
+  auto expression = 2*exp(-xe)*sin(xe)*log(ye)-sqrt(xe)+pow(ye,2)+pow(3,xe);
 
   evaluate(expression,z);
 
@@ -55,7 +59,9 @@ void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
 template<typename ViewT>
 void conditionals (const ViewT& x, const ViewT& y, const ViewT& z)
 {
-  auto expression = conditional(sqrt(x)>=0.5,x+y,x-y);
+  auto xe = view_expression(x);
+  auto ye = view_expression(y);
+  auto expression = conditional(sqrt(xe)>=0.5,xe+ye,xe-ye);
 
   evaluate(expression,z);
 
