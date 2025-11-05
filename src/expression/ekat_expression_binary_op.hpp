@@ -60,7 +60,7 @@ protected:
       return l/r;
     } else if constexpr (OP==BinOp::Max) {
       return Kokkos::max(l,r);
-    } else if constexpr (OP==BinOp::Div) {
+    } else if constexpr (OP==BinOp::Min) {
       return Kokkos::min(l,r);
     }
   }
@@ -69,6 +69,15 @@ protected:
   ERight   m_right;
 };
 
+// Unary minus implemented as -1*expr
+template<typename ERight>
+BinaryExpression<int,ERight,BinOp::Mult>
+operator- (const Expression<ERight>& r)
+{
+  return BinaryExpression<int,ERight,BinOp::Mult>(-1,r.cast());
+}
+
+// Overload arithmetic operators
 template<typename ELeft, typename ERight>
 BinaryExpression<ELeft,ERight,BinOp::Plus>
 operator+ (const Expression<ELeft>& l, const Expression<ERight>& r)
@@ -95,6 +104,22 @@ BinaryExpression<ELeft,ERight,BinOp::Div>
 operator/ (const Expression<ELeft>& l, const Expression<ERight>& r)
 {
   return BinaryExpression<ELeft,ERight,BinOp::Div>(l.cast(),r.cast());
+}
+
+// Overload max/min functions
+
+template<typename ELeft, typename ERight>
+BinaryExpression<ELeft,ERight,BinOp::Div>
+max (const Expression<ELeft>& l, const Expression<ERight>& r)
+{
+  return BinaryExpression<ELeft,ERight,BinOp::Max>(l.cast(),r.cast());
+}
+
+template<typename ELeft, typename ERight>
+BinaryExpression<ELeft,ERight,BinOp::Div>
+min (const Expression<ELeft>& l, const Expression<ERight>& r)
+{
+  return BinaryExpression<ELeft,ERight,BinOp::Min>(l.cast(),r.cast());
 }
 
 } // namespace ekat
