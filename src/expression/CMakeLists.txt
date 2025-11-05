@@ -16,7 +16,6 @@ set (HEADERS
   ekat_expression_eval.hpp
   ekat_expression_helpers.hpp
   ekat_expression_math.hpp
-  ekat_expression_scalar.hpp
   ekat_expression_view.hpp
 )
 set_target_properties(ekat_expression PROPERTIES PUBLIC_HEADER "${HEADERS}")

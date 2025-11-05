@@ -17,6 +17,11 @@ enum class BinOp {
 template<typename ELeft, typename ERight, BinOp OP>
 class BinaryExpression : public Expression<BinaryExpression<ELeft,ERight,OP>>{
 public:
+  static constexpr bool scalar_l = std::is_arithmetic_v<ELeft>;
+  static constexpr bool scalar_r = std::is_arithmetic_v<ERight>;
+
+  static_assert (not (scalar_l and scalar_r),
+    "[BinaryExpression] Error! At least one of the two terms must be an Expression instance.\n");
 
   BinaryExpression (const ELeft& left, const ERight& right)
     : m_left(left)
@@ -30,23 +35,35 @@ public:
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
   auto eval(Args... args) const {
-    if constexpr (OP==BinOp::Plus) {
-      return m_left.eval(args...) + m_right.eval(args...);
-    } else if constexpr (OP==BinOp::Minus) {
-      return m_left.eval(args...) - m_right.eval(args...);
-    } else if constexpr (OP==BinOp::Mult) {
-      return m_left.eval(args...) * m_right.eval(args...);
-    } else if constexpr (OP==BinOp::Div) {
-      return m_left.eval(args...) / m_right.eval(args...);
-    } else if constexpr (OP==BinOp::Max) {
-      return Kokkos::max(m_left.eval(args...),m_right.eval(args...));
-    } else if constexpr (OP==BinOp::Div) {
-      return Kokkos::min(m_left.eval(args...),m_right.eval(args...));
+    if constexpr (scalar_l) {
+      return eval_impl(m_left,m_right.eval(args...));
+    } else if constexpr (scalar_r) {
+      return eval_impl(m_left.eval(args...),m_right);
+    } else {
+      return eval_impl(m_left.eval(args...),m_right.eval(args...));
     }
   }
 
   static auto ret_type () { return ELeft::ret_type() + ERight::ret_type(); }
 protected:
+
+  template<typename T1, typename T2>
+  KOKKOS_INLINE_FUNCTION
+  auto eval_impl(const T1 l, const T2 r) const {
+    if constexpr (OP==BinOp::Plus) {
+      return l+r;
+    } else if constexpr (OP==BinOp::Minus) {
+      return l-r;
+    } else if constexpr (OP==BinOp::Mult) {
+      return l*r;
+    } else if constexpr (OP==BinOp::Div) {
+      return l/r;
+    } else if constexpr (OP==BinOp::Max) {
+      return Kokkos::max(l,r);
+    } else if constexpr (OP==BinOp::Div) {
+      return Kokkos::min(l,r);
+    }
+  }
 
   ELeft    m_left;
   ERight   m_right;

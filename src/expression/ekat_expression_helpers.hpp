@@ -3,20 +3,19 @@
 
 #include "ekat_expression_base.hpp"
 #include "ekat_expression_view.hpp"
-#include "ekat_expression_scalar.hpp"
 #include "ekat_expression_compare.hpp"
 #include "ekat_expression_binary_op.hpp"
 #include "ekat_expression_math.hpp"
 
 namespace ekat {
 
-// Support the case where LHS and/or RHS of a C++ operator is a View or scalar
+// Support the case where LHS and/or RHS of a C++ operator is a View
 
 // -------------- Unary minus -------------//
 
 template<typename ViewT>
 std::enable_if_t<Kokkos::is_view_v<ViewT>,
-                 BinaryExpression<ScalarExpression<int>,ViewExpression<ViewT>,BinOp::Mult>>
+                 BinaryExpression<int,ViewExpression<ViewT>,BinOp::Mult>>
 operator-(const ViewT& v)
 {
   return -1*view_expression(v);
@@ -51,40 +50,22 @@ auto operator+ (const ViewT& left, const ViewT& right)
   return view_expression(left)+view_expression(right);
 }
 
-// scalar+expression
-template<typename ST, typename ERight>
-auto operator+ (const ST& left, const Expression<ERight>& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ScalarExpression<ST>,ERight,BinOp::Plus>>
-{
-  return scalar_expression(left)+right;
-}
-
-// expression+scalar
-template<typename ELeft,typename ST>
-auto operator+ (const Expression<ELeft>& left, const ST& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ELeft,ScalarExpression<ST>,BinOp::Plus>>
-{
-  return left+scalar_expression(right);
-}
-
 // scalar+view
 template<typename ST,typename ViewT>
 auto operator+ (const ST& left, const ViewT& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ScalarExpression<ST>,ViewExpression<ViewT>,BinOp::Plus>>
+                     BinaryExpression<ST,ViewExpression<ViewT>,BinOp::Plus>>
 {
-  return scalar_expression(left)+view_expression(right);
+  return left+view_expression(right);
 }
 
 // view+scalar
 template<typename ViewT,typename ST>
 auto operator+ (const ViewT& left, const ST& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ViewExpression<ViewT>,ScalarExpression<ST>,BinOp::Plus>>
+                     BinaryExpression<ViewExpression<ViewT>,ST,BinOp::Plus>>
 {
-  return view_expression(left)+scalar_expression(right);
+  return view_expression(left)+right;
 }
 
 // ---------------- Minus ----------------- //
@@ -116,40 +97,22 @@ auto operator- (const ViewT& left, const ViewT& right)
   return view_expression(left)-view_expression(right);
 }
 
-// scalar-expression
-template<typename ST, typename ERight>
-auto operator- (const ST& left, const Expression<ERight>& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ScalarExpression<ST>,ERight,BinOp::Minus>>
-{
-  return scalar_expression(left)-right;
-}
-
-// expression-scalar
-template<typename ELeft,typename ST>
-auto operator- (const Expression<ELeft>& left, const ST& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ELeft,ScalarExpression<ST>,BinOp::Minus>>
-{
-  return left-scalar_expression(right);
-}
-
 // scalar-view
 template<typename ST,typename ViewT>
 auto operator- (const ST& left, const ViewT& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ScalarExpression<ST>,ViewExpression<ViewT>,BinOp::Minus>>
+                     BinaryExpression<ST,ViewExpression<ViewT>,BinOp::Minus>>
 {
-  return scalar_expression(left)-view_expression(right);
+  return left-view_expression(right);
 }
 
 // view-scalar
 template<typename ViewT,typename ST>
 auto operator- (const ViewT& left, const ST& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ViewExpression<ViewT>,ScalarExpression<ST>,BinOp::Minus>>
+                     BinaryExpression<ViewExpression<ViewT>,ST,BinOp::Minus>>
 {
-  return view_expression(left)-scalar_expression(right);
+  return view_expression(left)-right;
 }
 
 // ---------------- Mult ----------------- //
@@ -181,40 +144,22 @@ auto operator* (const ViewT& left, const ViewT& right)
   return view_expression(left)*view_expression(right);
 }
 
-// scalar*expression
-template<typename ST, typename ERight>
-auto operator* (const ST& left, const Expression<ERight>& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ScalarExpression<ST>,ERight,BinOp::Mult>>
-{
-  return scalar_expression(left)*right;
-}
-
-// expression*scalar
-template<typename ELeft,typename ST>
-auto operator* (const Expression<ELeft>& left, const ST& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ELeft,ScalarExpression<ST>,BinOp::Mult>>
-{
-  return left*scalar_expression(right);
-}
-
 // scalar*view
 template<typename ST,typename ViewT>
 auto operator* (const ST& left, const ViewT& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ScalarExpression<ST>,ViewExpression<ViewT>,BinOp::Mult>>
+                     BinaryExpression<ST,ViewExpression<ViewT>,BinOp::Mult>>
 {
-  return scalar_expression(left)*view_expression(right);
+  return left*view_expression(right);
 }
 
 // view*scalar
 template<typename ViewT,typename ST>
 auto operator* (const ViewT& left, const ST& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ViewExpression<ViewT>,ScalarExpression<ST>,BinOp::Mult>>
+                     BinaryExpression<ViewExpression<ViewT>,ST,BinOp::Mult>>
 {
-  return view_expression(left)*scalar_expression(right);
+  return view_expression(left)*right;
 }
 
 // ---------------- Div ----------------- //
@@ -246,40 +191,22 @@ auto operator/ (const ViewT& left, const ViewT& right)
   return view_expression(left)/view_expression(right);
 }
 
-// scalar/expression
-template<typename ST, typename ERight>
-auto operator/ (const ST& left, const Expression<ERight>& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ScalarExpression<ST>,ERight,BinOp::Div>>
-{
-  return scalar_expression(left)/right;
-}
-
-// expression/scalar
-template<typename ELeft,typename ST>
-auto operator/ (const Expression<ELeft>& left, const ST& right)
- -> std::enable_if_t<std::is_arithmetic_v<ST>,
-                     BinaryExpression<ELeft,ScalarExpression<ST>,BinOp::Div>>
-{
-  return left/scalar_expression(right);
-}
-
 // scalar/view
 template<typename ST,typename ViewT>
 auto operator/ (const ST& left, const ViewT& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ScalarExpression<ST>,ViewExpression<ViewT>,BinOp::Div>>
+                     BinaryExpression<ST,ViewExpression<ViewT>,BinOp::Div>>
 {
-  return scalar_expression(left)/view_expression(right);
+  return left/view_expression(right);
 }
 
 // view/scalar
 template<typename ViewT,typename ST>
 auto operator/ (const ViewT& left, const ST& right)
  -> std::enable_if_t<std::is_arithmetic_v<ST> and Kokkos::is_view_v<ViewT>,
-                     BinaryExpression<ViewExpression<ViewT>,ScalarExpression<ST>,BinOp::Div>>
+                     BinaryExpression<ViewExpression<ViewT>,ST,BinOp::Div>>
 {
-  return view_expression(left)/scalar_expression(right);
+  return view_expression(left)/right;
 }
 
 // Pow from view
