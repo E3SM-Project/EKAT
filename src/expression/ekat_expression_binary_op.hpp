@@ -20,6 +20,9 @@ public:
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
 
+  using ret_left  = eval_t<ELeft>;
+  using ret_right = eval_t<ERight>;
+
   static_assert (expr_l or expr_r,
     "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
@@ -52,24 +55,27 @@ public:
     }
   }
 
-  static auto ret_type () { return ELeft::ret_type() + ERight::ret_type(); }
+  static auto ret_type () {
+    return std::common_type_t<ret_left,ret_right>(0);
+  }
 protected:
 
-  template<typename T1, typename T2>
   KOKKOS_INLINE_FUNCTION
-  auto eval_impl(const T1 l, const T2 r) const {
+  std::common_type_t<ret_left,ret_right>
+  eval_impl (const ret_left& l, const ret_right& r) const {
+    using ret_t = std::common_type_t<ret_left,ret_right>;
     if constexpr (OP==BinOp::Plus) {
-      return l+r;
+      return static_cast<const ret_t&>(l)+static_cast<const ret_t&>(r);
     } else if constexpr (OP==BinOp::Minus) {
-      return l-r;
+      return static_cast<const ret_t&>(l)-static_cast<const ret_t&>(r);
     } else if constexpr (OP==BinOp::Mult) {
-      return l*r;
+      return static_cast<const ret_t&>(l)*static_cast<const ret_t&>(r);
     } else if constexpr (OP==BinOp::Div) {
-      return l/r;
+      return static_cast<const ret_t&>(l)/static_cast<const ret_t&>(r);
     } else if constexpr (OP==BinOp::Max) {
-      return Kokkos::max(l,r);
+      return Kokkos::max(static_cast<const ret_t&>(l),static_cast<const ret_t&>(r));
     } else if constexpr (OP==BinOp::Min) {
-      return Kokkos::min(l,r);
+      return Kokkos::min(static_cast<const ret_t&>(l),static_cast<const ret_t&>(r));
     }
   }
 
