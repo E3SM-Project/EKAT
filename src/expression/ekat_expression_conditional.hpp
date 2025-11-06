@@ -14,6 +14,7 @@ public:
 
   using ret_left  = std::conditional_t<expr_l,decltype(ELeft::ret_type()),ELeft>;
   using ret_right = std::conditional_t<expr_r,decltype(ERight::ret_type()),ERight>;
+  using ret_t = std::common_type_t<ret_left,ret_right>;
 
   static_assert(expr_c or expr_l or expr_r,
     "[CmpExpression] At least one between ECond, ELeft, and ERight must be an Expression type.\n");
@@ -32,30 +33,42 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  std::common_type_t<ret_left,ret_right> eval (Args... args) const
+  ret_t eval (Args... args) const
   {
-    if constexpr (expr_c) {
-      if (m_cmp.eval(args...))
+    if constexpr (expr_r) {
+      ret_t r = m_right.eval(args...);
+      if constexpr (expr_c) {
+        auto w = where(m_cmp.eval(args...),r);
         if constexpr (expr_l)
-          return m_left.eval(args...);
+          w = m_left.eval(args...);
         else
-          return m_left;
-      else
-        if constexpr (expr_r)
-          return m_right.eval(args...);
+          w = m_left;
+        return w.value();
+      } else {
+        auto w = where(m_cmp,r);
+        if constexpr (expr_l)
+          w = m_left.eval(args...);
         else
-          return m_right;
+          w = m_left;
+        return w.value();
+      }
     } else {
-      if (m_cmp)
+      ret_t r = m_right;
+      if constexpr (expr_c) {
+        auto w = where(m_cmp.eval(args...),r);
         if constexpr (expr_l)
-          return m_left.eval(args...);
+          w = m_left.eval(args...);
         else
-          return m_left;
-      else
-        if constexpr (expr_r)
-          return m_right.eval(args...);
+          w = m_left;
+        return w.value();
+      } else {
+        auto w = where(m_cmp,r);
+        if constexpr (expr_l)
+          w = m_left.eval(args...);
         else
-          return m_right;
+          w = m_left;
+        return w.value();
+      }
     }
   }
 
@@ -71,6 +84,9 @@ protected:
   ELeft    m_left;
   ERight   m_right;
 };
+
+template<typename ECond, typename ELeft, typename ERight>
+struct is_expr<ConditionalExpression<ECond,ELeft,ERight>> : std::true_type {};
 
 template<typename ECond, typename ELeft, typename ERight>
 std::enable_if_t<is_expr_v<ECond> or is_expr_v<ELeft> or is_expr_v<ERight>,ConditionalExpression<ECond,ELeft,ERight>>

@@ -3,6 +3,7 @@
 
 #include "ekat_expression_base.hpp"
 
+#include "ekat_where.hpp"
 #include "ekat_std_utils.hpp"
 #include "ekat_kernel_assert.hpp"
 #include "ekat_assert.hpp"
@@ -21,7 +22,6 @@ enum class Comparison : int {
 template<typename ELeft, typename ERight>
 class CmpExpression : public Expression<CmpExpression<ELeft,ERight>> {
 public:
-  using ret_t = int;
 
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
@@ -52,7 +52,7 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  ret_t eval(Args... args) const {
+  auto eval(Args... args) const {
     if constexpr (not expr_l) {
       switch (m_cmp) {
         case Comparison::EQ: return m_left == m_right.eval(args...);
@@ -89,7 +89,25 @@ public:
     }
   }
 
-  static int ret_type () { return 0; }
+  static auto ret_type () {
+    if constexpr (expr_l) {
+      auto ret_l = ELeft::ret_type();
+      if constexpr (expr_r) {
+        auto ret_r = ERight::ret_type();
+        return ret_l==ret_r;
+      } else {
+        return ret_l==ERight(0);
+      }
+    } else {
+      ELeft ret_l(0);
+      if constexpr (expr_r) {
+        auto ret_r = ERight::ret_type();
+        return ret_l==ret_r;
+      } else {
+        return ret_l==ERight(0);
+      }
+    }
+  }
 protected:
 
   ELeft    m_left;
