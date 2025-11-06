@@ -36,23 +36,23 @@ public:
   KOKKOS_INLINE_FUNCTION
   auto eval(Args... args) const {
     if constexpr (scalar_base) {
-      return Kokkos::pow(m_base,m_exp.eval(args...));
+      return pow(m_base,m_exp.eval(args...));
     } else if constexpr (scalar_exp) {
-      return Kokkos::pow(m_base.eval(args...),m_exp);
+      return pow(m_base.eval(args...),m_exp);
     } else {
-      return Kokkos::pow(m_base.eval(args...),m_exp.eval(args...));
+      return pow(m_base.eval(args...),m_exp.eval(args...));
     }
   }
 
   static auto ret_type () {
     if constexpr (scalar_base) {
-      using type = decltype(Kokkos::pow(std::declval<EBase>(),EExp::ret_type()));
+      using type = decltype(pow(std::declval<EBase>(),EExp::ret_type()));
       return type(0);
     } else if constexpr (scalar_exp) {
-      using type = decltype(Kokkos::pow(EBase::ret_type(),std::declval<EExp>()));
+      using type = decltype(pow(EBase::ret_type(),std::declval<EExp>()));
       return type(0);
     } else {
-      using type = decltype(Kokkos::pow(EBase::ret_type(),EExp::ret_type()));
+      using type = decltype(pow(EBase::ret_type(),EExp::ret_type()));
       return type(0);
     }
   }
@@ -102,10 +102,10 @@ pow (const ST b, const Expression<EExp>& e)
     template<typename... Args>                                          \
     KOKKOS_INLINE_FUNCTION                                              \
     auto eval(Args... args) const {                                     \
-      return Kokkos::impl(m_arg.eval(args...));                         \
+      return impl(m_arg.eval(args...));                                 \
     }                                                                   \
     static auto ret_type () {                                           \
-      using type = decltype(Kokkos::impl(EArg::ret_type()));            \
+      using type = decltype(impl(EArg::ret_type()));                    \
       return type(0);                                                   \
     }                                                                   \
   protected:                                                            \
