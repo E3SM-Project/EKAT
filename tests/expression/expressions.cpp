@@ -91,6 +91,19 @@ TEST_CASE("expressions", "") {
   std::uniform_real_distribution<Real> pdf(0.1, 1);
 
   using kk_t = KokkosTypes<DefaultDevice>;
+  SECTION ("0d") {
+    kk_t::view_ND<Real,0> x("x");
+    kk_t::view_ND<Real,0> y("y");
+    kk_t::view_ND<Real,0> z("z");
+
+    genRandArray(x,engine,pdf);
+    genRandArray(y,engine,pdf);
+
+    bin_ops(x,y,z);
+    math_fcns(x,y,z);
+    conditionals(x,y,z);
+  }
+
   SECTION ("1d") {
     kk_t::view_1d<Real> x("x",1000);
     kk_t::view_1d<Real> y("y",1000);
@@ -98,7 +111,7 @@ TEST_CASE("expressions", "") {
 
     genRandArray(x,engine,pdf);
     genRandArray(y,engine,pdf);
-    
+
     bin_ops(x,y,z);
     math_fcns(x,y,z);
     conditionals(x,y,z);
@@ -111,7 +124,7 @@ TEST_CASE("expressions", "") {
 
     genRandArray(x,engine,pdf);
     genRandArray(y,engine,pdf);
-    
+
     bin_ops(x,y,z);
     math_fcns(x,y,z);
     conditionals(x,y,z);
@@ -124,7 +137,7 @@ TEST_CASE("expressions", "") {
 
     genRandArray(x,engine,pdf);
     genRandArray(y,engine,pdf);
-    
+
     bin_ops(x,y,z);
     math_fcns(x,y,z);
     conditionals(x,y,z);
