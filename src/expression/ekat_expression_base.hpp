@@ -35,6 +35,18 @@ struct is_expr<Expression<D>> : std::true_type {};
 template<typename T>
 constexpr bool is_expr_v = is_expr<T>::value;
 
+// Deduce the type obtained evaluating an input type T
+template<typename T, bool is_expr>
+struct EvaluationType {
+  using type = T;
+};
+template<typename T>
+struct EvaluationType<T,true> {
+  using type = decltype(T::ret_type());
+};
+template<typename T>
+using eval_t = typename EvaluationType<T,is_expr_v<T>>::type;
+
 } // namespace ekat
 
 #endif // EKAT_EXPRESSION_HPP
