@@ -24,8 +24,10 @@ void evaluate (const Expression<Derived>& e, const ViewT& result)
   using Policy1D = Kokkos::RangePolicy<exec_space>;
   using PolicyMD = Kokkos::MDRangePolicy<exec_space,Kokkos::Rank<N>>;
 
-  int beg[N] = {};
-  int end[N] = {};
+  // Ensure the beg/end array size is > 0. While compilers may allow size-0 arrays as an extension,
+  // it is not standard compliant. For N=0, we won't use these anyways...
+  int beg[N==0 ? 1 : N] = {};
+  int end[N==0 ? 1 : N] = {};
   for (int i=0; i<N; ++i) end[i] = result.extent(i);
 
   // Cast now, and capture the derived obj in the lambda, to make sure we get the
