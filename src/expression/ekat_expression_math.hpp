@@ -7,84 +7,92 @@
 
 namespace ekat {
 
-// ----------------- POW ------------------- //
+// ----------------- Binary math fcns ------------------- //
 
-template<typename EBase, typename EExp>
-class PowExpression {
-public:
-  static constexpr bool expr_b = is_expr_v<EBase>;
-  static constexpr bool expr_e = is_expr_v<EExp>;
+#define EKAT_BINARY_MATH_EXPRESSION(impl,name) \
+  template<typename EArg1, typename EArg2>                                              \
+  class name##Expression {                                                              \
+  public:                                                                               \
+    static constexpr bool expr_l = is_expr_v<EArg1>;                                    \
+    static constexpr bool expr_r = is_expr_v<EArg2>;                                    \
+                                                                                        \
+    /* Don't create an expression from builtin types, just call the math fcn! */        \
+    static_assert (expr_l or expr_r,                                                    \
+      "At least one between EArg1 and EArg2 must be an Expression type.\n");            \
+                                                                                        \
+    using eval_arg1_t = eval_return_t<EArg1>;                                           \
+    using eval_arg2_t = eval_return_t<EArg2>;                                           \
+    using eval_t =                                                                      \
+      decltype(Kokkos::impl(std::declval<eval_arg1_t>(),                                \
+                            std::declval<eval_arg2_t>()));                              \
+                                                                                        \
+    name##Expression (const EArg1& arg1, const EArg2& arg2)                             \
+      : m_arg1(arg1)                                                                    \
+      , m_arg2(arg2)                                                                    \
+    {}                                                                                  \
+                                                                                        \
+    static constexpr int rank () {                                                      \
+      if constexpr (expr_l) {                                                           \
+        if constexpr (expr_r) {                                                         \
+          static_assert(EArg1::rank()==EArg2::rank(),                                   \
+            "[BinaryExpression] Error! EArg1 and EArg2 have different rank.\n");        \
+        }                                                                               \
+        return EArg1::rank();                                                           \
+      } else {                                                                          \
+        return EArg2::rank();                                                           \
+      }                                                                                 \
+    }                                                                                   \
+    int extent (int i) const {                                                          \
+      if constexpr (expr_l)                                                             \
+        return m_arg1.extent(i);                                                        \
+      else                                                                              \
+        return m_arg2.extent(i);                                                        \
+    }                                                                                   \
+                                                                                        \
+    template<typename... Args>                                                          \
+    KOKKOS_INLINE_FUNCTION                                                              \
+    eval_t eval(Args... args) const {                                                   \
+      if constexpr (not expr_l)                                                         \
+        return eval_impl(m_arg1,m_arg2.eval(args...));                                  \
+      else if constexpr (not expr_r)                                                    \
+        return eval_impl(m_arg1.eval(args...),m_arg2);                                  \
+      else                                                                              \
+        return eval_impl(m_arg1.eval(args...),m_arg2.eval(args...));                    \
+    }                                                                                   \
+  protected:                                                                            \
+    KOKKOS_INLINE_FUNCTION                                                              \
+    eval_t eval_impl(const eval_arg1_t& arg1, const eval_arg2_t& arg2) const {          \
+      return Kokkos::impl(static_cast<const eval_t&>(arg1),                             \
+                          static_cast<const eval_t&>(arg2));                            \
+    }                                                                                   \
+                                                                                        \
+    EArg1   m_arg1;                                                                     \
+    EArg2   m_arg2;                                                                     \
+  };                                                                                    \
+                                                                                        \
+  /* Free function to create a ##nameExpression */                                      \
+  template<typename EArg1, typename EArg2>                                              \
+  std::enable_if_t<is_expr_v<EArg1> or is_expr_v<EArg2>,name##Expression<EArg1,EArg2>>  \
+  impl (const EArg1& arg1, const EArg2& arg2)                                           \
+  {                                                                                     \
+    return name##Expression<EArg1,EArg2>(arg1,arg2);                                    \
+  }                                                                                     \
+                                                                                        \
+  /* Specialize meta util */                                                            \
+  template<typename EArg1, typename EArg2>                                              \
+  struct is_expr<name##Expression<EArg1,EArg2>> : std::true_type {};                    \
+  template<typename EArg1, typename EArg2>                                              \
+  struct eval_return<name##Expression<EArg1,EArg2>> {                                   \
+    using type = typename name##Expression<EArg1,EArg2>::eval_t;                        \
+  };
 
-  using eval_base_t = eval_return_t<EBase>;
-  using eval_exp_t  = eval_return_t<EExp>;
-  using eval_t      = decltype(Kokkos::pow(std::declval<eval_base_t>(),std::declval<eval_exp_t>()));
+EKAT_BINARY_MATH_EXPRESSION(pow,Pow);
 
-  // Don't create an expression from builtin types, just call pow!
-  static_assert(expr_b or expr_e,
-      "[PowExpression] Error! One between EBase and EExp must be an Expression type.\n");
-
-  PowExpression (const EBase& base, const EExp& exp)
-    : m_base(base)
-    , m_exp(exp)
-  {
-    // Nothing to do here
-  }
-
-  static constexpr int rank() {
-    if constexpr (not expr_b) {
-      return EExp::rank();
-    } else if constexpr (not expr_e) {
-      return EBase::rank();
-    } else {
-      static_assert(EBase::rank()==EExp::rank(),
-        "[PowExpression] Error! EBase and EExp are Expression types of different rank.\n");
-      return EBase::rank();
-    }
-  }
-  int extent (int i) const {
-    if constexpr (expr_b)
-      return m_base.extent(i);
-    else
-      return m_exp.extent(i);
-  }
-
-  template<typename... Args>
-  KOKKOS_INLINE_FUNCTION
-  auto eval(Args... args) const {
-    if constexpr (not expr_b) {
-      return Kokkos::pow(m_base,m_exp.eval(args...));
-    } else if constexpr (not expr_e) {
-      return Kokkos::pow(m_base.eval(args...),m_exp);
-    } else {
-      return Kokkos::pow(m_base.eval(args...),m_exp.eval(args...));
-    }
-  }
-
-protected:
-
-  EBase  m_base;
-  EExp   m_exp;
-};
-
-// Specialize meta utils
-template<typename EBase, typename EExp>
-struct is_expr<PowExpression<EBase,EExp>> : std::true_type {};
-template<typename EBase, typename EExp>
-struct eval_return<PowExpression<EBase,EExp>> {
-  using type = typename PowExpression<EBase,EExp>::eval_t;
-};
-
-// Free fcn to construct a PowExpression
-template<typename EBase, typename EExp>
-std::enable_if_t<is_expr_v<EBase> or is_expr_v<EExp>,PowExpression<EBase,EExp>>
-pow (const EBase& b, const EExp& e)
-{
-  return PowExpression<EBase,EExp>(b,e);
-}
+#undef EKAT_BINARY_MATH_EXPRESSION
 
 // ----------------- Unary math fcns ------------------- //
 
-#define UNARY_MATH_EXPRESSION(impl,name) \
+#define EKAT_UNARY_MATH_EXPRESSION(impl,name) \
   template<typename EArg>                                               \
   class name##Expression {                                              \
   public:                                                               \
@@ -123,12 +131,12 @@ pow (const EBase& b, const EExp& e)
     using type = typename name##Expression<EArg>::eval_t;               \
   };
 
-UNARY_MATH_EXPRESSION (sqrt,Sqrt)
-UNARY_MATH_EXPRESSION (exp,Exp)
-UNARY_MATH_EXPRESSION (log,Log)
-UNARY_MATH_EXPRESSION (sin,Sin)
-UNARY_MATH_EXPRESSION (cos,Cos)
-#undef UNARY_MATH_EXPRESSION
+EKAT_UNARY_MATH_EXPRESSION (sqrt,Sqrt)
+EKAT_UNARY_MATH_EXPRESSION (exp,Exp)
+EKAT_UNARY_MATH_EXPRESSION (log,Log)
+EKAT_UNARY_MATH_EXPRESSION (sin,Sin)
+EKAT_UNARY_MATH_EXPRESSION (cos,Cos)
+#undef EKAT_UNARY_MATH_EXPRESSION
 
 } // namespace ekat
 
