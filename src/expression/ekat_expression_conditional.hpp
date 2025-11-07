@@ -91,6 +91,9 @@ protected:
 };
 
 template<typename ECond, typename ELeft, typename ERight>
+struct is_expr<ConditionalExpression<ECond,ELeft,ERight>> : std::true_type {};
+
+template<typename ECond, typename ELeft, typename ERight>
 std::enable_if_t<is_expr_v<ECond> or is_expr_v<ELeft> or is_expr_v<ERight>,ConditionalExpression<ECond,ELeft,ERight>>
 conditional(const ECond& c, const ELeft& l, const ERight& r)
 {
