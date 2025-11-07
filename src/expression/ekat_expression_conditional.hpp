@@ -1,20 +1,26 @@
 #ifndef EKAT_EXPRESSION_CONDITIONAL_HPP
 #define EKAT_EXPRESSION_CONDITIONAL_HPP
 
-#include "ekat_expression_base.hpp"
+#include "ekat_expression_meta.hpp"
+
+#include <Kokkos_Core.hpp>
 
 namespace ekat {
 
 template<typename ECond, typename ELeft, typename ERight>
-class ConditionalExpression : public Expression<ConditionalExpression<ECond,ELeft,ERight>> {
+class ConditionalExpression {
 public:
   static constexpr bool expr_c = is_expr_v<ECond>;
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
 
-  using ret_left  = std::conditional_t<expr_l,decltype(ELeft::ret_type()),ELeft>;
-  using ret_right = std::conditional_t<expr_r,decltype(ERight::ret_type()),ERight>;
+  using eval_cond_t  = eval_return_t<ECond>;
+  using eval_left_t  = eval_return_t<ELeft>;
+  using eval_right_t = eval_return_t<ERight>;
 
+  using eval_t = std::common_type_t<eval_left_t,eval_right_t>;
+
+  // Don't create an expression from builtin types, just use a ternary op!
   static_assert(expr_c or expr_l or expr_r,
     "[CmpExpression] At least one between ECond, ELeft, and ERight must be an Expression type.\n");
 
@@ -58,7 +64,7 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  std::common_type_t<ret_left,ret_right> eval (Args... args) const
+  eval_t eval (Args... args) const
   {
     if constexpr (expr_c) {
       if (m_cmp.eval(args...))
@@ -85,12 +91,6 @@ public:
     }
   }
 
-  static auto ret_type () {
-    auto ret_l = ELeft::ret_type();
-    auto ret_r = ERight::ret_type();
-    using type = std::common_type_t<decltype(ret_l),decltype(ret_r)>;
-    return type(0);
-  }
 protected:
 
   ECond    m_cmp;
@@ -98,9 +98,15 @@ protected:
   ERight   m_right;
 };
 
+// Specialize meta utils
 template<typename ECond, typename ELeft, typename ERight>
 struct is_expr<ConditionalExpression<ECond,ELeft,ERight>> : std::true_type {};
+template<typename ECond, typename ELeft, typename ERight>
+struct eval_return<ConditionalExpression<ECond,ELeft,ERight>> {
+  using type = typename ConditionalExpression<ECond,ELeft,ERight>::eval_t;
+};
 
+// Free fcn to construct a ConditionalExpression
 template<typename ECond, typename ELeft, typename ERight>
 std::enable_if_t<is_expr_v<ECond> or is_expr_v<ELeft> or is_expr_v<ERight>,ConditionalExpression<ECond,ELeft,ERight>>
 conditional(const ECond& c, const ELeft& l, const ERight& r)

@@ -1,17 +1,25 @@
 #ifndef EKAT_EXPRESSION_MATH_HPP
 #define EKAT_EXPRESSION_MATH_HPP
 
-#include "ekat_expression_base.hpp"
+#include "ekat_expression_meta.hpp"
+
+#include <Kokkos_Core.hpp>
 
 namespace ekat {
 
 // ----------------- POW ------------------- //
 
 template<typename EBase, typename EExp>
-class PowExpression : public Expression<PowExpression<EBase,EExp>> {
+class PowExpression {
 public:
   static constexpr bool expr_b = is_expr_v<EBase>;
   static constexpr bool expr_e = is_expr_v<EExp>;
+
+  using eval_base_t = eval_return_t<EBase>;
+  using eval_exp_t  = eval_return_t<EExp>;
+  using eval_t      = decltype(Kokkos::pow(std::declval<eval_base_t>(),std::declval<eval_exp_t>()));
+
+  // Don't create an expression from builtin types, just call pow!
   static_assert(expr_b or expr_e,
       "[PowExpression] Error! One between EBase and EExp must be an Expression type.\n");
 
@@ -52,55 +60,37 @@ public:
     }
   }
 
-  static auto ret_type () {
-    if constexpr (not expr_b) {
-      using type = decltype(Kokkos::pow(std::declval<EBase>(),EExp::ret_type()));
-      return type(0);
-    } else if constexpr (not expr_e) {
-      using type = decltype(Kokkos::pow(EBase::ret_type(),std::declval<EExp>()));
-      return type(0);
-    } else {
-      using type = decltype(Kokkos::pow(EBase::ret_type(),EExp::ret_type()));
-      return type(0);
-    }
-  }
 protected:
 
   EBase  m_base;
   EExp   m_exp;
 };
 
+// Specialize meta utils
 template<typename EBase, typename EExp>
 struct is_expr<PowExpression<EBase,EExp>> : std::true_type {};
-
 template<typename EBase, typename EExp>
-PowExpression<EBase,EExp>
-pow (const Expression<EBase>& b, const Expression<EExp>& e)
-{
-  return PowExpression<EBase,EExp>(b.cast(),e.cast());
-}
+struct eval_return<PowExpression<EBase,EExp>> {
+  using type = typename PowExpression<EBase,EExp>::eval_t;
+};
 
-// Pow from scalars
-template<typename EBase,typename ST>
-std::enable_if_t<std::is_arithmetic_v<ST>,PowExpression<EBase,ST>>
-pow (const Expression<EBase>& b, const ST e)
+// Free fcn to construct a PowExpression
+template<typename EBase, typename EExp>
+std::enable_if_t<is_expr_v<EBase> or is_expr_v<EExp>,PowExpression<EBase,EExp>>
+pow (const EBase& b, const EExp& e)
 {
-  return PowExpression<EBase,ST>(b.cast(),e);
-}
-
-template<typename ST,typename EExp>
-std::enable_if_t<std::is_arithmetic_v<ST>,PowExpression<ST,EExp>>
-pow (const ST b, const Expression<EExp>& e)
-{
-  return PowExpression<ST,EExp>(b,e.cast());
+  return PowExpression<EBase,EExp>(b,e);
 }
 
 // ----------------- Unary math fcns ------------------- //
 
 #define UNARY_MATH_EXPRESSION(impl,name) \
   template<typename EArg>                                               \
-  class name##Expression : public Expression<name##Expression<EArg>> {  \
+  class name##Expression {                                              \
   public:                                                               \
+    using arg_eval_t = eval_return_t<EArg>;                             \
+    using eval_t = decltype(Kokkos::impl(std::declval<arg_eval_t>()));  \
+                                                                        \
     name##Expression (const EArg& arg)                                  \
       : m_arg(arg)                                                      \
     {}                                                                  \
@@ -110,26 +100,28 @@ pow (const ST b, const Expression<EExp>& e)
                                                                         \
     template<typename... Args>                                          \
     KOKKOS_INLINE_FUNCTION                                              \
-    auto eval(Args... args) const {                                     \
+    eval_t eval(Args... args) const {                                   \
       return Kokkos::impl(m_arg.eval(args...));                         \
-    }                                                                   \
-    static auto ret_type () {                                           \
-      using type = decltype(Kokkos::impl(EArg::ret_type()));            \
-      return type(0);                                                   \
     }                                                                   \
   protected:                                                            \
     EArg    m_arg;                                                      \
   };                                                                    \
                                                                         \
+  /* Free function to create a ##nameExpression */                      \
   template<typename EArg>                                               \
-  name##Expression<EArg>                                                \
-  impl (const Expression<EArg>& arg)                                    \
+  std::enable_if_t<is_expr_v<EArg>,name##Expression<EArg>>              \
+  impl (const EArg& arg)                                                \
   {                                                                     \
-    return name##Expression<EArg>(arg.cast());                          \
+    return name##Expression<EArg>(arg);                                 \
   }                                                                     \
                                                                         \
+  /* Specialize meta util */                                            \
   template<typename EArg>                                               \
-  struct is_expr<name##Expression<EArg>> : std::true_type {};
+  struct is_expr<name##Expression<EArg>> : std::true_type {};           \
+  template<typename EArg>                                               \
+  struct eval_return<name##Expression<EArg>> {                          \
+    using type = typename name##Expression<EArg>::eval_t;               \
+  };
 
 UNARY_MATH_EXPRESSION (sqrt,Sqrt)
 UNARY_MATH_EXPRESSION (exp,Exp)

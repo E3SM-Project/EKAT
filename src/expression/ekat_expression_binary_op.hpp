@@ -1,7 +1,9 @@
 #ifndef EKAT_EXPRESSION_BINARY_OP_HPP
 #define EKAT_EXPRESSION_BINARY_OP_HPP
 
-#include "ekat_expression_base.hpp"
+#include "ekat_expression_meta.hpp"
+
+#include <Kokkos_Core.hpp>
 
 namespace ekat {
 
@@ -15,14 +17,17 @@ enum class BinOp {
 };
 
 template<typename ELeft, typename ERight, BinOp OP>
-class BinaryExpression : public Expression<BinaryExpression<ELeft,ERight,OP>>{
+class BinaryExpression {
 public:
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
 
-  using ret_left  = eval_t<ELeft>;
-  using ret_right = eval_t<ERight>;
+  using eval_left_t  = eval_return_t<ELeft>;
+  using eval_right_t = eval_return_t<ERight>;
 
+  using eval_t = std::common_type_t<eval_left_t,eval_right_t>;
+
+  // Don't create an expression from builtin types, just combine them!
   static_assert (expr_l or expr_r,
     "[BinaryExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
@@ -53,7 +58,7 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  auto eval(Args... args) const {
+  eval_t eval(Args... args) const {
     if constexpr (not expr_l) {
       return eval_impl(m_left,m_right.eval(args...));
     } else if constexpr (not expr_r) {
@@ -63,27 +68,22 @@ public:
     }
   }
 
-  static auto ret_type () {
-    return std::common_type_t<ret_left,ret_right>(0);
-  }
 protected:
 
   KOKKOS_INLINE_FUNCTION
-  std::common_type_t<ret_left,ret_right>
-  eval_impl (const ret_left& l, const ret_right& r) const {
-    using ret_t = std::common_type_t<ret_left,ret_right>;
+  eval_t eval_impl (const eval_left_t& l, const eval_right_t& r) const {
     if constexpr (OP==BinOp::Plus) {
-      return static_cast<const ret_t&>(l)+static_cast<const ret_t&>(r);
+      return l+r;
     } else if constexpr (OP==BinOp::Minus) {
-      return static_cast<const ret_t&>(l)-static_cast<const ret_t&>(r);
+      return l-r;
     } else if constexpr (OP==BinOp::Mult) {
-      return static_cast<const ret_t&>(l)*static_cast<const ret_t&>(r);
+      return l*r;
     } else if constexpr (OP==BinOp::Div) {
-      return static_cast<const ret_t&>(l)/static_cast<const ret_t&>(r);
+      return l/r;
     } else if constexpr (OP==BinOp::Max) {
-      return Kokkos::max(static_cast<const ret_t&>(l),static_cast<const ret_t&>(r));
+      return Kokkos::max(static_cast<const eval_t&>(l),static_cast<const eval_t&>(r));
     } else if constexpr (OP==BinOp::Min) {
-      return Kokkos::min(static_cast<const ret_t&>(l),static_cast<const ret_t&>(r));
+      return Kokkos::min(static_cast<const eval_t&>(l),static_cast<const eval_t&>(r));
     }
   }
 
@@ -91,15 +91,20 @@ protected:
   ERight   m_right;
 };
 
+// Specialize meta utils
 template<typename ELeft, typename ERight, BinOp OP>
 struct is_expr<BinaryExpression<ELeft,ERight,OP>> : std::true_type {};
+template<typename ELeft, typename ERight, BinOp OP>
+struct eval_return<BinaryExpression<ELeft,ERight,OP>> {
+  using type = typename BinaryExpression<ELeft,ERight,OP>::eval_t;
+};
 
 // Unary minus implemented as -1*expr
 template<typename ERight>
-BinaryExpression<int,ERight,BinOp::Mult>
-operator- (const Expression<ERight>& r)
+std::enable_if_t<is_expr_v<ERight>,BinaryExpression<int,ERight,BinOp::Mult>>
+operator- (const ERight& r)
 {
-  return BinaryExpression<int,ERight,BinOp::Mult>(-1,r.cast());
+  return BinaryExpression<int,ERight,BinOp::Mult>(-1,r);
 }
 
 // Overload arithmetic operators

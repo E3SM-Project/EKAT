@@ -9,7 +9,7 @@ target_include_directories(ekat_expression INTERFACE
 
 # Set the PUBLIC_HEADER property
 set (HEADERS
-  ekat_expression_base.hpp
+  ekat_expression_meta.hpp
   ekat_expression_binary_op.hpp
   ekat_expression_compare.hpp
   ekat_expression_conditional.hpp

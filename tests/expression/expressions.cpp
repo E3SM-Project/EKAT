@@ -6,7 +6,7 @@
 #include "ekat_expression_conditional.hpp"
 #include "ekat_expression_math.hpp"
 #include "ekat_expression_eval.hpp"
-#include "ekat_expression_base.hpp"
+#include "ekat_expression_meta.hpp"
 
 #include "ekat_view_utils.hpp"
 #include "ekat_kokkos_types.hpp"
