@@ -14,6 +14,11 @@ struct eval_return { using type = T; };
 template<typename T>
 using eval_return_t = typename eval_return<T>::type;
 
+template<typename T>
+struct is_assignable_expr : std::false_type {};
+template<typename T>
+constexpr bool is_assignable_expr_v = is_assignable_expr<T>::value;
+
 } // namespace ekat
 
 #endif // EKAT_EXPRESSION_META_HPP

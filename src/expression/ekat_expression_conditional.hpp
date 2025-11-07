@@ -20,6 +20,10 @@ public:
 
   using eval_t = std::common_type_t<eval_left_t,eval_right_t>;
 
+  static constexpr bool is_assignable = is_assignable_expr_v<ELeft> and
+                                        is_assignable_expr_v<ERight> and
+                                        std::is_same_v<ret_left,ret_right>;
+
   // Don't create an expression from builtin types, just use a ternary op!
   static_assert(expr_c or expr_l or expr_r,
     "[CmpExpression] At least one between ECond, ELeft, and ERight must be an Expression type.\n");
@@ -102,9 +106,19 @@ protected:
 template<typename ECond, typename ELeft, typename ERight>
 struct is_expr<ConditionalExpression<ECond,ELeft,ERight>> : std::true_type {};
 template<typename ECond, typename ELeft, typename ERight>
+
 struct eval_return<ConditionalExpression<ECond,ELeft,ERight>> {
   using type = typename ConditionalExpression<ECond,ELeft,ERight>::eval_t;
 };
+
+struct is_assignable_expr<ConditionalExpression<ECond,ELeft,ERight>> : std::bool_constant<ConditionalExpression<ECond,ELeft,ERight>::is_assignable> {};
+
+template<typename ECond, typename ELeft, typename ERight>
+std::enable_if_t<is_expr_v<ECond> or is_expr_v<ELeft> or is_expr_v<ERight>,ConditionalExpression<ECond,ELeft,ERight>>
+conditional(const ECond& c, const ELeft& l, const ERight& r)
+{
+  return ConditionalExpression<ECond,ELeft,ERight>(c,l,r);
+}
 
 } // namespace ekat
 
