@@ -42,14 +42,6 @@ struct eval_return<ViewExpression<ViewT>> {
   using type = typename ViewExpression<ViewT>::value_t;
 };
 
-// Free fcn to construct a ViewExpression
-template<typename ViewT>
-std::enable_if_t<Kokkos::is_view_v<ViewT>,ViewExpression<ViewT>>
-view_expression(const ViewT& v)
-{
-  return ViewExpression<ViewT>(v);
-}
-
 } // namespace ekat
 
 #endif // EKAT_VIEW_EXPRESSION_HPP

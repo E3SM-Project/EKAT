@@ -113,49 +113,6 @@ struct eval_return<CmpExpression<ELeft,ERight>> {
   using type = typename CmpExpression<ELeft,ERight>::eval_t;
 };
 
-// Overload cmp operators for Expression types
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
-operator== (const ELeft& l, const ERight& r)
-{
-  return CmpExpression<ELeft,ERight>(l,r,Comparison::EQ);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
-operator!= (const ELeft& l, const ERight& r)
-{
-  return CmpExpression<ELeft,ERight>(l,r,Comparison::NE);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
-operator> (const ELeft& l, const ERight& r)
-{
-  return CmpExpression<ELeft,ERight>(l,r,Comparison::GT);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
-operator>= (const ELeft& l, const ERight& r)
-{
-  return CmpExpression<ELeft,ERight>(l,r,Comparison::GE);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
-operator< (const ELeft& l, const ERight& r)
-{
-  return CmpExpression<ELeft,ERight>(l,r,Comparison::LT);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,CmpExpression<ELeft,ERight>>
-operator<= (const ELeft& l, const ERight& r)
-{
-  return CmpExpression<ELeft,ERight>(l,r,Comparison::LE);
-}
-
 } // namespace ekat
 
 #endif // EKAT_EXPRESSION_COMPARE_HPP

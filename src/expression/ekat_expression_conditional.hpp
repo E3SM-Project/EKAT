@@ -106,14 +106,6 @@ struct eval_return<ConditionalExpression<ECond,ELeft,ERight>> {
   using type = typename ConditionalExpression<ECond,ELeft,ERight>::eval_t;
 };
 
-// Free fcn to construct a ConditionalExpression
-template<typename ECond, typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ECond> or is_expr_v<ELeft> or is_expr_v<ERight>,ConditionalExpression<ECond,ELeft,ERight>>
-conditional(const ECond& c, const ELeft& l, const ERight& r)
-{
-  return ConditionalExpression<ECond,ELeft,ERight>(c,l,r);
-}
-
 } // namespace ekat
 
 #endif // EKAT_EXPRESSION_CONDITIONAL_HPP

@@ -94,43 +94,6 @@ struct eval_return<BinaryExpression<ELeft,ERight,OP>> {
   using type = typename BinaryExpression<ELeft,ERight,OP>::eval_t;
 };
 
-// Unary minus implemented as -1*expr
-template<typename ERight>
-std::enable_if_t<is_expr_v<ERight>,BinaryExpression<int,ERight,BinOp::Mult>>
-operator- (const ERight& r)
-{
-  return BinaryExpression<int,ERight,BinOp::Mult>(-1,r);
-}
-
-// Overload arithmetic operators
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Plus>>
-operator+ (const ELeft& l, const ERight& r)
-{
-  return BinaryExpression<ELeft,ERight,BinOp::Plus>(l,r);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Minus>>
-operator- (const ELeft& l, const ERight& r)
-{
-  return BinaryExpression<ELeft,ERight,BinOp::Minus>(l,r);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Mult>>
-operator* (const ELeft& l, const ERight& r)
-{
-  return BinaryExpression<ELeft,ERight,BinOp::Mult>(l,r);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Div>>
-operator/ (const ELeft& l, const ERight& r)
-{
-  return BinaryExpression<ELeft,ERight,BinOp::Div>(l,r);
-}
-
 } // namespace ekat
 
 #endif // EKAT_EXPRESSION_BINARY_OP_HPP
