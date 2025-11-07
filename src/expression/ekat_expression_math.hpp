@@ -99,6 +99,7 @@ EKAT_BINARY_MATH_EXPRESSION(min,Min);
     using arg_eval_t = eval_return_t<EArg>;                             \
     using eval_t = decltype(Kokkos::impl(std::declval<arg_eval_t>()));  \
                                                                         \
+    static constexpr bool is_assignable = false;                        \
     name##Expression (const EArg& arg)                                  \
       : m_arg(arg)                                                      \
     {}                                                                  \
