@@ -24,7 +24,7 @@ public:
   using ret_right = eval_t<ERight>;
 
   static_assert (expr_l or expr_r,
-    "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
+    "[BinaryExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
   BinaryExpression (const ELeft& left, const ERight& right)
     : m_left(left)

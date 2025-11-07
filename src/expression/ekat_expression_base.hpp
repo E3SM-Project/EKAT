@@ -15,9 +15,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   auto eval(Args... args) const {
     static_assert(std::conjunction_v<std::is_integral<Args>...>,
-                  "[Expression] All arguments must be integral types!");
+                  "[Expression::eval] Error! All arguments must be integral types!");
     static_assert(sizeof...(Args) <= 7,
-                  "[Expression] The number of arguments must be between 0 and 7.");
+                  "[Expression::eval] Error! The number of arguments must be between 0 and 7.");
     return cast().eval(args...);
   }
 

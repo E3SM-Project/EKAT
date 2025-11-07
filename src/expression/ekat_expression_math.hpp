@@ -10,10 +10,10 @@ namespace ekat {
 template<typename EBase, typename EExp>
 class PowExpression : public Expression<PowExpression<EBase,EExp>> {
 public:
-  static constexpr bool scalar_base = std::is_arithmetic_v<EBase>;
-  static constexpr bool scalar_exp  = std::is_arithmetic_v<EExp>;
-  static_assert(not scalar_base or not scalar_exp,
-      "[PowExpression] One between EBase and EExp must be non-arithmetic.\n");
+  static constexpr bool expr_b = is_expr_v<EBase>;
+  static constexpr bool expr_e = is_expr_v<EExp>;
+  static_assert(expr_b or expr_e,
+      "[PowExpression] Error! One between EBase and EExp must be an Expression type.\n");
 
   PowExpression (const EBase& base, const EExp& exp)
     : m_base(base)
@@ -23,9 +23,9 @@ public:
   }
 
   int num_indices () const {
-    if constexpr (scalar_base) {
+    if constexpr (not expr_b) {
       return m_exp.num_indices();
-    } else if constexpr (scalar_exp) {
+    } else if constexpr (not expr_e) {
       return m_base.num_indices();
     } else {
       return std::max(m_base.num_indices(),m_exp.num_indices());
@@ -35,9 +35,9 @@ public:
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
   auto eval(Args... args) const {
-    if constexpr (scalar_base) {
+    if constexpr (not expr_b) {
       return Kokkos::pow(m_base,m_exp.eval(args...));
-    } else if constexpr (scalar_exp) {
+    } else if constexpr (not expr_e) {
       return Kokkos::pow(m_base.eval(args...),m_exp);
     } else {
       return Kokkos::pow(m_base.eval(args...),m_exp.eval(args...));
@@ -45,10 +45,10 @@ public:
   }
 
   static auto ret_type () {
-    if constexpr (scalar_base) {
+    if constexpr (not expr_b) {
       using type = decltype(Kokkos::pow(std::declval<EBase>(),EExp::ret_type()));
       return type(0);
-    } else if constexpr (scalar_exp) {
+    } else if constexpr (not expr_e) {
       using type = decltype(Kokkos::pow(EBase::ret_type(),std::declval<EExp>()));
       return type(0);
     } else {
