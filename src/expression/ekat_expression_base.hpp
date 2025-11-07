@@ -1,6 +1,8 @@
 #ifndef EKAT_EXPRESSION_HPP
 #define EKAT_EXPRESSION_HPP
 
+#include <ekat_assert.hpp>
+
 #include <Kokkos_Core.hpp>
 
 namespace ekat {
@@ -10,6 +12,12 @@ class Expression {
 public:
 
   static constexpr int rank () { return Derived::rank(); }
+
+  int extent (int i) const {
+    EKAT_REQUIRE_MSG (i>=0 and i<rank(),
+      "[Expression::extent] Error! Dimension index out of bounds.\n");
+    return cast().extent(i);
+  }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION

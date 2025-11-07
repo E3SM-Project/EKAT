@@ -44,6 +44,12 @@ public:
       return ERight::rank();
     }
   }
+  int extent (int i) const {
+    if constexpr (expr_l)
+      return m_left.extent(i);
+    else
+      return m_right.extent(i);
+  }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION

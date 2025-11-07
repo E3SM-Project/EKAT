@@ -33,6 +33,12 @@ public:
       return EBase::rank();
     }
   }
+  int extent (int i) const {
+    if constexpr (expr_b)
+      return m_base.extent(i);
+    else
+      return m_exp.extent(i);
+  }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
@@ -100,6 +106,7 @@ pow (const ST b, const Expression<EExp>& e)
     {}                                                                  \
                                                                         \
     static constexpr int rank() { return EArg::rank(); }                \
+    int extent (int i) const { return m_arg.extent(i); }                \
                                                                         \
     template<typename... Args>                                          \
     KOKKOS_INLINE_FUNCTION                                              \

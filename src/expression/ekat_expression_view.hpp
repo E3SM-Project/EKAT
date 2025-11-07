@@ -18,6 +18,7 @@ public:
   }
 
   static constexpr int rank () { return ViewT::rank; }
+  int extent (int i) const { return m_view.extent_int(i); }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION

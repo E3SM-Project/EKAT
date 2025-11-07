@@ -28,7 +28,11 @@ void evaluate (const Expression<Derived>& e, const ViewT& result)
   // it is not standard compliant. For N=0, we won't use these anyways...
   int beg[N==0 ? 1 : N] = {};
   int end[N==0 ? 1 : N] = {};
-  for (int i=0; i<N; ++i) end[i] = result.extent(i);
+  for (int i=0; i<N; ++i) {
+    EKAT_REQUIRE_MSG (e.extent(i)==result.extent_int(i),
+      "[evaluate] Error! Input expression and output view have incompatible extents.\n");
+    end[i] = e.extent(i);
+  }
 
   // Cast now, and capture the derived obj in the lambda, to make sure we get the
   // correct default copy constructor behavior
