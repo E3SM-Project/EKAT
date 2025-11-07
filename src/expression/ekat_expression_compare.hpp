@@ -40,13 +40,15 @@ public:
       "[CmpExpression] Error! Unrecognized/unsupported Comparison value.\n");
   }
 
-  int num_indices () const {
-    if constexpr (not expr_l) {
-      return m_right.num_indices();
-    } else if constexpr (not expr_r) {
-      return m_left.num_indices();
+  static constexpr int rank() {
+    if constexpr (expr_l) {
+      if constexpr (expr_r) {
+        static_assert(ELeft::rank()==ERight::rank(),
+          "[CmpExpression] Error! ELeft and ERight are Expression types of different rank.\n");
+      }
+      return ELeft::rank();
     } else {
-      return std::max(m_left.num_indices(),m_right.num_indices());
+      return ERight::rank();
     }
   }
 

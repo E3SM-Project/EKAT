@@ -17,7 +17,7 @@ public:
     // Nothing to do here
   }
 
-  int num_indices () const { return ViewT::rank; }
+  static constexpr int rank () { return ViewT::rank; }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION

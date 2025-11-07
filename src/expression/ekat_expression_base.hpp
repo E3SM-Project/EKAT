@@ -9,7 +9,7 @@ template<typename Derived>
 class Expression {
 public:
 
-  int num_indices () const { return cast().num_indices(); }
+  static constexpr int rank () { return Derived::rank(); }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION

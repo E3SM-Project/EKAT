@@ -11,10 +11,10 @@ void evaluate (const Expression<Derived>& e, const ViewT& result)
 {
   constexpr int N = ViewT::rank;
 
-  EKAT_REQUIRE_MSG (N==e.num_indices(),
+  EKAT_REQUIRE_MSG (N==Derived::rank(),
     "[evaluate] Error! Input expression and result view have different ranks.\n"
     " - view rank: " + std::to_string(N) + "\n"
-    " - expression rank: " + std::to_string(e.num_indices()) + "\n");
+    " - expression rank: " + std::to_string(Derived::rank()) + "\n");
 
   // Kokkos views don't go higher than rank 8, but just in case...
   static_assert(N<=8, "[evaluate] Unsupported expression rank.\n");

@@ -22,13 +22,15 @@ public:
     // Nothing to do here
   }
 
-  int num_indices () const {
+  static constexpr int rank() {
     if constexpr (not expr_b) {
-      return m_exp.num_indices();
+      return EExp::rank();
     } else if constexpr (not expr_e) {
-      return m_base.num_indices();
+      return EBase::rank();
     } else {
-      return std::max(m_base.num_indices(),m_exp.num_indices());
+      static_assert(EBase::rank()==EExp::rank(),
+        "[PowExpression] Error! EBase and EExp are Expression types of different rank.\n");
+      return EBase::rank();
     }
   }
 
@@ -97,7 +99,7 @@ pow (const ST b, const Expression<EExp>& e)
       : m_arg(arg)                                                      \
     {}                                                                  \
                                                                         \
-    int num_indices () const { return m_arg.num_indices(); }            \
+    static constexpr int rank() { return EArg::rank(); }                \
                                                                         \
     template<typename... Args>                                          \
     KOKKOS_INLINE_FUNCTION                                              \

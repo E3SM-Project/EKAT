@@ -26,8 +26,26 @@ public:
     // Nothing to do here
   }
 
-  int num_indices () const {
-    return std::max(m_cmp.num_indices(),std::max(m_left.num_indices(),m_right.num_indices()));
+  static constexpr int rank() {
+    if constexpr (expr_c) {
+      if constexpr (expr_l) {
+        static_assert(ECond::rank()==ELeft::rank(),
+          "[ConditionalExpression] Error! ECond and ELeft are Expression types of different rank.\n");
+      }
+      if constexpr (expr_r) {
+        static_assert(ECond::rank()==ERight::rank(),
+          "[ConditionalExpression] Error! ECond and ERight are Expression types of different rank.\n");
+      }
+      return ECond::rank();
+    } else if constexpr (expr_l) {
+      if constexpr (expr_r) {
+        static_assert(ELeft::rank()==ERight::rank(),
+          "[ConditionalExpression] Error! ELeft and ERight are Expression types of different rank.\n");
+      }
+      return ELeft::rank();
+    } else {
+      return ERight::rank();
+    }
   }
 
   template<typename... Args>
