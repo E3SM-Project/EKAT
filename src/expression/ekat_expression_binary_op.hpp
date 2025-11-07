@@ -11,9 +11,7 @@ enum class BinOp {
   Plus,
   Minus,
   Mult,
-  Div,
-  Max,
-  Min
+  Div
 };
 
 template<typename ELeft, typename ERight, BinOp OP>
@@ -80,9 +78,6 @@ protected:
       return l*r;
     } else if constexpr (OP==BinOp::Div) {
       return l/r;
-    } else if constexpr (OP==BinOp::Max) {
-      return Kokkos::max(static_cast<const eval_t&>(l),static_cast<const eval_t&>(r));
-    } else if constexpr (OP==BinOp::Min) {
       return Kokkos::min(static_cast<const eval_t&>(l),static_cast<const eval_t&>(r));
     }
   }
@@ -134,21 +129,6 @@ std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ER
 operator/ (const ELeft& l, const ERight& r)
 {
   return BinaryExpression<ELeft,ERight,BinOp::Div>(l,r);
-}
-
-// Overload max/min functions
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Max>>
-max (const ELeft& l, const ERight& r)
-{
-  return BinaryExpression<ELeft,ERight,BinOp::Max>(l,r);
-}
-
-template<typename ELeft, typename ERight>
-std::enable_if_t<is_expr_v<ELeft> or is_expr_v<ERight>,BinaryExpression<ELeft,ERight,BinOp::Min>>
-min (const ELeft& l, const ERight& r)
-{
-  return BinaryExpression<ELeft,ERight,BinOp::Min>(l,r);
 }
 
 } // namespace ekat
