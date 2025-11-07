@@ -15,6 +15,10 @@ public:
   using ret_left  = std::conditional_t<expr_l,decltype(ELeft::ret_type()),ELeft>;
   using ret_right = std::conditional_t<expr_r,decltype(ERight::ret_type()),ERight>;
 
+  static constexpr bool is_assignable = is_assignable_expr_v<ELeft> and
+                                        is_assignable_expr_v<ERight> and
+                                        std::is_same_v<ret_left,ret_right>;
+
   static_assert(expr_c or expr_l or expr_r,
     "[CmpExpression] At least one between ECond, ELeft, and ERight must be an Expression type.\n");
 
@@ -85,6 +89,23 @@ public:
     }
   }
 
+  template<typename... Args>
+  KOKKOS_INLINE_FUNCTION
+  ret_left& access (Args... args) const
+  {
+    if constexpr (expr_c) {
+      if (m_cmp.eval(args...))
+        return m_left.access(args...);
+      else
+        return m_right.access(args...);
+    } else {
+      if (m_cmp)
+        return m_left.access(args...);
+      else
+        return m_right.access(args...);
+    }
+  }
+
   static auto ret_type () {
     auto ret_l = ELeft::ret_type();
     auto ret_r = ERight::ret_type();
@@ -100,6 +121,9 @@ protected:
 
 template<typename ECond, typename ELeft, typename ERight>
 struct is_expr<ConditionalExpression<ECond,ELeft,ERight>> : std::true_type {};
+
+template<typename ECond, typename ELeft, typename ERight>
+struct is_assignable_expr<ConditionalExpression<ECond,ELeft,ERight>> : std::bool_constant<ConditionalExpression<ECond,ELeft,ERight>::is_assignable> {};
 
 template<typename ECond, typename ELeft, typename ERight>
 std::enable_if_t<is_expr_v<ECond> or is_expr_v<ELeft> or is_expr_v<ERight>,ConditionalExpression<ECond,ELeft,ERight>>

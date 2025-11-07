@@ -25,6 +25,7 @@ public:
 
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
+  static constexpr bool is_assignable = false;
 
   static_assert(expr_l or expr_r,
     "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");

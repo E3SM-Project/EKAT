@@ -19,6 +19,7 @@ class BinaryExpression : public Expression<BinaryExpression<ELeft,ERight,OP>>{
 public:
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
+  static constexpr bool is_assignable = false;
 
   using ret_left  = eval_t<ELeft>;
   using ret_right = eval_t<ERight>;

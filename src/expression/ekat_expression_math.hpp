@@ -12,6 +12,7 @@ class PowExpression : public Expression<PowExpression<EBase,EExp>> {
 public:
   static constexpr bool expr_b = is_expr_v<EBase>;
   static constexpr bool expr_e = is_expr_v<EExp>;
+  static constexpr bool is_assignable = false;
   static_assert(expr_b or expr_e,
       "[PowExpression] Error! One between EBase and EExp must be an Expression type.\n");
 
@@ -101,6 +102,7 @@ pow (const ST b, const Expression<EExp>& e)
   template<typename EArg>                                               \
   class name##Expression : public Expression<name##Expression<EArg>> {  \
   public:                                                               \
+    static constexpr bool is_assignable = false;                        \
     name##Expression (const EArg& arg)                                  \
       : m_arg(arg)                                                      \
     {}                                                                  \

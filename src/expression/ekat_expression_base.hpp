@@ -55,6 +55,11 @@ struct EvaluationType<T,true> {
 template<typename T>
 using eval_t = typename EvaluationType<T,is_expr_v<T>>::type;
 
+template<typename T>
+struct is_assignable_expr : std::false_type {};
+template<typename T>
+constexpr bool is_assignable_expr_v = is_assignable_expr<T>::value;
+
 } // namespace ekat
 
 #endif // EKAT_EXPRESSION_HPP
