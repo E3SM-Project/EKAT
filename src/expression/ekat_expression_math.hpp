@@ -22,9 +22,7 @@ namespace ekat {
                                                                                         \
     using eval_arg1_t = eval_return_t<EArg1>;                                           \
     using eval_arg2_t = eval_return_t<EArg2>;                                           \
-    using eval_t =                                                                      \
-      decltype(Kokkos::impl(std::declval<eval_arg1_t>(),                                \
-                            std::declval<eval_arg2_t>()));                              \
+    using eval_t = std::common_type_t<eval_arg1_t,eval_arg2_t>;                         \
                                                                                         \
     name##Expression (const EArg1& arg1, const EArg2& arg2)                             \
       : m_arg1(arg1)                                                                    \
