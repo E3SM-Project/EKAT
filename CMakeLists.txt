@@ -90,6 +90,7 @@ endif()
 ###  KOKKOS CONFIG OPTIONS ###
 ##############################
 option (Kokkos_ENABLE_IMPL_VIEW_LEGACY "EKAT is only compatible with Kokkok' legacy view impl at the moment." ON)
+set(CMAKE_CXX_STANDARD 20)
 
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
