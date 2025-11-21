@@ -86,6 +86,11 @@ if (EKAT_ENABLE_MPI)
   set(EKAT_MPI_THREAD_FLAG "" CACHE STRING "The mpirun flag for designating the number of threads")
 endif()
 
+##############################
+###  KOKKOS CONFIG OPTIONS ###
+##############################
+option (Kokkos_ENABLE_IMPL_VIEW_LEGACY "EKAT is only compatible with Kokkok' legacy view impl at the moment." ON)
+
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
 ############################################
