@@ -26,7 +26,7 @@ TEST_CASE("parameter_list", "") {
       "   - input type: d'.",
       ""
     };
-    auto it = lines.end()-6;
+    auto it = lines.begin();
     for (const auto& s : expected) {
       REQUIRE (s==*it);
       ++it;
