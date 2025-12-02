@@ -50,11 +50,11 @@ void throw_exception(const std::string& msg)
 #define IMPL_THROW(condition, msg, exception_type)  \
   do {                                                                \
     if ( ! (condition) ) {                                            \
-      std::cerr << "\nFAILED CONDITION: '" << #condition  << "'\n\n"; \
-      std::cerr << "BACKTRACE:\n";                                    \
-      std::cerr << EKAT_BACKTRACE << "\n";                            \
       std::stringstream ss;                                           \
       ss << msg;                                                      \
+      ss << "\nFAILED CONDITION: '" << #condition  << "'\n\n";        \
+      ss << "BACKTRACE:\n";                                           \
+      ss << EKAT_BACKTRACE << "\n";                                   \
       ekat::throw_exception<exception_type>(ss.str());                \
     }                                                                 \
   } while(0)
