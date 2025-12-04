@@ -42,7 +42,7 @@ namespace ekat {
  * used. Note that all sub-blocks have a name.
  */
 
-template <typename T, typename DeviceT=DefaultDevice>
+template <typename T, typename DeviceT=DefaultDevice, typename Layout = Kokkos::LayoutRight>
 class WorkspaceManager
 {
  public:
@@ -58,14 +58,14 @@ class WorkspaceManager
   using ExeSpace   = typename KokkosTypes<Device>::ExeSpace;
 
   template <typename S>
-  using view_1d = typename KokkosTypes<Device>::template view_1d<S>;
+  using view_1d = Kokkos::View<S*, Layout, Device, Kokkos::MemoryTraits<0>>;
   template <typename S>
-  using view_2d = typename KokkosTypes<Device>::template view_2d<S>;
+  using view_2d = Kokkos::View<S**, Layout, Device, Kokkos::MemoryTraits<0>>;
   template <typename S>
-  using view_3d = typename KokkosTypes<Device>::template view_3d<S>;
+  using view_3d = Kokkos::View<S***, Layout, Device, Kokkos::MemoryTraits<0>>;
 
   template <typename S, int N>
-  using view_1d_ptr_array = typename KokkosTypes<Device>::template view_1d_ptr_array<S, N>;
+  using view_1d_ptr_array = Kokkos::Array<Unmanaged<view_1d<S> >*, N>;
 
   //
   // -------- Contants --------

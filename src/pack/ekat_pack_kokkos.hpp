@@ -166,6 +166,34 @@ adj_diff(const Kokkos::View<ScalarT*,Props...>& v, int index)
 // Turn a View of Packs into a View of scalars.
 // Example: const auto b = scalarize(a);
 
+// Helper for getting correct layout
+namespace {
+  template<class ViewT, class... Extents>
+  requires (std::is_same_v<typename ViewT::traits::array_layout,Kokkos::LayoutStride>)
+  KOKKOS_INLINE_FUNCTION static Kokkos::LayoutStride get_layout(const Extents... exts) {
+    constexpr int rank = sizeof...(exts);
+    assert(rank == ViewT::rank());
+
+    // EKAT ASSUMING LAYOUTSTRIDE IS LAYOUTRIGHT
+    int dims[] = {exts...};
+    int order[rank];
+    for (std::size_t r=0; r<rank; ++r) {
+        order[r] = rank - 1 - r; // Fill with descending values
+    }
+
+    return Kokkos::LayoutStride::order_dimensions(rank, order, dims);
+  }
+
+  template<class ViewT, class... Extents>
+  requires (std::is_same_v<typename ViewT::traits::array_layout, Kokkos::LayoutRight>)
+  KOKKOS_INLINE_FUNCTION static Kokkos::LayoutRight get_layout(const Extents... exts) {
+    constexpr int rank = sizeof...(exts);
+    assert(rank == ViewT::rank());
+
+    return Kokkos::LayoutRight(exts...);
+  }
+}
+
 // Default impl returns the input view, regardless of rank
 template<typename ScalarT>
 struct ScalarizeHelper
@@ -187,8 +215,9 @@ struct ScalarizeHelper<Pack<T,N>>
   static Unmanaged<Kokkos::View<T****, Parms...> >
   scalarize (const Kokkos::View<PackT****, Parms...>& vp) {
     return Unmanaged<Kokkos::View<T****, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       vp.extent_int(2), N * vp.extent_int(3));
+      reinterpret_cast<T*>(vp.data()),
+      get_layout<Kokkos::View<T****, Parms...>>(vp.extent_int(0), vp.extent_int(1),
+                                                vp.extent_int(2), N * vp.extent_int(3)));
   }
 
   template <typename ...Parms>
@@ -196,8 +225,9 @@ struct ScalarizeHelper<Pack<T,N>>
   static Unmanaged<Kokkos::View<T***, Parms...> >
   scalarize (const Kokkos::View<PackT***, Parms...>& vp) {
     return Unmanaged<Kokkos::View<T***, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       N * vp.extent_int(2));
+      reinterpret_cast<T*>(vp.data()),
+      get_layout<Kokkos::View<T***, Parms...>>(vp.extent_int(0), vp.extent_int(1),
+                                               N * vp.extent_int(2)));
   }
 
   template <typename ...Parms>
@@ -205,7 +235,8 @@ struct ScalarizeHelper<Pack<T,N>>
   static Unmanaged<Kokkos::View<T**, Parms...> >
   scalarize (const Kokkos::View<PackT**, Parms...>& vp) {
     return Unmanaged<Kokkos::View<T**, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), N * vp.extent_int(1));
+      reinterpret_cast<T*>(vp.data()),
+      get_layout<Kokkos::View<T**, Parms...>>(vp.extent_int(0), N * vp.extent_int(1)));
   }
 
   template <typename ...Parms>
@@ -213,7 +244,8 @@ struct ScalarizeHelper<Pack<T,N>>
   static Unmanaged<Kokkos::View<T*, Parms...> >
   scalarize (const Kokkos::View<PackT*, Parms...>& vp) {
     return Unmanaged<Kokkos::View<T*, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), N * vp.extent_int(0));
+      reinterpret_cast<T*>(vp.data()),
+      get_layout<Kokkos::View<T*, Parms...>>(N * vp.extent_int(0)));
   }
 };
 
@@ -228,9 +260,10 @@ struct ScalarizeHelper<const Pack<ScalarT,N>>
   KOKKOS_FORCEINLINE_FUNCTION
   static Unmanaged<Kokkos::View<T****, Parms...> >
   scalarize (const Kokkos::View<PackT****, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T****, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       vp.extent_int(2), N * vp.extent_int(3));
+   return Unmanaged<Kokkos::View<T****, Parms...> >(
+        reinterpret_cast<T*>(vp.data()),
+        get_layout<Kokkos::View<T****, Parms...>>(vp.extent_int(0), vp.extent_int(1),
+                                                  vp.extent_int(2), N * vp.extent_int(3)));
   }
 
   template <typename ...Parms>
@@ -238,8 +271,9 @@ struct ScalarizeHelper<const Pack<ScalarT,N>>
   static Unmanaged<Kokkos::View<T***, Parms...> >
   scalarize (const Kokkos::View<PackT***, Parms...>& vp) {
     return Unmanaged<Kokkos::View<T***, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       N * vp.extent_int(2));
+        reinterpret_cast<T*>(vp.data()),
+        get_layout<Kokkos::View<T***, Parms...>>(vp.extent_int(0), vp.extent_int(1),
+                                                 N * vp.extent_int(2)));
   }
 
   template <typename ...Parms>
@@ -247,7 +281,8 @@ struct ScalarizeHelper<const Pack<ScalarT,N>>
   static Unmanaged<Kokkos::View<T**, Parms...> >
   scalarize (const Kokkos::View<PackT**, Parms...>& vp) {
     return Unmanaged<Kokkos::View<T**, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), N * vp.extent_int(1));
+        reinterpret_cast<T*>(vp.data()),
+        get_layout<Kokkos::View<T**, Parms...>>(vp.extent_int(0), N * vp.extent_int(1)));
   }
 
   template <typename ...Parms>
@@ -255,7 +290,8 @@ struct ScalarizeHelper<const Pack<ScalarT,N>>
   static Unmanaged<Kokkos::View<T*, Parms...> >
   scalarize (const Kokkos::View<PackT*, Parms...>& vp) {
     return Unmanaged<Kokkos::View<T*, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), N * vp.extent_int(0));
+        reinterpret_cast<T*>(vp.data()),
+        get_layout<Kokkos::View<T*, Parms...>>(N * vp.extent_int(0)));
   }
 };
 
@@ -327,7 +363,7 @@ auto repack (const Kokkos::View<DT,Props...>& src)
     layout.dimension[i] = src.extent(i);
   }
   layout.dimension[rank-1] = ekat::PackInfo<N>::num_packs(src.extent(rank-1));
-  
+
   return dst_view_t(packed_data,layout);
 }
 

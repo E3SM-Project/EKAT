@@ -20,22 +20,22 @@ namespace ekat {
  * mixing interface and implementation. Clients should NOT ever include this file.
  */
 
-template <typename T, typename D>
-WorkspaceManager<T, D>::WorkspaceManager(int size, int max_used, TeamPolicy policy,
+template <typename T, typename D, typename L>
+WorkspaceManager<T, D, L>::WorkspaceManager(int size, int max_used, TeamPolicy policy,
                                          const double& overprov_factor)
 {
   setup(size, max_used, policy, overprov_factor);
 }
 
-template <typename T, typename D>
-WorkspaceManager<T, D>::WorkspaceManager(T* data, int size, int max_used,
+template <typename T, typename D, typename L>
+WorkspaceManager<T, D, L>::WorkspaceManager(T* data, int size, int max_used,
                                          TeamPolicy policy, const double& overprov_factor)
 {
   setup(data, size, max_used, policy, overprov_factor);
 }
 
-template <typename T, typename D>
-void WorkspaceManager<T, D>::compute_internals(const int size, const int max_used)
+template <typename T, typename D, typename L>
+void WorkspaceManager<T, D, L>::compute_internals(const int size, const int max_used)
 {
   m_max_ws_idx = m_tu.get_num_ws_slots();
   m_reserve    = (sizeof(T) > 2*sizeof(int)) ?
@@ -55,8 +55,8 @@ void WorkspaceManager<T, D>::compute_internals(const int size, const int max_use
   m_next_slot  = decltype(m_next_slot)  ("Workspace.m_next_slot",  m_max_ws_idx*m_pad_factor);
 }
 
-template <typename T, typename D>
-int WorkspaceManager<T, D>::get_total_bytes_needed(int size, int max_used, TeamPolicy policy,
+template <typename T, typename D, typename L>
+int WorkspaceManager<T, D, L>::get_total_bytes_needed(int size, int max_used, TeamPolicy policy,
                                                    const double& overprov_factor)
 {
   TeamUtils<T,ExeSpace> tu(policy, overprov_factor);
@@ -66,8 +66,8 @@ int WorkspaceManager<T, D>::get_total_bytes_needed(int size, int max_used, TeamP
   return tu.get_num_ws_slots()*total_slots*max_used*sizeof(T);
 }
 
-template <typename T, typename D>
-void WorkspaceManager<T, D>::report() const
+template <typename T, typename D, typename L>
+void WorkspaceManager<T, D, L>::report() const
 {
   EKAT_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
 
@@ -127,8 +127,8 @@ void WorkspaceManager<T, D>::report() const
 #endif
 }
 
-template <typename T, typename D>
-void WorkspaceManager<T, D>::setup (int size, int max_used, TeamPolicy policy,
+template <typename T, typename D, typename L>
+void WorkspaceManager<T, D, L>::setup (int size, int max_used, TeamPolicy policy,
                                     const double& overprov_factor)
 {
   m_tu = TeamUtils<T,ExeSpace>(policy, overprov_factor);
@@ -141,8 +141,8 @@ void WorkspaceManager<T, D>::setup (int size, int max_used, TeamPolicy policy,
   is_initialized = true;
 }
 
-template <typename T, typename D>
-void WorkspaceManager<T, D>::setup (T* data, int size, int max_used, TeamPolicy policy,
+template <typename T, typename D, typename L>
+void WorkspaceManager<T, D, L>::setup (T* data, int size, int max_used, TeamPolicy policy,
                                     const double& overprov_factor)
 {
   m_tu = TeamUtils<T,ExeSpace>(policy, overprov_factor);
@@ -154,8 +154,8 @@ void WorkspaceManager<T, D>::setup (T* data, int size, int max_used, TeamPolicy 
   is_initialized = true;
 }
 
-template <typename T, typename D>
-void WorkspaceManager<T, D>::reset_internals()
+template <typename T, typename D, typename L>
+void WorkspaceManager<T, D, L>::reset_internals()
 {
 #ifndef NDEBUG
   Kokkos::deep_copy(m_active, false);
@@ -171,26 +171,26 @@ void WorkspaceManager<T, D>::reset_internals()
     *this);
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-typename WorkspaceManager<T, D>::Workspace
-WorkspaceManager<T, D>::get_workspace(const MemberType& team, const char* ws_name) const
+typename WorkspaceManager<T, D, L>::Workspace
+WorkspaceManager<T, D, L>::get_workspace(const MemberType& team, const char* ws_name) const
 {
   EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
   return Workspace(*this, m_tu.get_workspace_idx(team), team, ws_name);
 }
 
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::release_workspace(const MemberType& team, const Workspace& ws) const
+void WorkspaceManager<T, D, L>::release_workspace(const MemberType& team, const Workspace& ws) const
 {
   EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
   m_tu.release_workspace_idx(team, ws.m_ws_idx);
 }
 
-template <typename T, typename D>
-void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int max_used)
+template <typename T, typename D, typename L>
+void WorkspaceManager<T, D, L>::init_all_metadata(const int max_ws_idx, const int max_used)
 {
   auto policy = TeamPolicyFactory<ExeSpace>::get_default_team_policy(max_ws_idx, max_used);
 
@@ -200,9 +200,9 @@ void WorkspaceManager<T, D>::init_all_metadata(const int max_ws_idx, const int m
     *this);
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::operator() (const MemberType& team) const
+void WorkspaceManager<T, D, L>::operator() (const MemberType& team) const
 {
   Kokkos::parallel_for(
     Kokkos::TeamVectorRange(team, m_max_used), [&] (int i) {
@@ -210,10 +210,10 @@ void WorkspaceManager<T, D>::operator() (const MemberType& team) const
   });
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_FORCEINLINE_FUNCTION
-int WorkspaceManager<T, D>::set_next_and_get_index(const Unmanaged<view_1d<S> >& space, int next) const
+int WorkspaceManager<T, D, L>::set_next_and_get_index(const Unmanaged<view_1d<S> >& space, int next) const
 {
   EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
 
@@ -222,11 +222,11 @@ int WorkspaceManager<T, D>::set_next_and_get_index(const Unmanaged<view_1d<S> >&
   return metadata[0];
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_FORCEINLINE_FUNCTION
-Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
-WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) const
+Unmanaged<typename WorkspaceManager<T, D, L>::template view_1d<S> >
+WorkspaceManager<T, D, L>::get_space_in_slot(const int team_idx, const int slot) const
 {
   EKAT_KERNEL_ASSERT_MSG (is_initialized, "Error! WorkspaceManager not yet inited.\n");
 
@@ -243,35 +243,35 @@ WorkspaceManager<T, D>::get_space_in_slot(const int team_idx, const int slot) co
   return space;
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::init_slot_metadata(const int ws_idx, const int slot) const
+void WorkspaceManager<T, D, L>::init_slot_metadata(const int ws_idx, const int slot) const
 {
   int* const metadata = reinterpret_cast<int*>(&m_data(ws_idx, slot*m_total));
   metadata[0] = slot;     // idx
   metadata[1] = slot + 1; // next
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-WorkspaceManager<T, D>::Workspace::Workspace(
+WorkspaceManager<T, D, L>::Workspace::Workspace(
   const WorkspaceManager& parent, int ws_idx, const MemberType& team, const char* ws_name) :
   m_parent(parent), m_team(team), m_ws_idx(ws_idx),
   m_next_slot(parent.m_next_slot(m_pad_factor*ws_idx)),
   m_ws_name (ws_name)
 {}
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-WorkspaceManager<T, D>::Workspace::~Workspace()
+WorkspaceManager<T, D, L>::Workspace::~Workspace()
 {
   m_parent.release_workspace(m_team, *this);
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> > WorkspaceManager<T, D>::Workspace::take(
+Unmanaged<typename WorkspaceManager<T, D, L>::template view_1d<S> > WorkspaceManager<T, D, L>::Workspace::take(
   const char* name) const
 {
 #ifndef NDEBUG
@@ -296,10 +296,10 @@ Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> > WorkspaceManage
   return space;
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <size_t N, typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::take_many_contiguous_unsafe(
+void WorkspaceManager<T, D, L>::Workspace::take_many_contiguous_unsafe(
   const Kokkos::Array<const char*, N>& names,
   const view_1d_ptr_array<S, N>& ptrs) const
 {
@@ -333,11 +333,11 @@ void WorkspaceManager<T, D>::Workspace::take_many_contiguous_unsafe(
   m_team.team_barrier();
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-Unmanaged<typename WorkspaceManager<T, D>::template view_1d<S> >
-WorkspaceManager<T, D>::Workspace::take_macro_block(
+Unmanaged<typename WorkspaceManager<T, D, L>::template view_1d<S> >
+WorkspaceManager<T, D, L>::Workspace::take_macro_block(
   const char* name, const int n_sub_blocks) const
 {
 #ifndef NDEBUG
@@ -369,10 +369,10 @@ WorkspaceManager<T, D>::Workspace::take_macro_block(
   return space;
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <size_t N, typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::take_many(
+void WorkspaceManager<T, D, L>::Workspace::take_many(
   const Kokkos::Array<const char*, N>& names,
   const view_1d_ptr_array<S, N>& ptrs) const
 {
@@ -403,10 +403,10 @@ void WorkspaceManager<T, D>::Workspace::take_many(
   m_team.team_barrier();
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename... Vs>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::take_many_refs(
+void WorkspaceManager<T, D, L>::Workspace::take_many_refs(
   const Kokkos::Array<const char*, sizeof...(Vs)>& names,
   Vs&... views) const
 {
@@ -427,10 +427,10 @@ void WorkspaceManager<T, D>::Workspace::take_many_refs(
   take_many(names,ptrs);
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <size_t N, typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::take_many_and_reset(
+void WorkspaceManager<T, D, L>::Workspace::take_many_and_reset(
   const Kokkos::Array<const char*, N>& names,
   const view_1d_ptr_array<S, N>& ptrs) const
 {
@@ -470,9 +470,9 @@ void WorkspaceManager<T, D>::Workspace::take_many_and_reset(
   m_team.team_barrier();
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::reset() const
+void WorkspaceManager<T, D, L>::Workspace::reset() const
 {
   m_team.team_barrier();
 #ifndef NDEBUG
@@ -499,8 +499,8 @@ void WorkspaceManager<T, D>::Workspace::reset() const
 }
 
 // Print the linked list. Obviously not a device function.
-template <typename T, typename D>
-void WorkspaceManager<T, D>::Workspace::print() const
+template <typename T, typename D, typename L>
+void WorkspaceManager<T, D, L>::Workspace::print() const
 {
   m_team.team_barrier();
   Kokkos::single(
@@ -521,18 +521,18 @@ void WorkspaceManager<T, D>::Workspace::print() const
 }
 
 #ifndef NDEBUG
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-const char* WorkspaceManager<T, D>::Workspace::get_name_impl(const Unmanaged<view_1d<S> >& space) const
+const char* WorkspaceManager<T, D, L>::Workspace::get_name_impl(const Unmanaged<view_1d<S> >& space) const
 {
   const int slot = m_parent.get_index<S>(space);
   return &(m_parent.m_curr_names(m_ws_idx, slot, 0));
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::change_num_used(int change_by) const
+void WorkspaceManager<T, D, L>::Workspace::change_num_used(int change_by) const
 {
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
     int curr_used = m_parent.m_num_used(m_ws_idx) += change_by;
@@ -544,10 +544,10 @@ void WorkspaceManager<T, D>::Workspace::change_num_used(int change_by) const
   });
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::change_indv_meta(
+void WorkspaceManager<T, D, L>::Workspace::change_indv_meta(
   const Unmanaged<view_1d<S> >& space, const char* name, bool release) const
 {
   Kokkos::single(Kokkos::PerTeam(m_team), [&] () {
@@ -570,9 +570,9 @@ void WorkspaceManager<T, D>::Workspace::change_indv_meta(
   });
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 KOKKOS_INLINE_FUNCTION
-int WorkspaceManager<T, D>::Workspace::get_name_idx(const char* name, bool add) const
+int WorkspaceManager<T, D, L>::Workspace::get_name_idx(const char* name, bool add) const
 {
   int name_idx = -1;
   for (int n = 0; n < m_max_names; ++n) {
@@ -592,10 +592,10 @@ int WorkspaceManager<T, D>::Workspace::get_name_idx(const char* name, bool add) 
 }
 #endif
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::release_impl(const Unmanaged<view_1d<S> >& space) const
+void WorkspaceManager<T, D, L>::Workspace::release_impl(const Unmanaged<view_1d<S> >& space) const
 {
 #ifndef NDEBUG
   change_num_used(-1);
@@ -610,10 +610,10 @@ void WorkspaceManager<T, D>::Workspace::release_impl(const Unmanaged<view_1d<S> 
   m_team.team_barrier();
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <size_t N, typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::release_many_contiguous(
+void WorkspaceManager<T, D, L>::Workspace::release_many_contiguous(
   const view_1d_ptr_array<S, N>& ptrs) const
 {
 #ifndef NDEBUG
@@ -638,10 +638,10 @@ void WorkspaceManager<T, D>::Workspace::release_many_contiguous(
   m_team.team_barrier();
 }
 
-template <typename T, typename D>
+template <typename T, typename D, typename L>
 template <typename S>
 KOKKOS_INLINE_FUNCTION
-void WorkspaceManager<T, D>::Workspace::release_macro_block(
+void WorkspaceManager<T, D, L>::Workspace::release_macro_block(
   const Unmanaged<view_1d<S> >& space, const int n_sub_blocks) const
 {
 #ifndef NDEBUG

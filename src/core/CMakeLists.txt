@@ -60,7 +60,8 @@ add_library(ekat_core
 )
 
 # EKAT requires c++20 features
-target_compile_features(ekat_core PUBLIC cxx_std_20)
+#target_compile_features(ekat_core PUBLIC cxx_std_20)
+set (CMAKE_CXX_STANDARD 20 CACHE STRING "")
 
 # Add the correct ekat::Comm impl file, depending on whether MPI is ON/OFF.
 if (EKAT_ENABLE_MPI)

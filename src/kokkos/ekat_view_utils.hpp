@@ -8,6 +8,32 @@
 
 namespace ekat {
 
+// Helper for getting correct layout
+template<class ViewT, class... Extents>
+requires (std::is_same_v<typename ViewT::traits::array_layout,Kokkos::LayoutStride>)
+KOKKOS_INLINE_FUNCTION static Kokkos::LayoutStride get_layout(const Extents... exts) {
+  constexpr int rank = sizeof...(exts);
+  assert(rank == ViewT::rank());
+
+  // EKAT is assuming layout stride is equiv to layout right
+  int dims[] = {exts...};
+  int order[rank];
+  for (std::size_t r=0; r<rank; ++r) {
+      order[r] = rank - 1 - r; // Fill with descending values
+  }
+
+  return Kokkos::LayoutStride::order_dimensions(rank, order, dims);
+}
+
+template<class ViewT, class... Extents>
+requires (std::is_same_v<typename ViewT::traits::array_layout, Kokkos::LayoutRight>)
+KOKKOS_INLINE_FUNCTION static Kokkos::LayoutRight get_layout(const Extents... exts) {
+  constexpr int rank = sizeof...(exts);
+  assert(rank == ViewT::rank());
+
+  return Kokkos::LayoutRight(exts...);
+}
+
 template<typename DataTypeOut, typename DataTypeIn, typename... Props>
 typename std::enable_if<GetRanks<DataTypeOut>::rank_dynamic==0,
                         Unmanaged<Kokkos::View<DataTypeOut,Props...>>>::type
