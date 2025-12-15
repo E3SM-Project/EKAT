@@ -4,6 +4,8 @@
 #include "ekat_kokkos_types.hpp"
 #include "ekat_kokkos_meta.hpp"
 
+#include <cassert>
+
 namespace ekat {
 
 // ================ Subviews of several ranks views ======================= //
