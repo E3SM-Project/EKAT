@@ -6,6 +6,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <cassert>
+
 namespace ekat {
 
 template<typename DataTypeOut, typename DataTypeIn, typename... Props>

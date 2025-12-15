@@ -3,6 +3,7 @@
 
 #include "ekat_assert.hpp"
 
+#include <cassert>
 #include <stdexcept>
 #include <sstream>
 #include <array>
