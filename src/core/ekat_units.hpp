@@ -85,6 +85,15 @@ public:
     // Nothing to do here
   }
 
+  constexpr Units (const Units& rhs,
+                   const std::array<char,UNITS_MAX_STR_LEN>& n)
+   : m_scaling(rhs.m_scaling)
+   , m_units (rhs.m_units)
+   , m_string_repr(n)
+  {
+    // Nothing to do here
+  }
+
   constexpr Units (const Units& rhs, const std::string_view& s)
    : Units(rhs)
   {
@@ -148,16 +157,26 @@ public:
   // Returns true if this Units has its own symbol.
   // E.g., for "J" it returns true, but for "J/s" it returns false
   constexpr bool has_symbol () const {
-    for (const auto& c : m_string_repr) {
-       if (c=='*' or c=='/' or c=='^' or c==' ' or c=='(' or c==')')
-         return false;
-       if (c=='\0')
-         return true;
-    }
-    return true;
+    return has_connecting_symbol<0>();
   }
 
 private:
+
+  constexpr bool is_connecting_symbol(const char c) const {
+    return c=='*' or c=='/' or c=='^' or c==' ' or c=='(' or c==')';
+  }
+
+  template<int N>
+  constexpr bool has_connecting_symbol () const {
+    if constexpr (N==(UNITS_MAX_STR_LEN-1)) {
+      return not is_connecting_symbol(m_string_repr[N]);
+    } else {
+      return m_string_repr[N]=='\0' or
+             (not is_connecting_symbol(m_string_repr[N]) and
+              not has_connecting_symbol<N+1>());
+    }
+  }
+
   constexpr const std::array<char,UNITS_MAX_STR_LEN>& string_repr () const {
     return m_string_repr;
   }
@@ -285,28 +304,25 @@ constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
   // If input rhs has its own symbol, we allow prepending a letter to it,
   // to get the usual symbol for 10^n powers
   if (rhs.has_symbol()) {
-    Units u (rhs);
-    u.m_scaling *= lhs;
     if (lhs==nano) {
-      u.m_string_repr = Units::concat_repr({'n'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'n'},rhs.string_repr(),'\0'));
     } else if (lhs==micro) {
-      u.m_string_repr = Units::concat_repr({'u'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'u'},rhs.string_repr(),'\0'));
     } else if (lhs==milli) {
-      u.m_string_repr = Units::concat_repr({'m'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'m'},rhs.string_repr(),'\0'));
     } else if (lhs==centi) {
-      u.m_string_repr = Units::concat_repr({'c'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'c'},rhs.string_repr(),'\0'));
     } else if (lhs==hecto) {
-      u.m_string_repr = Units::concat_repr({'h'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'h'},rhs.string_repr(),'\0'));
     } else if (lhs==kilo) {
-      u.m_string_repr = Units::concat_repr({'k'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'k'},rhs.string_repr(),'\0'));
     } else if (lhs==mega) {
-      u.m_string_repr = Units::concat_repr({'M'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'M'},rhs.string_repr(),'\0'));
     } else if (lhs==giga) {
-      u.m_string_repr = Units::concat_repr({'G'},u.string_repr(),'\0');
+      return Units(rhs,Units::concat_repr({'G'},rhs.string_repr(),'\0'));
     } else {
       return Units(lhs)*rhs;
     }
-    return u;
   }
   return Units(lhs)*rhs;
 }
