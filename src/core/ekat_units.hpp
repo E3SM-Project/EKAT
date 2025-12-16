@@ -105,7 +105,7 @@ public:
   }
   static constexpr Units invalid () {
     constexpr auto infty = std::numeric_limits<RationalConstant::iType>::max();
-    return ScalingFactor(-infty)*nondimensional();
+    return Units(0,0,0,0,0,0,0,ScalingFactor(infty));
   }
 
   std::string get_si_string () const {
