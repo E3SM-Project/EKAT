@@ -59,9 +59,6 @@ add_library(ekat_core
   ekat_test_utils.cpp
 )
 
-# EKAT requires c++17 features
-target_compile_features(ekat_core PUBLIC cxx_std_17)
-
 # Add the correct ekat::Comm impl file, depending on whether MPI is ON/OFF.
 if (EKAT_ENABLE_MPI)
   target_sources(ekat_core PRIVATE ekat_comm.cpp)
