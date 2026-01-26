@@ -77,3 +77,7 @@ EkatCreateUnitTest(string_utils string_utils.cpp
 # Test factory
 EkatCreateUnitTest(factory factory.cpp
   LIBS ekat::Core)
+
+# Test zip utility
+EkatCreateUnitTest(zip zip.cpp
+  LIBS ekat::Core)
