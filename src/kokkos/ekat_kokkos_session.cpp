@@ -50,7 +50,6 @@ std::string kokkos_config_string ()
 {
   std::string cfg;
   cfg += " Default Execution Space name: " + std::string(DefaultDevice::execution_space::name()) + "\n";
-  cfg += " Default Execution Space initialized: " + std::string(DefaultDevice::execution_space::impl_is_initialized() ? "yes" : "no") + "\n";
 
 #ifdef KOKKOS_ENABLE_OPENMP
   int num_host_threads = Kokkos::OpenMP().concurrency();
