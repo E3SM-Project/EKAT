@@ -48,15 +48,15 @@ void throw_exception(const std::string& msg)
 
 // Internal do not call directly.
 #define IMPL_THROW(condition, msg, exception_type)  \
-  do {                                                                \
-    if ( ! (condition) ) {                                            \
-      std::stringstream ss;                                           \
-      ss << msg;                                                      \
-      ss << "\nFAILED CONDITION: '" << #condition  << "'\n\n";        \
-      ss << "BACKTRACE:\n";                                           \
-      ss << EKAT_BACKTRACE << "\n";                                   \
-      ekat::throw_exception<exception_type>(ss.str());                \
-    }                                                                 \
+  do {                                                                  \
+    if ( ! (condition) ) {                                              \
+      std::stringstream ekat_tmp_ss;                                    \
+      ekat_tmp_ss << msg;                                               \
+      ekat_tmp_ss << "\nFAILED CONDITION: '" << #condition  << "'\n\n"; \
+      ekat_tmp_ss << "BACKTRACE:\n";                                    \
+      ekat_tmp_ss << EKAT_BACKTRACE << "\n";                            \
+      ekat::throw_exception<exception_type>(ekat_tmp_ss.str());         \
+    }                                                                   \
   } while(0)
 
 // Define the EKAT_REQUIRE macros for different argument counts
