@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include "ekat_assert.hpp"
+#include "ekat_string_utils.hpp"
 #include "ekat_fpe.hpp"
 
 #include <csignal>
@@ -211,6 +212,19 @@ TEST_CASE ("assert-macros") {
   EKAT_REQUIRE (2>0);
   EKAT_REQUIRE (2>0, "some string");
   EKAT_REQUIRE (2>0, "some string", std::logic_error);
+
+  // Make sure the user msg does not get lost
+  std::stringstream ss;
+  ss << "Things went wrong...\n";
+  ss << "...VERY wrong...\n";
+
+  try {
+    EKAT_ERROR_MSG(ss.str());
+  } catch (std::exception& e) {
+    const auto& what = e.what();
+    auto lines = ekat::split(what,"\nFAILED CONDITION");
+    REQUIRE (lines[0]==ss.str());
+  }
 }
 
 } // anonymous namespace
