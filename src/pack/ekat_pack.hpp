@@ -142,18 +142,31 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
 //       *dest = return_val + val;
 //       ^
 #define ekat_pack_gen_assign_op_p(op)                       \
+  template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  Pack& operator op (const volatile Pack& a) {              \
+  std::enable_if_t<                                         \
+    std::is_constructible<scalar,S>::value,                 \
+    Pack&                                                   \
+  >                                                         \
+  operator op (const volatile Pack<S,n>& a) {               \
     vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
     return *this;                                           \
   }                                                         \
+  template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  Pack& operator op (const Pack& a) {                       \
+  std::enable_if_t<                                         \
+    std::is_constructible<scalar,S>::value,                 \
+    Pack&                                                   \
+  >                                                         \
+  operator op (const Pack<S,n>& a) {                        \
     vector_simd for (int i = 0; i < n; ++i) d[i] op a[i];   \
     return *this;                                           \
   }                                                         \
+  template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  void operator op (const Pack& a) volatile {               \
+  std::enable_if_t<                                         \
+    std::is_constructible<scalar,S>::value>                 \
+  operator op (const Pack<S,n>& a) volatile {               \
     vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
   }                                                         \
   KOKKOS_FORCEINLINE_FUNCTION                               \
@@ -161,8 +174,13 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
     vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
   }
 #define ekat_pack_gen_assign_op_s(op)                       \
+  template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  Pack& operator op (const scalar& a) {                     \
+  std::enable_if_t<                                         \
+    std::is_constructible<scalar,S>::value,                 \
+    Pack&                                                   \
+  >                                                         \
+  operator op (const S& a) {                                \
     vector_simd for (int i = 0; i < n; ++i) d[i] op a;      \
     return *this;                                           \
   }
@@ -385,30 +403,40 @@ struct IsPack<const Pack<T,N>&> : std::true_type {};
 // promote a pack's scalar type in mixed-type arithmetic.
 
 #define ekat_pack_gen_bin_op_pp(op)                                   \
-  template <typename T, int n>                                          \
+  template <typename T, typename S, int n>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  Pack<T,n>                                                             \
-  operator op (const Pack<T,n>& a, const Pack<T,n>& b) {                \
-    Pack<T,n> c;                                                        \
+  auto                                                                  \
+  operator op (const Pack<T,n>& a, const Pack<S,n>& b)                  \
+    -> std::enable_if_t<                                                \
+          std::is_constructible<T,S>::value or                          \
+          std::is_constructible<S,T>::value,                            \
+          Pack<std::common_type_t<S,T>,n>                               \
+       >                                                                \
+  {                                                                     \
+    Pack<std::common_type_t<S,T>,n> c;                                  \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a[i] op b[i];                    \
     return c;                                                           \
   }
 #define ekat_pack_gen_bin_op_ps(op)                                   \
-  template <typename T, int n, typename ScalarType>                     \
+  template <typename T, int n, typename S>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  Pack<T,n>                                                             \
-  operator op (const Pack<T,n>& a, const ScalarType& b) {               \
+  std::enable_if_t<not IsPack<S>::value and                             \
+                   std::is_constructible<T,S>::value,                   \
+                   Pack<T,n>>                                           \
+  operator op (const Pack<T,n>& a, const S& b) {                        \
     Pack<T,n> c;                                                        \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a[i] op b;                       \
     return c;                                                           \
   }
 #define ekat_pack_gen_bin_op_sp(op)                                   \
-  template <typename T, int n, typename ScalarType>                     \
+  template <typename S, typename T, int n>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  Pack<T,n>                                                             \
-  operator op (const ScalarType& a, const Pack<T,n>& b) {               \
+  std::enable_if_t<not IsPack<S>::value and                             \
+                   std::is_constructible<T,S>::value,                   \
+                   Pack<T,n>>                                           \
+  operator op (const S& a, const Pack<T,n>& b) {                        \
     Pack<T,n> c;                                                        \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a op b[i];                       \
