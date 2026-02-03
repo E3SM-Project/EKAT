@@ -157,9 +157,20 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
 //       *dest = return_val + val;
 //       ^
 #define ekat_pack_gen_assign_op_p(op)                       \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  Pack& operator op (const Pack& a) {                       \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    return *this;                                           \
+  }                                                         \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  Pack& operator op (const volatile Pack& a) {              \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    return *this;                                           \
+  }                                                         \
   template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
   std::enable_if_t<                                         \
+    not IsPack<S>::value and                                \
     std::is_constructible<scalar,S>::value,                 \
     Pack&                                                   \
   >                                                         \
@@ -192,6 +203,7 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
   template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
   std::enable_if_t<                                         \
+    not IsPack<S>::value and                                \
     std::is_constructible<scalar,S>::value,                 \
     Pack&                                                   \
   >                                                         \
