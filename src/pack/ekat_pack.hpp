@@ -14,6 +14,21 @@
 
 namespace ekat {
 
+// A general SFINAE utility, which can be used to select pack or non-pack impl
+// in template functions. Specialization for T=Pack is after Pack class decl
+template<typename T>
+struct IsPack : std::false_type {};
+
+// Partial specialization to capture CV qualifiers and refs
+template<typename T>
+struct IsPack<const T> : IsPack<T> {};
+template<typename T>
+struct IsPack<volatile T> : IsPack<T> {};
+template<typename T>
+struct IsPack<T&> : IsPack<T> {};
+template<typename T>
+struct IsPack<T&&> : IsPack<T> {};
+
 /* API for using "packed" data in ekat. Packs are just bundles of N
    scalars within a single object. Using packed data makes it much easier
    to get good vectorization with C++.
@@ -143,26 +158,56 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
 //       ^
 #define ekat_pack_gen_assign_op_p(op)                       \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  Pack& operator op (const volatile Pack& a) {              \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+  Pack& operator op (const Pack& a) {                       \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
     return *this;                                           \
   }                                                         \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  Pack& operator op (const Pack& a) {                       \
+  Pack& operator op (const volatile Pack& a) {              \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
+    return *this;                                           \
+  }                                                         \
+  template<typename S>                                      \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  std::enable_if_t<                                         \
+    not IsPack<S>::value and                                \
+    std::is_constructible<scalar,S>::value,                 \
+    Pack&                                                   \
+  >                                                         \
+  operator op (const volatile Pack<S,n>& a) {               \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
+    return *this;                                           \
+  }                                                         \
+  template<typename S>                                      \
+  KOKKOS_FORCEINLINE_FUNCTION                               \
+  std::enable_if_t<                                         \
+    std::is_constructible<scalar,S>::value,                 \
+    Pack&                                                   \
+  >                                                         \
+  operator op (const Pack<S,n>& a) {                        \
     vector_simd for (int i = 0; i < n; ++i) d[i] op a[i];   \
     return *this;                                           \
   }                                                         \
+  template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  void operator op (const Pack& a) volatile {               \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+  std::enable_if_t<                                         \
+    std::is_constructible<scalar,S>::value>                 \
+  operator op (const Pack<S,n>& a) volatile {               \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
   }                                                         \
   KOKKOS_FORCEINLINE_FUNCTION                               \
   void operator op (const volatile Pack& a) volatile {      \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
   }
 #define ekat_pack_gen_assign_op_s(op)                       \
+  template<typename S>                                      \
   KOKKOS_FORCEINLINE_FUNCTION                               \
-  Pack& operator op (const scalar& a) {                     \
+  std::enable_if_t<                                         \
+    not IsPack<S>::value and                                \
+    std::is_constructible<scalar,S>::value,                 \
+    Pack&                                                   \
+  >                                                         \
+  operator op (const S& a) {                                \
     vector_simd for (int i = 0; i < n; ++i) d[i] op a;      \
     return *this;                                           \
   }
@@ -369,46 +414,45 @@ using OnlyPack = typename std::enable_if<PackType::packtag,PackType>::type;
 template <typename PackType, typename ReturnType>
 using OnlyPackReturn = typename std::enable_if<PackType::packtag,ReturnType>::type;
 
-// A more general SFINAE utility, which can be used to select pack or non-pack
-template<typename T>
-struct IsPack : std::false_type {};
+// Specialize IsPack for Pack type
 template<typename T, int N>
 struct IsPack<Pack<T,N>> : std::true_type {};
-template<typename T, int N>
-struct IsPack<Pack<T,N>&> : std::true_type {};
-template<typename T, int N>
-struct IsPack<const Pack<T,N>> : std::true_type {};
-template<typename T, int N>
-struct IsPack<const Pack<T,N>&> : std::true_type {};
-
-// Later, we might support type promotion. For now, caller must explicitly
-// promote a pack's scalar type in mixed-type arithmetic.
 
 #define ekat_pack_gen_bin_op_pp(op)                                   \
-  template <typename T, int n>                                          \
+  template <typename T, typename S, int n>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  Pack<T,n>                                                             \
-  operator op (const Pack<T,n>& a, const Pack<T,n>& b) {                \
-    Pack<T,n> c;                                                        \
+  auto                                                                  \
+  operator op (const Pack<T,n>& a, const Pack<S,n>& b)                  \
+    -> std::enable_if_t<                                                \
+          std::is_constructible<T,S>::value or                          \
+          std::is_constructible<S,T>::value,                            \
+          Pack<std::common_type_t<S,T>,n>                               \
+       >                                                                \
+  {                                                                     \
+    Pack<std::common_type_t<S,T>,n> c;                                  \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a[i] op b[i];                    \
     return c;                                                           \
   }
 #define ekat_pack_gen_bin_op_ps(op)                                   \
-  template <typename T, int n, typename ScalarType>                     \
+  template <typename T, int n, typename S>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  Pack<T,n>                                                             \
-  operator op (const Pack<T,n>& a, const ScalarType& b) {               \
+  std::enable_if_t<not IsPack<S>::value and                             \
+                   std::is_constructible<T,S>::value,                   \
+                   Pack<T,n>>                                           \
+  operator op (const Pack<T,n>& a, const S& b) {                        \
     Pack<T,n> c;                                                        \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a[i] op b;                       \
     return c;                                                           \
   }
 #define ekat_pack_gen_bin_op_sp(op)                                   \
-  template <typename T, int n, typename ScalarType>                     \
+  template <typename S, typename T, int n>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
-  Pack<T,n>                                                             \
-  operator op (const ScalarType& a, const Pack<T,n>& b) {               \
+  std::enable_if_t<not IsPack<S>::value and                             \
+                   std::is_constructible<T,S>::value,                   \
+                   Pack<T,n>>                                           \
+  operator op (const S& a, const Pack<T,n>& b) {                        \
     Pack<T,n> c;                                                        \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a op b[i];                       \
@@ -584,12 +628,6 @@ struct ScalarTraits<Pack<T,N>> {
 
   using value_type  = Pack<T,N>;
   using scalar_type = typename inner_traits::scalar_type;
-
-  // TODO: should we allow a pack of packs? For now, I assume the answer is NO.
-  //       So in order to FORBID pack<pack<T,N>>, check that inner_traits::value_type
-  //       is an arithmetic type.
-  static_assert (std::is_arithmetic<typename inner_traits::value_type>::value,
-                 "Error! We do not allow nested pack structures, for now.\n");
 
   // This seems funky. But write down a pow of 2 and a non-pow of 2 in binary (both positive), and you'll see why it works
   static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
