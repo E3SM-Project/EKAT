@@ -613,12 +613,6 @@ struct ScalarTraits<Pack<T,N>> {
   using value_type  = Pack<T,N>;
   using scalar_type = typename inner_traits::scalar_type;
 
-  // TODO: should we allow a pack of packs? For now, I assume the answer is NO.
-  //       So in order to FORBID pack<pack<T,N>>, check that inner_traits::value_type
-  //       is an arithmetic type.
-  static_assert (std::is_arithmetic<typename inner_traits::value_type>::value,
-                 "Error! We do not allow nested pack structures, for now.\n");
-
   // This seems funky. But write down a pow of 2 and a non-pow of 2 in binary (both positive), and you'll see why it works
   static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
 
