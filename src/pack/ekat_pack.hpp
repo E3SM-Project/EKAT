@@ -14,6 +14,21 @@
 
 namespace ekat {
 
+// A general SFINAE utility, which can be used to select pack or non-pack impl
+// in template functions. Specialization for T=Pack is after Pack class decl
+template<typename T>
+struct IsPack : std::false_type {};
+
+// Partial specialization to capture CV qualifiers and refs
+template<typename T>
+struct IsPack<const T> : IsPack<T> {};
+template<typename T>
+struct IsPack<volatile T> : IsPack<T> {};
+template<typename T>
+struct IsPack<T&> : IsPack<T> {};
+template<typename T>
+struct IsPack<T&&> : IsPack<T> {};
+
 /* API for using "packed" data in ekat. Packs are just bundles of N
    scalars within a single object. Using packed data makes it much easier
    to get good vectorization with C++.
@@ -387,17 +402,9 @@ using OnlyPack = typename std::enable_if<PackType::packtag,PackType>::type;
 template <typename PackType, typename ReturnType>
 using OnlyPackReturn = typename std::enable_if<PackType::packtag,ReturnType>::type;
 
-// A more general SFINAE utility, which can be used to select pack or non-pack
-template<typename T>
-struct IsPack : std::false_type {};
+// Specialize IsPack for Pack type
 template<typename T, int N>
 struct IsPack<Pack<T,N>> : std::true_type {};
-template<typename T, int N>
-struct IsPack<Pack<T,N>&> : std::true_type {};
-template<typename T, int N>
-struct IsPack<const Pack<T,N>> : std::true_type {};
-template<typename T, int N>
-struct IsPack<const Pack<T,N>&> : std::true_type {};
 
 // Later, we might support type promotion. For now, caller must explicitly
 // promote a pack's scalar type in mixed-type arithmetic.
