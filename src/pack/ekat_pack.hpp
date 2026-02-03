@@ -159,12 +159,12 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
 #define ekat_pack_gen_assign_op_p(op)                       \
   KOKKOS_FORCEINLINE_FUNCTION                               \
   Pack& operator op (const Pack& a) {                       \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
     return *this;                                           \
   }                                                         \
   KOKKOS_FORCEINLINE_FUNCTION                               \
   Pack& operator op (const volatile Pack& a) {              \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
     return *this;                                           \
   }                                                         \
   template<typename S>                                      \
@@ -175,7 +175,7 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
     Pack&                                                   \
   >                                                         \
   operator op (const volatile Pack<S,n>& a) {               \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
     return *this;                                           \
   }                                                         \
   template<typename S>                                      \
@@ -193,11 +193,11 @@ bool operator == (const Mask<n>& m1, const Mask<n>& m2) {
   std::enable_if_t<                                         \
     std::is_constructible<scalar,S>::value>                 \
   operator op (const Pack<S,n>& a) volatile {               \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
   }                                                         \
   KOKKOS_FORCEINLINE_FUNCTION                               \
   void operator op (const volatile Pack& a) volatile {      \
-    vector_simd for (int i = 0; i < n; ++i) d[i] op a.d[i]; \
+    vector_simd for (int i = 0; i < n; ++i) d[i] op a[i]; \
   }
 #define ekat_pack_gen_assign_op_s(op)                       \
   template<typename S>                                      \
@@ -417,9 +417,6 @@ using OnlyPackReturn = typename std::enable_if<PackType::packtag,ReturnType>::ty
 // Specialize IsPack for Pack type
 template<typename T, int N>
 struct IsPack<Pack<T,N>> : std::true_type {};
-
-// Later, we might support type promotion. For now, caller must explicitly
-// promote a pack's scalar type in mixed-type arithmetic.
 
 #define ekat_pack_gen_bin_op_pp(op)                                   \
   template <typename T, typename S, int n>                              \

@@ -538,7 +538,7 @@ TEST_CASE("pack_update") {
 
 TEST_CASE("different_scalar_types")
 {
-  constexpr int N = 2;
+  constexpr int N = EKAT_TEST_PACK_SIZE;
   using pr_t  = ekat::Pack<Real,N>;
   using ppr_t = ekat::Pack<pr_t,N>;
 
