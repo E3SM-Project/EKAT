@@ -536,4 +536,23 @@ TEST_CASE("pack_update") {
   for (int i=0; i<N; ++i) REQUIRE (y[i]==(i%2==0 ? 1 : -1));
 }
 
+TEST_CASE("different_scalar_types")
+{
+  constexpr int N = 2;
+  using pr_t  = ekat::Pack<Real,N>;
+  using ppr_t = ekat::Pack<pr_t,N>;
+
+  pr_t p1 = 10;
+  ppr_t p2 (10);
+
+  auto p3 = p2 + p1;
+  for (int i=0; i<N; ++i) {
+    for (int j=0; j<N; ++j) {
+      REQUIRE (p3[i][j]==20);
+    }
+  }
+
+
+}
+
 } // namespace
