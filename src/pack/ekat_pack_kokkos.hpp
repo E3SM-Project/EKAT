@@ -180,12 +180,8 @@ struct ScalarizeHelper
 template<typename T, int N>
 struct ScalarizeHelper<Pack<T,N>>
 {
-  using PackT = Pack<T,N>;
-
   template<typename DT>
   using data_t = typename ScalarizedDataType<DT>::type;
-  template<typename DT>
-  using scalar_t = typename ScalarizedDataType<DT>::value_type;
 
   // Template, to capture const and non-consta packs
   template<typename PT>

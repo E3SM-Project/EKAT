@@ -127,8 +127,15 @@ void genRandArray(Pack<ScalarType,N> *const x, int length, rngAlg &engine, PDF &
 template<typename DT>
 struct ScalarizedDataType {
   using as_inner_t = DT;
-  using type = DT; 
+  using type       = DT;
   static constexpr int pack_size = 1;
+};
+
+template<typename DT>
+struct ScalarizedDataType<const DT> {
+  using as_inner_t = const typename ScalarizedDataType<DT>::as_inner_t;
+  using type       = const typename ScalarizedDataType<DT>::type;
+  static constexpr int pack_size = ScalarizedDataType<DT>::pack_size;
 };
 
 // Specialization for Pack types
@@ -147,7 +154,7 @@ struct ScalarizedDataType<T*> {
 
   // Propagate pack size up, so the compile-time array dim(s) can see it
   static constexpr int pack_size = inner::pack_size;
-  
+
   using type = as_inner_t;
 };
 
