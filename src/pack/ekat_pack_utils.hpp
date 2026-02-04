@@ -131,18 +131,18 @@ struct ScalarizedDataType {
   static constexpr int pack_size = 1;
 };
 
-template<typename DT>
-struct ScalarizedDataType<const DT> {
-  using as_inner_t = const typename ScalarizedDataType<DT>::as_inner_t;
-  using type       = const typename ScalarizedDataType<DT>::type;
-  static constexpr int pack_size = ScalarizedDataType<DT>::pack_size;
-};
-
 // Specialization for Pack types
 template<typename S, int N>
 struct ScalarizedDataType<Pack<S, N>> {
   using as_inner_t = S;
   using type = S[N];
+  static constexpr int pack_size = N;
+};
+// Specialization for Pack types
+template<typename S, int N>
+struct ScalarizedDataType<const Pack<S, N>> {
+  using as_inner_t = const S;
+  using type = const S[N];
   static constexpr int pack_size = N;
 };
 
