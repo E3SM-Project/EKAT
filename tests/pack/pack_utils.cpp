@@ -58,4 +58,24 @@ TEST_CASE("PackInfo") {
   }
 }
 
+TEST_CASE("scalarized_data_type")
+{
+  using DT1 = double*[10][40];
+  using DT1_s = typename ekat::ScalarizedDataType<DT1>::type;
+
+  using DT2 = ekat::Pack<double,4>*[10][10];
+  using DT2_s = typename ekat::ScalarizedDataType<DT2>::type;
+
+  using DT3 = double**;
+  using DT3_s = typename ekat::ScalarizedDataType<DT3>::type;
+
+  using DT4 = ekat::Pack<double,8>;
+  using DT4_s = typename ekat::ScalarizedDataType<DT4>::type;
+
+  REQUIRE (std::is_same_v<DT1,DT1_s>);
+  REQUIRE (std::is_same_v<DT1,DT2_s>);
+  REQUIRE (std::is_same_v<DT3,DT3_s>);
+  REQUIRE (std::is_same_v<double[8],DT4_s>);
+}
+
 } // namespace

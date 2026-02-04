@@ -143,7 +143,7 @@ TEST_CASE("scalarize", "ekat::pack") {
   typedef Kokkos::View<Pack<double, 16>*>    Array1;
   typedef Kokkos::View<Pack<double, 32>**>   Array2;
   typedef Kokkos::View<Pack<double, 8>***>   Array3;
-  typedef Kokkos::View<Pack<double, 24>****> Array4;
+  typedef Kokkos::View<Pack<double, 24>**[4][2]> Array4;
 
   {
     const Array1 a1("a1", 10);
@@ -179,7 +179,7 @@ TEST_CASE("scalarize", "ekat::pack") {
   }
 
   {
-    const Array4 a1("a4", 3, 2, 4, 2);
+    const Array4 a1("a4", 3, 2);
     const auto a2 = scalarize(a1);
     typedef decltype(a2) VT;
     static_assert(VT::memory_traits::is_unmanaged, "Um");
@@ -220,9 +220,9 @@ TEST_CASE("repack", "ekat::pack") {
   using ekat::repack;
 
   using Array1 = Kokkos::View<Pack<double, 16>*>;
-  using Array2 = Kokkos::View<Pack<double, 32>**>;
+  using Array2 = Kokkos::View<Pack<double, 32>*[4]>;
   using CArray1 = Kokkos::View<Pack<double, 16>*>;
-  using CArray2 = Kokkos::View<Pack<double, 32>**>;
+  using CArray2 = Kokkos::View<Pack<double, 32>*[4]>;
 
   {
     const Array1 a1("a1", 10);
@@ -250,7 +250,7 @@ TEST_CASE("repack", "ekat::pack") {
   }
 
   {
-    const Array2 a1("v1", 10, 4);
+    const Array2 a1("v1", 10);
     fill(a1);
 
     auto run_test = [](const auto v1) {
