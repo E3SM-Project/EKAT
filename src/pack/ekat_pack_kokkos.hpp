@@ -186,7 +186,12 @@ struct ScalarizeHelper<Pack<T,N>>
   // Template, to capture const and non-consta packs
   template<typename PT>
   KOKKOS_INLINE_FUNCTION
-  static auto pack2scl (PT* p) { return &((*p)[0]); }
+  static auto pack2scl (PT* p) -> decltype(&((*p)[0])) {
+    if (p == nullptr) {
+      return nullptr;
+    }
+    return &((*p)[0]);
+  }
 
   template <typename DT, typename... Props>
   KOKKOS_FORCEINLINE_FUNCTION
@@ -194,7 +199,11 @@ struct ScalarizeHelper<Pack<T,N>>
   {
     using ret_t = Unmanaged<Kokkos::View<data_t<DT>, Props...> >;
     constexpr int rank = Kokkos::View<DT, Props...>::rank;
-    if constexpr (rank==1) {
+    static_assert (rank<=5, "ScalarizeHelper only supports up to rank-5 views.\n");
+
+    if constexpr (rank==0) {
+      return ret_t(pack2scl(vp.data()));
+    } else if constexpr (rank==1) {
       return ret_t(pack2scl(vp.data()), vp.extent(0)*N);
     } else if constexpr (rank==2) {
       return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1)*N);
@@ -206,8 +215,8 @@ struct ScalarizeHelper<Pack<T,N>>
                                         vp.extent(2), vp.extent(3)*N);
     } else if constexpr (rank==5) {
       return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1),
-                                       vp.extent(2), vp.extent(3),
-                                       vp.extent(3)*N);
+                                        vp.extent(2), vp.extent(3),
+                                        vp.extent(4)*N);
     }
   }
 };
