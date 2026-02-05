@@ -113,6 +113,62 @@ void genRandArray(Pack<ScalarType,N> *const x, int length, rngAlg &engine, PDF &
   }
 }
 
+/*
+ * A meta-utility to convert a multi-dimensional array with a Pack
+ * scalar type to an equivalent multi-dimensional array where the
+ * pack structure is "bursted". In particular we want
+ *  - scalarized(T**) = T**
+ *  - scalarized(T[N][M]) = T[N][M]
+ *  - scalarized(Pack<T,N>*[M1][M2]) = T*[M1][M2*N]
+ *  - scalarized(Pack<T,N>) = T[N]
+ */
+
+// Primary template for ScalarizedDataType
+template<typename DT>
+struct ScalarizedDataType {
+  using as_inner_t = DT;
+  using type       = DT;
+  static constexpr int pack_size = 1;
+};
+
+template<typename DT>
+struct ScalarizedDataType<const DT> {
+  using as_inner_t = const typename ScalarizedDataType<DT>::as_inner_t;
+  using type       = const typename ScalarizedDataType<DT>::type;
+  static constexpr int pack_size = ScalarizedDataType<DT>::pack_size;
+};
+
+// Specialization for Pack types
+template<typename S, int N>
+struct ScalarizedDataType<Pack<S, N>> {
+  using as_inner_t = S;
+  using type = S[N];
+  static constexpr int pack_size = N;
+};
+
+// Recursive case for pointer types
+template<typename T>
+struct ScalarizedDataType<T*> {
+  using inner = ScalarizedDataType<T>;
+  using as_inner_t = typename inner::as_inner_t*;
+
+  // Propagate pack size up, so the compile-time array dim(s) can see it
+  static constexpr int pack_size = inner::pack_size;
+
+  using type = as_inner_t;
+};
+
+// Recursive case for array types
+template<typename T, int N>
+struct ScalarizedDataType<T[N]> {
+  using inner = ScalarizedDataType<T>;
+  
+  // Only the first (from the inside) array dim gets multiplied by the pack size
+  static constexpr int pack_size = 1;
+
+  using as_inner_t = typename inner::as_inner_t[N*inner::pack_size];
+  using type       = as_inner_t;
+};
 
 } // namespace ekat
 

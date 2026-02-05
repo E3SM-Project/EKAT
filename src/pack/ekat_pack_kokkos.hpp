@@ -176,120 +176,58 @@ struct ScalarizeHelper
   scalarize (const ViewT& v) { return v; }
 };
 
-// Specialization if ScalarT is a non-const Pack type
+// Specialization if ScalarT is a Pack type
 template<typename T, int N>
 struct ScalarizeHelper<Pack<T,N>>
 {
-  using PackT = Pack<T,N>;
+  template<typename DT>
+  using data_t = typename ScalarizedDataType<DT>::type;
 
-  template <typename ...Parms>
-  KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T****, Parms...> >
-  scalarize (const Kokkos::View<PackT****, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T****, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       vp.extent_int(2), N * vp.extent_int(3));
+  // Template, to capture const and non-consta packs
+  template<typename PT>
+  KOKKOS_INLINE_FUNCTION
+  static auto pack2scl (PT* p) -> decltype(&((*p)[0])) {
+    if (p == nullptr) {
+      return nullptr;
+    }
+    return &((*p)[0]);
   }
 
-  template <typename ...Parms>
+  template <typename DT, typename... Props>
   KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T***, Parms...> >
-  scalarize (const Kokkos::View<PackT***, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T***, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       N * vp.extent_int(2));
-  }
+  static auto scalarize (const Kokkos::View<DT, Props...>& vp)
+  {
+    using ret_t = Unmanaged<Kokkos::View<data_t<DT>, Props...> >;
+    constexpr int rank = Kokkos::View<DT, Props...>::rank;
+    static_assert (rank<=5, "ScalarizeHelper only supports up to rank-5 views.\n");
 
-  template <typename ...Parms>
-  KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T**, Parms...> >
-  scalarize (const Kokkos::View<PackT**, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T**, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), N * vp.extent_int(1));
-  }
-
-  template <typename ...Parms>
-  KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T*, Parms...> >
-  scalarize (const Kokkos::View<PackT*, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T*, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), N * vp.extent_int(0));
-  }
-};
-
-// Specialization if ScalarT is a const Pack type
-template<typename ScalarT, int N>
-struct ScalarizeHelper<const Pack<ScalarT,N>>
-{
-  using PackT = const Pack<ScalarT,N>;
-  using T = const ScalarT;
-
-  template <typename ...Parms>
-  KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T****, Parms...> >
-  scalarize (const Kokkos::View<PackT****, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T****, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       vp.extent_int(2), N * vp.extent_int(3));
-  }
-
-  template <typename ...Parms>
-  KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T***, Parms...> >
-  scalarize (const Kokkos::View<PackT***, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T***, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), vp.extent_int(1),
-                                       N * vp.extent_int(2));
-  }
-
-  template <typename ...Parms>
-  KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T**, Parms...> >
-  scalarize (const Kokkos::View<PackT**, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T**, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), vp.extent_int(0), N * vp.extent_int(1));
-  }
-
-  template <typename ...Parms>
-  KOKKOS_FORCEINLINE_FUNCTION
-  static Unmanaged<Kokkos::View<T*, Parms...> >
-  scalarize (const Kokkos::View<PackT*, Parms...>& vp) {
-    return Unmanaged<Kokkos::View<T*, Parms...> >(
-      reinterpret_cast<T*>(vp.data()), N * vp.extent_int(0));
+    if constexpr (rank==0) {
+      return ret_t(pack2scl(vp.data()));
+    } else if constexpr (rank==1) {
+      return ret_t(pack2scl(vp.data()), vp.extent(0)*N);
+    } else if constexpr (rank==2) {
+      return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1)*N);
+    } else if constexpr (rank==3) {
+      return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1),
+                                        vp.extent(2)*N);
+    } else if constexpr (rank==4) {
+      return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1),
+                                        vp.extent(2), vp.extent(3)*N);
+    } else if constexpr (rank==5) {
+      return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1),
+                                        vp.extent(2), vp.extent(3),
+                                        vp.extent(4)*N);
+    }
   }
 };
 
 // Free functions, that call the helper above
-template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-auto
-scalarize (const Kokkos::View<ValueT****, Parms...>& v)
- -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
+template <typename DataType, typename... Props>
+KOKKOS_FORCEINLINE_FUNCTION
+auto scalarize (const Kokkos::View<DataType,Props...>& v)
 {
-  return ScalarizeHelper<ValueT>::scalarize(v);
-}
-
-template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-auto
-scalarize (const Kokkos::View<ValueT***, Parms...>& v)
- -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
-{
-  return ScalarizeHelper<ValueT>::scalarize(v);
-}
-
-template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-auto
-scalarize (const Kokkos::View<ValueT**, Parms...>& v)
- -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
-{
-  return ScalarizeHelper<ValueT>::scalarize(v);
-}
-
-template <typename ValueT, typename ...Parms> KOKKOS_FORCEINLINE_FUNCTION
-auto
-scalarize (const Kokkos::View<ValueT*, Parms...>& v)
- -> decltype(ScalarizeHelper<ValueT>::scalarize(v))
-{
-  return ScalarizeHelper<ValueT>::scalarize(v);
+  using value_t = std::remove_cv_t<std::remove_reference_t<decltype(*v.data())>>;
+  return ScalarizeHelper<value_t>::scalarize(v);
 }
 
 // Turn a View of Pack<T,M>s into a View of Pack<T,N>s,

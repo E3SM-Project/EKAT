@@ -438,10 +438,11 @@ struct IsPack<Pack<T,N>> : std::true_type {};
   template <typename T, int n, typename S>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
   std::enable_if_t<not IsPack<S>::value and                             \
-                   std::is_constructible<T,S>::value,                   \
-                   Pack<T,n>>                                           \
+                   (std::is_constructible<T,S>::value or                \
+                    std::is_constructible<S,T>::value),                 \
+                   Pack<std::common_type_t<S,T>,n>>                     \
   operator op (const Pack<T,n>& a, const S& b) {                        \
-    Pack<T,n> c;                                                        \
+    Pack<std::common_type_t<S,T>,n> c;                                  \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a[i] op b;                       \
     return c;                                                           \
@@ -450,10 +451,11 @@ struct IsPack<Pack<T,N>> : std::true_type {};
   template <typename S, typename T, int n>                              \
   KOKKOS_FORCEINLINE_FUNCTION                                           \
   std::enable_if_t<not IsPack<S>::value and                             \
-                   std::is_constructible<T,S>::value,                   \
-                   Pack<T,n>>                                           \
+                   (std::is_constructible<T,S>::value or                \
+                    std::is_constructible<S,T>::value),                 \
+                   Pack<std::common_type_t<S,T>,n>>                     \
   operator op (const S& a, const Pack<T,n>& b) {                        \
-    Pack<T,n> c;                                                        \
+    Pack<std::common_type_t<S,T>,n> c;                                  \
     vector_simd                                                         \
     for (int i = 0; i < n; ++i) c[i] = a op b[i];                       \
     return c;                                                           \
