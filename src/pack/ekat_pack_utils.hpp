@@ -121,6 +121,13 @@ void genRandArray(Pack<ScalarType,N> *const x, int length, rngAlg &engine, PDF &
  *  - scalarized(T[N][M]) = T[N][M]
  *  - scalarized(Pack<T,N>*[M1][M2]) = T*[M1][M2*N]
  *  - scalarized(Pack<T,N>) = T[N]
+ * The two types defined inside serve different purposes:
+ *  - as_inner_t: the type exposed to outer ScalarizedDataType that use
+ *                the current instantiation as a nested type
+ *  - type: the final type if this instantiation is not part of a recursive one
+ * The two only differ for packs: a Pack<T,N> itself can be seen as T[N],
+ * but a Pack<T,N>[M] is NOT T[N][M], so the "inner" Pack<T,N> must be seen
+ * as T, and the outer array must factor in the inner pack size.
  */
 
 // Primary template for ScalarizedDataType
@@ -131,18 +138,17 @@ struct ScalarizedDataType {
   static constexpr int pack_size = 1;
 };
 
-template<typename DT>
-struct ScalarizedDataType<const DT> {
-  using as_inner_t = const typename ScalarizedDataType<DT>::as_inner_t;
-  using type       = const typename ScalarizedDataType<DT>::type;
-  static constexpr int pack_size = ScalarizedDataType<DT>::pack_size;
-};
-
-// Specialization for Pack types
+// Specialization for Pack types (const and nonconst)
 template<typename S, int N>
 struct ScalarizedDataType<Pack<S, N>> {
   using as_inner_t = S;
   using type = S[N];
+  static constexpr int pack_size = N;
+};
+template<typename S, int N>
+struct ScalarizedDataType<const Pack<S,N>> {
+  using as_inner_t = const S;
+  using type = const S[N];
   static constexpr int pack_size = N;
 };
 
