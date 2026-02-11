@@ -72,10 +72,14 @@ TEST_CASE("scalarized_data_type")
   using DT4 = ekat::Pack<double,8>;
   using DT4_s = typename ekat::ScalarizedDataType<DT4>::type;
 
+  using DT5 = const ekat::Pack<double,4>[10][10];
+  using DT5_s = const typename ekat::ScalarizedDataType<DT5>::type;
+
   REQUIRE (std::is_same_v<DT1,DT1_s>);
   REQUIRE (std::is_same_v<DT1,DT2_s>);
   REQUIRE (std::is_same_v<DT3,DT3_s>);
   REQUIRE (std::is_same_v<double[8],DT4_s>);
+  REQUIRE (std::is_same_v<const double[10][40],DT5_s>);
 }
 
 } // namespace
