@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
+# EKAT requires C++20
+set(CMAKE_CXX_STANDARD 20)
+
 set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
 
 # Do not ignore <PackageName_ROOT> env vars in find_package() calls
@@ -85,6 +88,13 @@ if (EKAT_ENABLE_MPI)
   set(EKAT_MPI_NP_FLAG "--map-by" CACHE STRING "The mpirun flag for designating the total number of ranks")
   set(EKAT_MPI_THREAD_FLAG "" CACHE STRING "The mpirun flag for designating the number of threads")
 endif()
+
+##############################
+###  KOKKOS CONFIG OPTIONS ###
+##############################
+# FIXME: View usage in Hommexx and EAMxx needs to allow for Kokkos' MDSpan view implementation as the legacy
+#        implementation will go away in the future, unnanounced (it's an "impl" option => no deprecation).
+option (Kokkos_ENABLE_IMPL_VIEW_LEGACY "Currently, EKAT is only compatible with Kokkos' legacy view implementation." ON)
 
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
