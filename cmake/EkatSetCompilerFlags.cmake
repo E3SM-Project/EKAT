@@ -74,7 +74,7 @@ endmacro()
 #############################
 macro (SetGeneralFlags)
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-    SetFlags (FFLAGS "-assume byterecl -ftz" CXXFLAGS -restrict)
+    SetFlags (FFLAGS "-assume byterecl -ftz")
   elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     SetFlags (FFLAGS -ffree-line-length-none)
   endif()
