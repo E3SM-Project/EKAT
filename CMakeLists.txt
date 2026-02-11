@@ -89,13 +89,6 @@ if (EKAT_ENABLE_MPI)
   set(EKAT_MPI_THREAD_FLAG "" CACHE STRING "The mpirun flag for designating the number of threads")
 endif()
 
-##############################
-###  KOKKOS CONFIG OPTIONS ###
-##############################
-# FIXME: View usage in Hommexx and EAMxx needs to allow for Kokkos' MDSpan view implementation as the legacy
-#        implementation will go away in the future, unnanounced (it's an "impl" option => no deprecation).
-option (Kokkos_ENABLE_IMPL_VIEW_LEGACY "Currently, EKAT is only compatible with Kokkos' legacy view implementation." ON)
-
 ############################################
 ###  COMPILER/OS-SPECIFIC CONFIG OPTIONS ###
 ############################################
