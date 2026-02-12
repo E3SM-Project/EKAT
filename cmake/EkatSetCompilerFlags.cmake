@@ -73,10 +73,18 @@ endmacro()
 # Common basic flags (regardless of build type)
 #############################
 macro (SetGeneralFlags)
-  if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel" OR CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-    SetFlags (FFLAGS "-assume byterecl -ftz" CXXFLAGS -restrict)
+  # Fortran compiler-specific flags
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    SetFlags (FFLAGS "-assume byterecl -ftz")
+  elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+    SetFlags (FFLAGS "-assume byterecl -ftz")
   elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     SetFlags (FFLAGS -ffree-line-length-none)
+  endif()
+
+  # C++ compiler-specific flags
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    SetFlags (CXXFLAGS -restrict)
   endif()
 endmacro()
 
