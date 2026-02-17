@@ -5,6 +5,8 @@
 #ifndef EKAT_HAVE_FEENABLEEXCEPT
 
 // Drop-in replacement of some useful GNU utils (needed on Apple platforms)
+// Note: These implementations use x86-specific fenv_t members and won't work on ARM
+#if defined(__x86_64__) || defined(__i386__)
 inline int fegetexcept (void)
 {
   static fenv_t fenv;
@@ -43,6 +45,12 @@ inline int fedisableexcept (int excepts)
 
   return ( fesetenv (&fenv) ? -1 : old_excepts );
 }
+#else
+// Stub implementations for non-x86 platforms (e.g., ARM)
+inline int fegetexcept (void) { return 0; }
+inline int feenableexcept (int excepts) { return 0; }
+inline int fedisableexcept (int excepts) { return 0; }
+#endif
 
 #endif // EKAT_NEEDS_FEENABLEEXCEPT
 
