@@ -199,7 +199,7 @@ struct ScalarizeHelper<Pack<T,N>>
   {
     using ret_t = Unmanaged<Kokkos::View<data_t<DT>, Props...> >;
     constexpr int rank = Kokkos::View<DT, Props...>::rank;
-    static_assert (rank<=5, "ScalarizeHelper only supports up to rank-5 views.\n");
+    static_assert (rank<=7, "ScalarizeHelper only supports up to rank-7 views.\n");
 
     if constexpr (rank==0) {
       return ret_t(pack2scl(vp.data()));
@@ -217,6 +217,15 @@ struct ScalarizeHelper<Pack<T,N>>
       return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1),
                                         vp.extent(2), vp.extent(3),
                                         vp.extent(4)*N);
+    } else if constexpr (rank==6) {
+      return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1),
+                                        vp.extent(2), vp.extent(3),
+                                        vp.extent(4), vp.extent(5)*N);
+    } else if constexpr (rank==7) {
+      return ret_t(pack2scl(vp.data()), vp.extent(0), vp.extent(1),
+                                        vp.extent(2), vp.extent(3),
+                                        vp.extent(4), vp.extent(5),
+                                        vp.extent(6)*N);
     }
   }
 };
