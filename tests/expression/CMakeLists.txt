@@ -1,5 +1,6 @@
 include(EkatCreateUnitTest)
 
 # Test expression templates
-EkatCreateUnitTest(expressions expressions.cpp
+EkatCreateUnitTest(expressions
+  SOURCES expressions.cpp
   LIBS ekat::Expression)

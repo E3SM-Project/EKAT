@@ -1,7 +1,8 @@
 include(EkatCreateUnitTest)
 
 # Test debug tools
-EkatCreateUnitTest(debug_tools debug_tools_tests.cpp
+EkatCreateUnitTest(debug_tools
+  SOURCES debug_tools_tests.cpp
   LIBS ekat::Core)
 
 # Test the framework that checks asserts
@@ -13,7 +14,8 @@ if (EKAT_IS_DEBUG_BUILD)
 endif()
 
 # Ensure that FPE *do* throw when we expect them to
-EkatCreateUnitTestExec (fpe_check "fpe_check.cpp")
+EkatCreateUnitTestExec (fpe_check
+  SOURCES fpe_check.cpp)
 if (EKAT_ENABLE_FPE_DEFAULT_MASK)
   EkatCreateUnitTestFromExec (fpe_check fpe_check
     WILL_FAIL
@@ -23,14 +25,16 @@ else()
 endif()
 
 # Test catch main options
-EkatCreateUnitTest (catch_main_tests catch_main_tests.cpp
+EkatCreateUnitTest (catch_main_tests
+  SOURCES catch_main_tests.cpp
   EXE_ARGS "--args -a 1 --b 2 3 -c=4,5 --d 6,7 -K -foo --bar"
   PROPERTIES PASS_REGULAR_EXPRESSION
   ".*flags: K bar foo, params: a=1, vec_params: a=1 b=2,3 c=4,5 d=6,7")
 
 # Test that failure are indeed spotted. Also, verify that redirection
 # of input is not parsed as test filter, by fwding a file
-EkatCreateUnitTest(regress_fail regress_fail.cpp
+EkatCreateUnitTest(regress_fail
+  SOURCES regress_fail.cpp
   LIBS ekat::Core
   EXE_ARGS " < CTestTestfile.cmake"
   WILL_FAIL
@@ -45,39 +49,48 @@ EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
 )
 
 # Comm tests
-EkatCreateUnitTest(comm comm.cpp
+EkatCreateUnitTest(comm
+  SOURCES comm.cpp
   LIBS ekat::Core
   MPI_RANKS 1 ${EKAT_TEST_MAX_RANKS}
 )
 
 # Test units framework
-EkatCreateUnitTest(units units.cpp
+EkatCreateUnitTest(units
+  SOURCES units.cpp
   LIBS ekat::Core)
 
 # Test std_meta stuff
-EkatCreateUnitTest(std_meta std_meta.cpp
+EkatCreateUnitTest(std_meta
+  SOURCES std_meta.cpp
   LIBS ekat::Core)
 
 # Test meta utilities
-EkatCreateUnitTest(meta_utils meta_utils.cpp
+EkatCreateUnitTest(meta_utils
+  SOURCES meta_utils.cpp
   LIBS ekat::Core)
 
 # Test parameter list
-EkatCreateUnitTest(parameter_list parameter_list.cpp
+EkatCreateUnitTest(parameter_list
+  SOURCES parameter_list.cpp
   LIBS ekat::Core)
 
 # Test type traits
-EkatCreateUnitTest(type_traits_utils type_traits_utils.cpp
+EkatCreateUnitTest(type_traits_utils
+  SOURCES type_traits_utils.cpp
   LIBS ekat::Core)
 
 # Test string utilities
-EkatCreateUnitTest(string_utils string_utils.cpp
+EkatCreateUnitTest(string_utils
+  SOURCES string_utils.cpp
   LIBS ekat::Core)
 
 # Test factory
-EkatCreateUnitTest(factory factory.cpp
+EkatCreateUnitTest(factory
+  SOURCES factory.cpp
   LIBS ekat::Core)
 
 # Test zip utility
-EkatCreateUnitTest(zip zip.cpp
+EkatCreateUnitTest(zip
+  SOURCES zip.cpp
   LIBS ekat::Core)

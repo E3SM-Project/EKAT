@@ -9,6 +9,7 @@ set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../extern/Catch2/single_include)
 set(CUT_EXEC_OPTIONS EXCLUDE_MAIN_CPP USER_DEFINED_TEST_SESSION)
 set(CUT_EXEC_1V_ARGS)
 set(CUT_EXEC_MV_ARGS
+  SOURCES
   INCLUDE_DIRS
   COMPILER_DEFS
   COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
@@ -43,7 +44,7 @@ set(CUT_TEST_MV_ARGS DEP EXE_ARGS MPI_RANKS THREADS LABELS PROPERTIES
 #    - LIBS: a list of libraries needed by the executable (i.e., libs/targets to link against)
 #    - LIBS_DIRS: a list of directories to add to the linker search path
 #    - LINKER_FLAGS: a list of additional flags for the linker
-function(EkatCreateUnitTestExec exec_name exec_srcs)
+function(EkatCreateUnitTestExec exec_name)
   #---------------------------#
   #   Parse function inputs   #
   #---------------------------#
@@ -69,7 +70,7 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   if (ecute_LIBS_DIRS)
     link_directories("${ecute_LIBS_DIRS}")
   endif()
-  add_executable(${target_name} ${exec_srcs})
+  add_executable(${target_name} ${ecute_SOURCES})
 
   #---------------------------#
   # Set all target properties #
@@ -96,7 +97,12 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   endforeach()
 
   # Link flags/libs
-  if (NOT ecute_EXCLUDE_MAIN_CPP)
+  if (ecute_EXCLUDE_MAIN_CPP)
+    if (NOT ecute_SOURCES)
+      # If we need to exclude the catch main lib, then the user MUST provide SOME source file...
+      message (FATAL_ERROR "When calling EkatCreateUnitTestExec with EXCLUDE_MAIN_CPP, you MUST provide the SOURCES arg.")
+    endif()
+  else()
     target_link_libraries(${target_name} PUBLIC ekat::CatchMain)
   endif ()
   if (NOT ecute_USER_DEFINED_TEST_SESSION)
@@ -435,7 +441,7 @@ endfunction(EkatCreateUnitTestFromExec)
 # This function combines the two above, to create an executable, and use it
 # to create a suite of unit tests. The optional arguments are the union of
 # the optional arguments of the two functions above
-function(EkatCreateUnitTest test_name test_srcs)
+function(EkatCreateUnitTest test_name)
   set(options ${CUT_EXEC_OPTIONS} ${CUT_TEST_OPTIONS})
   set(oneValueArgs ${CUT_EXEC_1V_ARGS} ${CUT_TEST_1V_ARGS})
   set(multiValueArgs ${CUT_EXEC_MV_ARGS} ${CUT_TEST_MV_ARGS})
@@ -449,7 +455,7 @@ function(EkatCreateUnitTest test_name test_srcs)
   #------------------------------#
 
   separate_cut_arguments(ecut "${CUT_EXEC_OPTIONS}" "${CUT_EXEC_1V_ARGS}" "${CUT_EXEC_MV_ARGS}" options_ExecPhase)
-  EkatCreateUnitTestExec("${test_name}" "${test_srcs}" ${options_ExecPhase})
+  EkatCreateUnitTestExec("${test_name}" ${options_ExecPhase})
 
   #------------------------------#
   #      Create Tests Phase      #
