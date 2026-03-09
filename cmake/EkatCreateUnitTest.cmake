@@ -4,6 +4,7 @@ include(EkatUtils) # To check macro args
 set(CUT_EXEC_OPTIONS EXCLUDE_MAIN_CPP USER_DEFINED_TEST_SESSION)
 set(CUT_EXEC_1V_ARGS)
 set(CUT_EXEC_MV_ARGS
+  SOURCES
   INCLUDE_DIRS
   COMPILER_DEFS
   COMPILER_C_DEFS COMPILER_CXX_DEFS COMPILER_F_DEFS
@@ -29,16 +30,16 @@ set(CUT_TEST_MV_ARGS DEP EXE_ARGS MPI_RANKS THREADS LABELS PROPERTIES
 
 # This function takes the following mandatory arguments:
 #    - exec_name: the name of the test executable that will be created.
-#    - exec_srcs: a list of src files for the executable.
-#      Note: no need to include ekat_catch_main.cpp; this macro will add it (if needed).
-# The following optional arguments can be passed as ARG_NAME "ARG_VAL":
+# The following keyword arguments can be passed as ARG_NAME ARG_VAL.
+# Note: all these arguments are optional EXCEPT for the SOURCES arg, which is required.
+#    - SOURCES: a list of src files for the executable.
 #    - INCLUDE_DIRS: a list of directories to add to the include search path
 #    - COMPILE_[C_|CXX_|F_]DEFS: a list of additional (possibly language-specific) defines for the compiler
 #    - COMPILER_[C_|CXX_|F_]FLAGS: a list of additional flags (possibly language-specific) for the compiler
 #    - LIBS: a list of libraries needed by the executable (i.e., libs/targets to link against)
 #    - LIBS_DIRS: a list of directories to add to the linker search path
 #    - LINKER_FLAGS: a list of additional flags for the linker
-function(EkatCreateUnitTestExec exec_name exec_srcs)
+function(EkatCreateUnitTestExec exec_name)
   #---------------------------#
   #   Parse function inputs   #
   #---------------------------#
@@ -58,7 +59,10 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   #-------------------------------------------------#
 
   set(target_name ${exec_name})
-  add_executable(${target_name} ${exec_srcs})
+  if (NOT ecute_SOURCES)
+    message (FATAL_ERROR "Target ${target_name} created without specifying the SOURCES arg")
+  endif()
+  add_executable(${target_name} ${ecute_SOURCES})
 
   #---------------------------#
   # Set all target properties #
@@ -78,7 +82,7 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
     )
 
   # Check if we need a Fortran modules folder
-  foreach (file ${exec_srcs})
+  foreach (file ${ecute_SOURCES})
     get_filename_component(ext ${file} EXT)
     string(REGEX REPLACE "^\\." "" ext ${ext})
 
@@ -429,7 +433,7 @@ endfunction(EkatCreateUnitTestFromExec)
 # This function combines the two above, to create an executable, and use it
 # to create a suite of unit tests. The optional arguments are the union of
 # the optional arguments of the two functions above
-function(EkatCreateUnitTest test_name test_srcs)
+function(EkatCreateUnitTest test_name)
   set(options ${CUT_EXEC_OPTIONS} ${CUT_TEST_OPTIONS})
   set(oneValueArgs ${CUT_EXEC_1V_ARGS} ${CUT_TEST_1V_ARGS})
   set(multiValueArgs ${CUT_EXEC_MV_ARGS} ${CUT_TEST_MV_ARGS})
@@ -443,7 +447,7 @@ function(EkatCreateUnitTest test_name test_srcs)
   #------------------------------#
 
   separate_cut_arguments(ecut "${CUT_EXEC_OPTIONS}" "${CUT_EXEC_1V_ARGS}" "${CUT_EXEC_MV_ARGS}" options_ExecPhase)
-  EkatCreateUnitTestExec("${test_name}" "${test_srcs}" ${options_ExecPhase})
+  EkatCreateUnitTestExec("${test_name}" ${options_ExecPhase})
 
   #------------------------------#
   #      Create Tests Phase      #
