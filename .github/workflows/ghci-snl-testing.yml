@@ -37,6 +37,10 @@ env:
   NODE_EXTRA_CA_CERTS: /etc/pki/tls/certs/ca-bundle.crt
   REQUESTS_CA_BUNDLE: /etc/pki/tls/certs/ca-bundle.crt
 
+defaults:
+  run:
+    shell: bash --login {0}
+
 jobs:
   gcc-openmp:
     if: |
