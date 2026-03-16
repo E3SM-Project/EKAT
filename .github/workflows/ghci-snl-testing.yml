@@ -37,6 +37,10 @@ env:
   NODE_EXTRA_CA_CERTS: /etc/pki/tls/certs/ca-bundle.crt
   REQUESTS_CA_BUNDLE: /etc/pki/tls/certs/ca-bundle.crt
 
+defaults:
+  run:
+    shell: bash --login {0}
+
 jobs:
   gcc-openmp:
     if: |
@@ -83,7 +87,7 @@ jobs:
           submodules: recursive
       - name: Ensure CACTS is installed
         run: |
-          python3 -m pip install --user --upgrade --trusted-host pypi.org cacts
+          python3 -m pip install --upgrade --trusted-host pypi.org cacts
       - name: Run tests
         run: |
           cmd="cacts -m ghci-snl-cpu -t ${{ matrix.build_type }} -r ./"
@@ -169,7 +173,7 @@ jobs:
           esac
       - name: Ensure CACTS is installed
         run: |
-          python3 -m pip install --user --upgrade --trusted-host pypi.org cacts
+          python3 -m pip install --upgrade --trusted-host pypi.org cacts
       - name: Run tests
         run: |
           cmd="cacts -m ghci-snl-cuda -t ${{ matrix.build_type }} -r ./ -c Kokkos_ARCH_${{ env.ARCH }}=ON"
