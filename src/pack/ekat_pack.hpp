@@ -46,7 +46,7 @@ template <int PackSize>
 struct Mask {
   // One tends to think a short boolean type would be useful here (e.g., bool or
   // char), but that is bad for vectorization. int or long are best.
-  typedef long type;
+  typedef int type;
 
   // A tag for this struct for type checking.
   enum { masktag = true };
