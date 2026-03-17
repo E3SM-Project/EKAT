@@ -641,6 +641,24 @@ struct ScalarTraits<Pack<T,N>> {
   static constexpr bool specialized = true;
 };
 
+template<int N>
+struct ScalarTraits<Mask<N>> {
+
+  using inner_traits = ScalarTraits<int>;
+
+  using value_type  = Mask<N>;
+  using scalar_type = typename value_type::type;
+
+  // This seems funky. But write down a pow of 2 and a non-pow of 2 in binary (both positive), and you'll see why it works
+  static_assert (N>0 && ((N & (N-1))==0), "Error! We only support packs with length = 2^n.\n");
+
+  static constexpr bool is_simd = true;
+
+  static constexpr bool is_floating_point = false;
+
+  static constexpr bool specialized = true;
+};
+
 template<typename PackT>
 KOKKOS_INLINE_FUNCTION
 constexpr OnlyPack<PackT> invalid () {
