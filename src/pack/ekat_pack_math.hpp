@@ -4,44 +4,35 @@
 #include "ekat.hpp"
 #include "ekat_math_utils.hpp"
 
+#include <Kokkos_MathematicalFunctions.hpp>
+
 namespace ekat {
 
-#ifdef __CUDA_ARCH__
-#define ekat_pack_gen_unary_stdfn(fn)               \
+#define ekat_pack_gen_unary_fn(fn)                  \
   template <typename ScalarT, int N>                \
   KOKKOS_INLINE_FUNCTION                            \
   Pack<ScalarT,N> fn (const Pack<ScalarT,N>& p) {   \
     Pack<ScalarT,N> s;                              \
     vector_simd                                     \
     for (int i = 0; i < N; ++i) {                   \
-      s[i] = ::fn(p[i]);                            \
+      s[i] = Kokkos::fn(p[i]);                      \
     }                                               \
     return s;                                       \
   }
-#else
-#define ekat_pack_gen_unary_stdfn(fn)               \
-  template <typename ScalarT, int N>                \
-  KOKKOS_INLINE_FUNCTION                            \
-  Pack<ScalarT,N> fn (const Pack<ScalarT,N>& p) {   \
-    Pack<ScalarT,N> s;                              \
-    vector_simd                                     \
-    for (int i = 0; i < N; ++i) {                   \
-      s[i] = std::fn(p[i]);                         \
-    }                                               \
-    return s;                                       \
-  }
-#endif
 
-ekat_pack_gen_unary_stdfn(abs)
-ekat_pack_gen_unary_stdfn(exp)
-ekat_pack_gen_unary_stdfn(expm1)
-ekat_pack_gen_unary_stdfn(log)
-ekat_pack_gen_unary_stdfn(log10)
-ekat_pack_gen_unary_stdfn(tgamma)
-ekat_pack_gen_unary_stdfn(sqrt)
-ekat_pack_gen_unary_stdfn(cbrt)
-ekat_pack_gen_unary_stdfn(tanh)
-ekat_pack_gen_unary_stdfn(erf)
+ekat_pack_gen_unary_fn(abs)
+ekat_pack_gen_unary_fn(exp)
+ekat_pack_gen_unary_fn(expm1)
+ekat_pack_gen_unary_fn(log)
+ekat_pack_gen_unary_fn(log10)
+ekat_pack_gen_unary_fn(tgamma)
+ekat_pack_gen_unary_fn(sqrt)
+ekat_pack_gen_unary_fn(cbrt)
+ekat_pack_gen_unary_fn(tanh)
+ekat_pack_gen_unary_fn(erf)
+
+// Cleanup the macros we used simply to generate code
+#undef ekat_pack_gen_unary_fn
 
 template <typename PackType> KOKKOS_INLINE_FUNCTION
 OnlyPackReturn<PackType, typename PackType::scalar> min (const PackType& p) {
@@ -159,9 +150,5 @@ OnlyPack<PackType> cube (const PackType& a) {
 }
 
 } // namespace ekat
-
-// Cleanup the macros we used simply to generate code
-#undef ekat_pack_gen_unary_fn
-#undef ekat_pack_gen_unary_stdfn
 
 #endif // EKAT_PACK_MATH_HPP
