@@ -107,10 +107,11 @@ TEST_CASE("subviews") {
     auto sv3 = ekat::subview_1(v3,i4);
     auto sv2 = ekat::subview_1(v2,i5);
 
-    // First four should retain LaoutRight, last one has no other choice but getting LayoutStride
-    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutRight>::value);
+    // All but rank 3 -> rank 2 will be layout stride. This exception is due to the fact that
+    // Kokkos will assign the 2D subview to layout_right_padded, which represents a special case.
+    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutStride>::value);
     REQUIRE (std::is_same<typename decltype(sv3)::traits::array_layout,Kokkos::LayoutRight>::value);
     REQUIRE (std::is_same<typename decltype(sv2)::traits::array_layout,Kokkos::LayoutStride>::value);
 
