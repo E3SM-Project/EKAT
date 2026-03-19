@@ -35,3 +35,6 @@ EkatCreateUnitTest(pack_where pack_where.cpp
 # Test pack index arithmetics utils
 EkatCreateUnitTest(pack_utils pack_utils.cpp
   LIBS ekat::Pack)
+
+EkatCreateUnitTest(perf_check perf_check.cpp
+  LIBS ekat::Pack)
