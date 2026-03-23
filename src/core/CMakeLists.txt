@@ -78,7 +78,7 @@ endif()
 
 if (EKAT_HAS_STACKTRACE)
   target_link_libraries(ekat_core PUBLIC ${Boost_LIBRARIES})
-  target_compile_definitions(ekat_core PRIVATE EKAT_HAS_STACKTRACE BOOST_STACKTRACE_USE_ADDR2LINE)
+  target_compile_definitions(ekat_core PUBLIC EKAT_HAS_STACKTRACE BOOST_STACKTRACE_USE_ADDR2LINE)
 endif()
 
 if (EKAT_DEFAULT_BFB)
