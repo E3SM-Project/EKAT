@@ -45,7 +45,7 @@ if (@EKAT_ENABLE_LOGGING@)
 endif()
 
 # Boost stacktrace library
-if (@EKAT_HAS_STACKTRACE@)
+if (@EKAT_ENABLE_BOOST_STACKTRACE@)
   find_dependency(Boost 1.65.0 REQUIRED QUIET
                   COMPONENTS stacktrace_addr2line)
 endif()
