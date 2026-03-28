@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
+# EKAT requires C++20
+set (CMAKE_CXX_STANDARD 20)
+
 set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
 
 # Do not ignore <PackageName_ROOT> env vars in find_package() calls
