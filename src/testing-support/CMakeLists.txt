@@ -4,24 +4,22 @@ include(GNUInstallDirs)
 
 # Catch2 is a REQUIRED dep of this package
 option (EKAT_SKIP_FIND_CATCH2 "Skip find_package for Catch2, and fetch via FetchContent" OFF)
-if (EKAT_SKIP_FIND_CATCH2)
-  # The user does not want to accidentally get an existing installation,
-  # and instead wants to force a fetch via FetchContent
+if (NOT EKAT_SKIP_FIND_CATCH2)
+  message (STATUS "Looking for Catch2 ...")
+  find_package(Catch2 QUIET)
+  if (Catch2_FOUND)
+    message (STATUS "Looking for Catch2 ... FOUND")
+    message (STATUS "  Catch2_DIR: ${Catch2_DIR}")
+  else()
+    message (STATUS "Looking for Catch2 ... NOT FOUND")
+  endif()
+endif()
+
+if (NOT TARGET Catch2::Catch2)
   include (EkatBuildCatch2)
   set (EKAT_BUILDS_CATCH2 ON CACHE BOOL "Whether Ekat fetches Catch2" FORCE)
 else()
-  # We first try to use find_package. If that doesn't work, fetch via FetchContent
-  message (STATUS "Looking for Catch2 ...")
-  find_package(Catch2 QUIET)
-  if (NOT Catch2_FOUND)
-    message (STATUS "Looking for Catch2 ... NOT FOUND")
-    include (EkatBuildCatch2)
-    set (EKAT_BUILDS_CATCH2 ON CACHE BOOL "Whether Ekat fetches Catch2" FORCE)
-  else()
-    message (STATUS "Looking for Catch2 ... FOUND")
-    message (STATUS "  Catch2_DIR: ${Catch2_DIR}")
-    set (EKAT_BUILDS_CATCH2 OFF CACHE BOOL "Whether Ekat fetches Catch2" FORCE)
-  endif()
+  set (EKAT_BUILDS_CATCH2 OFF CACHE BOOL "Whether Ekat fetches Catch2" FORCE)
 endif()
 
 # A small lib for Catch2 main executable, so we don't rebuild it
