@@ -1,0 +1,4 @@
+# TPLs fetched via FetchContent during cmake configure
+extern/Catch2/
+extern/spdlog/
+extern/yaml-cpp/

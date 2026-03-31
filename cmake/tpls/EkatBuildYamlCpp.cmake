@@ -1,18 +1,27 @@
+# Build yaml-cpp via FetchContent, unless already built in this CMake project
+include (FetchContent)
+
 # NOTE: unfortunately yaml-cpp does not offer a CMake installation,
 #       so we need to find libs/headers by hand
 if (NOT TARGET yaml-cpp)
-  message (STATUS "No yaml-cpp target already defined. Building locally from submodule")
+  message (STATUS "No yaml-cpp target already defined. Fetching via FetchContent")
 
   # Set options for yamlcpp before adding the subdirectory
   option (YAML_CPP_BUILD_TOOLS "Enable parse tools" OFF)
   option (YAML_CPP_BUILD_TESTS "Enable yaml-cpp tests" OFF)
 
-  set (yaml-cpp_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../../extern/yaml-cpp)
-  set (yaml-cpp_BINARY_DIR ${CMAKE_BINARY_DIR}/externals/yaml-cpp)
-  message (STATUS "  yaml-cpp_SOURCE_DIR: ${yaml-cpp_SOURCE_DIR}")
-  message (STATUS "  yaml-cpp_BINARY_DIR: ${yaml-cpp_BINARY_DIR}")
+  FetchContent_Declare(yaml-cpp
+    GIT_REPOSITORY https://github.com/e3sm-project/yaml-cpp.git
+    GIT_TAG        95088a0a2b6f2dec0b3e6e59020cdcc0d4f3c658
+    SOURCE_DIR     ${CMAKE_SOURCE_DIR}/extern/yaml-cpp
+  )
 
-  add_subdirectory (${yaml-cpp_SOURCE_DIR} ${yaml-cpp_BINARY_DIR})
+  FetchContent_GetProperties(yaml-cpp)
+  if (NOT yaml-cpp_POPULATED)
+    FetchContent_Populate(yaml-cpp)
+    message (STATUS "  yaml-cpp_SOURCE_DIR: ${yaml-cpp_SOURCE_DIR}")
+    add_subdirectory (${yaml-cpp_SOURCE_DIR} ${CMAKE_BINARY_DIR}/externals/yaml-cpp)
+  endif ()
 
   if (EKAT_DISABLE_TPL_WARNINGS)
     include (EkatUtils)

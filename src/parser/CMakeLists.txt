@@ -1,10 +1,10 @@
 # yaml-cpp is a REQUIRED dep of this package
 
 option (EKAT_SKIP_FIND_YAML_CPP
-  "Skip find_package for yaml-cpp, and  build directly from submodule" OFF)
+  "Skip find_package for yaml-cpp, and fetch via FetchContent" OFF)
 if (EKAT_SKIP_FIND_YAML_CPP)
   # The user does not want to accidentally get an existing installation,
-  # and instead wants to force a build from the internal submodule
+  # and instead wants to force a fetch via FetchContent
   include (EkatBuildYamlCpp)
   set (EKAT_BUILDS_YAMLCPP ON CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
 else()
