@@ -13,7 +13,7 @@ if (NOT EKAT_SKIP_FIND_YAML_CPP)
     set (YAML_CPP_ROOT $ENV{YAML_CPP_ROOT})
   endif()
 
-  find_package(yaml-cpp HINTS ${YAML_CPP_ROOT})
+  find_package(yaml-cpp NO_DEFAULT_PATH HINTS ${YAML_CPP_ROOT})
   if (yaml-cpp_FOUND)
     message (STATUS "Looking for yaml-cpp ... FOUND")
     message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
