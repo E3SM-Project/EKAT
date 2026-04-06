@@ -36,6 +36,11 @@ set_target_properties(ekat_all_libs PROPERTIES
 # we want to be able to access ekat's targets via ekat::TARGET
 add_library(ekat::AllLibs ALIAS ekat_all_libs)
 
+# Honor the <PKG>_ROOT env var used in HPC modules when looking for pkg/Pkg
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+endif()
+
 # Core is ALWAYS enabled
 add_subdirectory(core)
 
