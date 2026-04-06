@@ -16,23 +16,17 @@ if (NOT EKAT_SKIP_FIND_CATCH2)
 endif()
 
 if (NOT TARGET Catch2::Catch2)
+  set (EKAT_BUILDS_CATCH2 ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
   include (EkatBuildCatch2)
-  set (EKAT_BUILDS_CATCH2 ON CACHE BOOL "Whether Ekat fetches Catch2" FORCE)
 else()
-  set (EKAT_BUILDS_CATCH2 OFF CACHE BOOL "Whether Ekat fetches Catch2" FORCE)
+  set (EKAT_BUILDS_CATCH2 OFF CACHE BOOL "Whether Ekat builds spdlog" FORCE)
 endif()
 
 # A small lib for Catch2 main executable, so we don't rebuild it
 # for every single unit test
 add_library(ekat_catchmain ekat_catch_main.cpp)
 target_link_libraries(ekat_catchmain PUBLIC ekat::Core)
-if (EKAT_BUILDS_CATCH2)
-  target_include_directories(ekat_catchmain PUBLIC
-    $<BUILD_INTERFACE:${EKAT_SOURCE_DIR}/extern/Catch2/single_include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-else()
-  target_link_libraries(ekat_catchmain PUBLIC Catch2::Catch2)
-endif()
+target_link_libraries(ekat_catchmain PUBLIC Catch2::Catch2)
 
 # Set the name to be used when exportin the target
 # This, together with the NAMESPACE property set in the main CMakeLists.txt
@@ -47,12 +41,6 @@ install (TARGETS ekat_catchmain
          RUNTIME       DESTINATION ${CMAKE_INSTALL_BINDIR}
          LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
          ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-# Install catch2 header (only when ekat fetched Catch2)
-if (EKAT_BUILDS_CATCH2)
-  install (DIRECTORY ${EKAT_SOURCE_DIR}/extern/Catch2/single_include/catch2
-           DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-endif()
 
 # Regardless of whether we use INSTALLED ekat, or BUILT (via add_subdirectory),
 # we want to be able to access ekat's targets via ekat::TARGET
