@@ -1,13 +1,8 @@
 # yaml-cpp is a REQUIRED dep of this package
 
 option (EKAT_SKIP_FIND_YAML_CPP
-  "Skip find_package for yaml-cpp, and  build directly from submodule" OFF)
-if (EKAT_SKIP_FIND_YAML_CPP)
-  # The user does not want to accidentally get an existing installation,
-  # and instead wants to force a build from the internal submodule
-  include (EkatBuildYamlCpp)
-  set (EKAT_BUILDS_YAMLCPP ON CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
-else()
+  "Skip find_package for yaml-cpp, and fetch via FetchContent" OFF)
+if (NOT EKAT_SKIP_FIND_YAML_CPP)
   # I am having issues getting the env var YAML_CPP_ROOT being picked up
   # by cmake. I suspect this has to do with the presence of the hyphen
   # CMake *should* convert '-' to '_' when forming the cmake/env var name,
@@ -19,12 +14,7 @@ else()
   endif()
 
   find_package(yaml-cpp HINTS ${YAML_CPP_ROOT})
-  if (NOT yaml-cpp_FOUND)
-    message (STATUS "Looking for yaml-cpp ... NOT FOUND")
-    include(EkatBuildYamlCpp)
-    set (EKAT_BUILDS_YAMLCPP ON CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
-  else()
-    set (EKAT_BUILDS_YAMLCPP OFF CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
+  if (yaml-cpp_FOUND)
     message (STATUS "Looking for yaml-cpp ... FOUND")
     message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
     # It is possible that the installation provides the yaml-cpp target, but not the yaml-cpp::yaml-cpp target. If so, define the alias target
@@ -34,7 +24,16 @@ else()
       endif()
       add_library (yaml-cpp::yaml-cpp ALIAS yaml-cpp)
     endif()
+  else()
+    message (STATUS "Looking for yaml-cpp ... NOT FOUND")
   endif()
+endif()
+
+if (NOT TARGET yaml-cpp)
+  include(EkatBuildYamlCpp)
+  set (EKAT_BUILDS_YAMLCPP ON CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
+else()
+  set (EKAT_BUILDS_YAMLCPP OFF CACHE BOOL "Whether Ekat builds yaml-cpp" FORCE)
 endif()
 
 # Create the library, and set all its properties

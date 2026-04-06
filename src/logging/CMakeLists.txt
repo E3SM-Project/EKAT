@@ -2,25 +2,23 @@ include(GNUInstallDirs)
 
 # spdlog is a REQUIRED dep of this package
 
-option (EKAT_SKIP_FIND_SPDLOG "Skip find_package for spdlog, and  build directly from submodule" OFF)
-if (EKAT_SKIP_FIND_SPDLOG)
-  # The user does not want to accidentally get an existing installation,
-  # and instead wants to force a build from the internal submodule
-  include (EkatBuildSpdlog)
-  set (EKAT_BUILDS_SPDLOG ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
-else()
-  # We first try to use find_XYZ. If that doesn't work, build from submodule
+option (EKAT_SKIP_FIND_SPDLOG "Skip find_package for spdlog, and fetch via FetchContent" OFF)
+if (NOT EKAT_SKIP_FIND_SPDLOG)
   message (STATUS "Looking for spdlog ...")
   find_package(spdlog QUIET)
-  if (NOT spdlog_FOUND)
-    message (STATUS "Looking for spdlog ... NOT FOUND")
-    include(EkatBuildSpdlog)
-    set (EKAT_BUILDS_SPDLOG ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
-  else()
+  if (spdlog_FOUND)
     message (STATUS "Looking for spdlog ... FOUND")
     message (STATUS "  spdlog_DIR: ${spdlog_DIR}")
-    set (EKAT_BUILDS_SPDLOG OFF CACHE BOOL "Whether Ekat builds spdlog" FORCE)
+  else()
+    message (STATUS "Looking for spdlog ... NOT FOUND")
   endif()
+endif()
+
+if (NOT TARGET spdlog)
+  include(EkatBuildSpdlog)
+  set (EKAT_BUILDS_SPDLOG ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
+else()
+  set (EKAT_BUILDS_SPDLOG OFF CACHE BOOL "Whether Ekat builds spdlog" FORCE)
 endif()
 
 # Create the library, and set all its properties
