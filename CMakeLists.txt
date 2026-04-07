@@ -31,7 +31,9 @@ IsDebugBuild(EKAT_IS_DEBUG_BUILD)
 
 set (EKAT_VERSION_MAJOR 1)
 set (EKAT_VERSION_MINOR 0)
-set (EKAT_VERSION_PATCH 0)
+set (EKAT_VERSION_PATCH 1)
+
+message(STATUS "EKAT version: ${EKAT_VERSION_MAJOR}.${EKAT_VERSION_MINOR}.${EKAT_VERSION_PATCH}")
 
 # Report the installation prefix.
 message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
