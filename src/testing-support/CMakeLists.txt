@@ -16,10 +16,10 @@ if (NOT EKAT_SKIP_FIND_CATCH2)
 endif()
 
 if (NOT TARGET Catch2::Catch2)
-  set (EKAT_BUILDS_CATCH2 ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
+  set (EKAT_BUILDS_CATCH2 ON CACHE BOOL "Whether Ekat builds Catch2" FORCE)
   include (EkatBuildCatch2)
 else()
-  set (EKAT_BUILDS_CATCH2 OFF CACHE BOOL "Whether Ekat builds spdlog" FORCE)
+  set (EKAT_BUILDS_CATCH2 OFF CACHE BOOL "Whether Ekat builds Catch2" FORCE)
 endif()
 
 # A small lib for Catch2 main executable, so we don't rebuild it
