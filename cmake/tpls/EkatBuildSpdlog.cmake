@@ -15,18 +15,7 @@ FetchContent_Declare(spdlog
   BINARY_DIR     ${EKAT_BINARY_DIR}/extern/spdlog
 )
 
-# MakeAvailable is better, but we need CMake>=3.14...
-if(CMAKE_VERSION VERSION_LESS "3.14")
-  # Legacy path for CMake 3.11 - 3.13
-  FetchContent_GetProperties(spdlog)
-  if(NOT spdlog_POPULATED)
-    FetchContent_Populate(spdlog)
-    add_subdirectory (${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
-  endif()
-else()
-  # Modern path for 3.14+ (Silences CMP0169 in 3.30+)
-  FetchContent_MakeAvailable(spdlog)
-endif()
+FetchContent_MakeAvailable(spdlog)
 
 if (EKAT_DISABLE_TPL_WARNINGS)
   include (EkatUtils)

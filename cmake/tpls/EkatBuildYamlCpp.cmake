@@ -14,18 +14,7 @@ FetchContent_Declare(yaml-cpp
   BINARY_DIR     ${EKAT_BINARY_DIR}/extern/yaml-cpp
 )
 
-# MakeAvailable is better, but we need CMake>=3.14...
-if(CMAKE_VERSION VERSION_LESS "3.14")
-  # Legacy path for CMake 3.11 - 3.13
-  FetchContent_GetProperties(yaml-cpp)
-  if(NOT yaml-cpp_POPULATED)
-    FetchContent_Populate(yaml-cpp)
-    add_subdirectory (${yaml-cpp_SOURCE_DIR} ${yaml-cpp_BINARY_DIR})
-  endif()
-else()
-  # Modern path for 3.14+ (Silences CMP0169 in 3.30+)
-  FetchContent_MakeAvailable(yaml-cpp)
-endif()
+FetchContent_MakeAvailable(yaml-cpp)
 
 if (EKAT_DISABLE_TPL_WARNINGS)
   include (EkatUtils)
