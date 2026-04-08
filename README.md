@@ -32,8 +32,8 @@ and available to downstream projects.
 
 # Configuring EKAT
 
-EKAT uses CMake (≥ 3.18) to generate its build system. Only C and C++ (C++17)
-are required; no Fortran compiler is needed.
+EKAT uses CMake (version 3.18 or higher) to generate its build system. Only C
+and C++ (C++17) are required; no Fortran compiler is needed.
 
 ## Kokkos machine files
 
@@ -138,7 +138,7 @@ Provides three functions for creating Catch2-based unit tests:
 Provides macros to initialize and configure compiler flags in a portable way:
 
 - **`ResetFlags()`** — Clears CMake's default language flags for the current
-  scope, giving you a clean slate.
+  CMake directory scope, giving you a clean slate.
 - **`SetFlags(...)`** / **`SetCommonFlags()`** — Apply recommended flags for
   debug and release builds.
 - **`SetProfilingFlags(PROFILER ... COVERAGE ...)`** — Add profiling or coverage
