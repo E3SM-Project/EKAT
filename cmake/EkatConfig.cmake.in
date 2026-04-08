@@ -50,6 +50,13 @@ if (@EKAT_ENABLE_BOOST_STACKTRACE@)
                   COMPONENTS stacktrace_addr2line)
 endif()
 
+# Catch2 testing system
+if (@EKAT_BUILDS_CATCH2@)
+  find_dependency (Catch2 REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+else()
+  find_dependency (Catch2 REQUIRED QUIET HINTS @Catch2_DIR@)
+endif()
+
 include (${CMAKE_CURRENT_LIST_DIR}/EkatTargets.cmake)
 
 # Handle components

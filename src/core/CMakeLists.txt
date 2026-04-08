@@ -35,16 +35,15 @@ option (EKAT_ENABLE_BOOST_STACKTRACE "Whether to enable Boost stacktrace" OFF)
 
 if (EKAT_ENABLE_BOOST_STACKTRACE)
   message (STATUS "Looking for boost::stacktrace ...")
+
   # Stacktrace is available with Boost>=1.65
   find_package(Boost 1.65.0 REQUIRED
     COMPONENTS stacktrace_addr2line
   )
 
-  if (Boost_STACKTRACE_ADDR2LINE_FOUND)
-    message (STATUS "Looking for boost::stacktrace ... Found")
-    message ("    -> EKAT's assert macros will provide a stacktrace.")
-    set (EKAT_HAS_STACKTRACE TRUE)
-  endif()
+  message (STATUS "Looking for boost::stacktrace ... Found")
+  message ("    -> EKAT's assert macros will provide a stacktrace.")
+  set (EKAT_HAS_STACKTRACE TRUE)
 else()
   message (STATUS "EKAT_ENABLE_BOOST_STACKTRACE: OFF")
   message ("    -> EKAT's assert macros will NOT provide a stacktrace.")
