@@ -65,7 +65,7 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   #---------------------------#
 
   if (ecute_LIBS_DIRS)
-    target_link_directories(${target_name} PUBLIC "${ecute_LIBS_DIRS}")
+    target_link_directories(${target_name} PRIVATE "${ecute_LIBS_DIRS}")
   endif()
 
   target_link_libraries (${exec_name} PUBLIC Catch2::Catch2)
