@@ -111,8 +111,6 @@ set (HEADERS
   ekat_rational_constant.hpp
   ekat_scalar_traits.hpp
   ekat_scaling_factor.hpp
-  ekat_std_any.hpp
-  ekat_std_enable_shared_from_this.hpp
   ekat_std_map_key_iterator.hpp
   ekat_std_type_traits.hpp
   ekat_std_utils.hpp

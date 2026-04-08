@@ -54,10 +54,6 @@ EkatCreateUnitTest(comm comm.cpp
 EkatCreateUnitTest(units units.cpp
   LIBS ekat::Core)
 
-# Test std_meta stuff
-EkatCreateUnitTest(std_meta std_meta.cpp
-  LIBS ekat::Core)
-
 # Test meta utilities
 EkatCreateUnitTest(meta_utils meta_utils.cpp
   LIBS ekat::Core)
