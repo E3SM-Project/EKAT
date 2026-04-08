@@ -57,18 +57,16 @@ function(EkatCreateUnitTestExec exec_name exec_srcs)
   #   Create the executable and set its properties  #
   #-------------------------------------------------#
 
-  # Set link directories (must be done BEFORE add_executable is called)
-  # NOTE: CMake 3.15 adds 'target_link_directories', which is superior (does not pollute other targets).
-  #       We should switch to that as soon as we can assume CMAKE_VERSION >= 3.15.
   set(target_name ${exec_name})
-  if (ecute_LIBS_DIRS)
-    link_directories("${ecute_LIBS_DIRS}")
-  endif()
   add_executable(${target_name} ${exec_srcs})
 
   #---------------------------#
   # Set all target properties #
   #---------------------------#
+
+  if (ecute_LIBS_DIRS)
+    target_link_directories(${target_name} PRIVATE "${ecute_LIBS_DIRS}")
+  endif()
 
   target_link_libraries (${exec_name} PUBLIC Catch2::Catch2)
 

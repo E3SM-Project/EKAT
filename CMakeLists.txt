@@ -1,11 +1,9 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.18)
 
 set (EKAT_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake CACHE INTERNAL "")
 
 # Do not ignore <PackageName_ROOT> env vars in find_package() calls
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-    cmake_policy (SET CMP0074 NEW)
-endif(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+cmake_policy (SET CMP0074 NEW)
 
 # Add our own cmake goodies to cmake module search path
 list(APPEND CMAKE_MODULE_PATH
@@ -29,9 +27,9 @@ endif()
 include(EkatUtils)
 IsDebugBuild(EKAT_IS_DEBUG_BUILD)
 
-set (EKAT_VERSION_MAJOR 1)
+set (EKAT_VERSION_MAJOR 2)
 set (EKAT_VERSION_MINOR 0)
-set (EKAT_VERSION_PATCH 1)
+set (EKAT_VERSION_PATCH 0)
 
 message(STATUS "EKAT version: ${EKAT_VERSION_MAJOR}.${EKAT_VERSION_MINOR}.${EKAT_VERSION_PATCH}")
 
