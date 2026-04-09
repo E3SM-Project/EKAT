@@ -16,7 +16,7 @@ namespace ekat {
  * A parameter list store two things: parameters, and sublists.
  * Each of these is stored in a map, which uses a string as key.
  *
- * Parameters are stored using ekat::any, which allows to store pretty
+ * Parameters are stored using std::any, which allows to store pretty
  * much anything you want in the list. However, this means that when
  * you try to retrieve a parameter, you must already know what the
  * type is, or else the any_cast will throw. You can specify the type
