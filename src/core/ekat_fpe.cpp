@@ -3,6 +3,26 @@
 #include <cfenv>
 
 #ifndef EKAT_HAVE_FEENABLEEXCEPT
+#ifdef __APPLE__
+// Apple Silicon has a very different floating point environment, which we leave for
+// future exploration.
+
+inline int fegetexcept (void)
+{
+  return 0;
+}
+
+inline int feenableexcept (int excepts)
+{
+  return 0;
+}
+
+inline int fedisableexcept (int excepts)
+{
+  return 0;
+}
+
+#else
 
 // Drop-in replacement of some useful GNU utils (needed on Apple platforms)
 inline int fegetexcept (void)
@@ -44,7 +64,8 @@ inline int fedisableexcept (int excepts)
   return ( fesetenv (&fenv) ? -1 : old_excepts );
 }
 
-#endif // EKAT_NEEDS_FEENABLEEXCEPT
+#endif // #ifndef __APPLE__
+#endif // #ifndef EKAT_HAVE_FEENABLEEXCEPT
 
 namespace ekat {
 
