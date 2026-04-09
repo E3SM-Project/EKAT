@@ -45,10 +45,12 @@ EkatCreateUnitTestFromExec(catch_main_invalid_flags regress_fail
 )
 
 # Comm tests
-EkatCreateUnitTest(comm comm.cpp
-  LIBS ekat::Core
-  MPI_RANKS 1 ${EKAT_TEST_MAX_RANKS}
-)
+if (EKAT_ENABLE_MPI)
+  EkatCreateUnitTest(comm comm.cpp
+    LIBS ekat::Core
+    MPI_RANKS 1 ${EKAT_TEST_MAX_RANKS}
+  )
+endif()
 
 # Test units framework
 EkatCreateUnitTest(units units.cpp
