@@ -32,6 +32,11 @@ if (@EKAT_ENABLE_YAML_PARSER@)
   else()
     find_dependency(yaml-cpp REQUIRED QUIET HINTS @yaml-cpp_DIR@)
   endif()
+
+  # Ensure the namespaced target exists for downstream consumers even if we created it on the fly
+  if (TARGET yaml-cpp AND NOT TARGET yaml-cpp::yaml-cpp)
+    add_library(yaml-cpp::yaml-cpp ALIAS yaml-cpp)
+  endif()
 endif()
 
 if (@EKAT_ENABLE_LOGGING@)
