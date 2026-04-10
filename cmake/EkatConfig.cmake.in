@@ -47,6 +47,11 @@ if (@EKAT_ENABLE_LOGGING@)
   else()
     find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
   endif()
+
+  # Ensure the namespaced target exists for downstream consumers even if we created it on the fly
+  if (TARGET spdlog AND NOT TARGET spdlog::spdlog)
+    add_library(spdlog::spdlog ALIAS spdlog)
+  endif()
 endif()
 
 # Boost stacktrace library
@@ -60,6 +65,10 @@ if (@EKAT_BUILDS_CATCH2@)
   find_dependency (Catch2 REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
 else()
   find_dependency (Catch2 REQUIRED QUIET HINTS @Catch2_DIR@)
+endif()
+# Ensure the namespaced target exists for downstream consumers even if we created it on the fly
+if (TARGET Catch2 AND NOT TARGET Catch2::Catch2)
+  add_library(Catch2::Catch2 ALIAS Catch2)
 endif()
 
 include (${CMAKE_CURRENT_LIST_DIR}/EkatTargets.cmake)
