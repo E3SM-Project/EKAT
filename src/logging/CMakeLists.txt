@@ -1,9 +1,13 @@
-include(GNUInstallDirs)
-
 # spdlog is a REQUIRED dep of this package
 
+set (spdlog_FOUND FALSE)
+if (TARGET spdlog::spdlog OR TARGET spdlog)
+  set(spdlog_FOUND TRUE)
+  message(STATUS "EKAT: Using spdlog provided by parent project")
+endif()
+
 option (EKAT_SKIP_FIND_SPDLOG "Skip find_package for spdlog, and fetch via FetchContent" OFF)
-if (NOT EKAT_SKIP_FIND_SPDLOG)
+if (NOT spdlog_FOUND AND NOT EKAT_SKIP_FIND_SPDLOG)
   message (STATUS "Looking for spdlog ...")
   find_package(spdlog QUIET NO_DEFAULT_PATH)
   if (spdlog_FOUND)
@@ -19,8 +23,14 @@ if (NOT EKAT_SKIP_FIND_SPDLOG)
   else()
     message (STATUS "Looking for spdlog ... NOT FOUND")
   endif()
-else ()
-  set (spdlog_FOUND FALSE)
+endif()
+
+# If we found spdlog (via find_package or as an existing tgt)
+# ensure it provides the scoped target
+if (spdlog_FOUND)
+  if (TARGET spdlog AND NOT TARGET spdlog::spdlog)
+    add_library(spdlog::spdlog ALIAS spdlog)
+  endif()
 endif()
 
 if (NOT spdlog_FOUND)

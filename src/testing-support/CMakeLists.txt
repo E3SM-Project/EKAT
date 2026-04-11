@@ -1,27 +1,30 @@
-include(GNUInstallDirs)
-
 ### CATCH MAIN ###
+
+set (Catch2_FOUND FALSE)
+if (TARGET Catch2::Catch2 OR TARGET Catch2)
+  set(Catch2_FOUND TRUE)
+  message(STATUS "EKAT: Using Catch2 provided by parent project")
+endif()
 
 # Catch2 is a REQUIRED dep of this package
 option (EKAT_SKIP_FIND_CATCH2 "Skip find_package for Catch2, and fetch via FetchContent" OFF)
-if (NOT EKAT_SKIP_FIND_CATCH2)
+if (NOT Catch2_FOUND AND NOT EKAT_SKIP_FIND_CATCH2)
   message (STATUS "Looking for Catch2 ...")
   find_package(Catch2 QUIET NO_DEFAULT_PATH)
   if (Catch2_FOUND)
     message (STATUS "Looking for Catch2 ... FOUND")
     message (STATUS "  Catch2_DIR: ${Catch2_DIR}")
-    # It is possible that the installation provides the Catch2 target, but not the Catch2::Catch2 target. If so, define the alias target
-    if (NOT TARGET Catch2::Catch2)
-      if (NOT TARGET Catch2)
-        message (FATAL_ERROR "Neither Catch2 nor Catch2::Catch2 targets were found")
-      endif()
-      add_library (Catch2::Catch2 ALIAS Catch2)
-    endif()
   else()
     message (STATUS "Looking for Catch2 ... NOT FOUND")
   endif()
-else ()
-  set (Catch2_FOUND FALSE)
+endif()
+
+# If we found Catch2 (via find_package or as an existing tgt)
+# ensure it provides the scoped target
+if (Catch2_FOUND)
+  if (TARGET Catch2 AND NOT TARGET Catch2::Catch2)
+    add_library(Catch2::Catch2 ALIAS Catch2)
+  endif()
 endif()
 
 if (NOT Catch2_FOUND)
