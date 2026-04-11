@@ -26,21 +26,35 @@ endif()
 
 # yaml-cpp
 if (@EKAT_ENABLE_YAML_PARSER@)
-  if (@EKAT_BUILDS_YAMLCPP@)
-    # We're installing yaml-cpp alongside ekat
-    find_dependency(yaml-cpp REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
-  else()
-    find_dependency(yaml-cpp REQUIRED QUIET HINTS @yaml-cpp_DIR@)
+  if (NOT TARGET yaml-cpp::yaml-cpp AND NOT TARGET yaml-cpp)
+    if (@EKAT_BUILDS_YAMLCPP@)
+      # We're installing yaml-cpp alongside ekat
+      find_dependency(yaml-cpp REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+    else()
+      find_dependency(yaml-cpp REQUIRED QUIET HINTS @yaml-cpp_DIR@)
+    endif()
+  endif()
+
+  # Ensure the namespaced target exists for downstream consumers even if we created it on the fly
+  if (TARGET yaml-cpp AND NOT TARGET yaml-cpp::yaml-cpp)
+    add_library(yaml-cpp::yaml-cpp ALIAS yaml-cpp)
   endif()
 endif()
 
 if (@EKAT_ENABLE_LOGGING@)
   # spdlog
-  if (@EKAT_BUILDS_SPDLOG@)
-    # We're installing yaml-cpp alongside ekat
-    find_dependency(spdlog REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
-  else()
-    find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
+  if (NOT TARGET spdlog::spdlog AND NOT TARGET spdlog)
+    if (@EKAT_BUILDS_SPDLOG@)
+      # We're installing spdlog alongside ekat
+      find_dependency(spdlog REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+    else()
+      find_dependency(spdlog REQUIRED QUIET HINTS @spdlog_DIR@)
+    endif()
+  endif()
+
+  # Ensure the namespaced target exists for downstream consumers even if we created it on the fly
+  if (TARGET spdlog AND NOT TARGET spdlog::spdlog)
+    add_library(spdlog::spdlog ALIAS spdlog)
   endif()
 endif()
 
@@ -51,10 +65,16 @@ if (@EKAT_ENABLE_BOOST_STACKTRACE@)
 endif()
 
 # Catch2 testing system
-if (@EKAT_BUILDS_CATCH2@)
-  find_dependency (Catch2 REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
-else()
-  find_dependency (Catch2 REQUIRED QUIET HINTS @Catch2_DIR@)
+if (NOT TARGET Catch2::Catch2 AND NOT TARGET Catch2)
+  if (@EKAT_BUILDS_CATCH2@)
+    find_dependency (Catch2 REQUIRED QUIET HINTS @CMAKE_INSTALL_PREFIX@)
+  else()
+    find_dependency (Catch2 REQUIRED QUIET HINTS @Catch2_DIR@)
+  endif()
+endif()
+# Ensure the namespaced target exists for downstream consumers even if we created it on the fly
+if (TARGET Catch2 AND NOT TARGET Catch2::Catch2)
+  add_library(Catch2::Catch2 ALIAS Catch2)
 endif()
 
 include (${CMAKE_CURRENT_LIST_DIR}/EkatTargets.cmake)

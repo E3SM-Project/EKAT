@@ -1,20 +1,39 @@
-include(GNUInstallDirs)
-
 # spdlog is a REQUIRED dep of this package
 
+set (spdlog_FOUND FALSE)
+if (TARGET spdlog::spdlog OR TARGET spdlog)
+  set(spdlog_FOUND TRUE)
+  message(STATUS "EKAT: Using spdlog provided by parent project")
+endif()
+
 option (EKAT_SKIP_FIND_SPDLOG "Skip find_package for spdlog, and fetch via FetchContent" OFF)
-if (NOT EKAT_SKIP_FIND_SPDLOG)
+if (NOT spdlog_FOUND AND NOT EKAT_SKIP_FIND_SPDLOG)
   message (STATUS "Looking for spdlog ...")
   find_package(spdlog QUIET NO_DEFAULT_PATH)
   if (spdlog_FOUND)
     message (STATUS "Looking for spdlog ... FOUND")
     message (STATUS "  spdlog_DIR: ${spdlog_DIR}")
+    # It is possible that the installation provides the spdlog target, but not the spdlog::spdlog target. If so, define the alias target
+    if (NOT TARGET spdlog::spdlog)
+      if (NOT TARGET spdlog)
+        message (FATAL_ERROR "Neither spdlog nor spdlog::spdlog targets were found")
+      endif()
+      add_library (spdlog::spdlog ALIAS spdlog)
+    endif()
   else()
     message (STATUS "Looking for spdlog ... NOT FOUND")
   endif()
 endif()
 
-if (NOT TARGET spdlog)
+# If we found spdlog (via find_package or as an existing tgt)
+# ensure it provides the scoped target
+if (spdlog_FOUND)
+  if (TARGET spdlog AND NOT TARGET spdlog::spdlog)
+    add_library(spdlog::spdlog ALIAS spdlog)
+  endif()
+endif()
+
+if (NOT spdlog_FOUND)
   include(EkatBuildSpdlog)
   set (EKAT_BUILDS_SPDLOG ON CACHE BOOL "Whether Ekat builds spdlog" FORCE)
 else()
