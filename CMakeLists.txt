@@ -80,6 +80,9 @@ endif()
 
 # MPI CONFIG OPTIONS. Defaults are set for generic MPI desktop.
 if (EKAT_ENABLE_MPI)
+  if (APPLE)
+    message(FATAL_ERROR "EKAT does not support MPI on Apple machines")
+  endif()
   set(EKAT_MPIRUN_EXE "mpiexec" CACHE STRING "The executable name for mpirun")
   set(EKAT_MPI_EXTRA_ARGS "--bind-to core" CACHE STRING "Options for mpirun")
   set(EKAT_MPI_NP_FLAG "--map-by" CACHE STRING "The mpirun flag for designating the total number of ranks")
