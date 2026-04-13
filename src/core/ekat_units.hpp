@@ -401,7 +401,6 @@ constexpr auto day  = (86400*s).rename("day");    // day          (time)
 constexpr auto year = (365*day).rename("yr");     // year         (time)
 constexpr auto g    = (kg/1000).rename("g");      // gram         (mass)
 constexpr auto N    = (kg*m/(s*s)).rename("N");   // newton       (force)
-constexpr auto dyn  = (N/10000).rename("dyn";     // dyne         (force)
 constexpr auto Pa   = (N/(m*m)).rename("Pa");     // pascal       (pressure)
 constexpr auto bar  = (100000*Pa).rename("bar");  // bar          (pressure)
 constexpr auto atm  = (101325*Pa).rename("atm");  // atmosphere   (pressure)
@@ -416,12 +415,17 @@ constexpr auto F    = (C/V).rename("F");          // farad        (capacitance)
 constexpr auto Wb   = (V*s).rename("Wb");         // weber        (magnetic flux)
 constexpr auto H    = (Wb/A).rename("H");         // henri        (inductance)
 constexpr auto Sv   = (J/kg).rename("Sv");        // sievert      (radiation dose)
-constexpr auto rem  = (Sv/100).rename("rem");     // rem          (radiation dose)
 constexpr auto Hz   = (1/s).rename("Hz");         // hertz        (frequency)
 
 // Angle and solid angle
 constexpr auto rad = Units::nondimensional().rename("rad");   // radian     (angle)
 constexpr auto sr  = Units::nondimensional().rename("sr");    // steradian  (solid angle)
+
+// Deprecated
+[[deprecated("units::dyn is CGS and deprecated.")]]
+constexpr auto dyn  = (N/10000).rename("dyn");    // dyne         (force)
+[[deprecated("units::rem is non-SI and deprecated.")]]
+constexpr auto rem  = (Sv/100).rename("rem");     // rem          (radiation dose)
 
 } // namespace units
 
