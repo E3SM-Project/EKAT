@@ -396,28 +396,28 @@ constexpr Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBO
 // === DERIVED SI UNITS === //
 
 // Thermomechanics
-constexpr Units h    = Units(3600*s,"h");
-constexpr Units day  = 86400*s;                   // day          (time)
-constexpr Units year = 365*day;                   // year         (time)
-constexpr Units g    = Units(kg/1000,"g");        // gram         (mass)
-constexpr Units N    = Units(kg*m/(s*s),"N");     // newton       (force)
-constexpr Units dyn  = N/(10000);                 // dyne         (force)
-constexpr Units Pa   = Units(N/(m*m),"Pa");       // pascal       (pressure)
-constexpr Units bar  = Units(100000*Pa,"bar");    // bar          (pressure)
-constexpr Units atm  = Units(101325*Pa,"atm");    // atmosphere   (pressure)
-constexpr Units J    = Units(N*m,"J");            // joule        (energy)
-constexpr Units W    = Units(J/s,"W");            // watt         (power)
+constexpr auto h    = (3600*s).rename("h");       // hour         (time)
+constexpr auto day  = (86400*s).rename("day");    // day          (time)
+constexpr auto year = (365*day).rename("yr");     // year         (time)
+constexpr auto g    = (kg/1000).rename("g");      // gram         (mass)
+constexpr auto N    = (kg*m/(s*s)).rename("N");   // newton       (force)
+constexpr auto dyn  = (N/10000).rename("dyn";     // dyne         (force)
+constexpr auto Pa   = (N/(m*m)).rename("Pa");     // pascal       (pressure)
+constexpr auto bar  = (100000*Pa).rename("bar");  // bar          (pressure)
+constexpr auto atm  = (101325*Pa).rename("atm");  // atmosphere   (pressure)
+constexpr auto J    = (N*m).rename("J");          // joule        (energy)
+constexpr auto W    = (J/s).rename("W");          // watt         (power)
 
 // Electro-magnetism
-constexpr Units C    = Units(A*s,"C");            // coulomb      (charge)
-constexpr Units V    = Units(J/C,"V");            // volt         (voltage)
-constexpr Units T    = Units(N/(A*m),"T");        // tesla        (magnetic field)
-constexpr Units F    = Units(C/V,"F");            // farad        (capacitance)
-constexpr Units Wb   = Units(V*s,"Wb");           // weber        (magnetic flux)
-constexpr Units H    = Units(Wb/A,"H");           // henri        (inductance)
-constexpr Units Sv   = Units(J/kg,"Sv");          // sievert      (radiation dose)
-constexpr Units rem  = Units(Sv/100,"rem");       // rem          (radiation dose)
-constexpr Units Hz   = Units(1/s,"Hz");           // hertz        (frequency)
+constexpr auto C    = (A*s).rename("C");          // coulomb      (charge)
+constexpr auto V    = (J/C).rename("V");          // volt         (voltage)
+constexpr auto T    = (N/(A*m)).rename("T");      // tesla        (magnetic field)
+constexpr auto F    = (C/V).rename("F");          // farad        (capacitance)
+constexpr auto Wb   = (V*s).rename("Wb");         // weber        (magnetic flux)
+constexpr auto H    = (Wb/A).rename("H");         // henri        (inductance)
+constexpr auto Sv   = (J/kg).rename("Sv");        // sievert      (radiation dose)
+constexpr auto rem  = (Sv/100).rename("rem");     // rem          (radiation dose)
+constexpr auto Hz   = (1/s).rename("Hz");         // hertz        (frequency)
 
 } // namespace units
 
