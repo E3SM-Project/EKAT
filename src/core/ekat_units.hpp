@@ -157,6 +157,14 @@ public:
     return true;
   }
 
+  /**
+   * Returns a copy of the unit with a new string representation.
+   * Use [[nodiscard]] to ensure users get a warning if the returned
+   * value is not used.
+   */
+  [[nodiscard]] constexpr Units rename(const std::string_view s) const {
+    return Units(*this, s);
+  }
 private:
   constexpr const std::array<char,UNITS_MAX_STR_LEN>& string_repr () const {
     return m_string_repr;
