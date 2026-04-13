@@ -1,10 +1,14 @@
-include(GNUInstallDirs)
-
 ### CATCH MAIN ###
+
+set (Catch2_FOUND FALSE)
+if (TARGET Catch2::Catch2 OR TARGET Catch2)
+  set(Catch2_FOUND TRUE)
+  message(STATUS "EKAT: Using Catch2 provided by parent project")
+endif()
 
 # Catch2 is a REQUIRED dep of this package
 option (EKAT_SKIP_FIND_CATCH2 "Skip find_package for Catch2, and fetch via FetchContent" OFF)
-if (NOT EKAT_SKIP_FIND_CATCH2)
+if (NOT Catch2_FOUND AND NOT EKAT_SKIP_FIND_CATCH2)
   message (STATUS "Looking for Catch2 ...")
   find_package(Catch2 QUIET NO_DEFAULT_PATH)
   if (Catch2_FOUND)
@@ -15,7 +19,15 @@ if (NOT EKAT_SKIP_FIND_CATCH2)
   endif()
 endif()
 
-if (NOT TARGET Catch2::Catch2)
+# If we found Catch2 (via find_package or as an existing tgt)
+# ensure it provides the scoped target
+if (Catch2_FOUND)
+  if (TARGET Catch2 AND NOT TARGET Catch2::Catch2)
+    add_library(Catch2::Catch2 ALIAS Catch2)
+  endif()
+endif()
+
+if (NOT Catch2_FOUND)
   set (EKAT_BUILDS_CATCH2 ON CACHE BOOL "Whether Ekat builds Catch2" FORCE)
   include (EkatBuildCatch2)
 else()
