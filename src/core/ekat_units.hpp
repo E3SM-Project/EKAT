@@ -419,6 +419,10 @@ constexpr auto Sv   = (J/kg).rename("Sv");        // sievert      (radiation dos
 constexpr auto rem  = (Sv/100).rename("rem");     // rem          (radiation dose)
 constexpr auto Hz   = (1/s).rename("Hz");         // hertz        (frequency)
 
+// Angle and solid angle
+constexpr auto rad = Units::nondimensional().rename("rad");   // radian     (angle)
+constexpr auto sr  = Units::nondimensional().rename("sr");    // steradian  (solid angle)
+
 } // namespace units
 
 } // namespace ekat
