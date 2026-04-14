@@ -144,6 +144,10 @@ public:
            m_units[6].num==0;
   }
 
+  constexpr bool is_scaled () const {
+    return m_scaling!=ScalingFactor::one();
+  }
+
   // Returns true if this Units has its own symbol.
   // E.g., for "J" it returns true, but for "J/s" it returns false
   constexpr bool has_symbol () const {
