@@ -414,7 +414,7 @@ constexpr auto sr  = none.rename("sr");    // steradian  (solid angle)
 
 // Deprecated
 [[deprecated("units::dyn is CGS and deprecated.")]]
-constexpr auto dyn  = (N/10000).rename("dyn");    // dyne         (force)
+constexpr auto dyn  = (N/100000).rename("dyn");    // dyne        (force)
 [[deprecated("units::rem is non-SI and deprecated.")]]
 constexpr auto rem  = (Sv/100).rename("rem");     // rem          (radiation dose)
 
