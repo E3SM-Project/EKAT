@@ -98,6 +98,7 @@ public:
 
   constexpr Units& operator= (const Units&) = default;
 
+  [[deprecated("Use the 'ekat::units::none' constant instead.")]]
   static constexpr Units nondimensional () {
     Units u(ScalingFactor::one());
     u.m_string_repr[0] = '1';
@@ -385,13 +386,16 @@ inline std::ostream& operator<< (std::ostream& out, const Units& x) {
 
 // Note: no need to pass a string for these, since the default
 //       string construction would return the same thing.
-constexpr Units m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[0]);
-constexpr Units s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[1]);
-constexpr Units kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[2]);
-constexpr Units K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[3]);
-constexpr Units A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[4]);
-constexpr Units mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
-constexpr Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
+constexpr auto m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[0]);
+constexpr auto s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[1]);
+constexpr auto kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[2]);
+constexpr auto K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[3]);
+constexpr auto A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[4]);
+constexpr auto mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
+constexpr auto cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
+
+// Nondimensional units
+constexpr auto none = Units(ScalingFactor::one(),"1");
 
 // === DERIVED SI UNITS === //
 
@@ -418,8 +422,8 @@ constexpr auto Sv   = (J/kg).rename("Sv");        // sievert      (radiation dos
 constexpr auto Hz   = (1/s).rename("Hz");         // hertz        (frequency)
 
 // Angle and solid angle
-constexpr auto rad = Units::nondimensional().rename("rad");   // radian     (angle)
-constexpr auto sr  = Units::nondimensional().rename("sr");    // steradian  (solid angle)
+constexpr auto rad = none.rename("rad");   // radian     (angle)
+constexpr auto sr  = none.rename("sr");    // steradian  (solid angle)
 
 // Deprecated
 [[deprecated("units::dyn is CGS and deprecated.")]]
