@@ -17,9 +17,6 @@ namespace units
 
 constexpr int UNITS_MAX_STR_LEN = 128;
 constexpr int NUM_BASIC_UNITS = 7;
-constexpr std::array<char,UNITS_MAX_STR_LEN> BASIC_UNITS_SYMBOLS[7] = {
-  {"m"}, {"s"}, {"kg"}, {"K"}, {"A"}, {"mol"}, {"cd"}
-};
 
 /*
  *  Units: a class to store physical units in terms of fundamental ones
@@ -63,7 +60,7 @@ public:
 
   // Construct a non-dimensional quantity
   constexpr Units (const ScalingFactor& scaling)
-   : Units(0,0,0,0,0,0,0,scaling,scaling.string_repr<UNITS_MAX_STR_LEN>())
+   : Units(0,0,0,0,0,0,0,scaling,scaling.string_repr<UNITS_MAX_STR_LEN>().data())
   {
     // Nothing to do here
   }
@@ -77,12 +74,16 @@ public:
                    const RationalConstant& amountExp,
                    const RationalConstant& luminousIntensityExp,
                    const ScalingFactor& scalingFactor = ScalingFactor::one(),
-                   const std::array<char,UNITS_MAX_STR_LEN>& n = {'\0'})
+                   const std::string_view& n = "")
    : m_scaling {scalingFactor}
    , m_units {lengthExp,timeExp,massExp,temperatureExp,currentExp,amountExp,luminousIntensityExp}
-   , m_string_repr(n)
   {
-    // Nothing to do here
+    assert(n.size() < UNITS_MAX_STR_LEN);
+
+    for (size_t i = 0; i < n.size(); ++i)
+        m_string_repr[i] = n[i];
+
+    m_string_repr[n.size()] = '\0';
   }
 
   constexpr Units (const Units& rhs, const std::string_view& s)
@@ -98,6 +99,7 @@ public:
 
   constexpr Units& operator= (const Units&) = default;
 
+  [[deprecated("Use the 'ekat::units::none' constant instead.")]]
   static constexpr Units nondimensional () {
     Units u(ScalingFactor::one());
     u.m_string_repr[0] = '1';
@@ -109,12 +111,13 @@ public:
   }
 
   std::string get_si_string () const {
+    static constexpr std::string_view symbols[] = {"m", "s", "kg", "K", "A", "mol", "cd"};
     std::string s;
     for (int i=0; i<NUM_BASIC_UNITS; ++i) {
       if (m_units[i].num==0) {
         continue;
       }
-      s += std::string(BASIC_UNITS_SYMBOLS[i].data());
+      s += symbols[i];
       if (m_units[i]!=RationalConstant::one()) {
         s += "^" + m_units[i].to_string(Format::Rat);
       }
@@ -145,6 +148,10 @@ public:
            m_units[6].num==0;
   }
 
+  constexpr bool is_scaled () const {
+    return m_scaling!=ScalingFactor::one();
+  }
+
   // Returns true if this Units has its own symbol.
   // E.g., for "J" it returns true, but for "J/s" it returns false
   constexpr bool has_symbol () const {
@@ -157,72 +164,61 @@ public:
     return true;
   }
 
+  /**
+   * Returns a copy of the unit with a new string representation.
+   * Use [[nodiscard]] to ensure users get a warning if the returned
+   * value is not used.
+   */
+  [[nodiscard]] constexpr Units rename(const std::string_view s) const {
+    return Units(*this, s);
+  }
 private:
-  constexpr const std::array<char,UNITS_MAX_STR_LEN>& string_repr () const {
-    return m_string_repr;
+  constexpr std::string_view string_repr () const {
+    return m_string_repr.data();
   }
 
   // Returns true if the unit is composite (i.e., does not have a one-word symbol,
   // but instead is a compound of symbols, such as a*b/c)
-  static constexpr bool composite (const std::array<char,UNITS_MAX_STR_LEN>& sv) {
+  static constexpr bool composite (const std::string_view sv) {
     for (const auto& c : sv) {
-      if (c=='*' or c=='/' or c=='^')
+      // These are the characters that trigger parentheses
+      if (c == '*' || c == '/' || c == '^')
         return true;
-      if (c=='\0')
-        return false;
     }
     return false;
-  };
+  }
 
-  static constexpr std::array<char,UNITS_MAX_STR_LEN>
-  concat_repr (const std::array<char,UNITS_MAX_STR_LEN>& lhs,
-               const std::array<char,UNITS_MAX_STR_LEN>& rhs,
+  static constexpr std::array<char, UNITS_MAX_STR_LEN>
+  concat_repr (const std::string_view& lhs,
+               const std::string_view& rhs,
                const char sep)
   {
-    std::array<char,UNITS_MAX_STR_LEN> out = {'\0'};
-    const auto comp1 = composite(lhs);
-    const auto comp2 = composite(rhs);
-    int size1 = 0;
-    for (auto c : lhs) {
-      if (c=='\0') break;
-      ++size1;
-    }
-    int size2 = 0;
-    for (auto c : rhs) {
-      if (c=='\0') break;
-      ++size2;
-    }
-    if (size1==0) {
-      return rhs;
-    } else if (size2==0) {
-      return lhs;
-    }
+    // 1. Calculate required length upfront
+    const bool comp1 = composite(lhs);
+    const bool comp2 = composite(rhs);
+    
+    const size_t total_len = lhs.size() + rhs.size() + 
+                             (comp1 ? 2 : 0) + (comp2 ? 2 : 0) + 
+                             (sep != '\0' ? 1 : 0);
+    // Trigger a compiler error if the name is too long.
+    assert (total_len<UNITS_MAX_STR_LEN);
 
-    assert ( size1 + size2 + (sep == '\0' ? 0 : 1) + (comp1 ? 2 : 0) + (comp2 ? 2 : 0) < UNITS_MAX_STR_LEN );
+    std::array<char, UNITS_MAX_STR_LEN> out = {'\0'};
 
-    int pos=0;
-    if (comp1) {
-      out[pos++]='(';
-    }
-    for (int i=0; i<size1; ++i) {
-      out [pos++] = lhs[i];
-    }
-    if (comp1) {
-      out[pos++] = ')';
-    }
-    if (sep!='\0') {
-      out[pos++] = sep;
-    }
-    if (comp2) {
-      out[pos++]='(';
-    }
-    for (int i=0; i<size2; ++i) {
-      out [pos++] = rhs[i];
-    }
-    if (comp2) {
-      out[pos++] = ')';
-    }
-    out[pos] = '\0';
+    int pos = 0;
+    // Copy LHS
+    if (comp1) out[pos++] = '(';
+    for (char c : lhs) out[pos++] = c;
+    if (comp1) out[pos++] = ')';
+
+    // Add separator (if needed)
+    if (sep != '\0') { out[pos++] = sep; }
+
+    // Copy RHS
+    if (comp2) out[pos++] = '(';
+    for (char c : rhs) out[pos++] = c;
+    if (comp2) out[pos++] = ')';
+
     return out;
   }
 private:
@@ -277,7 +273,7 @@ constexpr Units operator*(const Units& lhs, const Units& rhs) {
                 lhs.m_units[5]+rhs.m_units[5],
                 lhs.m_units[6]+rhs.m_units[6],
                 lhs.m_scaling*rhs.m_scaling,
-                Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'*'));
+                Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'*').data());
 }
 
 constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
@@ -288,21 +284,21 @@ constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
     Units u (rhs);
     u.m_scaling *= lhs;
     if (lhs==nano) {
-      u.m_string_repr = Units::concat_repr({'n'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("n",u.string_repr(),'\0');
     } else if (lhs==micro) {
-      u.m_string_repr = Units::concat_repr({'u'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("u",u.string_repr(),'\0');
     } else if (lhs==milli) {
-      u.m_string_repr = Units::concat_repr({'m'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("m",u.string_repr(),'\0');
     } else if (lhs==centi) {
-      u.m_string_repr = Units::concat_repr({'c'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("c",u.string_repr(),'\0');
     } else if (lhs==hecto) {
-      u.m_string_repr = Units::concat_repr({'h'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("h",u.string_repr(),'\0');
     } else if (lhs==kilo) {
-      u.m_string_repr = Units::concat_repr({'k'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("k",u.string_repr(),'\0');
     } else if (lhs==mega) {
-      u.m_string_repr = Units::concat_repr({'M'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("M",u.string_repr(),'\0');
     } else if (lhs==giga) {
-      u.m_string_repr = Units::concat_repr({'G'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("G",u.string_repr(),'\0');
     } else {
       return Units(lhs)*rhs;
     }
@@ -330,7 +326,7 @@ constexpr Units operator/(const Units& lhs, const Units& rhs) {
                lhs.m_units[5]-rhs.m_units[5],
                lhs.m_units[6]-rhs.m_units[6],
                lhs.m_scaling/rhs.m_scaling,
-               Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'/'));
+               Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'/').data());
 }
 constexpr Units operator/(const Units& lhs, const ScalingFactor& rhs) {
   return lhs/Units(rhs);
@@ -355,7 +351,7 @@ constexpr Units pow(const Units& x, const RationalConstant& p) {
                x.m_units[5]*p,
                x.m_units[6]*p,
                pow(x.m_scaling,p),
-               Units::concat_repr(x.string_repr(),p.string_repr<UNITS_MAX_STR_LEN>(),'^'));
+               Units::concat_repr(x.string_repr(),p.string_repr<UNITS_MAX_STR_LEN>().data(),'^').data());
 }
 
 constexpr Units sqrt(const Units& x) {
@@ -377,39 +373,50 @@ inline std::ostream& operator<< (std::ostream& out, const Units& x) {
 
 // Note: no need to pass a string for these, since the default
 //       string construction would return the same thing.
-constexpr Units m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[0]);
-constexpr Units s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[1]);
-constexpr Units kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[2]);
-constexpr Units K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[3]);
-constexpr Units A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[4]);
-constexpr Units mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
-constexpr Units cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
+constexpr auto m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),"m");
+constexpr auto s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),"s");
+constexpr auto kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),"kg");
+constexpr auto K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),"K");
+constexpr auto A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),"A");
+constexpr auto mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),"mol");
+constexpr auto cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),"cd");
+
+// Nondimensional units
+constexpr auto none = Units(ScalingFactor::one(),"1");
 
 // === DERIVED SI UNITS === //
 
 // Thermomechanics
-constexpr Units h    = Units(3600*s,"h");
-constexpr Units day  = 86400*s;                   // day          (time)
-constexpr Units year = 365*day;                   // year         (time)
-constexpr Units g    = Units(kg/1000,"g");        // gram         (mass)
-constexpr Units N    = Units(kg*m/(s*s),"N");     // newton       (force)
-constexpr Units dyn  = N/(10000);                 // dyne         (force)
-constexpr Units Pa   = Units(N/(m*m),"Pa");       // pascal       (pressure)
-constexpr Units bar  = Units(100000*Pa,"bar");    // bar          (pressure)
-constexpr Units atm  = Units(101325*Pa,"atm");    // atmosphere   (pressure)
-constexpr Units J    = Units(N*m,"J");            // joule        (energy)
-constexpr Units W    = Units(J/s,"W");            // watt         (power)
+constexpr auto h    = (3600*s).rename("h");       // hour         (time)
+constexpr auto day  = (86400*s).rename("day");    // day          (time)
+constexpr auto year = (365*day).rename("yr");     // year         (time)
+constexpr auto g    = (kg/1000).rename("g");      // gram         (mass)
+constexpr auto N    = (kg*m/(s*s)).rename("N");   // newton       (force)
+constexpr auto Pa   = (N/(m*m)).rename("Pa");     // pascal       (pressure)
+constexpr auto bar  = (100000*Pa).rename("bar");  // bar          (pressure)
+constexpr auto atm  = (101325*Pa).rename("atm");  // atmosphere   (pressure)
+constexpr auto J    = (N*m).rename("J");          // joule        (energy)
+constexpr auto W    = (J/s).rename("W");          // watt         (power)
 
 // Electro-magnetism
-constexpr Units C    = Units(A*s,"C");            // coulomb      (charge)
-constexpr Units V    = Units(J/C,"V");            // volt         (voltage)
-constexpr Units T    = Units(N/(A*m),"T");        // tesla        (magnetic field)
-constexpr Units F    = Units(C/V,"F");            // farad        (capacitance)
-constexpr Units Wb   = Units(V*s,"Wb");           // weber        (magnetic flux)
-constexpr Units H    = Units(Wb/A,"H");           // henri        (inductance)
-constexpr Units Sv   = Units(J/kg,"Sv");          // sievert      (radiation dose)
-constexpr Units rem  = Units(Sv/100,"rem");       // rem          (radiation dose)
-constexpr Units Hz   = Units(1/s,"Hz");           // hertz        (frequency)
+constexpr auto C    = (A*s).rename("C");          // coulomb      (charge)
+constexpr auto V    = (J/C).rename("V");          // volt         (voltage)
+constexpr auto T    = (N/(A*m)).rename("T");      // tesla        (magnetic field)
+constexpr auto F    = (C/V).rename("F");          // farad        (capacitance)
+constexpr auto Wb   = (V*s).rename("Wb");         // weber        (magnetic flux)
+constexpr auto H    = (Wb/A).rename("H");         // henri        (inductance)
+constexpr auto Sv   = (J/kg).rename("Sv");        // sievert      (radiation dose)
+constexpr auto Hz   = (1/s).rename("Hz");         // hertz        (frequency)
+
+// Angle and solid angle
+constexpr auto rad = none.rename("rad");   // radian     (angle)
+constexpr auto sr  = none.rename("sr");    // steradian  (solid angle)
+
+// Deprecated
+[[deprecated("units::dyn is CGS and deprecated.")]]
+constexpr auto dyn  = (N/100000).rename("dyn");    // dyne        (force)
+[[deprecated("units::rem is non-SI and deprecated.")]]
+constexpr auto rem  = (Sv/100).rename("rem");     // rem          (radiation dose)
 
 } // namespace units
 

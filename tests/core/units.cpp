@@ -91,11 +91,23 @@ TEST_CASE("units_framework", "") {
     REQUIRE (uJ.to_string()=="uJ");
     REQUIRE ((ug/kg).to_string()=="ug/kg");
     REQUIRE ((mbar/h).to_string()=="mbar/h");
+    REQUIRE ( mJ.is_scaled() );
+    REQUIRE ( not (kilo*mJ).is_scaled() );
 
     REQUIRE ((mbar/h).get_si_string()=="1/36 m^-1 s^-3 kg");
     REQUIRE ((ug/kg).get_si_string()=="1/1000000000");
 
     REQUIRE ((kilo*(ug/kg)).to_string()=="(10^3)*(ug/kg)");
+
+    auto m2 = (m*m).rename("square_meters");
+    REQUIRE ( m2.to_string()=="square_meters" );
+    REQUIRE ( m2==(m*m) );
+
+    REQUIRE ( rad.to_string()=="rad" );
+    REQUIRE ( sr.to_string()=="sr" );
+    REQUIRE ( (milli*rad).to_string()=="mrad" );
+    REQUIRE ( rad==nondim );
+    REQUIRE ( rad.is_dimensionless() );
   }
 
   SECTION ("issue-52") {
