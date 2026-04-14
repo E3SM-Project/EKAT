@@ -17,9 +17,6 @@ namespace units
 
 constexpr int UNITS_MAX_STR_LEN = 128;
 constexpr int NUM_BASIC_UNITS = 7;
-constexpr std::array<char,UNITS_MAX_STR_LEN> BASIC_UNITS_SYMBOLS[7] = {
-  {"m"}, {"s"}, {"kg"}, {"K"}, {"A"}, {"mol"}, {"cd"}
-};
 
 /*
  *  Units: a class to store physical units in terms of fundamental ones
@@ -110,12 +107,13 @@ public:
   }
 
   std::string get_si_string () const {
+    static constexpr std::string_view symbols[] = {"m", "s", "kg", "K", "A", "mol", "cd"};
     std::string s;
     for (int i=0; i<NUM_BASIC_UNITS; ++i) {
       if (m_units[i].num==0) {
         continue;
       }
-      s += std::string(BASIC_UNITS_SYMBOLS[i].data());
+      s += symbols[i];
       if (m_units[i]!=RationalConstant::one()) {
         s += "^" + m_units[i].to_string(Format::Rat);
       }
@@ -386,13 +384,13 @@ inline std::ostream& operator<< (std::ostream& out, const Units& x) {
 
 // Note: no need to pass a string for these, since the default
 //       string construction would return the same thing.
-constexpr auto m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[0]);
-constexpr auto s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[1]);
-constexpr auto kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[2]);
-constexpr auto K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[3]);
-constexpr auto A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[4]);
-constexpr auto mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[5]);
-constexpr auto cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),BASIC_UNITS_SYMBOLS[6]);
+constexpr auto m   = Units(1,0,0,0,0,0,0,ScalingFactor::one(),"m");
+constexpr auto s   = Units(0,1,0,0,0,0,0,ScalingFactor::one(),"s");
+constexpr auto kg  = Units(0,0,1,0,0,0,0,ScalingFactor::one(),"kg");
+constexpr auto K   = Units(0,0,0,1,0,0,0,ScalingFactor::one(),"K");
+constexpr auto A   = Units(0,0,0,0,1,0,0,ScalingFactor::one(),"A");
+constexpr auto mol = Units(0,0,0,0,0,1,0,ScalingFactor::one(),"mol");
+constexpr auto cd  = Units(0,0,0,0,0,0,1,ScalingFactor::one(),"cd");
 
 // Nondimensional units
 constexpr auto none = Units(ScalingFactor::one(),"1");
