@@ -60,7 +60,7 @@ public:
 
   // Construct a non-dimensional quantity
   constexpr Units (const ScalingFactor& scaling)
-   : Units(0,0,0,0,0,0,0,scaling,scaling.string_repr<UNITS_MAX_STR_LEN>())
+   : Units(0,0,0,0,0,0,0,scaling,scaling.string_repr<UNITS_MAX_STR_LEN>().data())
   {
     // Nothing to do here
   }
@@ -74,12 +74,16 @@ public:
                    const RationalConstant& amountExp,
                    const RationalConstant& luminousIntensityExp,
                    const ScalingFactor& scalingFactor = ScalingFactor::one(),
-                   const std::array<char,UNITS_MAX_STR_LEN>& n = {'\0'})
+                   const std::string_view& n = "")
    : m_scaling {scalingFactor}
    , m_units {lengthExp,timeExp,massExp,temperatureExp,currentExp,amountExp,luminousIntensityExp}
-   , m_string_repr(n)
   {
-    // Nothing to do here
+    assert(n.size() < UNITS_MAX_STR_LEN);
+
+    for (size_t i = 0; i < n.size(); ++i)
+        m_string_repr[i] = n[i];
+
+    m_string_repr[n.size()] = '\0';
   }
 
   constexpr Units (const Units& rhs, const std::string_view& s)
@@ -169,71 +173,52 @@ public:
     return Units(*this, s);
   }
 private:
-  constexpr const std::array<char,UNITS_MAX_STR_LEN>& string_repr () const {
-    return m_string_repr;
+  constexpr std::string_view string_repr () const {
+    return m_string_repr.data();
   }
 
   // Returns true if the unit is composite (i.e., does not have a one-word symbol,
   // but instead is a compound of symbols, such as a*b/c)
-  static constexpr bool composite (const std::array<char,UNITS_MAX_STR_LEN>& sv) {
+  static constexpr bool composite (const std::string_view sv) {
     for (const auto& c : sv) {
-      if (c=='*' or c=='/' or c=='^')
+      // These are the characters that trigger parentheses
+      if (c == '*' || c == '/' || c == '^')
         return true;
-      if (c=='\0')
-        return false;
     }
     return false;
-  };
+  }
 
-  static constexpr std::array<char,UNITS_MAX_STR_LEN>
-  concat_repr (const std::array<char,UNITS_MAX_STR_LEN>& lhs,
-               const std::array<char,UNITS_MAX_STR_LEN>& rhs,
+  static constexpr std::array<char, UNITS_MAX_STR_LEN>
+  concat_repr (const std::string_view& lhs,
+               const std::string_view& rhs,
                const char sep)
   {
-    std::array<char,UNITS_MAX_STR_LEN> out = {'\0'};
-    const auto comp1 = composite(lhs);
-    const auto comp2 = composite(rhs);
-    int size1 = 0;
-    for (auto c : lhs) {
-      if (c=='\0') break;
-      ++size1;
-    }
-    int size2 = 0;
-    for (auto c : rhs) {
-      if (c=='\0') break;
-      ++size2;
-    }
-    if (size1==0) {
-      return rhs;
-    } else if (size2==0) {
-      return lhs;
-    }
+    // 1. Calculate required length upfront
+    const bool comp1 = composite(lhs);
+    const bool comp2 = composite(rhs);
+    
+    const size_t total_len = lhs.size() + rhs.size() + 
+                             (comp1 ? 2 : 0) + (comp2 ? 2 : 0) + 
+                             (sep != '\0' ? 1 : 0);
+    // Trigger a compiler error if the name is too long.
+    assert (total_len<UNITS_MAX_STR_LEN);
 
-    assert ( size1 + size2 + (sep == '\0' ? 0 : 1) + (comp1 ? 2 : 0) + (comp2 ? 2 : 0) < UNITS_MAX_STR_LEN );
+    std::array<char, UNITS_MAX_STR_LEN> out = {'\0'};
 
-    int pos=0;
-    if (comp1) {
-      out[pos++]='(';
-    }
-    for (int i=0; i<size1; ++i) {
-      out [pos++] = lhs[i];
-    }
-    if (comp1) {
-      out[pos++] = ')';
-    }
-    if (sep!='\0') {
-      out[pos++] = sep;
-    }
-    if (comp2) {
-      out[pos++]='(';
-    }
-    for (int i=0; i<size2; ++i) {
-      out [pos++] = rhs[i];
-    }
-    if (comp2) {
-      out[pos++] = ')';
-    }
-    out[pos] = '\0';
+    int pos = 0;
+    // Copy LHS
+    if (comp1) out[pos++] = '(';
+    for (char c : lhs) out[pos++] = c;
+    if (comp1) out[pos++] = ')';
+
+    // Add separator (if needed)
+    if (sep != '\0') { out[pos++] = sep; }
+
+    // Copy RHS
+    if (comp2) out[pos++] = '(';
+    for (char c : rhs) out[pos++] = c;
+    if (comp2) out[pos++] = ')';
+
     return out;
   }
 private:
@@ -288,7 +273,7 @@ constexpr Units operator*(const Units& lhs, const Units& rhs) {
                 lhs.m_units[5]+rhs.m_units[5],
                 lhs.m_units[6]+rhs.m_units[6],
                 lhs.m_scaling*rhs.m_scaling,
-                Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'*'));
+                Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'*').data());
 }
 
 constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
@@ -299,21 +284,21 @@ constexpr Units operator*(const ScalingFactor& lhs, const Units& rhs) {
     Units u (rhs);
     u.m_scaling *= lhs;
     if (lhs==nano) {
-      u.m_string_repr = Units::concat_repr({'n'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("n",u.string_repr(),'\0');
     } else if (lhs==micro) {
-      u.m_string_repr = Units::concat_repr({'u'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("u",u.string_repr(),'\0');
     } else if (lhs==milli) {
-      u.m_string_repr = Units::concat_repr({'m'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("m",u.string_repr(),'\0');
     } else if (lhs==centi) {
-      u.m_string_repr = Units::concat_repr({'c'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("c",u.string_repr(),'\0');
     } else if (lhs==hecto) {
-      u.m_string_repr = Units::concat_repr({'h'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("h",u.string_repr(),'\0');
     } else if (lhs==kilo) {
-      u.m_string_repr = Units::concat_repr({'k'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("k",u.string_repr(),'\0');
     } else if (lhs==mega) {
-      u.m_string_repr = Units::concat_repr({'M'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("M",u.string_repr(),'\0');
     } else if (lhs==giga) {
-      u.m_string_repr = Units::concat_repr({'G'},u.string_repr(),'\0');
+      u.m_string_repr = Units::concat_repr("G",u.string_repr(),'\0');
     } else {
       return Units(lhs)*rhs;
     }
@@ -341,7 +326,7 @@ constexpr Units operator/(const Units& lhs, const Units& rhs) {
                lhs.m_units[5]-rhs.m_units[5],
                lhs.m_units[6]-rhs.m_units[6],
                lhs.m_scaling/rhs.m_scaling,
-               Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'/'));
+               Units::concat_repr(lhs.string_repr(),rhs.string_repr(),'/').data());
 }
 constexpr Units operator/(const Units& lhs, const ScalingFactor& rhs) {
   return lhs/Units(rhs);
@@ -366,7 +351,7 @@ constexpr Units pow(const Units& x, const RationalConstant& p) {
                x.m_units[5]*p,
                x.m_units[6]*p,
                pow(x.m_scaling,p),
-               Units::concat_repr(x.string_repr(),p.string_repr<UNITS_MAX_STR_LEN>(),'^'));
+               Units::concat_repr(x.string_repr(),p.string_repr<UNITS_MAX_STR_LEN>().data(),'^').data());
 }
 
 constexpr Units sqrt(const Units& x) {
