@@ -2,3 +2,6 @@
 extern/Catch2/
 extern/spdlog/
 extern/yaml-cpp/
+
+# Our util ekat_fetch_tpl util uses these lock files to avoid race conditions
+extern/.*.lock
