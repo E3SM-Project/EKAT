@@ -146,3 +146,39 @@ function(separate_cut_arguments prefix options oneValueArgs multiValueArgs retur
 
   set(${return_varname} ${result} PARENT_SCOPE)
 endfunction(separate_cut_arguments)
+
+# Utility to avoid race conditions in FetchContent_MakeAvailable
+# when 2+ builds are configuring at the same time
+include(FetchContent)
+function(ekat_make_available NAME GIT_TAG_VALUE)
+  string(TOUPPER "${NAME}" NAME_UPPER)
+  string(REPLACE "-" "_" NAME_SANITIZED "${NAME_UPPER}")
+  set(FC_VAR "FETCHCONTENT_SOURCE_DIR_${NAME_SANITIZED}")
+
+  # 1. Respect existing User/Cache Override
+  if (${FC_VAR})
+    message(STATUS "  Using provided ${NAME} source: ${${FC_VAR}}")
+  else()
+    # 2. Setup the Lock (Using the source tree for multi-user safety)
+    set(LOCK_FILE "${EKAT_SOURCE_DIR}/extern/.${NAME}.lock")
+    file(LOCK "${LOCK_FILE}" GUARD FUNCTION)
+
+    # 3. Verify on-disk state
+    set(TPL_SRC_DIR "${EKAT_SOURCE_DIR}/extern/${NAME}")
+    if(EXISTS "${TPL_SRC_DIR}/.git/index" AND EXISTS "${TPL_SRC_DIR}/.git/HEAD")
+      file(READ "${TPL_SRC_DIR}/.git/HEAD" ON_DISK_SHA)
+      string(STRIP "${ON_DISK_SHA}" ON_DISK_SHA)
+
+      if(ON_DISK_SHA STREQUAL GIT_TAG_VALUE)
+        message(STATUS "  ${NAME}: Source matches required version (${GIT_TAG_VALUE}). Bypassing populate step.")
+        # Promote to CACHE so all sub-projects see the bypass
+        set(${FC_VAR} "${TPL_SRC_DIR}" CACHE PATH "Path to ${NAME} source" FORCE)
+      else()
+        message(STATUS "  ${NAME}: Source version mismatch (found ${ON_DISK_SHA}, expected ${GIT_TAG_VALUE}). Proceeding with populate step.")
+      endif()
+    endif()
+  endif()
+
+  # 4. Finalize
+  FetchContent_MakeAvailable(${NAME})
+endfunction()
