@@ -148,37 +148,114 @@ function(separate_cut_arguments prefix options oneValueArgs multiValueArgs retur
 endfunction(separate_cut_arguments)
 
 # Utility to avoid race conditions in FetchContent_MakeAvailable
-# when 2+ builds are configuring at the same time
-include(FetchContent)
-function(ekat_make_available NAME GIT_TAG_VALUE)
+# when 2+ builds are configuring at the same time. Only the 1st one
+# will actually populate (i.e. clone) the TPL folder, and ONLY if
+# the folder doesn't exist or contains a different version of the code
+function (ekat_fetch_content NAME)
+  # 0.b Check if we already parsed the TPL (if so, we're done)
+  get_property(already_added GLOBAL PROPERTY EKAT_TPL_${NAME}_ADDED)
+  if (already_added)
+    get_property(first_caller GLOBAL PROPERTY EKAT_TPL_${NAME}_CALLER)
+    message(AUTHOR_WARNING
+      "  ${NAME}: This TPL has already been added to the build tree.\n"
+      "  Subsequent calls to ekat_fetch_content(${NAME}) will NOT reconfigure the TPL.\n"
+      "  First added from: ${first_caller}\n"
+      "  If you need to change TPL options, do it at the first call site."
+    )
+    return()
+  endif()
+
+  # 0.b Support the standard CMake override: -DFETCHCONTENT_SOURCE_DIR_<NAME>=/path/to/src
   string(TOUPPER "${NAME}" NAME_UPPER)
   string(REPLACE "-" "_" NAME_SANITIZED "${NAME_UPPER}")
-  set(FC_VAR "FETCHCONTENT_SOURCE_DIR_${NAME_SANITIZED}")
+  set(OVERRIDE_VAR "FETCHCONTENT_SOURCE_DIR_${NAME_SANITIZED}")
+  if (DEFINED ${OVERRIDE_VAR})
+    set(OVERRIDE_DIR "${${OVERRIDE_VAR}}")
+    if ("${OVERRIDE_DIR}" STREQUAL "")
+      message(FATAL_ERROR
+        "  ${NAME}: ${OVERRIDE_VAR} is defined but empty.\n"
+        "  Please set it to a valid source directory.")
+    endif()
+    if (NOT IS_DIRECTORY "${OVERRIDE_DIR}")
+      message(FATAL_ERROR
+        "  ${NAME}: ${OVERRIDE_VAR} does not point to an existing directory:\n"
+        "  ${OVERRIDE_DIR}")
+    endif()
 
-  # 1. Respect existing User/Cache Override
-  if (${FC_VAR})
-    message(STATUS "  Using provided ${NAME} source: ${${FC_VAR}}")
-  else()
-    # 2. Setup the Lock (Using the source tree for multi-user safety)
-    set(LOCK_FILE "${EKAT_SOURCE_DIR}/extern/.${NAME}.lock")
-    file(LOCK "${LOCK_FILE}" GUARD FUNCTION)
+    message(STATUS "  ${NAME}: Using source override from ${${OVERRIDE_VAR}}")
+    # Mark as added and jump straight to the finish
+    add_subdirectory("${${OVERRIDE_VAR}}" "${CMAKE_BINARY_DIR}/externals/${NAME}")
+    set_property(GLOBAL PROPERTY EKAT_TPL_${NAME}_ADDED TRUE)
+    set_property(GLOBAL PROPERTY EKAT_TPL_${NAME}_CALLER "${CMAKE_CURRENT_LIST_FILE}")
+    return()
+  endif()
 
-    # 3. Verify on-disk state
-    set(TPL_SRC_DIR "${EKAT_SOURCE_DIR}/extern/${NAME}")
-    if(EXISTS "${TPL_SRC_DIR}/.git/index" AND EXISTS "${TPL_SRC_DIR}/.git/HEAD")
-      file(READ "${TPL_SRC_DIR}/.git/HEAD" ON_DISK_SHA)
-      string(STRIP "${ON_DISK_SHA}" ON_DISK_SHA)
+  # 1. Define the expected arguments
+  set(options "")
+  set(oneValueArgs GIT_REPOSITORY GIT_TAG SOURCE_DIR)
+  set(multiValueArgs "")
+  cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-      if(ON_DISK_SHA STREQUAL GIT_TAG_VALUE)
-        message(STATUS "  ${NAME}: Source matches required version (${GIT_TAG_VALUE}). Bypassing populate step.")
-        # Promote to CACHE so all sub-projects see the bypass
-        set(${FC_VAR} "${TPL_SRC_DIR}" CACHE PATH "Path to ${NAME} source" FORCE)
-      else()
-        message(STATUS "  ${NAME}: Source version mismatch (found ${ON_DISK_SHA}, expected ${GIT_TAG_VALUE}). Proceeding with populate step.")
-      endif()
+  # Check for unparsed arguments (typos in argument names)
+  if (ARG_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "ekat_fetch_content(${NAME}): Unrecognized arguments: ${ARG_UNPARSED_ARGUMENTS}")
+  endif()
+
+  # Ensure all critical parameters are present
+  foreach(req_var GIT_REPOSITORY GIT_TAG SOURCE_DIR)
+    if (NOT ARG_${req_var})
+      message(FATAL_ERROR "ekat_fetch_content(${NAME}): Missing required argument: ${req_var}")
+    endif()
+  endforeach()
+
+  # 2. Setup paths and lock (a hidden file in the source dir parent folder)
+  get_filename_component(ABS_SOURCE_DIR "${ARG_SOURCE_DIR}" ABSOLUTE)
+  get_filename_component(PARENT_DIR "${ABS_SOURCE_DIR}" DIRECTORY)
+  set(LOCK_FILE "${PARENT_DIR}/.${NAME}.lock")
+
+  # 3. Serialized section: lock the shared source area to verify/populate
+  file(LOCK "${LOCK_FILE}" GUARD FUNCTION TIMEOUT 600)
+
+  # 4. Check if we need to populate the TPL source dir
+  set (POPULATE TRUE)
+  if (EXISTS "${ABS_SOURCE_DIR}/.git/index")
+    # Ask Git for the current HEAD commit hash
+    execute_process(
+      COMMAND git rev-parse HEAD
+      WORKING_DIRECTORY ${ABS_SOURCE_DIR}
+      OUTPUT_VARIABLE ON_DISK_SHA
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+    )
+    if ("${ON_DISK_SHA}" STREQUAL "${ARG_GIT_TAG}")
+      message (STATUS "  ${NAME} source dir already populated with correct version. Skipping populate...")
+      set (POPULATE FALSE)
+    else()
+      message (STATUS "  ${NAME} source dir already populated but with incorrect version. Calling populate...\n"
+                      "    Found version: ${ON_DISK_SHA}"
+                      "    Expected version: ${ARG_GIT_TAG}")
     endif()
   endif()
 
-  # 4. Finalize
-  FetchContent_MakeAvailable(${NAME})
+  # 5. Populate (if needed)
+  if (POPULATE)
+    # Use FetchContent internally for the one build that 'wins' the lock
+    include(FetchContent)
+    FetchContent_Declare(${NAME}
+        GIT_REPOSITORY ${ARG_GIT_REPOSITORY}
+        GIT_TAG        ${ARG_GIT_TAG}
+        SOURCE_DIR     ${ABS_SOURCE_DIR}
+    )
+
+    # This performs the actual git clone/checkout
+    FetchContent_Populate(${NAME})
+  endif ()
+
+  # We can finally release the lock
+  file(LOCK "${LOCK_FILE}" RELEASE)
+
+  # 6. Parse subfolder, and set global property (so we don't re-add it by mistake)
+  add_subdirectory("${ABS_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/externals/${NAME}")
+  set_property(GLOBAL PROPERTY EKAT_TPL_${NAME}_ADDED TRUE)
+  set_property(GLOBAL PROPERTY EKAT_TPL_${NAME}_CALLER "${CMAKE_CURRENT_LIST_FILE}")
 endfunction()

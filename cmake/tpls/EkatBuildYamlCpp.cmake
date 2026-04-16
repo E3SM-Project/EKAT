@@ -10,15 +10,12 @@ set (YAML_CPP_GIT_TAG 95088a0a2b6f2dec0b3e6e59020cdcc0d4f3c658)
 option (YAML_CPP_BUILD_TOOLS "Enable parse tools" OFF)
 option (YAML_CPP_BUILD_TESTS "Enable yaml-cpp tests" OFF)
 
-FetchContent_Declare(yaml-cpp
+# If TPL is already present with correct sha simply adds subdir, otherwise uses FetchContent first
+ekat_fetch_content (yaml-cpp
   GIT_REPOSITORY https://github.com/e3sm-project/yaml-cpp.git
   GIT_TAG        ${YAML_CPP_GIT_TAG}
   SOURCE_DIR     ${EKAT_SOURCE_DIR}/extern/yaml-cpp
-  BINARY_DIR     ${EKAT_BINARY_DIR}/extern/yaml-cpp
 )
-
-# Calls FetchContent_MakeAvailable in a way that avoids race conditions
-ekat_make_available(yaml-cpp ${YAML_CPP_GIT_TAG})
 
 if (EKAT_DISABLE_TPL_WARNINGS)
   include (EkatUtils)

@@ -12,12 +12,9 @@ set(CATCH_INSTALL_HELPERS OFF CACHE BOOL "Disable Catch2 install" FORCE)
 set(CATCH_FORCE_INSTALL ON CACHE BOOL "Force install even if Catch2 is a subproject" FORCE)
 set(CATCH_INSTALL_DOCS OFF CACHE BOOL "Install documentation alongside library" FORCE)
 
-FetchContent_Declare(Catch2
+# If TPL is already present with correct sha simply adds subdir, otherwise uses FetchContent first
+ekat_fetch_content(Catch2
   GIT_REPOSITORY https://github.com/E3SM-Project/Catch2.git
   GIT_TAG        ${CATCH2_GIT_TAG}
   SOURCE_DIR     ${EKAT_SOURCE_DIR}/extern/Catch2
-  BINARY_DIR     ${EKAT_BINARY_DIR}/extern/Catch2
 )
-
-# Calls FetchContent_MakeAvailable in a way that avoids race conditions
-ekat_make_available(Catch2 ${CATCH2_GIT_TAG})
