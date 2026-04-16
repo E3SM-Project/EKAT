@@ -170,6 +170,18 @@ function (ekat_fetch_content NAME)
   string(REPLACE "-" "_" NAME_SANITIZED "${NAME_UPPER}")
   set(OVERRIDE_VAR "FETCHCONTENT_SOURCE_DIR_${NAME_SANITIZED}")
   if (DEFINED ${OVERRIDE_VAR})
+    set(OVERRIDE_DIR "${${OVERRIDE_VAR}}")
+    if ("${OVERRIDE_DIR}" STREQUAL "")
+      message(FATAL_ERROR
+        "  ${NAME}: ${OVERRIDE_VAR} is defined but empty.\n"
+        "  Please set it to a valid source directory.")
+    endif()
+    if (NOT IS_DIRECTORY "${OVERRIDE_DIR}")
+      message(FATAL_ERROR
+        "  ${NAME}: ${OVERRIDE_VAR} does not point to an existing directory:\n"
+        "  ${OVERRIDE_DIR}")
+    endif()
+
     message(STATUS "  ${NAME}: Using source override from ${${OVERRIDE_VAR}}")
     # Mark as added and jump straight to the finish
     add_subdirectory("${${OVERRIDE_VAR}}" "${CMAKE_BINARY_DIR}/externals/${NAME}")
@@ -183,6 +195,18 @@ function (ekat_fetch_content NAME)
   set(oneValueArgs GIT_REPOSITORY GIT_TAG SOURCE_DIR)
   set(multiValueArgs "")
   cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  # Check for unparsed arguments (typos in argument names)
+  if (ARG_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "ekat_fetch_content(${NAME}): Unrecognized arguments: ${ARG_UNPARSED_ARGUMENTS}")
+  endif()
+
+  # Ensure all critical parameters are present
+  foreach(req_var GIT_REPOSITORY GIT_TAG SOURCE_DIR)
+    if (NOT ARG_${req_var})
+      message(FATAL_ERROR "ekat_fetch_content(${NAME}): Missing required argument: ${req_var}")
+    endif()
+  endforeach()
 
   # 2. Setup paths and lock (a hidden file in the source dir parent folder)
   get_filename_component(ABS_SOURCE_DIR "${ARG_SOURCE_DIR}" ABSOLUTE)
