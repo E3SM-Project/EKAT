@@ -11,15 +11,12 @@ option (SPDLOG_BUILD_TESTS "Enable spdlog tests" OFF)
 option (SPDLOG_BUILD_EXAMPLE "Enable spdlog examples" OFF)
 option (SPDLOG_INSTALL "Spdlog install location" ON)
 
-FetchContent_Declare(spdlog
+# If TPL is already present with correct sha simply adds subdir, otherwise uses FetchContent first
+ekat_fetch_content(spdlog
   GIT_REPOSITORY https://github.com/e3sm-project/spdlog.git
   GIT_TAG        ${SPDLOG_GIT_TAG}
   SOURCE_DIR     ${EKAT_SOURCE_DIR}/extern/spdlog
-  BINARY_DIR     ${EKAT_BINARY_DIR}/extern/spdlog
 )
-
-# Calls FetchContent_MakeAvailable in a way that avoids race conditions
-ekat_make_available(spdlog ${SPDLOG_GIT_TAG})
 
 if (EKAT_DISABLE_TPL_WARNINGS)
   EkatDisableAllWarning(spdlog)
