@@ -5,3 +5,6 @@ extern/yaml-cpp/
 
 # Our util ekat_fetch_tpl util uses these lock files to avoid race conditions
 extern/.*.lock
+
+# Directory created by CACTS testing framework
+ctest-build
