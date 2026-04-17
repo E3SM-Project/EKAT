@@ -58,9 +58,11 @@ public:
   // No default
   Units () = delete;
 
-  // Construct a non-dimensional quantity
+  // Construct a Non-dimensional quantity
   constexpr Units (const ScalingFactor& scaling)
-   : Units(0,0,0,0,0,0,0,scaling,scaling.string_repr<UNITS_MAX_STR_LEN>().data())
+   : m_scaling (scaling)
+   , m_units {0,0,0,0,0,0,0}
+   , m_string_repr {scaling.string_repr<UNITS_MAX_STR_LEN>()}
   {
     // Nothing to do here
   }
@@ -196,9 +198,9 @@ private:
     // 1. Calculate required length upfront
     const bool comp1 = composite(lhs);
     const bool comp2 = composite(rhs);
-    
-    const size_t total_len = lhs.size() + rhs.size() + 
-                             (comp1 ? 2 : 0) + (comp2 ? 2 : 0) + 
+
+    const size_t total_len = lhs.size() + rhs.size() +
+                             (comp1 ? 2 : 0) + (comp2 ? 2 : 0) +
                              (sep != '\0' ? 1 : 0);
     // Trigger a compiler error if the name is too long.
     assert (total_len<UNITS_MAX_STR_LEN);
