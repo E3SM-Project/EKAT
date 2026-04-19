@@ -76,7 +76,7 @@ public:
                    const RationalConstant& amountExp,
                    const RationalConstant& luminousIntensityExp,
                    const ScalingFactor& scalingFactor = ScalingFactor::one(),
-                   const std::string_view& n = "")
+                   std::string_view n = "")
    : m_scaling {scalingFactor}
    , m_units {lengthExp,timeExp,massExp,temperatureExp,currentExp,amountExp,luminousIntensityExp}
   {
@@ -88,7 +88,7 @@ public:
     m_string_repr[n.size()] = '\0';
   }
 
-  constexpr Units (const Units& rhs, const std::string_view& s)
+  constexpr Units (const Units& rhs, std::string_view s)
    : Units(rhs)
   {
     assert (s.size()<UNITS_MAX_STR_LEN);
@@ -171,7 +171,7 @@ public:
    * Use [[nodiscard]] to ensure users get a warning if the returned
    * value is not used.
    */
-  [[nodiscard]] constexpr Units rename(const std::string_view s) const {
+  [[nodiscard]] constexpr Units rename(std::string_view s) const {
     return Units(*this, s);
   }
 private:
@@ -181,7 +181,7 @@ private:
 
   // Returns true if the unit is composite (i.e., does not have a one-word symbol,
   // but instead is a compound of symbols, such as a*b/c)
-  static constexpr bool composite (const std::string_view sv) {
+  static constexpr bool composite (std::string_view sv) {
     for (const auto& c : sv) {
       // These are the characters that trigger parentheses
       if (c == '*' || c == '/' || c == '^')
@@ -191,8 +191,8 @@ private:
   }
 
   static constexpr std::array<char, UNITS_MAX_STR_LEN>
-  concat_repr (const std::string_view& lhs,
-               const std::string_view& rhs,
+  concat_repr (std::string_view lhs,
+               std::string_view rhs,
                const char sep)
   {
     // 1. Calculate required length upfront
