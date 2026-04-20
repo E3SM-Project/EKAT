@@ -76,26 +76,20 @@ public:
                    const RationalConstant& amountExp,
                    const RationalConstant& luminousIntensityExp,
                    const ScalingFactor& scalingFactor = ScalingFactor::one(),
-                   std::string_view n = "")
+                   std::string_view s = "")
    : m_scaling {scalingFactor}
    , m_units {lengthExp,timeExp,massExp,temperatureExp,currentExp,amountExp,luminousIntensityExp}
+   , m_string_repr (to_array(s))
   {
-    assert(n.size() < UNITS_MAX_STR_LEN);
-
-    for (size_t i = 0; i < n.size(); ++i)
-        m_string_repr[i] = n[i];
-
-    m_string_repr[n.size()] = '\0';
+    // Nothing to do here
   }
 
   constexpr Units (const Units& rhs, std::string_view s)
-   : Units(rhs)
+   : m_scaling (rhs.m_scaling)
+   , m_units (rhs.m_units)
+   , m_string_repr (to_array(s))
   {
-    assert (s.size()<UNITS_MAX_STR_LEN);
-    for (size_t i=0; i<s.size(); ++i) {
-      m_string_repr[i] = s[i];
-    }
-    m_string_repr[s.size()] = '\0';
+    // Nothing to do here
   }
   constexpr Units (const Units&) = default;
 
@@ -179,6 +173,16 @@ private:
     return m_string_repr.data();
   }
 
+  // Convert string_view to std::array<char,N> to prevent view expiration
+  // Units must OWN the string representation, which can be tricky in constexpr functions
+  static constexpr std::array<char, UNITS_MAX_STR_LEN> to_array(std::string_view s) {
+    assert (s.size()<UNITS_MAX_STR_LEN);
+    std::array<char, UNITS_MAX_STR_LEN> res = {'\0'};
+    for (size_t i = 0; i < s.size() && i < UNITS_MAX_STR_LEN - 1; ++i) {
+      res[i] = s[i];
+    }
+    return res;
+  }
   // Returns true if the unit is composite (i.e., does not have a one-word symbol,
   // but instead is a compound of symbols, such as a*b/c)
   static constexpr bool composite (std::string_view sv) {
