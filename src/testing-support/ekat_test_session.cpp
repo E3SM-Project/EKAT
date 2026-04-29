@@ -1,5 +1,3 @@
-#include "ekat_testing_support.hpp"
-
 #ifdef EKAT_HAS_KOKKOS
 #include "ekat_kokkos_session.hpp"
 #endif

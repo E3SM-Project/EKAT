@@ -1,7 +1,5 @@
 #define CATCH_CONFIG_RUNNER
 
-#include "ekat_testing_support.hpp"
-
 #include "catch2/catch.hpp"
 
 #include "ekat_test_utils.hpp"
