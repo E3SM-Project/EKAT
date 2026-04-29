@@ -1,5 +1,7 @@
 #define CATCH_CONFIG_RUNNER
 
+#include "ekat_testing_support.hpp"
+
 #include "catch2/catch.hpp"
 
 #include "ekat_test_utils.hpp"
@@ -48,6 +50,10 @@ Args split_args (int argc, char** argv)
 }
 
 int main (int argc, char **argv) {
+
+#ifdef EKAT_ENABLE_KOKKOS_TOOLS
+  setenv("KOKKOS_TOOLS_LIBS", KOKKOS_TOOLS_LIBS, 1);
+#endif
 
 #ifdef EKAT_ENABLE_MPI
   // Initialize MPI

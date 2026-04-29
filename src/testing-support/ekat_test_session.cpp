@@ -1,3 +1,5 @@
+#include "ekat_testing_support.hpp"
+
 #ifdef EKAT_HAS_KOKKOS
 #include "ekat_kokkos_session.hpp"
 #endif
@@ -6,6 +8,10 @@
 #include "ekat_arch.hpp"
 
 void ekat_initialize_test_session (int argc, char** argv, const bool print_config) {
+#ifdef EKAT_ENABLE_KOKKOS_TOOLS
+  setenv("KOKKOS_TOOLS_LIBS", KOKKOS_TOOLS_LIBS, 1);
+#endif
+
 #ifdef EKAT_HAS_KOKKOS
   ekat::initialize_kokkos_session (argc,argv,print_config);
 #endif

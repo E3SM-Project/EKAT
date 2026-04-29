@@ -1,3 +1,21 @@
+### Kokkos Tools for kernel profiling ###
+
+if (EKAT_ENABLE_KOKKOS_TOOLS)
+  set (KokkosTools_FOUND FALSE)
+  if (TARGET kokkostools)
+    set(KokkosTools_FOUND TRUE)
+    message(STATUS "EKAT: Using kokkos-tools provided by parent project")
+  else() # not found -- we fetch it ourselves
+    include (EkatBuildKokkosTools)
+  endif()
+
+  # Build a list of kokkos-tools libraries
+  set(profiling_libs simple-kernel-timer)
+  foreach (lib_path ${profile_libs})
+    list(APPEND KOKKOS_TOOLS_LIBS ${kokkostools_BINARY_DIR}/profiling/${lib_path})
+  endforeach()
+endif()
+
 ### CATCH MAIN ###
 
 set (Catch2_FOUND FALSE)
@@ -82,6 +100,13 @@ endif()
 # install call, will force user to link ekat::CatchMain
 set_target_properties(ekat_testsession PROPERTIES
   EXPORT_NAME DefaultTestSession
+)
+
+# Write out a configuration header for testing support.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ekat_testing_support.hpp.in
+               ${CMAKE_CURRENT_BINARY_DIR}/ekat_testing_support.hpp)
+set_target_properties(ekat_testsession PROPERTIES
+  INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 # Install the packages
