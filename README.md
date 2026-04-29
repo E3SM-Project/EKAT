@@ -102,6 +102,7 @@ ctest --output-on-failure
 | `EKAT_ENABLE_ALGORITHM` | `OFF` | Enable the Algorithm sub-package. |
 | `EKAT_ENABLE_EXPRESSION` | `OFF` | Enable the Expression sub-package. |
 | `EKAT_ENABLE_KOKKOS` | `OFF` | Enable the KokkosUtils sub-package. |
+| `EKAT_ENABLE_KOKKOS_TOOLS` | `OFF` | Enable support for kokkos-tools. |
 | `EKAT_ENABLE_LOGGING` | `OFF` | Enable the Logging sub-package. |
 | `EKAT_ENABLE_PACK` | `OFF` | Enable the Pack sub-package. |
 | `EKAT_ENABLE_YAML_PARSER` | `OFF` | Enable the Parser sub-package. |

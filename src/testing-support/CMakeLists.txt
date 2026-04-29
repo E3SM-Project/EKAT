@@ -11,7 +11,7 @@ if (EKAT_ENABLE_KOKKOS_TOOLS)
 
   # Build a list of kokkos-tools libraries
   set(profiling_libs simple-kernel-timer)
-  foreach (lib_path ${profile_libs})
+  foreach (lib_path ${profiling_libs})
     list(APPEND KOKKOS_TOOLS_LIBS ${kokkostools_BINARY_DIR}/profiling/${lib_path})
   endforeach()
 endif()
@@ -52,17 +52,23 @@ else()
   set (EKAT_BUILDS_CATCH2 OFF CACHE BOOL "Whether Ekat builds Catch2" FORCE)
 endif()
 
+# Write out a configuration header for testing support.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ekat_testing_support.hpp.in
+               ${CMAKE_CURRENT_BINARY_DIR}/ekat_testing_support.hpp)
+
 # A small lib for Catch2 main executable, so we don't rebuild it
 # for every single unit test
 add_library(ekat_catchmain ekat_catch_main.cpp)
 target_link_libraries(ekat_catchmain PUBLIC ekat::Core)
 target_link_libraries(ekat_catchmain PUBLIC Catch2::Catch2)
+target_link_libraries(ekat_catchmain PUBLIC ekat_testsession)
 
 # Set the name to be used when exportin the target
 # This, together with the NAMESPACE property set in the main CMakeLists.txt
 # install call, will force user to link ekat::CatchMain
 set_target_properties(ekat_catchmain PROPERTIES
   EXPORT_NAME CatchMain
+  INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 # Install the packages
@@ -100,12 +106,6 @@ endif()
 # install call, will force user to link ekat::CatchMain
 set_target_properties(ekat_testsession PROPERTIES
   EXPORT_NAME DefaultTestSession
-)
-
-# Write out a configuration header for testing support.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ekat_testing_support.hpp.in
-               ${CMAKE_CURRENT_BINARY_DIR}/ekat_testing_support.hpp)
-set_target_properties(ekat_testsession PROPERTIES
   INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}
 )
 
