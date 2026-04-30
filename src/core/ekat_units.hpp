@@ -208,6 +208,7 @@ private:
                              (sep != '\0' ? 1 : 0);
     // Trigger a compiler error if the name is too long.
     assert (total_len<UNITS_MAX_STR_LEN);
+    (void)total_len;
 
     std::array<char, UNITS_MAX_STR_LEN> out = {'\0'};
 
