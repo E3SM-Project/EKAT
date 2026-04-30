@@ -663,7 +663,7 @@ template<typename PackT>
 KOKKOS_INLINE_FUNCTION
 constexpr OnlyPack<PackT> invalid () {
   using scalar_t = typename ScalarTraits<PackT>::scalar_type;
-  if constexpr (ScalarTraits<PackT>::is_floating_point) {
+  if constexpr (ScalarTraits<scalar_t>::is_floating_point) {
     constexpr auto s = Kokkos::Experimental::quiet_NaN_v<scalar_t>;
     return PackT{s};
   } else {
