@@ -3,9 +3,7 @@
 
 #include "ekat_expression_meta.hpp"
 
-#include "ekat_std_utils.hpp"
 #include "ekat_kernel_assert.hpp"
-#include "ekat_assert.hpp"
 
 #include <Kokkos_Core.hpp>
 
@@ -34,14 +32,16 @@ public:
   static_assert(expr_l or expr_r,
     "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
+  KOKKOS_INLINE_FUNCTION
   CmpExpression (const ELeft& left, const ERight& right, Comparison CMP)
     : m_left(left)
     , m_right(right)
     , m_cmp(CMP)
   {
-    auto valid = {Comparison::EQ,Comparison::NE,Comparison::GT,
-                  Comparison::GE,Comparison::LT,Comparison::LE};
-    EKAT_REQUIRE_MSG (ekat::contains(valid,CMP),
+    EKAT_KERNEL_REQUIRE_MSG (
+      CMP==Comparison::EQ || CMP==Comparison::NE ||
+      CMP==Comparison::GT || CMP==Comparison::GE ||
+      CMP==Comparison::LT || CMP==Comparison::LE,
       "[CmpExpression] Error! Unrecognized/unsupported Comparison value.\n");
   }
 
@@ -59,11 +59,26 @@ public:
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
   int extent (int i) const {
     if constexpr (expr_l)
       return m_left.extent(i);
     else
       return m_right.extent(i);
+  }
+
+  // Propagate the highest ExprKind from sub-expressions
+  static constexpr ExprKind kind () {
+    constexpr ExprKind lk = expr_l ? ELeft::kind()  : ExprKind::Elemental;
+    constexpr ExprKind rk = expr_r ? ERight::kind() : ExprKind::Elemental;
+    return expr_kind_max(lk,rk);
+  }
+
+  template<typename MemberType>
+  KOKKOS_INLINE_FUNCTION
+  void setup (const MemberType& team) {
+    if constexpr (expr_l) m_left.setup(team);
+    if constexpr (expr_r) m_right.setup(team);
   }
 
   template<typename... Args>
@@ -96,6 +111,7 @@ protected:
       case Comparison::LE: return l<=r;
       default:
         EKAT_KERNEL_ERROR_MSG ("Internal error! Unsupported cmp operator.\n");
+        return false; // unreachable, suppresses compiler warning
     }
   }
 

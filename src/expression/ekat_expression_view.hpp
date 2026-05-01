@@ -13,6 +13,7 @@ public:
   using view_t = ViewT;
   using value_t = typename ViewT::element_type;
 
+  KOKKOS_INLINE_FUNCTION
   ViewExpression (const view_t& v)
    : m_view(v)
   {
@@ -20,7 +21,14 @@ public:
   }
 
   static constexpr int rank () { return ViewT::rank; }
-  int extent (int i) const { return m_view.extent_int(i); }
+  KOKKOS_INLINE_FUNCTION int extent (int i) const { return m_view.extent_int(i); }
+
+  // Elemental: no pre-computation needed
+  static constexpr ExprKind kind () { return ExprKind::Elemental; }
+
+  template<typename MemberType>
+  KOKKOS_INLINE_FUNCTION
+  void setup (const MemberType&) const { /* no-op */ }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION

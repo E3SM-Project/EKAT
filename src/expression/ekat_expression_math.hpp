@@ -24,27 +24,58 @@ namespace ekat {
     using eval_arg2_t = eval_return_t<EArg2>;                                           \
     using eval_t = std::common_type_t<eval_arg1_t,eval_arg2_t>;                         \
                                                                                         \
+    KOKKOS_INLINE_FUNCTION                                                              \
     name##Expression (const EArg1& arg1, const EArg2& arg2)                             \
       : m_arg1(arg1)                                                                    \
       , m_arg2(arg2)                                                                    \
     {}                                                                                  \
                                                                                         \
     static constexpr int rank () {                                                      \
-      if constexpr (expr_l) {                                                           \
-        if constexpr (expr_r) {                                                         \
-          static_assert(EArg1::rank()==EArg2::rank(),                                   \
-            "[BinaryExpression] Error! EArg1 and EArg2 have different rank.\n");        \
+      if constexpr (expr_l and expr_r) {                                                \
+        constexpr int lr = EArg1::rank();                                               \
+        constexpr int rr = EArg2::rank();                                               \
+        if constexpr (lr > 0 and rr > 0) {                                              \
+          static_assert(lr == rr,                                                       \
+            "[BinaryMathExpression] Error! EArg1 and EArg2 have different rank.\n");    \
         }                                                                               \
+        return lr > rr ? lr : rr;                                                       \
+      } else if constexpr (expr_l) {                                                    \
         return EArg1::rank();                                                           \
       } else {                                                                          \
         return EArg2::rank();                                                           \
       }                                                                                 \
     }                                                                                   \
+    KOKKOS_INLINE_FUNCTION                                                              \
     int extent (int i) const {                                                          \
-      if constexpr (expr_l)                                                             \
+      if constexpr (expr_l and expr_r) {                                                \
+        if constexpr (EArg1::rank() > 0)                                               \
+          return m_arg1.extent(i);                                                      \
+        else if constexpr (EArg2::rank() > 0)                                          \
+          return m_arg2.extent(i);                                                      \
+        else                                                                            \
+          return 0;                                                                     \
+      } else if constexpr (expr_l) {                                                    \
         return m_arg1.extent(i);                                                        \
-      else                                                                              \
+      } else {                                                                          \
         return m_arg2.extent(i);                                                        \
+      }                                                                                 \
+    }                                                                                   \
+                                                                                        \
+    static constexpr ExprKind kind () {                                                 \
+      if constexpr (expr_l and expr_r)                                                  \
+        return expr_kind_max(EArg1::kind(), EArg2::kind());                             \
+      else if constexpr (expr_l)                                                        \
+        return EArg1::kind();                                                           \
+      else if constexpr (expr_r)                                                        \
+        return EArg2::kind();                                                           \
+      else                                                                              \
+        return ExprKind::Elemental;                                                     \
+    }                                                                                   \
+    template<typename MemberType>                                                       \
+    KOKKOS_INLINE_FUNCTION                                                              \
+    void setup (const MemberType& team) {                                               \
+      if constexpr (expr_l) m_arg1.setup(team);                                        \
+      if constexpr (expr_r) m_arg2.setup(team);                                        \
     }                                                                                   \
                                                                                         \
     template<typename... Args>                                                          \
@@ -54,8 +85,16 @@ namespace ekat {
         return eval_impl(m_arg1,m_arg2.eval(args...));                                  \
       else if constexpr (not expr_r)                                                    \
         return eval_impl(m_arg1.eval(args...),m_arg2);                                  \
-      else                                                                              \
-        return eval_impl(m_arg1.eval(args...),m_arg2.eval(args...));                    \
+      else {                                                                            \
+        constexpr int lr = EArg1::rank();                                               \
+        constexpr int rr = EArg2::rank();                                               \
+        if constexpr (lr == 0 and rr > 0)                                               \
+          return eval_impl(m_arg1.eval(),m_arg2.eval(args...));                         \
+        else if constexpr (rr == 0 and lr > 0)                                         \
+          return eval_impl(m_arg1.eval(args...),m_arg2.eval());                         \
+        else                                                                            \
+          return eval_impl(m_arg1.eval(args...),m_arg2.eval(args...));                  \
+      }                                                                                 \
     }                                                                                   \
   protected:                                                                            \
     KOKKOS_INLINE_FUNCTION                                                              \
@@ -99,12 +138,18 @@ EKAT_BINARY_MATH_EXPRESSION(min,Min);
     using arg_eval_t = eval_return_t<EArg>;                             \
     using eval_t = decltype(Kokkos::impl(std::declval<arg_eval_t>()));  \
                                                                         \
+    KOKKOS_INLINE_FUNCTION                                              \
     name##Expression (const EArg& arg)                                  \
       : m_arg(arg)                                                      \
     {}                                                                  \
                                                                         \
     static constexpr int rank() { return EArg::rank(); }                \
-    int extent (int i) const { return m_arg.extent(i); }                \
+    KOKKOS_INLINE_FUNCTION int extent (int i) const { return m_arg.extent(i); } \
+                                                                        \
+    static constexpr ExprKind kind () { return EArg::kind(); }          \
+    template<typename MemberType>                                       \
+    KOKKOS_INLINE_FUNCTION                                              \
+    void setup (const MemberType& team) { m_arg.setup(team); }          \
                                                                         \
     template<typename... Args>                                          \
     KOKKOS_INLINE_FUNCTION                                              \

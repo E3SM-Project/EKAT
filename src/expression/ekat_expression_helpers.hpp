@@ -5,6 +5,7 @@
 #include "ekat_expression_compare.hpp"
 #include "ekat_expression_conditional.hpp"
 #include "ekat_expression_math.hpp"
+#include "ekat_expression_reduce.hpp"
 #include "ekat_expression_view.hpp"
 
 namespace ekat {
@@ -102,6 +103,61 @@ std::enable_if_t<Kokkos::is_view_v<ViewT>,ViewExpression<ViewT>>
 view_expression(const ViewT& v)
 {
   return ViewExpression<ViewT>(v);
+}
+
+// -----------------------------------------------------------------------
+// Free functions to build ReduceExpression nodes
+//
+// The 'result' view must be pre-allocated on the host with at least
+// league_size elements (one per team).  All helpers require the
+// sub-expression to be rank-1.
+// -----------------------------------------------------------------------
+
+template<typename EArg>
+std::enable_if_t<is_expr_v<EArg>,
+                 ReduceExpression<EArg,ReduceOp::Sum>>
+reduce_sum (const EArg& sub,
+            const Kokkos::View<eval_return_t<EArg>*>& result)
+{
+  return ReduceExpression<EArg,ReduceOp::Sum>(sub, result);
+}
+
+template<typename EArg>
+std::enable_if_t<is_expr_v<EArg>,
+                 ReduceExpression<EArg,ReduceOp::Max>>
+reduce_max (const EArg& sub,
+            const Kokkos::View<eval_return_t<EArg>*>& result)
+{
+  return ReduceExpression<EArg,ReduceOp::Max>(sub, result);
+}
+
+template<typename EArg>
+std::enable_if_t<is_expr_v<EArg>,
+                 ReduceExpression<EArg,ReduceOp::Min>>
+reduce_min (const EArg& sub,
+            const Kokkos::View<eval_return_t<EArg>*>& result)
+{
+  return ReduceExpression<EArg,ReduceOp::Min>(sub, result);
+}
+
+// reduce_all: true if every element satisfies a boolean expression
+template<typename EArg>
+std::enable_if_t<is_expr_v<EArg>,
+                 ReduceExpression<EArg,ReduceOp::And>>
+reduce_all (const EArg& sub,
+            const Kokkos::View<eval_return_t<EArg>*>& result)
+{
+  return ReduceExpression<EArg,ReduceOp::And>(sub, result);
+}
+
+// reduce_any: true if at least one element satisfies a boolean expression
+template<typename EArg>
+std::enable_if_t<is_expr_v<EArg>,
+                 ReduceExpression<EArg,ReduceOp::Or>>
+reduce_any (const EArg& sub,
+            const Kokkos::View<eval_return_t<EArg>*>& result)
+{
+  return ReduceExpression<EArg,ReduceOp::Or>(sub, result);
 }
 
 } // namespace ekat

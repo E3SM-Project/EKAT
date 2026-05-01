@@ -24,6 +24,7 @@ public:
   static_assert(expr_c or expr_l or expr_r,
     "[CmpExpression] At least one between ECond, ELeft, and ERight must be an Expression type.\n");
 
+  KOKKOS_INLINE_FUNCTION
   ConditionalExpression (const ECond& cmp, const ELeft& left, const ERight& right)
     : m_cmp(cmp)
     , m_left(left)
@@ -53,6 +54,8 @@ public:
       return ERight::rank();
     }
   }
+
+  KOKKOS_INLINE_FUNCTION
   int extent (int i) const {
     if constexpr (expr_c)
       return m_cmp.extent(i);
@@ -60,6 +63,23 @@ public:
       return m_left.extent(i);
     else
       return m_right.extent(i);
+  }
+
+  // Propagate the highest ExprKind from sub-expressions
+  static constexpr ExprKind kind () {
+    constexpr ExprKind ck = expr_c ? ECond::kind()  : ExprKind::Elemental;
+    constexpr ExprKind lk = expr_l ? ELeft::kind()  : ExprKind::Elemental;
+    constexpr ExprKind rk = expr_r ? ERight::kind() : ExprKind::Elemental;
+    return expr_kind_max(expr_kind_max(ck,lk),rk);
+  }
+
+  // Eagerly setup all branches (both true and false branches are pre-computed)
+  template<typename MemberType>
+  KOKKOS_INLINE_FUNCTION
+  void setup (const MemberType& team) {
+    if constexpr (expr_c) m_cmp.setup(team);
+    if constexpr (expr_l) m_left.setup(team);
+    if constexpr (expr_r) m_right.setup(team);
   }
 
   template<typename... Args>
