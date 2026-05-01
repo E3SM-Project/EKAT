@@ -125,6 +125,7 @@ protected:
     } else if constexpr (OP==BinOp::Mult) {
       return l*r;
     } else {
+      // BinOp::Div — the only remaining case; BinOp has exactly 4 values
       return l/r;
     }
   }

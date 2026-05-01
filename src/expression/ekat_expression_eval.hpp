@@ -161,27 +161,23 @@ evaluate (Expression e,
                       : TeamEvalMode::TeamThread_ThreadVector;
   }
 
+  // TeamVectorRange only applies cleanly to rank 0 and 1; for higher ranks
+  // silently promote to TeamThread_ThreadVector.
   if (actual == TeamEvalMode::TeamVectorRange) {
     if constexpr (N == 0) {
       Kokkos::single(Kokkos::PerTeam(team), [&]() { result() = e.eval(); });
+      return;
     } else if constexpr (N == 1) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, e.extent(0)),
         [&](int i) { result(i) = e.eval(i); });
+      return;
+    } else {
+      // Promote to TeamThread_ThreadVector for N > 1
+      actual = TeamEvalMode::TeamThread_ThreadVector;
     }
-    // For N > 1 with TeamVectorRange, fall through to TeamThread_ThreadVector
-    // (TeamVectorRange cannot express multi-dimensional loops directly).
-    else {
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, e.extent(0)),
-        [&](int i) {
-          for (int j = 0; j < e.extent(1); ++j)
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, e.extent(2 > N-1 ? N-1 : 2)),
-              [&](int k) {
-                if constexpr (N == 2) result(i,j)   = e.eval(i,j);
-                else                  result(i,j,k)  = e.eval(i,j,k);
-              });
-        });
-    }
-  } else if (actual == TeamEvalMode::ThreadVectorRange) {
+  }
+
+  if (actual == TeamEvalMode::ThreadVectorRange) {
     // Caller is already inside a TeamThreadRange loop; cover the innermost dim.
     if constexpr (N == 1) {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, e.extent(0)),
@@ -191,7 +187,7 @@ evaluate (Expression e,
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, e.extent(1)),
           [&](int j) { result(i,j) = e.eval(i,j); });
     }
-  } else { // TeamThread_ThreadVector
+  } else { // TeamThread_ThreadVector (including promoted TeamVectorRange)
     if constexpr (N == 1) {
       // Degenerate: no thread-level loop, just vector
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, e.extent(0)),
