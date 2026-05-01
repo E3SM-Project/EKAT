@@ -1,13 +1,11 @@
 #ifndef EKAT_EXPRESSION_COMPARE_HPP
 #define EKAT_EXPRESSION_COMPARE_HPP
 
-#include "ekat_expression_meta.hpp"
+#include "ekat_expression_base.hpp"
 
 #include "ekat_std_utils.hpp"
 #include "ekat_kernel_assert.hpp"
 #include "ekat_assert.hpp"
-
-#include <Kokkos_Core.hpp>
 
 namespace ekat {
 
@@ -21,20 +19,22 @@ enum class Comparison : int {
 };
 
 template<typename ELeft, typename ERight>
-class CmpExpression {
+class CmpExpression : public ExpressionBase<CmpExpression<ELeft,ERight>> {
 public:
   static constexpr bool expr_l = is_expr_v<ELeft>;
   static constexpr bool expr_r = is_expr_v<ERight>;
 
-  using eval_left_t  = eval_return_t<ELeft>;
-  using eval_right_t = eval_return_t<ERight>;
-  using eval_t = decltype(std::declval<eval_left_t>()==std::declval<eval_right_t>());
+  using return_left_t  = eval_return_t<ELeft>;
+  using return_right_t = eval_return_t<ERight>;
+  using return_type = decltype(std::declval<return_left_t>()==std::declval<return_right_t>());
 
   // Don't create an expression from builtin types, just compare them!
   static_assert(expr_l or expr_r,
     "[CmpExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
-  CmpExpression (const ELeft& left, const ERight& right, Comparison CMP)
+  CmpExpression (const ELeft& left,
+                 const ERight& right,
+                 Comparison CMP)
     : m_left(left)
     , m_right(right)
     , m_cmp(CMP)
@@ -48,7 +48,7 @@ public:
   static constexpr int rank() {
     if constexpr (expr_l) {
       if constexpr (expr_r) {
-        static_assert(ELeft::rank()==ERight::rank(),
+        static_assert(ELeft::rank()==ERight::rank() or ELeft::rank()==0 or ERight::rank()==0,
           "[CmpExpression] Error! ELeft and ERight are Expression types of different rank.\n");
       }
       return ELeft::rank();
@@ -68,13 +68,12 @@ public:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  eval_t eval(Args... args) const {
+  return_type eval(Args... args) const {
     if constexpr (expr_l) {
-      if constexpr (expr_r) {
+      if constexpr (expr_r)
         return eval_impl(m_left.eval(args...), m_right.eval(args...));
-      } else {
+      else
         return eval_impl(m_left.eval(args...), m_right);
-      }
     } else if constexpr (expr_r) {
       return eval_impl(m_left, m_right.eval(args...));
     } else {
@@ -86,7 +85,7 @@ protected:
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
-  eval_t eval_impl(const eval_left_t& l, const eval_right_t& r) const {
+  return_type eval_impl(const return_left_t& l, const return_right_t& r) const {
     switch (m_cmp) {
       case Comparison::EQ: return l==r;
       case Comparison::NE: return l!=r;
@@ -105,13 +104,27 @@ protected:
   Comparison m_cmp;
 };
 
-// Specialize meta utils
-template<typename ELeft, typename ERight>
-struct is_expr<CmpExpression<ELeft,ERight>> : std::true_type {};
-template<typename ELeft, typename ERight>
-struct eval_return<CmpExpression<ELeft,ERight>> {
-  using type = typename CmpExpression<ELeft,ERight>::eval_t;
-};
+// Overload comparison operators
+#define EKAT_GEN_CMP_OP_EXPR(OP,ENUM)                                 \
+  template<typename T1, typename T2,                                  \
+           typename = std::enable_if_t<is_any_expr_v<T1,T2>>>         \
+  KOKKOS_INLINE_FUNCTION                                              \
+  auto operator OP (const T1& l, const T2& r)                         \
+  {                                                                   \
+    using  ret_t = CmpExpression<get_expr_node_t<T1>,                 \
+                                 get_expr_node_t<T2>>;                \
+                                                                      \
+    return ret_t(get_expr_node(l),get_expr_node(r),Comparison::ENUM); \
+  }
+
+EKAT_GEN_CMP_OP_EXPR(==,EQ);
+EKAT_GEN_CMP_OP_EXPR(!=,NE);
+EKAT_GEN_CMP_OP_EXPR(> ,GT);
+EKAT_GEN_CMP_OP_EXPR(>=,GE);
+EKAT_GEN_CMP_OP_EXPR(< ,LT);
+EKAT_GEN_CMP_OP_EXPR(<=,LE);
+
+#undef EKAT_GEN_CMP_OP_EXPR
 
 } // namespace ekat
 

@@ -1,23 +1,23 @@
 #ifndef EKAT_EXPRESSION_EVAL_HPP
 #define EKAT_EXPRESSION_EVAL_HPP
 
-#include "ekat_expression_meta.hpp"
+#include "ekat_expression_base.hpp"
 #include "ekat_assert.hpp"
 
 #include <Kokkos_Core.hpp>
 
 namespace ekat {
 
-template<typename Expression, typename ViewT>
-std::enable_if_t<is_expr_v<Expression>>
-evaluate (const Expression& e, const ViewT& result)
+template<typename EType, typename ViewT>
+void evaluate (const ExpressionBase<EType>& base, const ViewT& result)
 {
+  using expr_t = ExpressionBase<EType>;
   constexpr int N = ViewT::rank;
 
-  EKAT_REQUIRE_MSG (N==Expression::rank(),
+  EKAT_REQUIRE_MSG (N==expr_t::rank(),
     "[evaluate] Error! Input expression and result view have different ranks.\n"
     " - view rank: " + std::to_string(N) + "\n"
-    " - expression rank: " + std::to_string(Expression::rank()) + "\n");
+    " - expression rank: " + std::to_string(expr_t::rank()) + "\n");
 
   // Kokkos views don't go higher than rank 8, but just in case...
   static_assert(N<=8, "[evaluate] Unsupported expression rank.\n");
@@ -29,6 +29,7 @@ evaluate (const Expression& e, const ViewT& result)
 
   // Ensure the beg/end array size is > 0. While compilers may allow size-0 arrays as an extension,
   // it is not standard compliant. For N=0, we won't use these anyways...
+  const auto& e = base.cast();
   int beg[N==0 ? 1 : N] = {};
   int end[N==0 ? 1 : N] = {};
   for (int i=0; i<N; ++i) {

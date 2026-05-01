@@ -1,7 +1,12 @@
 #include <catch2/catch.hpp>
 
-#include "ekat_expression_helpers.hpp"
 #include "ekat_expression_eval.hpp"
+
+#include "ekat_expression_binary_op.hpp"
+#include "ekat_expression_compare.hpp"
+#include "ekat_expression_conditional.hpp"
+#include "ekat_expression_math.hpp"
+#include "ekat_expression_view.hpp"
 
 #include "ekat_view_utils.hpp"
 #include "ekat_kokkos_types.hpp"
@@ -13,8 +18,8 @@ namespace ekat {
 template<typename ViewT>
 void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
 {
-  auto xe = view_expression(x);
-  auto ye = view_expression(y);
+  auto xe = expression(x);
+  auto ye = expression(y);
   auto expression = xe*ye - 1/ye + 2*xe;
 
   evaluate(expression,z);
@@ -27,15 +32,15 @@ void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
     auto y_val = yh.data()[i];
     auto z_val = zh.data()[i];
     auto tgt   = x_val*y_val-1/y_val+2*x_val;
-    REQUIRE (z_val==Approx(tgt).epsilon(1e-10));
+    REQUIRE (z_val==tgt);
   }
 }
 
 template<typename ViewT>
 void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
 {
-  auto xe = view_expression(x);
-  auto ye = view_expression(y);
+  auto xe = expression(x);
+  auto ye = expression(y);
   auto expression = 2*exp(-xe)*sin(xe)*log(ye)-sqrt(xe)+pow(ye,2)+pow(3,xe);
 
   evaluate(expression,z);
@@ -53,12 +58,33 @@ void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
   }
 }
 
+template<typename ViewT, typename BViewT>
+void compare (const ViewT& x, const ViewT& y, const BViewT& z)
+{
+  auto xe = expression(x);
+  auto ye = expression(y);
+  auto expression = xe==ye;
+
+  evaluate(expression,z);
+
+  auto xh = create_host_mirror_and_copy(x);
+  auto yh = create_host_mirror_and_copy(y);
+  auto zh = create_host_mirror_and_copy(z);
+  for (size_t i=0; i<zh.size(); ++i) {
+    auto x_val = xh.data()[i];
+    auto y_val = yh.data()[i];
+    auto z_val = zh.data()[i];
+    auto tgt   = x_val==y_val;
+    REQUIRE (z_val==tgt);
+  }
+}
+
 template<typename ViewT>
 void conditionals (const ViewT& x, const ViewT& y, const ViewT& z)
 {
-  auto xe = view_expression(x);
-  auto ye = view_expression(y);
-  auto expression = conditional(sqrt(xe)>=0.5,xe+ye,xe-ye);
+  auto xe = expression(x);
+  auto ye = expression(y);
+  auto expression = if_then_else(sqrt(xe)>=0.5,xe+ye,xe-ye);
 
   evaluate(expression,z);
 
@@ -90,12 +116,14 @@ TEST_CASE("expressions", "") {
     kk_t::view_ND<Real,0> x("x");
     kk_t::view_ND<Real,0> y("y");
     kk_t::view_ND<Real,0> z("z");
+    kk_t::view_ND<bool,0> zb("z");
 
     genRandArray(x,engine,pdf);
     genRandArray(y,engine,pdf);
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
+    compare(x,y,zb);
     conditionals(x,y,z);
   }
 
