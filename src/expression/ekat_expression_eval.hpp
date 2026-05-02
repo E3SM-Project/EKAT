@@ -70,6 +70,7 @@ void evaluate (const ExpressionBase<EType>& base, const ViewT& result)
     auto eval = KOKKOS_LAMBDA (int i,int j,int k,int l) {
       result(i,j,k,l) = e.eval(i,j,k,l);
     };
+    Kokkos::parallel_for(p,eval);
   } else if constexpr (N==5) {
     PolicyMD p(beg,end);
     auto eval = KOKKOS_LAMBDA (int i,int j,int k,int l,int m) {
