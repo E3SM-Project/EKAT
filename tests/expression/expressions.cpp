@@ -3,7 +3,7 @@
 #include "ekat_expression_eval.hpp"
 
 #include "ekat_expression_binary_op.hpp"
-#include "ekat_expression_compare.hpp"
+#include "ekat_expression_binary_predicate.hpp"
 #include "ekat_expression_conditional.hpp"
 #include "ekat_expression_math.hpp"
 #include "ekat_expression_view.hpp"
@@ -61,7 +61,7 @@ void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
 }
 
 template<typename ViewT, typename BViewT>
-void compare (const ViewT& x, const ViewT& y, const BViewT& z)
+void predicate (const ViewT& x, const ViewT& y, const BViewT& z)
 {
   auto xe = expression(x);
   auto ye = expression(y);
@@ -84,7 +84,7 @@ void compare (const ViewT& x, const ViewT& y, const BViewT& z)
   }
   // NE
   {
-    auto expression = xe==ye;
+    auto expression = xe!=ye;
     evaluate(expression,z);
 
     auto zh = create_host_mirror_and_copy(z);
@@ -152,6 +152,27 @@ void compare (const ViewT& x, const ViewT& y, const BViewT& z)
       REQUIRE (z_val==tgt);
     }
   }
+  // AND/OR
+  {
+    // These two should eval to exactly opposite values (due to De Morgan's laws)
+    auto expr_and = xe>=0.5 && ye<=0.5;
+    auto expr_or  = xe<0.5 || ye>0.5;
+    auto z2 = Kokkos::create_mirror(typename BViewT::memory_space{}, z);
+    evaluate(expr_and,z);
+    evaluate(expr_or,z2);
+
+    auto zh = create_host_mirror_and_copy(z);
+    auto z2h = create_host_mirror_and_copy(z2);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto z2_val = z2h.data()[i];
+      auto tgt   = x_val>=0.5 and y_val<=0.5;
+      REQUIRE (z_val==tgt);
+      REQUIRE (z2_val==(not tgt));
+    }
+  }
 }
 
 template<typename ViewT>
@@ -207,8 +228,6 @@ void conditionals (const ViewT& x, const ViewT& y, const ViewT& z)
     evaluate(expression,z);
     auto zh = create_host_mirror_and_copy(z);
     for (size_t i=0; i<zh.size(); ++i) {
-      auto x_val = xh.data()[i];
-      auto y_val = yh.data()[i];
       auto z_val = zh.data()[i];
       auto tgt   = 42;
       REQUIRE (z_val==tgt);
@@ -229,7 +248,7 @@ TEST_CASE("expressions", "") {
 
   using kk_t = KokkosTypes<DefaultDevice>;
   SECTION ("0d") {
-    printf("running od tests with rng seed: %d\n",seed);
+    printf("running 0d tests with rng seed: %d\n",seed);
 
     kk_t::view_ND<Real,0> x ("x");
     kk_t::view_ND<Real,0> y ("y");
@@ -241,7 +260,7 @@ TEST_CASE("expressions", "") {
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
-    compare(x,y,zb);
+    predicate(x,y,zb);
     conditionals(x,y,z);
   }
 
@@ -258,7 +277,7 @@ TEST_CASE("expressions", "") {
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
-    compare(x,y,zb);
+    predicate(x,y,zb);
     conditionals(x,y,z);
   }
 
@@ -275,7 +294,7 @@ TEST_CASE("expressions", "") {
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
-    compare(x,y,zb);
+    predicate(x,y,zb);
     conditionals(x,y,z);
   }
 
@@ -292,7 +311,7 @@ TEST_CASE("expressions", "") {
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
-    compare(x,y,zb);
+    predicate(x,y,zb);
     conditionals(x,y,z);
   }
 }
