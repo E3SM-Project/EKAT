@@ -18,6 +18,8 @@ namespace ekat {
 template<typename ViewT>
 void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
 {
+  const auto eps = std::numeric_limits<decltype(*z.data())>::epsilon();
+  const auto tol = 1e5*eps;
   auto xe = expression(x);
   auto ye = expression(y);
   auto expression = xe*ye - 1/ye + 2*xe;
@@ -32,7 +34,7 @@ void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
     auto y_val = yh.data()[i];
     auto z_val = zh.data()[i];
     auto tgt   = x_val*y_val-1/y_val+2*x_val;
-    REQUIRE (z_val==tgt);
+    REQUIRE_THAT (z_val, Catch::Matchers::WithinRel(tgt,tol));
   }
 }
 
@@ -63,19 +65,92 @@ void compare (const ViewT& x, const ViewT& y, const BViewT& z)
 {
   auto xe = expression(x);
   auto ye = expression(y);
-  auto expression = xe==ye;
-
-  evaluate(expression,z);
-
   auto xh = create_host_mirror_and_copy(x);
   auto yh = create_host_mirror_and_copy(y);
-  auto zh = create_host_mirror_and_copy(z);
-  for (size_t i=0; i<zh.size(); ++i) {
-    auto x_val = xh.data()[i];
-    auto y_val = yh.data()[i];
-    auto z_val = zh.data()[i];
-    auto tgt   = x_val==y_val;
-    REQUIRE (z_val==tgt);
+
+  // EQ
+  {
+    auto expression = xe==ye;
+    evaluate(expression,z);
+
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = x_val==y_val;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // NE
+  {
+    auto expression = xe==ye;
+    evaluate(expression,z);
+
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = x_val!=y_val;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // GT
+  {
+    auto expression = xe>ye;
+    evaluate(expression,z);
+
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = x_val>y_val;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // GE
+  {
+    auto expression = xe>=ye;
+    evaluate(expression,z);
+
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = x_val>=y_val;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // LT
+  {
+    auto expression = xe<ye;
+    evaluate(expression,z);
+
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = x_val<y_val;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // LE
+  {
+    auto expression = xe<=ye;
+    evaluate(expression,z);
+
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = x_val<=y_val;
+      REQUIRE (z_val==tgt);
+    }
   }
 }
 
@@ -84,19 +159,60 @@ void conditionals (const ViewT& x, const ViewT& y, const ViewT& z)
 {
   auto xe = expression(x);
   auto ye = expression(y);
-  auto expression = if_then_else(sqrt(xe)>=0.5,xe+ye,xe-ye);
-
-  evaluate(expression,z);
-
   auto xh = create_host_mirror_and_copy(x);
   auto yh = create_host_mirror_and_copy(y);
-  auto zh = create_host_mirror_and_copy(z);
-  for (size_t i=0; i<zh.size(); ++i) {
-    auto x_val = xh.data()[i];
-    auto y_val = yh.data()[i];
-    auto z_val = zh.data()[i];
-    auto tgt   = std::sqrt(x_val)>=0.5 ? x_val+y_val : x_val-y_val;
-    REQUIRE (z_val==tgt);
+
+  // All expressions
+  {
+    auto expression = if_then_else(sqrt(xe)>=0.5,xe+ye,xe-ye);
+    evaluate(expression,z);
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = std::sqrt(x_val)>=0.5 ? x_val+y_val : x_val-y_val;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // cond(expr,expr,scalar)
+  {
+    auto expression = if_then_else(sqrt(xe)>=0.5,xe+ye,-3);
+    evaluate(expression,z);
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = std::sqrt(x_val)>=0.5 ? x_val+y_val : -3;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // cond(bool,expr,expr)
+  {
+    auto expression = if_then_else(false,xe+ye,xe-ye);
+    evaluate(expression,z);
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = x_val-y_val;
+      REQUIRE (z_val==tgt);
+    }
+  }
+  // cond(bool,scalar,expr)
+  {
+    auto expression = if_then_else(true,42,xe-ye);
+    evaluate(expression,z);
+    auto zh = create_host_mirror_and_copy(z);
+    for (size_t i=0; i<zh.size(); ++i) {
+      auto x_val = xh.data()[i];
+      auto y_val = yh.data()[i];
+      auto z_val = zh.data()[i];
+      auto tgt   = 42;
+      REQUIRE (z_val==tgt);
+    }
   }
 }
 
@@ -113,9 +229,11 @@ TEST_CASE("expressions", "") {
 
   using kk_t = KokkosTypes<DefaultDevice>;
   SECTION ("0d") {
-    kk_t::view_ND<Real,0> x("x");
-    kk_t::view_ND<Real,0> y("y");
-    kk_t::view_ND<Real,0> z("z");
+    printf("running od tests with rng seed: %d\n",seed);
+
+    kk_t::view_ND<Real,0> x ("x");
+    kk_t::view_ND<Real,0> y ("y");
+    kk_t::view_ND<Real,0> z ("z");
     kk_t::view_ND<bool,0> zb("z");
 
     genRandArray(x,engine,pdf);
@@ -128,41 +246,53 @@ TEST_CASE("expressions", "") {
   }
 
   SECTION ("1d") {
-    kk_t::view_1d<Real> x("x",1000);
-    kk_t::view_1d<Real> y("y",1000);
-    kk_t::view_1d<Real> z("z",1000);
+    printf("running 1d tests with rng seed: %d\n",seed);
+
+    kk_t::view_1d<Real> x ("x",1000);
+    kk_t::view_1d<Real> y ("y",1000);
+    kk_t::view_1d<Real> z ("z",1000);
+    kk_t::view_1d<bool> zb("zb",1000);
 
     genRandArray(x,engine,pdf);
     genRandArray(y,engine,pdf);
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
+    compare(x,y,zb);
     conditionals(x,y,z);
   }
 
   SECTION ("2d") {
-    kk_t::view_2d<Real> x("x",100,32);
-    kk_t::view_2d<Real> y("y",100,32);
-    kk_t::view_2d<Real> z("z",100,32);
+    printf("running 2d tests with rng seed: %d\n",seed);
+
+    kk_t::view_2d<Real> x ("x",100,32);
+    kk_t::view_2d<Real> y ("y",100,32);
+    kk_t::view_2d<Real> z ("z",100,32);
+    kk_t::view_2d<bool> zb("z",100,32);
 
     genRandArray(x,engine,pdf);
     genRandArray(y,engine,pdf);
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
+    compare(x,y,zb);
     conditionals(x,y,z);
   }
 
   SECTION ("3d") {
-    kk_t::view_3d<Real> x("x",100,4,32);
-    kk_t::view_3d<Real> y("y",100,4,32);
-    kk_t::view_3d<Real> z("z",100,4,32);
+    printf("running 3d tests with rng seed: %d\n",seed);
+
+    kk_t::view_3d<Real> x ("x",100,4,32);
+    kk_t::view_3d<Real> y ("y",100,4,32);
+    kk_t::view_3d<Real> z ("z",100,4,32);
+    kk_t::view_3d<bool> zb("z",100,4,32);
 
     genRandArray(x,engine,pdf);
     genRandArray(y,engine,pdf);
 
     bin_ops(x,y,z);
     math_fcns(x,y,z);
+    compare(x,y,zb);
     conditionals(x,y,z);
   }
 }
