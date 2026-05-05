@@ -7,7 +7,8 @@ if (NOT EKAT_VALGRIND_SUPPRESSION_FILE)
     add_executable(mpi_hw mpi_hw.cxx)
     target_link_libraries (mpi_hw PUBLIC MPI::MPI_C)
   endif()
-  EkatCreateUnitTestExec(mpi_valg_catch_test mpi_catch_test.cpp)
+  EkatCreateUnitTestExec(mpi_valg_catch_test
+    SOURCES mpi_catch_test.cpp)
 
   # We know this var was not set so it's safe to FORCE set it.
   set(EKAT_VALGRIND_SUPPRESSION_FILE ${CMAKE_BINARY_DIR}/ekat_gen_valgrind.supp CACHE FILEPATH "" FORCE)

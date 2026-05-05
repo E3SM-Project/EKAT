@@ -54,7 +54,7 @@ function(EkatCreateUnitTestWithAsserts test_base_name test_meta_src)
   # stripped, which is *not* supposed to fail
   EkatCreateUnitTest(
     ${test_base_name}
-    ${CMAKE_CURRENT_BINARY_DIR}/${base_src}.cpp
+    SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${base_src}.cpp
     ${ARGN}
   )
 
@@ -69,7 +69,7 @@ function(EkatCreateUnitTestWithAsserts test_base_name test_meta_src)
   foreach (N RANGE 1 ${OUT})
     EkatCreateUnitTest(
       ${test_base_name}_check_assert_${N}
-      ${CMAKE_CURRENT_BINARY_DIR}/${base_src}_${N}.cpp
+      SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${base_src}_${N}.cpp
       WILL_FAIL
       ${ARGN}
     )
