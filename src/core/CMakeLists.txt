@@ -118,6 +118,7 @@ set (HEADERS
   ekat_test_utils.hpp
   ekat_type_traits.hpp
   ekat_units.hpp
+  ekat_zip.hpp
 )
 set_target_properties(ekat_core PROPERTIES PUBLIC_HEADER "${HEADERS}")
 
