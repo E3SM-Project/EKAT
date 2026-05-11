@@ -9,6 +9,9 @@
 // If your test does not use Real, then you don't need any compile definition
 // (you don't even need to include this file).
 
+#cmakedefine EKAT_TEST_DOUBLE_PRECISION
+#cmakedefine EKAT_TEST_SINGLE_PRECISION
+
 #ifdef EKAT_TEST_DOUBLE_PRECISION
 using Real = double;
 #elif defined(EKAT_TEST_SINGLE_PRECISION)
