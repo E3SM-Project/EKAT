@@ -227,4 +227,70 @@ TEST_CASE ("assert-macros") {
   }
 }
 
+// helper class to trigger an EKAT check during its destructor
+struct UnwindTrig {
+  bool should_fail;
+  UnwindTrig(bool fail) : should_fail(fail) {}
+  ~UnwindTrig() {
+    // If should_fail is true, this will call ekat::throw_exception.
+    // If this destructor is called during an unwind, throw_exception
+    // should detect std::uncaught_exceptions() > 0 and log/return instead of throw.
+    EKAT_REQUIRE_MSG(!should_fail, "Secondary failure in destructor");
+  }
+};
+
+TEST_CASE("unwind-safety") {
+  printf ("*) testing exception unwind safety...\n");
+
+  SECTION("suppress-secondary-throw") {
+    // This section verifies that if EKAT_REQUIRE fails during an unwind,
+    // it doesn't throw a second exception (which would call std::terminate).
+
+    auto trigger_unwind = []() {
+      // 1. Create an object that will fail its EKAT check in its destructor
+      UnwindTrig guard(true);
+
+      // 2. Throw the "Primary" exception.
+      // This starts the unwind, which calls ~UnwindTrig().
+      EKAT_ERROR_MSG("Primary exception");
+    };
+
+    // If your fix works, REQUIRE_THROWS will catch the "Primary exception".
+    // If it fails, the program will terminate immediately due to the secondary throw.
+    REQUIRE_THROWS_WITH(trigger_unwind(), Catch::Contains("Primary exception"));
+
+    printf("  - Successfully suppressed secondary exception during unwind.\n");
+  }
+
+  SECTION("normal-throw-after-unwind") {
+    // Verify that the 'unwind_warning_issued' flag resets correctly
+    // and we can still throw normally after a previous unwind event.
+    try {
+      UnwindTrig guard(true);
+      throw std::runtime_error("First Unwind");
+    } catch (...) {
+      // Unwind finished
+    }
+
+    // This should still throw normally because std::uncaught_exceptions() is now 0
+    bool threw = false;
+    std::string my_msg = "Post-unwind failure";
+    try {
+      EKAT_REQUIRE_MSG(false, my_msg);
+    } catch (std::runtime_error& e) {
+      threw = true;
+      std::string actual_err = e.what();
+
+      // Verify the message starts correctly.
+      // This ignores the volatile line number at the end of the backtrace.
+      REQUIRE(ekat::starts_with(actual_err, my_msg));
+
+      // You can also verify the failed condition is present
+      REQUIRE(actual_err.find("FAILED CONDITION: 'false'") != std::string::npos);
+    }
+    REQUIRE (threw);
+    printf("  - Correctly reset safety flag after unwind completed.\n");
+  }
+}
+
 } // anonymous namespace
