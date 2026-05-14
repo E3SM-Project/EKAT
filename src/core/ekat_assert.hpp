@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <exception>  // For std::uncaught_exceptions
 #include <stdexcept>  // For std::runtime_error
 #include <type_traits>
 
@@ -24,23 +25,39 @@
 #endif
 
 namespace ekat {
+
+// This thread-local var allows to detect if we already printed the warning about
+// being inside a stack unwind, so that we don't print those lines MANY times when
+// SEVERAL errors are hit during stack unwind.
+inline thread_local bool unwind_warning_issued = false;
+
 // To be used in the following macro. We need template so that "if constepxr" can
 // effectively PREVENT the compilation of the wrong branch. Without template indirection,
 // the compiler will attempt to instantiate BOTH branches
 template<typename exception_type>
-void throw_exception(const std::string& msg)
+void throw_exception(const std::string& msg, const std::string& bt) // msg=message, bt=backtrace
 {
+  if (std::uncaught_exceptions()>0) {
+    if (not unwind_warning_issued) {
+      std::cerr << "[EKAT Critical error] Exception thrown while unwinding the stack.\n"
+                << " This error is being suppressed to prevent std::terminate and the\n"
+                << " subsequent loss of the stacktrace from the first exception.\n"
+                << "Suppressed Message: " << msg << std::endl << std::flush;
+      unwind_warning_issued = true;
+    }
+    return;
+  }
+  unwind_warning_issued = false;
   if constexpr (std::is_constructible<exception_type, const std::string&>::value) {
-    throw exception_type(msg);
+    throw exception_type(msg+bt);
   } else if constexpr (std::is_default_constructible<exception_type>::value) {
-    std::cerr << msg << "\n";
+    std::cerr << msg << bt << "\n";
     throw exception_type();
   } else {
-    std::cerr << msg << "\n";
     std::cerr << "Cannot create exception of type\n";
     std::cerr << "       " << typeid(exception_type).name() << "\n";
     std::cerr << "Throwing std::runtime_error instead...\n";
-    throw std::runtime_error(msg);
+    throw std::runtime_error(msg+bt);
   }
 }
 
@@ -48,15 +65,15 @@ void throw_exception(const std::string& msg)
 
 // Internal do not call directly.
 #define IMPL_THROW(condition, msg, exception_type)  \
-  do {                                                                  \
-    if ( ! (condition) ) {                                              \
-      std::stringstream ekat_tmp_ss;                                    \
-      ekat_tmp_ss << msg;                                               \
-      ekat_tmp_ss << "\nFAILED CONDITION: '" << #condition  << "'\n\n"; \
-      ekat_tmp_ss << "BACKTRACE:\n";                                    \
-      ekat_tmp_ss << EKAT_BACKTRACE << "\n";                            \
-      ekat::throw_exception<exception_type>(ekat_tmp_ss.str());         \
-    }                                                                   \
+  do {                                                                            \
+    if ( ! (condition) ) {                                                        \
+      std::stringstream ekat_msg_ss, ekat_tmp_ss;                                 \
+      ekat_msg_ss << msg;                                                         \
+      ekat_tmp_ss << "\nFAILED CONDITION: '" << #condition  << "'\n\n";           \
+      ekat_tmp_ss << "BACKTRACE:\n";                                              \
+      ekat_tmp_ss << EKAT_BACKTRACE << "\n";                                      \
+      ekat::throw_exception<exception_type>(ekat_msg_ss.str(),ekat_tmp_ss.str()); \
+    }                                                                             \
   } while(0)
 
 // Define the EKAT_REQUIRE macros for different argument counts
