@@ -43,6 +43,9 @@ void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
 template<typename ViewT>
 void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
 {
+  auto eps = std::numeric_limits<Real>::epsilon();
+  auto tol = 1e5*eps;
+
   auto xe = expression(x);
   auto ye = expression(y);
   auto expression = 2*exp(-xe)*sin(xe)*log(ye)-sqrt(xe)+pow(ye,2)+pow(3,xe);
@@ -58,7 +61,7 @@ void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
     auto z_val = zh.data()[i];
     auto tgt   = 2*std::exp(-x_val)*std::sin(x_val)*std::log(y_val)
                - std::sqrt(x_val) + std::pow(y_val,2) + std::pow(3,x_val);
-    REQUIRE (z_val==Approx(tgt).epsilon(1e-10));
+    REQUIRE_THAT (z_val, Catch::Matchers::WithinRel(tgt,tol));
   }
 }
 
