@@ -76,6 +76,8 @@ machines:
 
   ghci-snl-cpu: {}
 
+  ghci-snl-oneapi: {}
+
   ghci-snl-cuda:
     gpu_arch: "cuda"
     num_run_res: 2

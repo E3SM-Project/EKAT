@@ -16,6 +16,7 @@ on:
         options:
           - gcc-openmp
           - gcc-cuda
+          - oneapi-openmp
           - all
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
@@ -184,6 +185,67 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: log-files-${{ matrix.build_type }}-ghci-snl-cuda
+          path: |
+            ctest-build/*/Testing/Temporary/Last*.log
+            ctest-build/*/ctest_resource_file.json
+            ctest-build/*/ctest_script.cmake
+            ctest-build/*/CMakeCache.txt
+  oneapi-openmp:
+    if: |
+      ${{
+        github.event_name != 'workflow_dispatch' ||
+        (
+          github.event.inputs.job_to_run == 'oneapi-openmp' ||
+          github.event.inputs.job_to_run == 'all'
+        )
+      }}
+    runs-on:  [self-hosted, ghci-snl-oneapi, oneapi]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [debug, release]
+    name: oneapi-openmp / ${{ matrix.build_type }}
+    steps:
+      - name: Show action trigger
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const eventName = context.eventName;
+            const actor = context.actor || 'unknown';  // Default to 'unknown' if actor is not defined
+            let eventAction = 'N/A';
+
+            // Determine the event action based on the event type
+            if (eventName === 'pull_request') {
+              eventAction = context.payload.action || 'N/A';
+            } else if (eventName === 'pull_request_review') {
+              eventAction = context.payload.review.state || 'N/A';
+            } else if (eventName === 'workflow_dispatch') {
+              eventAction = 'manual trigger';
+            } else if (eventName === 'schedule') {
+              eventAction = 'scheduled trigger';
+            }
+            console.log(`The job was triggered by a ${eventName} event.`);
+            console.log(`  - Event action: ${eventAction}`);
+            console.log(`  - Triggered by: ${actor}`);
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Ensure CACTS is installed
+        run: |
+          python3 -m pip install --upgrade --trusted-host pypi.org cacts
+      - name: Run tests
+        run: |
+          cmd="cacts -m ghci-snl-oneapi -t ${{ matrix.build_type }} -r ./"
+          echo "CACTS call: $cmd"
+          $cmd
+      - name: Upload files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-files-${{ matrix.build_type }}-ghci-snl-oneapi
           path: |
             ctest-build/*/Testing/Temporary/Last*.log
             ctest-build/*/ctest_resource_file.json
