@@ -14,13 +14,17 @@
 
 namespace {
 
-jmp_buf JumpBuffer;
-
 static volatile std::sig_atomic_t gSignalStatus = 0;
 
+// Force the compiler to completely separate these operations
+__attribute__((noinline)) double do_div(double a, double b) { return a / b; }
+__attribute__((noinline)) double do_sqrt(double a) { return std::sqrt(a); }
+__attribute__((noinline)) double do_exp(double a) { return std::exp(a); }
+
+// 1. CHANGER THE SIGNAL HANDLER TO THROW AN EXCEPTION
 void signal_handler (int /* signum */) {
   gSignalStatus = 1;
-  std::longjmp(JumpBuffer,gSignalStatus);
+  throw std::runtime_error("FPE Intercepted");
 }
 
 int has_fe_divbyzero (const int mask) {
@@ -40,10 +44,6 @@ int run_fpe_tests () {
 
   std::cout << " tests mask: " << mask << "\n";
 
-  // Get the current fenv.
-  // Note: for some reason, each time SIGFPE is thrown or getenv
-  //       is called, the fenv is reset to 0. So remember to
-  //       set the fenv before each test.
   std::fenv_t fenv;
   feholdexcept(&fenv);
   fesetenv(&fenv);
@@ -52,62 +52,70 @@ int run_fpe_tests () {
   std::cout << "   has FE_INVALID:   " << has_fe_invalid(mask)   << "\n";
   std::cout << "   has FE_OVERFLOW:  " << has_fe_overflow(mask)  << "\n";
 
-  double one = 1.0;
-  double zero = 0.0;
-  double inf, nan, ovfl;
+  volatile double one = 1.0;
+  volatile double zero = 0.0;
+  volatile double inf, nan, ovfl;
   int ntests = 0;
 
-  // Run the tests.
-  // Note: sometimes a FPE is not thrown when the bad number
-  //       is generated, but rather the next time is used.
-  //       Therefore, sometimes we multiply the result
-  //       by 1.0 before testing that the FPE was thrown.
-
-  // Test 1/0
-  if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==has_fe_divbyzero(mask));
+  // --- Test 1/0 ---
+  try {
+    inf = do_div(one,zero);
+    inf *= 1.0;
+    REQUIRE(!has_fe_divbyzero(mask));
+  } catch (const std::runtime_error&) {
+    // If it caught an exception, it must have been enabled.
+    REQUIRE(has_fe_divbyzero(mask));
+    REQUIRE(gSignalStatus == 1);
     printf ("  - 1/0 threw.\n");
     ++ntests;
     gSignalStatus = 0;
     fesetenv(&fenv);
-  } else {
-    inf = one/zero;
-    inf *= 1.0;
+    std::feclearexcept(FE_ALL_EXCEPT);
   }
 
-  // Test 0/0
-  if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==1);
+  // --- Test 0/0 ---
+  try {
+    nan = do_div(zero,zero);
+    REQUIRE(!has_fe_invalid(mask));
+  } catch (const std::runtime_error&) {
+    REQUIRE(has_fe_invalid(mask));
+    REQUIRE(gSignalStatus == 1);
     printf ("  - 0/0 threw.\n");
     ++ntests;
     gSignalStatus = 0;
     fesetenv(&fenv);
-  } else {
-    nan = zero/zero;
+    std::feclearexcept(FE_ALL_EXCEPT);
   }
 
-  // Test invalid arg
-  if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==1);
+  // --- Test invalid arg ---
+  try {
+    nan = do_sqrt(-one);
+    nan *= 1.0;
+    REQUIRE(!has_fe_invalid(mask));
+  } catch (const std::runtime_error&) {
+    REQUIRE(has_fe_invalid(mask));
+    REQUIRE(gSignalStatus == 1);
     printf ("  - Invalid arg threw.\n");
     ++ntests;
     gSignalStatus = 0;
     fesetenv(&fenv);
-  } else {
-    nan = std::sqrt(-1.0);
-    nan *= 1.0;
+    std::feclearexcept(FE_ALL_EXCEPT);
   }
 
-  // Test overflow
-  if (setjmp(JumpBuffer)) {
-    REQUIRE (gSignalStatus==1);
+  // --- Test overflow ---
+  try {
+    ovfl = do_exp(710*one);
+    ovfl = exp(710.0);
+    ovfl *= 1.0;
+    REQUIRE(!has_fe_overflow(mask));
+  } catch (const std::runtime_error&) {
+    REQUIRE(has_fe_overflow(mask));
+    REQUIRE(gSignalStatus == 1);
     printf ("  - Overflow threw.\n");
     ++ntests;
     gSignalStatus = 0;
     fesetenv(&fenv);
-  } else {
-    ovfl = exp(710.0);
-    ovfl *= 1.0;
+    std::feclearexcept(FE_ALL_EXCEPT);
   }
 
   std::cout << inf << std::endl;
@@ -120,10 +128,10 @@ int run_fpe_tests () {
 TEST_CASE ("fpes","") {
   using namespace ekat;
 
-  // Set a handler, which simply sets the global gSignalStatus,
-  // so we can check with catch whether the FPE was raised.
   struct sigaction sa;
   sa.sa_handler = signal_handler;
+  // Note: We leave SA_NODEFER so that consecutive traps can fire
+  // without the signal block masking subsequent tests.
   sa.sa_flags = SA_NODEFER;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGFPE, &sa, NULL);
@@ -135,7 +143,8 @@ TEST_CASE ("fpes","") {
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
-    REQUIRE (run_fpe_tests () == num_expected_fpes);
+    int num_actual_fpes = run_fpe_tests();
+    REQUIRE (num_actual_fpes == num_expected_fpes);
 
     // Disable fpes before completing the section, since Section
     // destructor computes some states, including
@@ -153,7 +162,8 @@ TEST_CASE ("fpes","") {
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
-    REQUIRE (run_fpe_tests () == num_expected_fpes);
+    int num_actual_fpes = run_fpe_tests();
+    REQUIRE (num_actual_fpes == num_expected_fpes);
 
     // Disable fpes before completing the section, since Section
     // destructor computes some states, including
@@ -171,7 +181,8 @@ TEST_CASE ("fpes","") {
     int num_expected_fpes = has_fe_divbyzero(mask) +
                             has_fe_invalid(mask)*2 +
                             has_fe_overflow(mask);
-    REQUIRE (run_fpe_tests () == num_expected_fpes);
+    int num_actual_fpes = run_fpe_tests();
+    REQUIRE (num_actual_fpes == num_expected_fpes);
 
     // Disable fpes before completing the section, since Section
     // destructor computes some states, including

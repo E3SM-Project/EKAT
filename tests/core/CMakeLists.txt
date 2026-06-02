@@ -3,6 +3,7 @@ include(EkatCreateUnitTest)
 # Test debug tools
 EkatCreateUnitTest(debug_tools
   SOURCES debug_tools_tests.cpp
+  COMPILER_CXX_FLAGS -fnon-call-exceptions
   LIBS ekat::Core)
 
 # Test the framework that checks asserts
