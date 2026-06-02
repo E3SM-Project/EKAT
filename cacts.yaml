@@ -37,6 +37,8 @@
 
 project:
   name: EKAT
+  ctest_error_exceptions: ["error_handler"]
+
   # NOTE: CACTS will also set project.root_dir at runtime, so you can actually use
   # ${project.root_dir} in the machines/configurations sections
 
