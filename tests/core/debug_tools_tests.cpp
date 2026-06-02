@@ -14,6 +14,7 @@
 
 namespace {
 
+#ifndef NDEBUG
 static volatile std::sig_atomic_t gSignalStatus = 0;
 
 // Force the compiler to completely separate these operations
@@ -191,6 +192,7 @@ TEST_CASE ("fpes","") {
     disable_all_fpes();
   }
 }
+#endif
 
 class MyException : public std::exception {
 public:
