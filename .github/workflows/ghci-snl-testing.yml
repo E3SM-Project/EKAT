@@ -240,7 +240,7 @@ jobs:
           python3 -m pip install --upgrade --trusted-host pypi.org cacts
       - name: Run tests
         run: |
-          cmd="cacts -m ghci-snl-oneapi -t ${{ matrix.build_type }} -r ./"
+          cmd="cacts -m ghci-snl-oneapi -t ${{ matrix.build_type }} -r ./ -c CMAKE_CXX_FLAGS=-fp-model=precise"
           echo "CACTS call: $cmd"
           $cmd
       - name: Upload files
