@@ -104,6 +104,7 @@ jobs:
             ctest-build/*/ctest_resource_file.json
             ctest-build/*/ctest_script.cmake
             ctest-build/*/CMakeCache.txt
+            ctest-build/**/*.xml
   gcc-cuda:
     if: |
       ${{
@@ -190,6 +191,7 @@ jobs:
             ctest-build/*/ctest_resource_file.json
             ctest-build/*/ctest_script.cmake
             ctest-build/*/CMakeCache.txt
+            ctest-build/**/*.xml
   oneapi-openmp:
     if: |
       ${{
@@ -251,3 +253,4 @@ jobs:
             ctest-build/*/ctest_resource_file.json
             ctest-build/*/ctest_script.cmake
             ctest-build/*/CMakeCache.txt
+            ctest-build/**/*.xml
