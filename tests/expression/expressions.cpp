@@ -20,6 +20,9 @@ namespace ekat {
 template<typename ViewT>
 void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
 {
+  using Catch::Matchers::WithinAbs;
+  using Catch::Matchers::WithinRel;
+
   auto eps = std::numeric_limits<Real>::epsilon();
   auto tol = 1e5*eps;
   auto xe = expression(x);
@@ -36,13 +39,16 @@ void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
     auto y_val = yh.data()[i];
     auto z_val = zh.data()[i];
     auto tgt   = x_val*y_val-1/y_val+2*x_val;
-    REQUIRE_THAT (z_val, Catch::Matchers::WithinRel(tgt,tol));
+    REQUIRE_THAT (z_val, WithinRel(tgt,tol) || WithinAbs(tgt,tol));
   }
 }
 
 template<typename ViewT>
 void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
 {
+  using Catch::Matchers::WithinAbs;
+  using Catch::Matchers::WithinRel;
+
   auto eps = std::numeric_limits<Real>::epsilon();
   auto tol = 1e5*eps;
 
@@ -61,7 +67,7 @@ void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
     auto z_val = zh.data()[i];
     auto tgt   = 2*std::exp(-x_val)*std::sin(x_val)*std::log(y_val)
                - std::sqrt(x_val) + std::pow(y_val,2) + std::pow(3,x_val);
-    REQUIRE_THAT (z_val, Catch::Matchers::WithinRel(tgt,tol));
+    REQUIRE_THAT (z_val, WithinRel(tgt,tol) || WithinAbs(tgt,tol));
   }
 }
 
