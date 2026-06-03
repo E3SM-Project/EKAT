@@ -30,7 +30,7 @@ target_compile_definitions(ekat_kokkosutils PUBLIC EKAT_HAS_KOKKOS)
 
 # A shortcut var, to handle GPU-specific (but backend-agnostic) stuff
 if (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL)
-  set (EKAT_ENABLE_GPU TRUE)
+  set (EKAT_ENABLE_GPU TRUE CACHE INTERNAL "Notify other areas of EKAT that we are configured for GPU")
   target_compile_definitions(ekat_kokkosutils PUBLIC EKAT_ENABLE_GPU)
 endif ()
 

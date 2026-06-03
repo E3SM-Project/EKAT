@@ -1,9 +1,16 @@
 include(EkatCreateUnitTest)
 
 # Test debug tools
-EkatCreateUnitTest(debug_tools
-  SOURCES debug_tools_tests.cpp
-  LIBS ekat::Core)
+if (EKAT_IS_DEBUG_BUILD)
+  EkatCreateUnitTest(debug_tools
+    SOURCES debug_tools_tests.cpp
+    COMPILER_CXX_FLAGS -fnon-call-exceptions
+    LIBS ekat::Core)
+else()
+  EkatCreateUnitTest(debug_tools
+    SOURCES debug_tools_tests.cpp
+    LIBS ekat::Core)
+endif()
 
 # Test the framework that checks asserts
 if (EKAT_IS_DEBUG_BUILD)

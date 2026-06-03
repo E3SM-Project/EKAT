@@ -37,6 +37,8 @@
 
 project:
   name: EKAT
+  ctest_error_exceptions: ["error_handler"]
+
   # NOTE: CACTS will also set project.root_dir at runtime, so you can actually use
   # ${project.root_dir} in the machines/configurations sections
 
@@ -76,6 +78,8 @@ machines:
 
   ghci-snl-cpu: {}
 
+  ghci-snl-oneapi: {}
+
   ghci-snl-cuda:
     gpu_arch: "cuda"
     num_run_res: 2
@@ -94,8 +98,6 @@ configurations:
     cmake_args:
       CMAKE_CXX_STANDARD: 20
       EKAT_ENABLE_ALL_PACKAGES: True
-      EKAT_TEST_THREAD_INC: ${2 if machine.gpu_arch is None else 1}
-      EKAT_TEST_MAX_THREADS: ${machine.num_run_res if machine.gpu_arch is None else 1}
       EKAT_DISABLE_TPL_WARNINGS: True
       EKAT_DEFAULT_BFB: True
       EKAT_TEST_DOUBLE_PRECISION: True
