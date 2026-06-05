@@ -169,13 +169,8 @@ function (ekat_fetch_content NAME)
   string(TOUPPER "${NAME}" NAME_UPPER)
   string(REPLACE "-" "_" NAME_SANITIZED "${NAME_UPPER}")
   set(OVERRIDE_VAR "FETCHCONTENT_SOURCE_DIR_${NAME_SANITIZED}")
-  if (DEFINED ${OVERRIDE_VAR})
+  if (${OVERRIDE_VAR})
     set(OVERRIDE_DIR "${${OVERRIDE_VAR}}")
-    if ("${OVERRIDE_DIR}" STREQUAL "")
-      message(FATAL_ERROR
-        "  ${NAME}: ${OVERRIDE_VAR} is defined but empty.\n"
-        "  Please set it to a valid source directory.")
-    endif()
     if (NOT IS_DIRECTORY "${OVERRIDE_DIR}")
       message(FATAL_ERROR
         "  ${NAME}: ${OVERRIDE_VAR} does not point to an existing directory:\n"
