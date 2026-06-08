@@ -42,7 +42,7 @@ struct ScalingFactor {
     auto b_repr = base.string_repr<N>();
     auto e_repr = exp.string_repr<N>();
 
-    int sz1=0, sz2=0;
+    [[maybe_unused]] int sz1=0, sz2=0;
     for (auto c : b_repr) {
       if (c=='\0') break;
       ++sz1;
