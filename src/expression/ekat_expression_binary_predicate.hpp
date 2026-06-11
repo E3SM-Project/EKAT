@@ -31,6 +31,7 @@ public:
   static_assert(expr_l or expr_r,
     "[BinaryPredicateExpression] At least one between ELeft and ERight must be an Expression type.\n");
 
+  KOKKOS_INLINE_FUNCTION
   BinaryPredicateExpression (const ELeft& left,
                        const ERight& right)
     : m_left(left)
@@ -53,6 +54,7 @@ public:
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
   int extent (int i) const {
     if constexpr (expr_l)
       return m_left.extent(i);
@@ -60,7 +62,8 @@ public:
       return m_right.extent(i);
   }
 
-  template<typename... Args>
+  template<typename... Args,
+           typename = std::enable_if_t<(std::is_integral_v<Args> && ...)>>
   KOKKOS_INLINE_FUNCTION
   return_type eval(Args... args) const {
     if constexpr (expr_l) {
@@ -70,6 +73,22 @@ public:
         return eval_impl(m_left.eval(args...), m_right);
     } else if constexpr (expr_r) {
       return eval_impl(m_left, m_right.eval(args...));
+    } else {
+      return eval_impl(m_left, m_right);
+    }
+  }
+
+  template<typename TeamMember, typename... Args,
+           typename = std::enable_if_t<(std::is_integral_v<Args> && ...)>>
+  KOKKOS_INLINE_FUNCTION
+  return_type eval (const TeamEvalSpecs<TeamMember>& specs, Args... args) const {
+    if constexpr (expr_l) {
+      if constexpr (expr_r)
+        return eval_impl(m_left.eval(specs,args...), m_right.eval(specs,args...));
+      else
+        return eval_impl(m_left.eval(specs,args...), m_right);
+    } else if constexpr (expr_r) {
+      return eval_impl(m_left, m_right.eval(specs,args...));
     } else {
       return eval_impl(m_left, m_right);
     }

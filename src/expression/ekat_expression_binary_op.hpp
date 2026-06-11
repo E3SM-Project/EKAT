@@ -24,6 +24,7 @@ public:
 
   using return_type = std::common_type_t<return_left_t,return_right_t>;
 
+  KOKKOS_INLINE_FUNCTION
   BinaryExpression (const ELeft& left,
                     const ERight& right)
     : m_left(left)
@@ -43,6 +44,8 @@ public:
       return ERight::rank();
     }
   }
+
+  KOKKOS_INLINE_FUNCTION
   int extent (int i) const {
     if constexpr (expr_l)
       return m_left.extent(i);
@@ -50,7 +53,8 @@ public:
       return m_right.extent(i);
   }
 
-  template<typename... Args>
+  template<typename... Args,
+           typename = std::enable_if_t<(std::is_integral_v<Args> && ...)>>
   KOKKOS_INLINE_FUNCTION
   return_type eval(Args... args) const {
     if constexpr (not expr_l) {
@@ -59,6 +63,19 @@ public:
       return eval_impl(m_left.eval(args...),m_right);
     } else {
       return eval_impl(m_left.eval(args...),m_right.eval(args...));
+    }
+  }
+
+  template<typename TeamMember, typename... Args,
+           typename = std::enable_if_t<(std::is_integral_v<Args> && ...)>>
+  KOKKOS_INLINE_FUNCTION
+  return_type eval (const TeamEvalSpecs<TeamMember>& specs, Args... args) const {
+    if constexpr (not expr_l) {
+      return eval_impl(m_left,m_right.eval(specs,args...));
+    } else if constexpr (not expr_r) {
+      return eval_impl(m_left.eval(specs,args...),m_right);
+    } else {
+      return eval_impl(m_left.eval(specs,args...),m_right.eval(specs,args...));
     }
   }
 
@@ -88,6 +105,7 @@ public:
 
   using return_type = eval_return_t<EInner>;
 
+  KOKKOS_INLINE_FUNCTION
   NegateExpression (const ExpressionBase<EInner>& inner)
    : m_inner(inner.cast())
   {
@@ -95,12 +113,20 @@ public:
   }
 
   static constexpr int rank () { return EInner::rank(); }
+  KOKKOS_INLINE_FUNCTION
   int extent (int i) const { return m_inner.extent(i); }
 
   template<typename... Args>
   KOKKOS_INLINE_FUNCTION
   return_type eval(Args... args) const {
     return -m_inner.eval(args...);
+  }
+
+  template<typename TeamMember, typename... Args,
+           typename = std::enable_if_t<(std::is_integral_v<Args> && ...)>>
+  KOKKOS_INLINE_FUNCTION
+  return_type eval (const TeamEvalSpecs<TeamMember>& specs, Args... args) const {
+    return -m_inner.eval(specs, args...);
   }
 
 protected:

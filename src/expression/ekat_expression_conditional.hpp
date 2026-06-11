@@ -22,6 +22,7 @@ public:
   static_assert(expr_c or expr_l or expr_r,
     "[ConditionalExpression] At least one between ECond, ELeft, and ERight must be an Expression type.\n");
 
+  KOKKOS_INLINE_FUNCTION
   ConditionalExpression (const ECond& cmp, const ELeft& left, const ERight& right)
     : m_cmp(cmp)
     , m_left(left)
@@ -51,6 +52,8 @@ public:
       return ERight::rank();
     }
   }
+
+  KOKKOS_INLINE_FUNCTION
   int extent (int i) const {
     if constexpr (expr_c)
       return m_cmp.extent(i);
@@ -60,7 +63,8 @@ public:
       return m_right.extent(i);
   }
 
-  template<typename... Args>
+  template<typename... Args,
+           typename = std::enable_if_t<(std::is_integral_v<Args> && ...)>>
   KOKKOS_INLINE_FUNCTION
   return_type eval (Args... args) const
   {
@@ -90,6 +94,37 @@ public:
     }
   }
 
+  template<typename TeamMember, typename... Args,
+           typename = std::enable_if_t<(std::is_integral_v<Args> && ...)>>
+  KOKKOS_INLINE_FUNCTION
+  return_type eval (const TeamEvalSpecs<TeamMember>& specs, Args... args) const
+  {
+    if constexpr (expr_c) {
+      if (m_cmp.eval(args...))
+        if constexpr (expr_l)
+          return m_left.eval(specs,args...);
+        else
+          return m_left;
+      else
+        if constexpr (expr_r)
+          return m_right.eval(specs,args...);
+        else
+          return m_right;
+    } else {
+      if (m_cmp) {
+        if constexpr (expr_l)
+          return m_left.eval(specs,args...);
+        else
+          return m_left;
+      } else {
+        if constexpr (expr_r)
+          return m_right.eval(specs,args...);
+        else
+          return m_right;
+      }
+    }
+  }
+
 protected:
 
   ECond    m_cmp;
@@ -100,6 +135,7 @@ protected:
 // Free fcn to construct a ConditionalExpression
 template<typename TC, typename T1, typename T2,
          typename = std::enable_if_t<is_any_expr_v<TC, T1, T2>>>
+KOKKOS_INLINE_FUNCTION
 auto if_then_else(const TC& c, const T1& l, const T2& r)
 {
   using  ret_t = ConditionalExpression<get_expr_node_t<TC>,
