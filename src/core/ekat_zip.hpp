@@ -31,9 +31,9 @@ public:
   ZipIterator (std::tuple<Iterators...> iters) : iterators(iters) {}
 
   // Dereference operator
-  auto operator*() {
+  decltype(auto) operator*() {
     return std::apply([](Iterators... its){
-      return std::make_tuple(*its...);
+      return std::forward_as_tuple(*its...);
     },iterators);
   }
 

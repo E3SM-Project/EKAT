@@ -22,7 +22,15 @@ TEST_CASE ("ekat_comm","") {
   for (const auto& [i,s] : zip(v1,l1)) {
     REQUIRE (std::to_string(i)==s);
   }
+  int idx = 0;
+  for (auto&& [i,s] : zip(v1,l1)) {
+    i *= -1;
+    s += "_done";
+    REQUIRE (v1[idx]==i);
+    REQUIRE (*std::next(l1.begin(),idx)==s);
+    ++idx;
+  }
 }
 
-} // namespace ekat
 
+} // namespace ekat
