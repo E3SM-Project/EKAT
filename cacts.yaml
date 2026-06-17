@@ -76,7 +76,7 @@ machines:
     num_run_res: 4 # four gpus
     gpu_arch: "cuda"
 
-  ghci-snl-cpu: {}
+  ghci-snl-gnu: {}
 
   ghci-snl-oneapi: {}
 
