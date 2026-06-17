@@ -14,8 +14,8 @@ on:
         required: true
         type: choice
         options:
-          - gcc-openmp
-          - gcc-cuda
+          - gnu-openmp
+          - gnu-cuda
           - oneapi-openmp
           - all
 
@@ -30,34 +30,26 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# WARNING: if you change machines where this workflow can run, you may have to adjust the
-#          location of the certificate file (possibly on a per-job basis). For now, since
-#          all ghci-snl-XYZ machines have the same certificates, this can be set at
-#          the workflow level
-env:
-  NODE_EXTRA_CA_CERTS: /etc/pki/tls/certs/ca-bundle.crt
-  REQUESTS_CA_BUNDLE: /etc/pki/tls/certs/ca-bundle.crt
-
 defaults:
   run:
     shell: bash --login {0}
 
 jobs:
-  gcc-openmp:
+  gnu-openmp:
     if: |
       ${{
         github.event_name != 'workflow_dispatch' ||
         (
-          github.event.inputs.job_to_run == 'gcc-openmp' ||
+          github.event.inputs.job_to_run == 'gnu-openmp' ||
           github.event.inputs.job_to_run == 'all'
         )
       }}
-    runs-on:  [self-hosted, ghci-snl-cpu, gcc]
+    runs-on:  [self-hosted, ghci-snl, gnu]
     strategy:
       fail-fast: false
       matrix:
         build_type: [debug, release]
-    name: gcc-openmp / ${{ matrix.build_type }}
+    name: gnu-openmp / ${{ matrix.build_type }}
     steps:
       - name: Show action trigger
         uses: actions/github-script@v7
@@ -91,35 +83,35 @@ jobs:
           python3 -m pip install --upgrade --trusted-host pypi.org cacts
       - name: Run tests
         run: |
-          cmd="cacts -m ghci-snl-cpu -t ${{ matrix.build_type }} -r ./"
+          cmd="cacts -m ghci-snl-gnu -t ${{ matrix.build_type }} -r ./"
           echo "CACTS call: $cmd"
           $cmd
       - name: Upload files
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: log-files-${{ matrix.build_type }}-ghci-snl-cpu
+          name: log-files-${{ matrix.build_type }}-ghci-snl-gnu
           path: |
             ctest-build/*/Testing/Temporary/Last*.log
             ctest-build/*/ctest_resource_file.json
             ctest-build/*/ctest_script.cmake
             ctest-build/*/CMakeCache.txt
             ctest-build/**/*.xml
-  gcc-cuda:
+  gnu-cuda:
     if: |
       ${{
         github.event_name != 'workflow_dispatch' ||
         (
-          github.event.inputs.job_to_run == 'gcc-cuda' ||
+          github.event.inputs.job_to_run == 'gnu-cuda' ||
           github.event.inputs.job_to_run == 'all'
         )
       }}
-    runs-on:  [self-hosted, ghci-snl-cuda, cuda, gcc]
+    runs-on:  [self-hosted, ghci-snl, cuda, gnu]
     strategy:
       fail-fast: false
       matrix:
         build_type: [debug, release]
-    name: gcc-cuda / ${{ matrix.build_type }}
+    name: gnu-cuda / ${{ matrix.build_type }}
     steps:
       - name: Show action trigger
         uses: actions/github-script@v7
