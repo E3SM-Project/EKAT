@@ -83,7 +83,13 @@ jobs:
           python3 -m pip install --upgrade --trusted-host pypi.org cacts
       - name: Run tests
         run: |
-          cmd="cacts -m ghci-snl-gnu -t ${{ matrix.build_type }} -r ./"
+          # Determine if the scheduler flag should be included
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            extra_flags="-s"
+          else
+            extra_flags=""
+          fi
+          cmd="cacts -m ghci-snl-gnu -t ${{ matrix.build_type }} -r ./ $extra_flags"
           echo "CACTS call: $cmd"
           $cmd
       - name: Upload files
