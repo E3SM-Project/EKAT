@@ -38,6 +38,10 @@
 project:
   name: EKAT
   ctest_error_exceptions: ["error_handler"]
+  cdash:
+    drop_site: "my.cdash.org"
+    drop_location: "/submit.php?project=E3SM"
+    build_prefix: "ekat_"
 
   # NOTE: CACTS will also set project.root_dir at runtime, so you can actually use
   # ${project.root_dir} in the machines/configurations sections
