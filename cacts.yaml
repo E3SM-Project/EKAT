@@ -68,7 +68,7 @@ machines:
     env_setup:
         - 'module purge'
         - 'module load sems-cmake/3.27.9 sems-git/2.42.0 sems-gcc/11.4.0 sems-openmpi-no-cuda/4.1.6'
-    valg_supp_file: "${project.root_dir}/scripts/jenkins/valgrind/mappy.supp"
+    valg_supp_file: "${project.root_dir}/scripts/setup/valgrind/mappy.supp"
 
   weaver:
     env_setup:
