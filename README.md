@@ -33,7 +33,7 @@ and available to downstream projects.
 # Configuring EKAT
 
 EKAT uses CMake (version 3.18 or higher) to generate its build system. Only C
-and C++ (C++17) are required; no Fortran compiler is needed.
+and C++ (C++20) are required; no Fortran compiler is needed.
 
 ## Kokkos machine files
 

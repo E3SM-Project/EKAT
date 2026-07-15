@@ -4,7 +4,8 @@ include (EkatUtils)
 
 message (STATUS "  Fetching spdlog via FetchContent")
 
-set (SPDLOG_GIT_TAG bdd1dff3788ebfe520f48f9ad216c60da6dd8f00)
+# spdlog version 1.17.0 commit sha
+set (SPDLOG_GIT_TAG 79524ddd08a4ec981b7fea76afd08ee05f83755d)
 
 # We don't want testing or any spdlog executable at all
 option (SPDLOG_BUILD_TESTS "Enable spdlog tests" OFF)
