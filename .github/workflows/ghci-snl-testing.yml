@@ -14,9 +14,9 @@ on:
         required: true
         type: choice
         options:
-          - gnu-openmp
-          - gnu-cuda
-          - oneapi-openmp
+          - gnu
+          - cuda
+          - intel
           - all
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
@@ -35,12 +35,12 @@ defaults:
     shell: bash --login {0}
 
 jobs:
-  gnu-openmp:
+  gnu:
     if: |
       ${{
         github.event_name != 'workflow_dispatch' ||
         (
-          github.event.inputs.job_to_run == 'gnu-openmp' ||
+          github.event.inputs.job_to_run == 'gnu' ||
           github.event.inputs.job_to_run == 'all'
         )
       }}
@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type: [debug, release]
-    name: gnu-openmp / ${{ matrix.build_type }}
+    name: gnu / ${{ matrix.build_type }}
     steps:
       - name: Show action trigger
         uses: actions/github-script@v7
@@ -103,12 +103,12 @@ jobs:
             ctest-build/*/ctest_script.cmake
             ctest-build/*/CMakeCache.txt
             ctest-build/**/*.xml
-  gnu-cuda:
+  cuda:
     if: |
       ${{
         github.event_name != 'workflow_dispatch' ||
         (
-          github.event.inputs.job_to_run == 'gnu-cuda' ||
+          github.event.inputs.job_to_run == 'cuda' ||
           github.event.inputs.job_to_run == 'all'
         )
       }}
@@ -117,7 +117,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type: [debug, release]
-    name: gnu-cuda / ${{ matrix.build_type }}
+    name: cuda / ${{ matrix.build_type }}
     steps:
       - name: Show action trigger
         uses: actions/github-script@v7
@@ -190,21 +190,21 @@ jobs:
             ctest-build/*/ctest_script.cmake
             ctest-build/*/CMakeCache.txt
             ctest-build/**/*.xml
-  oneapi-openmp:
+  intel:
     if: |
       ${{
         github.event_name != 'workflow_dispatch' ||
         (
-          github.event.inputs.job_to_run == 'oneapi-openmp' ||
+          github.event.inputs.job_to_run == 'intel' ||
           github.event.inputs.job_to_run == 'all'
         )
       }}
-    runs-on:  [self-hosted, ghci-snl, oneapi]
+    runs-on:  [self-hosted, ghci-snl, intel]
     strategy:
       fail-fast: false
       matrix:
         build_type: [debug, release]
-    name: oneapi-openmp / ${{ matrix.build_type }}
+    name: intel / ${{ matrix.build_type }}
     steps:
       - name: Show action trigger
         uses: actions/github-script@v7
@@ -238,14 +238,14 @@ jobs:
           python3 -m pip install --upgrade --trusted-host pypi.org cacts
       - name: Run tests
         run: |
-          cmd="cacts -m ghci-snl-oneapi -t ${{ matrix.build_type }} -r ./ -c CMAKE_CXX_FLAGS=-fp-model=precise"
+          cmd="cacts -m ghci-snl-intel -t ${{ matrix.build_type }} -r ./ -c CMAKE_CXX_FLAGS=-fp-model=precise"
           echo "CACTS call: $cmd"
           $cmd
       - name: Upload files
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: log-files-${{ matrix.build_type }}-ghci-snl-oneapi
+          name: log-files-${{ matrix.build_type }}-ghci-snl-intel
           path: |
             ctest-build/*/Testing/Temporary/Last*.log
             ctest-build/*/ctest_resource_file.json
