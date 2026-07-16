@@ -82,7 +82,7 @@ machines:
 
   ghci-snl-gnu: {}
 
-  ghci-snl-oneapi: {}
+  ghci-snl-intel: {}
 
   ghci-snl-cuda:
     gpu_arch: "cuda"
