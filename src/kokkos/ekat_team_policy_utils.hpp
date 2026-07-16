@@ -72,7 +72,7 @@ struct TeamPolicyFactory<EkatGpuSpace> {
   template<HostOrDevice HD = Device>
   static policy_t<HD>
   get_policy_internal (const int ni, const int nk) {
-    auto nk_impl = HD==Host ? 1 : nk;
+    auto nk_impl = HD==Host or nk == 0 ? 1 : nk; // 0 team size not allowed in Kokkos
     return policy_t<HD>(ni,nk_impl);
   }
 
