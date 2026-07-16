@@ -93,7 +93,7 @@ endif()
 ###  KOKKOS CONFIG OPTIONS ###
 ##############################
 # FIXME: View usage in Hommexx and EAMxx needs to allow for Kokkos' MDSpan view implementation as the legacy
-#        implementation will go away in the future, unanounced (it's an "impl" option => no deprecation).
+#        implementation will go away in the future, unannounced (it's an "impl" option => no deprecation).
 option (Kokkos_ENABLE_IMPL_VIEW_LEGACY "Currently, EKAT is only compatible with Kokkos' legacy view implementation." ON)
 
 ############################################
