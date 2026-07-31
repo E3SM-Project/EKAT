@@ -240,21 +240,26 @@ struct Pack {
   }
 
   // Init this Pack from another one.
+  // Note: these constructors cannot be constexpr, since their body
+  // contains a vector_simd (#pragma omp simd) loop, and GCC>=14 (unlike
+  // GCC13 and earlier) rejects OpenMP directives inside constexpr
+  // function bodies (error: "OpenMP directives may not appear in
+  // 'constexpr' functions" [-Wtemplate-body]).
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION explicit
-  constexpr Pack (const Pack<T,n>& v) {
+  Pack (const Pack<T,n>& v) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = v[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  constexpr Pack (const Pack& src) {
+  Pack (const Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src[i];
   }
 
   // Init this Pack from another one.
   KOKKOS_FORCEINLINE_FUNCTION
-  constexpr Pack (const volatile Pack& src) {
+  Pack (const volatile Pack& src) {
     vector_simd for (int i = 0; i < n; ++i) d[i] = src.d[i];
   }
 
