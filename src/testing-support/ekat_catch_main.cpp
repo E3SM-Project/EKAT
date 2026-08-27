@@ -49,6 +49,10 @@ Args split_args (int argc, char** argv)
 
 int main (int argc, char **argv) {
 
+#ifdef EKAT_ENABLE_KOKKOS_TOOLS
+  setenv("KOKKOS_TOOLS_LIBS", KOKKOS_TOOLS_LIBS, 1);
+#endif
+
 #ifdef EKAT_ENABLE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
