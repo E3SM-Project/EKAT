@@ -232,7 +232,10 @@ function (ekat_fetch_content NAME)
     endif()
   endif()
 
-  # 5. Populate (if needed)
+  # 5. Populate (if needed). Note: FetchContent_MakeAvailable both
+  #    populates (clone/checkout) the source dir AND parses it via
+  #    add_subdirectory, so we must NOT add_subdirectory again below
+  #    in this branch.
   if (POPULATE)
     # Use FetchContent internally for the one build that 'wins' the lock
     include(FetchContent)
@@ -240,17 +243,24 @@ function (ekat_fetch_content NAME)
         GIT_REPOSITORY ${ARG_GIT_REPOSITORY}
         GIT_TAG        ${ARG_GIT_TAG}
         SOURCE_DIR     ${ABS_SOURCE_DIR}
+        BINARY_DIR     ${CMAKE_BINARY_DIR}/externals/${NAME}
     )
 
-    # This performs the actual git clone/checkout
-    FetchContent_Populate(${NAME})
+    # This performs the actual git clone/checkout, then parses the subfolder
+    FetchContent_MakeAvailable(${NAME})
   endif ()
 
   # We can finally release the lock
   file(LOCK "${LOCK_FILE}" RELEASE)
 
-  # 6. Parse subfolder, and set global property (so we don't re-add it by mistake)
-  add_subdirectory("${ABS_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/externals/${NAME}")
+  # 6. If the source dir was already populated with the right version, we
+  #    still need to parse it ourselves (FetchContent_MakeAvailable above
+  #    already did so for the case where we just populated it)
+  if (NOT POPULATE)
+    add_subdirectory("${ABS_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/externals/${NAME}")
+  endif ()
+
+  # Set global property (so we don't re-add it by mistake)
   set_property(GLOBAL PROPERTY EKAT_TPL_${NAME}_ADDED TRUE)
   set_property(GLOBAL PROPERTY EKAT_TPL_${NAME}_CALLER "${CMAKE_CURRENT_LIST_FILE}")
 endfunction()
