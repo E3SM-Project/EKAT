@@ -203,28 +203,28 @@ macro (SetReleaseFlags)
     if (SRF_FFLAGS)
       string(APPEND CMAKE_Fortran_FLAGS_RELEASE " ${SRF_FFLAGS}")
     else ()
-      string(APPEND CMAKE_Fortran_FLAGS_RELEASE " -O3")
+      string(PREPEND CMAKE_Fortran_FLAGS_RELEASE " -O3 ")
     endif ()
 
     # C
     if (SRF_CFLAGS)
       string(APPEND CMAKE_C_FLAGS_RELEASE " ${SRF_CFLAGS}")
     else ()
-      string(APPEND CMAKE_C_FLAGS_RELEASE " -O3")
+      string(PREPEND CMAKE_C_FLAGS_RELEASE " -O3 ")
     endif ()
 
     # CXX
     if (SRF_CXXFLAGS)
       string(APPEND CMAKE_CXX_FLAGS_RELEASE " ${SRF_FFLAGS}")
     else ()
-      string(APPEND CMAKE_CXX_FLAGS_RELEASE " -O3")
+      string(PREPEND CMAKE_CXX_FLAGS_RELEASE " -O3 ")
 
       # The default flags for CXX include openmp-simd,
       # which is different depending on the compiler
       if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        string (APPEND CMAKE_CXX_FLAGS_RELEASE " -fopenmp-simd")
+        string (PREPEND CMAKE_CXX_FLAGS_RELEASE " -fopenmp-simd ")
       elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel" OR CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-        string (APPEND CMAKE_CXX_FLAGS_RELEASE " -qopenmp-simd")
+        string (PREPEND CMAKE_CXX_FLAGS_RELEASE " -qopenmp-simd ")
       endif()
     endif ()
   endif ()
@@ -261,28 +261,28 @@ macro (SetDebugFlags)
     if (SDF_FFLAGS)
       string(APPEND CMAKE_Fortran_FLAGS_DEBUG " ${SDF_FFLAGS}")
     else ()
-      string(APPEND CMAKE_Fortran_FLAGS_DEBUG " -g -O0")
+      string(PREPEND CMAKE_Fortran_FLAGS_DEBUG " -g -O0 ")
     endif ()
 
     # C
     if (SDF_CFLAGS)
       string(APPEND CMAKE_C_FLAGS_DEBUG " ${SDF_CFLAGS}")
     else ()
-      string(APPEND CMAKE_C_FLAGS_DEBUG " -g -O0")
+      string(PREPEND CMAKE_C_FLAGS_DEBUG " -g -O0 ")
     endif ()
 
     # CXX
     if (SDF_CXXFLAGS)
       string(APPEND CMAKE_CXX_FLAGS_DEBUG " ${SDF_FFLAGS}")
     else ()
-      string(APPEND CMAKE_CXX_FLAGS_DEBUG " -g -O0")
+      string(PREPEND CMAKE_CXX_FLAGS_DEBUG " -g -O0 ")
 
       # The default flags for CXX include openmp-simd,
       # which is different depending on the compiler
       if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        string (APPEND CMAKE_CXX_FLAGS_DEBUG " -fopenmp-simd")
+        string (PREPEND CMAKE_CXX_FLAGS_DEBUG " -fopenmp-simd ")
       elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel" OR CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-        string (APPEND CMAKE_CXX_FLAGS_DEBUG " -qopenmp-simd")
+        string (PREPEND CMAKE_CXX_FLAGS_DEBUG " -qopenmp-simd ")
       endif()
     endif ()
   endif ()
