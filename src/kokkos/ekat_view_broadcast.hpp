@@ -16,7 +16,7 @@ namespace ekat {
  */
 
 template<typename ToView>
-class ViewBroadcast
+class [[deprecated("This class will be removed. Simply create a LayoutStride view instead")]] ViewBroadcast
 {
 public:
   using view_type  = Unmanaged<ToView>;
