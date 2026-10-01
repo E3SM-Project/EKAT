@@ -8,303 +8,89 @@
 
 namespace ekat {
 
-// ================ Subviews of several ranks views ======================= //
+namespace Impl {
 
-// Note: we template on scalar type ST to allow both builtin and Packs,
-//       as well as to allow const/non-const versions.
+// Return subview of v with subview dims described by args
+// Input:
+//   - ViewT v: view to subview
+//   - std::integer_sequence<int, Is...>: integer sequence [0, 1, ..., ViewT::rank]
+//   - Args... args: subview dims for the first sizeof(Args) dims (<= ViewT::rank)
+template <typename ViewT, int... Is, class... Args>
+KOKKOS_INLINE_FUNCTION
+auto subview_impl(const ViewT& v, std::integer_sequence<int, Is...>, const Args... args) {
+  // Pack the integral arguments into a tuple so they can be indexed via std::get inside the lambda
+  auto args_tuple = std::forward_as_tuple(args...);
+  constexpr auto num_args = std::tuple_size_v<decltype(args_tuple)>;
 
-// --- Rank1 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST,Props...>>
-subview(const ViewLR<ST*,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST,Props...>>(
-      &v.impl_map().reference(i0, 0));
-}
+  // Determine the subview arg (args... and then Kokkos::ALL for remaining ranks)
+  auto slice = [&](auto dim) {
+    if constexpr (dim < (int)num_args) {
+      auto indx = std::get<dim>(args_tuple);
+      assert((int)indx < v.extent_int((int)dim));
 
-// --- Rank2 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST**,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, 0),v.extent(1));
-}
-
-// --- Rank3 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST***,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, 0, 0),v.extent(1),v.extent(2));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST***,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, 0),v.extent(2));
+      // For the first r dimensions, extract the runtime integer parameter
+      return std::get<dim>(args_tuple);
+    } else {
+      // For the remaining dimensions, pass Kokkos::ALL
+      return Kokkos::ALL;
+    }
+  };
+  return Kokkos::subview(v, slice(std::integral_constant<int, Is>())...);
 }
 
-// --- Rank4 --- //
-template <typename ST, typename... Props>
+// Return subview of v at index i1 of dim1
+// Input:
+//   - ViewT v: view to subview
+//   - int i1: subview index for dim1
+//   - std::integer_sequence<int, Is...>: integer sequence [0, 1, ..., ViewT::rank]
+template <typename ViewT, int... Is>
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
-subview(const ViewLR<ST****,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      &v.impl_map().reference(i0, 0, 0, 0),v.extent(1),v.extent(2),v.extent(3));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST****,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, i1, 0, 0),v.extent(2),v.extent(3));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST****,Props...>& v,
-        const int i0, const int i1, const int i2) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, 0),v.extent(3));
+auto subview_1_impl(const ViewT& v, const int i1, std::integer_sequence<int, Is...>) {
+  auto slice = [&](auto dim) {
+    if constexpr (dim == 1) {
+      return i1;
+    } else {
+      return Kokkos::ALL;
+    }
+  };
+
+  return Kokkos::subview(v, slice(std::integral_constant<int, Is>{})...);
 }
 
-// --- Rank5 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST****,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST****,Props...>>(
-      &v.impl_map().reference(i0, 0, 0, 0, 0),v.extent(1),v.extent(2),v.extent(3),v.extent(4));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      &v.impl_map().reference(i0, i1, 0, 0, 0),v.extent(2),v.extent(3),v.extent(4));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0, const int i1, const int i2) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, 0 , 0),v.extent(3),v.extent(4));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0, const int i1, const int i2, const int i3) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  assert(i3>=0 && i3 < v.extent_int(3));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, i3 , 0),v.extent(4));
-}
+} // namespace Impl
 
-// --- Rank6 --- //
-template <typename ST, typename... Props>
+// ================ Subviews of first r ranks ======================= //
+// Return subview of v with subview dims described by args
+// Input:
+//   - ViewT v: view to subview
+//   - Args... args: subview dims for the first sizeof(Args) dims (<= ViewT::rank)
+template <typename ViewT, typename... Args>
+requires((ViewT::rank >= sizeof...(Args)) &&
+         (std::is_integral_v<Args> && ...) &&
+         (std::convertible_to<Args, int> && ...))
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*****,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0) {
+auto subview(const ViewT& v, const Args... args) {
   assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST*****,Props...>>(
-      &v.impl_map().reference(i0, 0, 0, 0, 0, 0),v.extent(1),v.extent(2),v.extent(3),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST****,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST****,Props...>>(
-      &v.impl_map().reference(i0, i1, 0, 0, 0, 0),v.extent(2),v.extent(3),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1, const int i2) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, 0, 0, 0),v.extent(3),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1, const int i2, const int i3) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  assert(i3>=0 && i3 < v.extent_int(3));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, i3, 0, 0),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1, const int i2, const int i3, const int i4) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  assert(i3>=0 && i3 < v.extent_int(3));
-  assert(i4>=0 && i4 < v.extent_int(4));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, i3, i4, 0),v.extent(5));
+
+  auto int_seq = std::make_integer_sequence<int, ViewT::rank>();
+  auto sv = Impl::subview_impl(v, int_seq, args...);
+
+  using Subview = decltype(sv);
+  return Unmanaged<Subview>(sv);
 }
 
 // ================ Subviews along 2nd dimension ======================= //
 
-// Note: if input rank>3, these subviews can retain LayoutRight.
-//       However, Kokkos::subview only works if the output rank is <=3,
-//       so for higher ranks, we manually build the output view
-//       instead of relying on Kokkos::subview.
-//       See https://github.com/kokkos/kokkos/issues/3757
-//       If the input view has rank=2, then the output view MUST have
-//       LayoutStride (there is no alternative).
-
-// --- Rank2 --- //
-template <typename ST, typename... Props>
+template <typename ViewT>
+requires (ViewT::rank > 1)
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLS<ST*,Props...>>
-subview_1(const ViewLR<ST**,Props...>& v,
-          const int i1) {
+auto subview_1(const ViewT& v, const int i1) {
   assert(v.data() != nullptr);
-  assert(i1>=0 && i1 < v.extent_int(1));
+  assert(i1 >= 0 && i1 < v.extent_int(1));
 
-  auto sv = Kokkos::subview(v,Kokkos::ALL,i1);
-  return Unmanaged<ViewLS<ST*,Props...>>(sv);
-}
-
-// --- Rank3 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview_1(const ViewLR<ST***,Props...>& v,
-          const int i1) {
-  assert(v.data() != nullptr);
-  assert(i1>=0 && i1 < v.extent_int(1));
-
-  auto sv = Kokkos::subview(v,Kokkos::ALL,i1,Kokkos::ALL);
-  return Unmanaged<ViewLR<ST**,Props...>>(sv);
-}
-
-// --- Rank4 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
-subview_1(const ViewLR<ST****,Props...>& v,
-          const int i1) {
-  assert(v.data() != nullptr);
-  assert(i1>=0 && i1 < v.extent_int(1));
-
-  using vt = Unmanaged<ViewLR<ST***,Props...>>;
-  // Figure out where the data starts, and create a tmp view with correct extents
-  auto offset = v.impl_map().m_impl_offset(0,i1,0,0);
-  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2),v.extent(3));
-
-  // The view tmp has still the wrong stride_0 (the prod of the following dims).
-  // Since we are keeping the first dimension, the stride is unchanged.
-  auto vm = tmp.impl_map();
-  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      v.impl_track(),vm);
-}
-
-// --- Rank5 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST****,Props...>>
-subview_1(const ViewLR<ST*****,Props...>& v,
-          const int i1) {
-  assert(v.data() != nullptr);
-  assert(i1>=0 && i1 < v.extent_int(1));
-
-  using vt = Unmanaged<ViewLR<ST****,Props...>>;
-  // Figure out where the data starts, and create a tmp view with correct extents
-  auto offset = v.impl_map().m_impl_offset(0,i1,0,0,0);
-  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2),v.extent(3),v.extent(4));
-
-  // The view tmp has still the wrong stride_0 (the prod of the following dims).
-  // Since we are keeping the first dimension, the stride is unchanged.
-  auto vm = tmp.impl_map();
-  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  return Unmanaged<ViewLR<ST****,Props...>>(
-      v.impl_track(),vm);
-}
-
-// --- Rank6 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*****,Props...>>
-subview_1(const ViewLR<ST******,Props...>& v,
-          const int i1) {
-  assert(v.data() != nullptr);
-  assert(i1>=0 && i1 < v.extent_int(1));
-
-  using vt = Unmanaged<ViewLR<ST*****,Props...>>;
-  // Figure out where the data starts, and create a tmp view with correct extents
-  auto offset = v.impl_map().m_impl_offset(0,i1,0,0,0,0);
-  auto tmp = vt(v.data()+offset,v.extent(0),v.extent(2),v.extent(3),v.extent(4),v.extent(5));
-
-  // The view tmp has still the wrong stride_0 (the prod of the following dims).
-  // Since we are keeping the first dimension, the stride is unchanged.
-  auto vm = tmp.impl_map();
-  vm.m_impl_offset.m_stride = v.impl_map().stride_0();
-  return Unmanaged<ViewLR<ST*****,Props...>>(
-      v.impl_track(),vm);
+  // Pass in a compile-time sequence matching the rank of the View
+  auto sv = Impl::subview_1_impl(v, i1, std::make_integer_sequence<int, ViewT::rank>{});
+  return Unmanaged<decltype(sv)>(sv);
 }
 
 // ================ Multi-sliced Subviews ======================= //

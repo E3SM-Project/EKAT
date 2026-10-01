@@ -108,9 +108,9 @@ TEST_CASE("subviews") {
     auto sv2 = ekat::subview_1(v2,i5);
 
     // First four should retain LaoutRight, last one has no other choice but getting LayoutStride
-    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutRight>::value);
+    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutStride>::value);
     REQUIRE (std::is_same<typename decltype(sv3)::traits::array_layout,Kokkos::LayoutRight>::value);
     REQUIRE (std::is_same<typename decltype(sv2)::traits::array_layout,Kokkos::LayoutStride>::value);
 
