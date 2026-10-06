@@ -70,7 +70,7 @@ function(EkatCreateUnitTestWithAsserts test_base_name test_meta_src)
     EkatCreateUnitTest(
       ${test_base_name}_check_assert_${N}
       SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${base_src}_${N}.cpp
-      WILL_FAIL
+      PROPERTIES PASS_REGULAR_EXPRESSION "Assertion `.*' failed"
       ${ARGN}
     )
   endforeach ()
