@@ -121,12 +121,20 @@ macro (EkatDisableAllWarning targetName)
   # Note: even if a compiler collection (usually) has the same flag for all languages, we still
   #       add the flag separately for each langauge, since the user MAY be using different compilers
   #       for different langauges (e.g., icpc and gfortran).
+  # Note: for GNU, -fcompare-debug-second helps silencing some `note: ...` lines too, but it has the
+  #       side effect of preventing coverage files from being generated, so add it only if the user
+  #       did not request coverage (via EKAT_ENABLE_COVERAGE=ON).
   # TODO: if we upgrade required cmake version to 3.16, we can use the more compact generator expression:
   #         target_compile_options (${targetName} PRIVATE $<$<COMPILE_LANG_AND_ID:C,GNU,Intel>:-w>)
   target_compile_options (${targetName} PRIVATE
     $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-w> $<$<C_COMPILER_ID:Intel>: -w>>)
-  target_compile_options (${targetName} PRIVATE
-    $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-w -fcompare-debug-second> $<$<CXX_COMPILER_ID:Intel>: -w>>)
+  if (EKAT_ENABLE_COVERAGE)
+    target_compile_options (${targetName} PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Intel>: -w>>)
+  else()
+    target_compile_options (${targetName} PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-w -fcompare-debug-second> $<$<CXX_COMPILER_ID:Intel>: -w>>)
+  endif()
   target_compile_options (${targetName} PRIVATE
     $<$<COMPILE_LANGUAGE:Fortran>:$<$<Fortran_COMPILER_ID:GNU>:-w> $<$<Fortran_COMPILER_ID:Intel>: -w>>)
 endmacro (EkatDisableAllWarning)
