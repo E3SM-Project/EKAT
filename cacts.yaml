@@ -88,6 +88,14 @@ machines:
     gpu_arch: "cuda"
     num_run_res: 2
 
+  ghci-snl-hip:
+    # The MPI compiler wrappers must use hipcc as the C++ backend compiler (honor any pre-existing setting)
+    env_setup:
+      - 'export OMPI_CXX=${OMPI_CXX:-hipcc}'
+      - 'export MPICH_CXX=${MPICH_CXX:-hipcc}'
+    gpu_arch: "hip"
+    num_run_res: 2
+
 #########################################################################################
 #                              BUILDS CONFIGURATIONS                                    #
 #########################################################################################
