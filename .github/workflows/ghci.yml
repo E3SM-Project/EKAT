@@ -6,19 +6,8 @@ on:
     branches: [ master ]
     types: [opened, synchronize, ready_for_review, reopened]
 
-  # Manual run is used to bless
+  # Allow manual runs
   workflow_dispatch:
-    inputs:
-      job_to_run:
-        description: 'Job to run'
-        required: true
-        type: choice
-        options:
-          - gnu
-          - cuda
-          - hip
-          - intel
-          - all
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
   schedule:
@@ -41,9 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # For manual runs, only test the requested runner (the 'matrix' context is not
-        # available in the job-level 'if', so we filter the runners list here)
-        runner: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.job_to_run != 'all' && format('["{0}"]', inputs.job_to_run) || '["gnu","cuda","hip","intel"]') }}
+        runner: [gnu, cuda, hip, intel]
         build_type: [debug, release]
     name: ${{ matrix.runner }} / ${{ matrix.build_type }}
     steps:
