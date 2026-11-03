@@ -145,8 +145,7 @@ jobs:
         with:
           name: log-files-${{ matrix.build_type }}-ghci-snl-${{ matrix.runner }}
           path: |
-            ctest-build/*/Testing/Temporary/Last*.log
+            ctest-build/*/Testing/**
             ctest-build/*/ctest_resource_file.json
             ctest-build/*/ctest_script.cmake
             ctest-build/*/CMakeCache.txt
-            ctest-build/**/*.xml
