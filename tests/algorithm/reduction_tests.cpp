@@ -103,6 +103,8 @@ void test_view_reduction(const int begin=0, const int end=TotalSize)
   ExeSpace temp_space;
   #ifdef KOKKOS_ENABLE_SYCL
   auto num_sm = temp_space.impl_internal_space_instance()->m_queue->get_device().get_info<sycl::info::device::max_compute_units>();
+  #elif defined KOKKOS_ENABLE_HIP
+  auto num_sm = temp_space.hip_device_prop().multiProcessorCount;
   #else
   auto num_sm = temp_space.cuda_device_prop().multiProcessorCount;
   #endif
