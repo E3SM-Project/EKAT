@@ -1,4 +1,4 @@
-name: ghci-snl-testing
+name: ghci
 
 on:
   # Runs on PRs against master
