@@ -135,14 +135,13 @@ jobs:
         run: |
           cmd="cacts -m ghci-snl-${{ matrix.runner }} -t ${{ matrix.build_type }} -r ./"
 
+          # Add the scheduler flag for nightly runs
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+              cmd+=" -s"
+          fi
+
           # Runner-specific options
           case "${{ matrix.runner }}" in
-              gnu)
-                  # Add the scheduler flag for nightly runs
-                  if [ "${{ github.event_name }}" = "schedule" ]; then
-                      cmd+=" -s"
-                  fi
-                  ;;
               cuda|hip)
                   # ARCH was set by the "Get CUDA/HIP Arch" step
                   cmd+=" -c Kokkos_ARCH_${{ env.ARCH }}=ON"
