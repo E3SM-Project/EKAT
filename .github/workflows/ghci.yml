@@ -35,84 +35,17 @@ jobs:
     name: ${{ matrix.runner }} / ${{ matrix.build_type }}
     steps:
       - name: Show action trigger
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const eventName = context.eventName;
-            const actor = context.actor || 'unknown';  // Default to 'unknown' if actor is not defined
-            let eventAction = 'N/A';
-
-            // Determine the event action based on the event type
-            if (eventName === 'pull_request') {
-              eventAction = context.payload.action || 'N/A';
-            } else if (eventName === 'pull_request_review') {
-              eventAction = context.payload.review.state || 'N/A';
-            } else if (eventName === 'workflow_dispatch') {
-              eventAction = 'manual trigger';
-            } else if (eventName === 'schedule') {
-              eventAction = 'scheduled trigger';
-            }
-            console.log(`The job was triggered by a ${eventName} event.`);
-            console.log(`  - Event action: ${eventAction}`);
-            console.log(`  - Triggered by: ${actor}`);
+        uses: e3sm-project/automation/show-trigger@main
       - name: Check out the repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           show-progress: false
           submodules: recursive
-      - name: Get CUDA Arch
-        if: ${{ matrix.runner == 'cuda' }}
-        run: |
-          # Ensure nvidia-smi is available
-          if ! command -v nvidia-smi &> /dev/null; then
-              echo "nvidia-smi could not be found. Please ensure you have Nvidia drivers installed."
-              exit 1
-          fi
-
-          # Get the GPU model from nvidia-smi, and set env for next step
-          gpu_model=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n 1)
-          case "$gpu_model" in
-              *"H100"*)
-                  echo "ARCH=HOPPER90" >> $GITHUB_ENV
-                  ;;
-              *"A100"*)
-                  echo "ARCH=AMPERE80" >> $GITHUB_ENV
-                  ;;
-              *"V100"*)
-                  echo "ARCH=VOLTA70" >> $GITHUB_ENV
-                  ;;
-              *)
-                  echo "Unsupported GPU model: $gpu_model"
-                  exit 1
-                  ;;
-          esac
-      - name: Get HIP Arch
-        if: ${{ matrix.runner == 'hip' }}
-        run: |
-          # Ensure rocminfo is available
-          if ! command -v rocminfo &> /dev/null; then
-              echo "rocminfo could not be found. Please ensure you have ROCm installed."
-              exit 1
-          fi
-
-          # Get the gfx target from rocminfo, and set env for next step
-          gfx=$(rocminfo | grep -o -m 1 'gfx[0-9a-f]\+')
-          case "$gfx" in
-              gfx942)
-                  echo "ARCH=AMD_GFX942" >> $GITHUB_ENV
-                  ;;
-              gfx90a)
-                  echo "ARCH=AMD_GFX90A" >> $GITHUB_ENV
-                  ;;
-              gfx908)
-                  echo "ARCH=AMD_GFX908" >> $GITHUB_ENV
-                  ;;
-              *)
-                  echo "Unsupported GPU architecture: $gfx"
-                  exit 1
-                  ;;
-          esac
+      - name: Get GPU Arch
+        id: gpu
+        if: ${{ matrix.runner == 'cuda' || matrix.runner == 'hip' }}
+        uses: e3sm-project/automation/gpu-arch@main
       - name: Ensure CACTS is installed
         env:
           PIP_CERT: /etc/pki/tls/certs/ca-bundle.crt
@@ -130,8 +63,8 @@ jobs:
           # Runner-specific options
           case "${{ matrix.runner }}" in
               cuda|hip)
-                  # ARCH was set by the "Get CUDA/HIP Arch" step
-                  cmd+=" -c Kokkos_ARCH_${{ env.ARCH }}=ON"
+                  # The "Get GPU Arch" step detected the GPU arch
+                  cmd+=" -c Kokkos_ARCH_${{ steps.gpu.outputs.kokkos-arch }}=ON"
                   ;;
               intel)
                   cmd+=" -c CMAKE_CXX_FLAGS=-fp-model=precise"
