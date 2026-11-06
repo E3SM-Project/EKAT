@@ -35,7 +35,7 @@ jobs:
     name: ${{ matrix.runner }} / ${{ matrix.build_type }}
     steps:
       - name: Show action trigger
-        uses: e3sm-project/automation/show-trigger@main
+        uses: e3sm-project/automation/show-trigger@v1
       - name: Check out the repository
         uses: actions/checkout@v4
         with:
@@ -45,7 +45,7 @@ jobs:
       - name: Get GPU Arch
         id: gpu
         if: ${{ matrix.runner == 'cuda' || matrix.runner == 'hip' }}
-        uses: e3sm-project/automation/gpu-arch@main
+        uses: e3sm-project/automation/gpu-arch@v1
       - name: Ensure CACTS is installed
         env:
           PIP_CERT: /etc/pki/tls/certs/ca-bundle.crt
