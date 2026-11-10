@@ -9,13 +9,8 @@
 // If your test does not use Real, then you don't need any compile definition
 // (you don't even need to include this file).
 
-// If the target already selected a precision (e.g., via COMPILER_DEFS), do not
-// redefine it (that would trigger a macro-redefined warning, and the global
-// defaults below could override the target's choice when both are enabled).
-#if !defined(EKAT_TEST_DOUBLE_PRECISION) && !defined(EKAT_TEST_SINGLE_PRECISION)
 #cmakedefine EKAT_TEST_DOUBLE_PRECISION
 #cmakedefine EKAT_TEST_SINGLE_PRECISION
-#endif
 
 #ifdef EKAT_TEST_DOUBLE_PRECISION
 using Real = double;
