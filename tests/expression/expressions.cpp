@@ -39,7 +39,7 @@ void bin_ops (const ViewT& x, const ViewT& y, const ViewT& z)
     auto y_val = yh.data()[i];
     auto z_val = zh.data()[i];
     auto tgt   = x_val*y_val-1/y_val+2*x_val;
-    REQUIRE_THAT (z_val, WithinRel(tgt,tol) || WithinAbs(tgt,tol));
+    REQUIRE_THAT (z_val, WithinRel(Real(tgt),Real(tol)) || WithinAbs(Real(tgt),Real(tol)));
   }
 }
 
@@ -67,7 +67,7 @@ void math_fcns (const ViewT& x, const ViewT& y, const ViewT& z)
     auto z_val = zh.data()[i];
     auto tgt   = 2*std::exp(-x_val)*std::sin(x_val)*std::log(y_val)
                - std::sqrt(x_val) + std::pow(y_val,2) + std::pow(3,x_val);
-    REQUIRE_THAT (z_val, WithinRel(tgt,tol) || WithinAbs(tgt,tol));
+    REQUIRE_THAT (z_val, WithinRel(Real(tgt),Real(tol)) || WithinAbs(Real(tgt),Real(tol)));
   }
 }
 

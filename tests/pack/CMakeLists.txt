@@ -4,13 +4,11 @@ include(EkatCreateUnitTest)
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(pack${DP_POSTFIX}
     SOURCES pack.cpp
-    COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
     LIBS ekat::Pack)
 endif()
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(pack${SP_POSTFIX}
     SOURCES pack.cpp
-    COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
     LIBS ekat::Pack)
 endif()
 
@@ -18,13 +16,11 @@ endif()
 if (EKAT_TEST_DOUBLE_PRECISION)
   EkatCreateUnitTest(pack_kokkos${DP_POSTFIX}
     SOURCES pack_kokkos_utils.cpp
-    COMPILER_DEFS EKAT_TEST_DOUBLE_PRECISION
     LIBS ekat::Pack)
 endif ()
 if (EKAT_TEST_SINGLE_PRECISION)
   EkatCreateUnitTest(pack_kokkos${SP_POSTFIX}
     SOURCES pack_kokkos_utils.cpp
-    COMPILER_DEFS EKAT_TEST_SINGLE_PRECISION
     LIBS ekat::Pack)
 endif ()
 
