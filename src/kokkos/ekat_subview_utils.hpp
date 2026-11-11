@@ -8,201 +8,27 @@
 
 namespace ekat {
 
+namespace impl {
+// Helper functions for subview operations
+template <typename ViewT, typename... Indices, int... Remaining>
+KOKKOS_INLINE_FUNCTION
+auto subview_impl(const ViewT& v, std::integer_sequence<int, Remaining...>, Indices... indices) {
+  auto result = Kokkos::subview(v, indices...,
+                               (static_cast<void>(Remaining), Kokkos::ALL)...);
+  return Unmanaged<decltype(result)>(result);
+}
+
+} // namespace impl
+
 // ================ Subviews of several ranks views ======================= //
 
-// Note: we template on scalar type ST to allow both builtin and Packs,
-//       as well as to allow const/non-const versions.
-
-// --- Rank1 --- //
-template <typename ST, typename... Props>
+template <typename ViewT, typename... Indices>
+requires (Kokkos::is_view<ViewT>::value && sizeof...(Indices) > 0 &&
+          sizeof...(Indices) <= ViewT::rank &&
+          (std::is_convertible_v<Indices,int> && ...))
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST,Props...>>
-subview(const ViewLR<ST*,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST,Props...>>(
-      &v.impl_map().reference(i0, 0));
-}
-
-// --- Rank2 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST**,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, 0),v.extent(1));
-}
-
-// --- Rank3 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST***,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, 0, 0),v.extent(1),v.extent(2));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST***,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, 0),v.extent(2));
-}
-
-// --- Rank4 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
-subview(const ViewLR<ST****,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      &v.impl_map().reference(i0, 0, 0, 0),v.extent(1),v.extent(2),v.extent(3));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST****,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, i1, 0, 0),v.extent(2),v.extent(3));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST****,Props...>& v,
-        const int i0, const int i1, const int i2) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, 0),v.extent(3));
-}
-
-// --- Rank5 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST****,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST****,Props...>>(
-      &v.impl_map().reference(i0, 0, 0, 0, 0),v.extent(1),v.extent(2),v.extent(3),v.extent(4));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      &v.impl_map().reference(i0, i1, 0, 0, 0),v.extent(2),v.extent(3),v.extent(4));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0, const int i1, const int i2) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, 0 , 0),v.extent(3),v.extent(4));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST*****,Props...>& v,
-        const int i0, const int i1, const int i2, const int i3) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  assert(i3>=0 && i3 < v.extent_int(3));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, i3 , 0),v.extent(4));
-}
-
-// --- Rank6 --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*****,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  return Unmanaged<ViewLR<ST*****,Props...>>(
-      &v.impl_map().reference(i0, 0, 0, 0, 0, 0),v.extent(1),v.extent(2),v.extent(3),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST****,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  return Unmanaged<ViewLR<ST****,Props...>>(
-      &v.impl_map().reference(i0, i1, 0, 0, 0, 0),v.extent(2),v.extent(3),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST***,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1, const int i2) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  return Unmanaged<ViewLR<ST***,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, 0, 0, 0),v.extent(3),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST**,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1, const int i2, const int i3) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  assert(i3>=0 && i3 < v.extent_int(3));
-  return Unmanaged<ViewLR<ST**,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, i3, 0, 0),v.extent(4),v.extent(5));
-}
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLR<ST*,Props...>>
-subview(const ViewLR<ST******,Props...>& v,
-        const int i0, const int i1, const int i2, const int i3, const int i4) {
-  assert(v.data() != nullptr);
-  assert(i0>=0 && i0 < v.extent_int(0));
-  assert(i1>=0 && i1 < v.extent_int(1));
-  assert(i2>=0 && i2 < v.extent_int(2));
-  assert(i3>=0 && i3 < v.extent_int(3));
-  assert(i4>=0 && i4 < v.extent_int(4));
-  return Unmanaged<ViewLR<ST*,Props...>>(
-      &v.impl_map().reference(i0, i1, i2, i3, i4, 0),v.extent(5));
+auto subview(const ViewT& v, Indices... indices) {
+  return impl::subview_impl(v, std::make_integer_sequence<int, ViewT::rank - sizeof...(Indices)>{}, indices...);
 }
 
 // ================ Subviews along 2nd dimension ======================= //
