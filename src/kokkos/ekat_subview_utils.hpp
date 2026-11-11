@@ -25,6 +25,16 @@ auto subview_1_impl(const ViewT& v, const int i1, std::integer_sequence<int, Rem
                                (static_cast<void>(Remaining), Kokkos::ALL)...);
   return Unmanaged<decltype(result)>(result);
 }
+
+template <typename ViewT, int... Dimensions>
+KOKKOS_INLINE_FUNCTION
+auto subview_multi_slice_impl(const ViewT& v, const Kokkos::pair<int,int>& range,
+                              const int idim, std::integer_sequence<int, Dimensions...>) {
+  auto result = Kokkos::subview(v,
+      (Dimensions == idim
+       ? range : Kokkos::make_pair<int, int>(0, v.extent_int(Dimensions)))...);
+  return Unmanaged<decltype(result)>(result);
+}
 } // namespace impl
 
 // ================ Subviews of several ranks views ======================= //
@@ -56,156 +66,13 @@ auto subview_1(const ViewT& v,
 // Note also that this slicing means that the subview has the same rank
 // as the source view
 
-// --- Rank1 multi-slice --- //
-template <typename ST, typename... Props>
+template <typename ViewT>
+requires (Kokkos::is_view<ViewT>::value && ViewT::rank >= 1)
 KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLS<ST*, Props...>>
-subview(const ViewLR<ST*, Props...>& v,
-        const Kokkos::pair<int, int> &kp0,
-        const int idim = 0) {
-  assert(v.data() != nullptr);
-  assert(idim == 0);
-  assert(kp0.first >= 0 && kp0.first < kp0.second);
-  return Unmanaged<ViewLS<ST*,Props...>>(Kokkos::subview(v, kp0));
-}
-
-// --- Rank2 multi-slice --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLS<ST**, Props...>>
-subview(const ViewLR<ST**, Props...>& v,
-        const Kokkos::pair<int, int> &kp0,
-        const int idim) {
-  assert(v.data() != nullptr);
+auto subview(const ViewT& v, const Kokkos::pair<int,int>& range,
+             const int idim = 0) {
   assert(idim >= 0 && idim < static_cast<int>(v.rank));
-  assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
-  if (idim == 0) {
-    return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, kp0, Kokkos::ALL));
-  } else {
-    assert(idim == 1);
-    return Unmanaged<ViewLS<ST**,Props...>>(Kokkos::subview(v, Kokkos::ALL, kp0));
-  }
-}
-
-// --- Rank3 multi-slice --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLS<ST***, Props...>>
-subview(const ViewLR<ST***, Props...>& v,
-        const Kokkos::pair<int, int> &kp0,
-        const int idim) {
-  assert(v.data() != nullptr);
-  assert(idim >= 0 && idim < static_cast<int>(v.rank));
-  assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
-  if (idim == 0) {
-    return Unmanaged<ViewLS<ST***,Props...>>(
-      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 1) {
-    return Unmanaged<ViewLS<ST***,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL));
-  } else {
-    assert(idim == 2);
-    return Unmanaged<ViewLS<ST***,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0));
-  }
-}
-
-// --- Rank4 multi-slice --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLS<ST****, Props...>>
-subview(const ViewLR<ST****, Props...>& v,
-        const Kokkos::pair<int, int> &kp0,
-        const int idim) {
-  assert(v.data() != nullptr);
-  assert(idim >= 0 && idim < static_cast<int>(v.rank));
-  assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
-  if (idim == 0) {
-    return Unmanaged<ViewLS<ST****,Props...>>(
-      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 1) {
-    return Unmanaged<ViewLS<ST****,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 2) {
-    return Unmanaged<ViewLS<ST****,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL));
-  } else {
-    assert(idim == 3);
-    return Unmanaged<ViewLS<ST****,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0));
-  }
-}
-
-// --- Rank5 multi-slice --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLS<ST*****, Props...>>
-subview(const ViewLR<ST*****, Props...>& v,
-        const Kokkos::pair<int, int> &kp0,
-        const int idim) {
-  assert(v.data() != nullptr);
-  assert(idim >= 0 && idim < static_cast<int>(v.rank));
-  assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
-  if (idim == 0) {
-    return Unmanaged<ViewLS<ST*****,Props...>>(
-      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 1) {
-    return Unmanaged<ViewLS<ST*****,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 2) {
-    return Unmanaged<ViewLS<ST*****,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 3) {
-    return Unmanaged<ViewLS<ST*****,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL));
-  } else {
-    assert(idim == 4);
-    return Unmanaged<ViewLS<ST*****,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0));
-  }
-}
-
-// --- Rank6 multi-slice --- //
-template <typename ST, typename... Props>
-KOKKOS_INLINE_FUNCTION
-Unmanaged<ViewLS<ST******, Props...>>
-subview(const ViewLR<ST******, Props...>& v,
-        const Kokkos::pair<int, int> &kp0,
-        const int idim) {
-  assert(v.data() != nullptr);
-  assert(idim >= 0 && idim < static_cast<int>(v.rank));
-  assert(kp0.first >= 0 && kp0.first < kp0.second
-         && kp0.second <= v.extent_int(idim));
-  if (idim == 0) {
-    return Unmanaged<ViewLS<ST******,Props...>>(
-      Kokkos::subview(v, kp0, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
-                      Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 1) {
-    return Unmanaged<ViewLS<ST******,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, kp0, Kokkos::ALL, Kokkos::ALL,
-                      Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 2) {
-    return Unmanaged<ViewLS<ST******,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, kp0, Kokkos::ALL,
-                      Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 3) {
-    return Unmanaged<ViewLS<ST******,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, kp0,
-                      Kokkos::ALL, Kokkos::ALL));
-  } else if (idim == 4) {
-    return Unmanaged<ViewLS<ST******,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
-                      kp0, Kokkos::ALL));
-  } else {
-    assert(idim == 5);
-    return Unmanaged<ViewLS<ST******,Props...>>(
-      Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL,
-                      Kokkos::ALL, kp0));
-  }
+  return impl::subview_multi_slice_impl(v, range, idim, std::make_integer_sequence<int, ViewT::rank>{});
 }
 } // namespace ekat
 
