@@ -107,10 +107,14 @@ TEST_CASE("subviews") {
     auto sv3 = ekat::subview_1(v3,i4);
     auto sv2 = ekat::subview_1(v2,i5);
 
-    // First four should retain LaoutRight, last one has no other choice but getting LayoutStride
-    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutRight>::value);
-    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutRight>::value);
+    // All subviews should have LayoutStride, except rank 3 which should retain LayoutRight
+    // For input rank = 3, subview_1 can retain LayoutRight for a LayoutRight input view.
+    // This is because Kokkos contains a special type of LayoutRight which can be padded
+    // in the last dimension. For all other ranks, subview_1 will return LayoutStride
+    // for LayoutRight input views.
+    REQUIRE (std::is_same<typename decltype(sv6)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv5)::traits::array_layout,Kokkos::LayoutStride>::value);
+    REQUIRE (std::is_same<typename decltype(sv4)::traits::array_layout,Kokkos::LayoutStride>::value);
     REQUIRE (std::is_same<typename decltype(sv3)::traits::array_layout,Kokkos::LayoutRight>::value);
     REQUIRE (std::is_same<typename decltype(sv2)::traits::array_layout,Kokkos::LayoutStride>::value);
 
