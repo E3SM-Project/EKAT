@@ -43,6 +43,7 @@ message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
 # TODO: this is never used in EKAT src folder, so it should be removed.
 #       Downstream projects should handle bfb logic autonomously
 option (EKAT_DEFAULT_BFB "Whether EKAT should default to BFB behavior whenever possible/appropriate." ${EKAT_IS_DEBUG_BUILD})
+option (EKAT_ENABLE_KOKKOS_TOOLS "Whether to build kokkos-tools and use it to instrument tests at runtime" OFF)
 option (EKAT_ENABLE_VALGRIND "Whether to run tests with valgrind" OFF)
 option (EKAT_ENABLE_CUDA_MEMCHECK "Whether to run tests with cuda-memcheck" OFF)
 option (EKAT_ENABLE_COMPUTE_SANITIZER "Whether to run tests with nvidia's compute-sanitizer" OFF)
