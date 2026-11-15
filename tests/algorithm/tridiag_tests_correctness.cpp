@@ -58,18 +58,14 @@ KOKKOS_INLINE_FUNCTION
 Kokkos::View<typename TridiagArray::value_type*>
 get_diag (const TridiagArray& A, const int diag_idx) {
   assert(A.extent_int(2) == 1);
-  return Kokkos::View<typename TridiagArray::value_type*>(
-    &A.impl_map().reference(diag_idx, 0, 0),
-    A.extent_int(1));
+  return Kokkos::subview(A, diag_idx, Kokkos::ALL(), 0);
 }
 
 template <typename TridiagArray>
 Kokkos::View<typename TridiagArray::value_type**, TestConfig::TeamLayout>
 KOKKOS_INLINE_FUNCTION
 get_diags (const TridiagArray& A, const int diag_idx) {
-  return Kokkos::View<typename TridiagArray::value_type**, TestConfig::TeamLayout>(
-    &A.impl_map().reference(diag_idx, 0, 0),
-    A.extent_int(1), A.extent_int(2));
+  return Kokkos::subview(A, diag_idx, Kokkos::ALL(), Kokkos::ALL());
 }
 
 template <typename DataArray>
@@ -77,8 +73,7 @@ KOKKOS_INLINE_FUNCTION
 Kokkos::View<typename DataArray::value_type*>
 get_x (const DataArray& X) {
   assert(X.extent_int(1) == 1);
-  return Kokkos::View<typename DataArray::value_type*>(
-    &X.impl_map().reference(0, 0), X.extent_int(0));
+  return Kokkos::subview(X, Kokkos::ALL(), 0);
 }
 
 template <typename Scalar>

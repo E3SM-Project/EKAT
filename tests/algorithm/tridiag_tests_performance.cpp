@@ -92,18 +92,18 @@ KOKKOS_INLINE_FUNCTION
 Kokkos::View<typename TridiagArray::value_type*, TeamLayout, Kokkos::MemoryUnmanaged>
 get_diag (const TridiagArray& A, const int& ip, const int& diag_idx) {
   assert(A.extent_int(3) == 1);
+  const auto diag = Kokkos::subview(A, ip, diag_idx, Kokkos::ALL(), 0);
   return Kokkos::View<typename TridiagArray::value_type*, TeamLayout, Kokkos::MemoryUnmanaged>(
-    &A.impl_map().reference(ip, diag_idx, 0, 0),
-    A.extent_int(2));
+    diag.data(), diag.extent_int(0));
 }
 
 template <typename TridiagArray>
 KOKKOS_INLINE_FUNCTION
 Kokkos::View<typename TridiagArray::value_type**, TeamLayout, Kokkos::MemoryUnmanaged>
 get_diags (const TridiagArray& A, const int& ip, const int& diag_idx) {
+  const auto diags = Kokkos::subview(A, ip, diag_idx, Kokkos::ALL(), Kokkos::ALL());
   return Kokkos::View<typename TridiagArray::value_type**, TeamLayout, Kokkos::MemoryUnmanaged>(
-    &A.impl_map().reference(ip, diag_idx, 0, 0),
-    A.extent_int(2), A.extent_int(3));
+    diags.data(), diags.extent_int(0), diags.extent_int(1));
 }
 
 template <typename DataArray>
@@ -111,16 +111,18 @@ KOKKOS_INLINE_FUNCTION
 Kokkos::View<typename DataArray::value_type*, TeamLayout, Kokkos::MemoryUnmanaged>
 get_x (const DataArray& X, const int& ip) {
   assert(X.extent_int(2) == 1);
+  const auto x = Kokkos::subview(X, ip, Kokkos::ALL(), 0);
   return Kokkos::View<typename DataArray::value_type*, TeamLayout, Kokkos::MemoryUnmanaged>(
-    &X.impl_map().reference(ip, 0, 0), X.extent_int(1));
+    x.data(), x.extent_int(0));
 }
 
 template <typename DataArray>
 KOKKOS_INLINE_FUNCTION
 Kokkos::View<typename DataArray::value_type**, TeamLayout, Kokkos::MemoryUnmanaged>
 get_xs (const DataArray& X, const int& ip) {
+  const auto xs = Kokkos::subview(X, ip, Kokkos::ALL(), Kokkos::ALL());
   return Kokkos::View<typename DataArray::value_type**, TeamLayout, Kokkos::MemoryUnmanaged>(
-    &X.impl_map().reference(ip, 0, 0), X.extent_int(1), X.extent_int(2));
+    xs.data(), xs.extent_int(0), xs.extent_int(1));
 }
 
 template <typename Scalar>
@@ -421,7 +423,7 @@ void run (const Input& in) {
       }
     }
     Kokkos::fence();
-    t1 = gettime();    
+    t1 = gettime();
   } break;
   default:
     std::cout << "run does not support "
