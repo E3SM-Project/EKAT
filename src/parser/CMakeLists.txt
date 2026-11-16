@@ -9,17 +9,19 @@ endif()
 option (EKAT_SKIP_FIND_YAML_CPP
   "Skip find_package for yaml-cpp, and fetch via FetchContent" OFF)
 if (NOT yaml-cpp_FOUND AND NOT EKAT_SKIP_FIND_YAML_CPP)
-  # I am having issues getting the env var YAML_CPP_ROOT being picked up
-  # by cmake. I suspect this has to do with the presence of the hyphen
-  # CMake *should* convert '-' to '_' when forming the cmake/env var name,
-  # so YAML_CPP_ROOT should be recognized. Alas, it's not on my machine,
-  # running CMake 3.26.3, so we must pass the var explicitly via HINTS
-  message (STATUS "Looking for yaml-cpp ...")
-  if (NOT YAML_CPP_ROOT AND NOT "$ENV{YAML_CPP_ROOT}" STREQUAL "")
-    set (YAML_CPP_ROOT $ENV{YAML_CPP_ROOT})
+  # cmake builds the name of the root var/env var from the package name, so for yaml-cpp
+  # we would need yaml-cpp_ROOT. Since env vars with a hyphen in their name are awkward
+  # to set in a shell, we also support YAML_CPP_ROOT (both as cmake var and as env var).
+  if (NOT yaml-cpp_ROOT)
+    if (YAML_CPP_ROOT)
+      set (yaml-cpp_ROOT ${YAML_CPP_ROOT})
+    elseif (NOT "$ENV{YAML_CPP_ROOT}" STREQUAL "")
+      set (yaml-cpp_ROOT $ENV{YAML_CPP_ROOT})
+    endif()
   endif()
 
-  find_package(yaml-cpp NO_DEFAULT_PATH HINTS ${YAML_CPP_ROOT})
+  include (EkatFindTpl)
+  ekat_find_tpl(yaml-cpp)
   if (yaml-cpp_FOUND)
     message (STATUS "Looking for yaml-cpp ... FOUND")
     message (STATUS "  yaml-cpp_DIR: ${yaml-cpp_DIR}")
