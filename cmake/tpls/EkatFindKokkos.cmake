@@ -44,7 +44,8 @@ endforeach()
 # Try to find the package
 message (STATUS "Looking for a Kokkos installation ...")
 
-find_package(Kokkos QUIET NO_DEFAULT_PATH)
+include (EkatFindTpl)
+ekat_find_tpl(Kokkos QUIET)
 
 if (Kokkos_FOUND)
   # Check if the requested devices/archs/options are enabled in the installation
